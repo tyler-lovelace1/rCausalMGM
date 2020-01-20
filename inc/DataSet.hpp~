@@ -1,0 +1,46 @@
+/*
+ * Represents a real-valued variable. The values are doubles, and the default
+ * missing value marker for is numeric_limits<double>::quiet_NaN().
+ *
+ * @author Willie Wheeler 7/99
+ * @author Joseph Ramsey modifications 12/00
+`* @author Tyler Lovelace conversion to C++ 1/20
+ */
+
+#ifndef DATASET_HPP_
+#define DATASET_HPP_
+
+#include "armaLapack.hpp"
+#include "ContinuousVariable.hpp"
+#include "DiscreteVariable.hpp"
+#include <exception>
+#include <iostream>
+#include <set>
+#include <map>
+#include <vector>
+#include <typeinfo>
+
+class DataSet {
+private:
+  std::vector<Variable*> variables;
+  std::vector<std::string> variableNames;
+  std::map<std::string, int> name2idx;
+  // std::map<int, std::string> idx2name;
+  arma::mat data;
+  int maxDiscrete;
+  int m, n;
+
+  std::set<double> getUnique(const Rcpp::NumericVector& col);
+  std::set<std::string> getUnique(const Rcpp::CharacterVector& col);
+  // DataType checkDataType(const Rcpp::DataVector& col);
+
+public:
+  DataSet(const int& maxDiscrete) { this->maxDiscrete=maxDiscrete; }
+  DataSet(const Rcpp::DataFrame& df, const int& maxDiscrete);
+  ~DataSet();
+
+  friend Rcpp::List rCausalMGMData(const Rcpp::DataFrame& df, const int& maxDiscrete);
+  
+};
+
+#endif /* DATASET_HPP_ */
