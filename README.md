@@ -11,7 +11,7 @@ The following steps need to be followed to build and install rCausalMGM as an R 
 1. First, we need to generate the `RcppExports.cpp` file that contains the functions that will be exported to R. This only needs to be done when you've defined a new function being exported to R or have changed the output type or parameters of an already defined funtion. In R, execute the following:
 
 ```R
-Rcpp::compileAtributes("path/to/rCausalMGM")
+Rcpp::compileAttributes("path/to/rCausalMGM")
 ```
 
 The path can be left blank if you are in the rCausalMGM directory. 
