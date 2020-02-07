@@ -13,8 +13,7 @@
  * @author Jack Fiore Conversion to c++ 2/30
  */
 
-class LogisticRegressionResult
-{
+class LogisticRegressionResult {
   private:
     /**
      * String representation of the result
@@ -56,7 +55,7 @@ class LogisticRegressionResult
     /**
      * The array of standard errors for the regression coefficients.
      */
-    arma::vec  stdErrs;
+    arma::vec stdErrs;
 
     /**
      * The array of coefP-values for the regression coefficients.
@@ -146,7 +145,7 @@ class LogisticRegressionResult
 
     std::vector<std::string> getVarNames() {return variableNames;}
 
-    public std::string toString() {return result;}
+    std::string toString() {return result;}
 
     arma::vec getxMeans() {return xMeans;}
 
@@ -157,6 +156,6 @@ class LogisticRegressionResult
      */
     double getLogLikelihood() {return logLikelihood;}
 
-}
+};
 
 #endif /* LOGISTICREGRESSIONRESULT_HPP_ */

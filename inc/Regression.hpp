@@ -26,6 +26,6 @@ class Regression
    */
   virtual RegressionResult regress(Node* target, std::list<Node&>* regressors) = 0;
 
-}
+};
 
 #endif /* REGRESSION_HPP_ */

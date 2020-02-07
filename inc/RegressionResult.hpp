@@ -21,7 +21,7 @@ class RegressionResult
      *
      * @see #RegressionResult
      */
-    boolean zeroInterceptAssumed;
+    bool zeroInterceptAssumed;
 
     /**
      * Regressor names.
@@ -128,27 +128,27 @@ class RegressionResult
      */
 
   public:
-    RegressionResult(boolean zeroInterceptAssumed, std::vector<std::string> regressorNames,
-                    int n, arma::vec b, arma::vec t, arma:vec p, arma::vec se, double r2,
-                    double rss, double alpha, arma::vec yHat, arma::vec res);
+    RegressionResult(bool zeroInterceptAssumed, std::vector<std::string> regressorNames,
+                     int n, arma::vec b, arma::vec t, arma::vec p, arma::vec se, double r2,
+                     double rss, double alpha, arma::vec yHat, arma::vec res);
 
-    boolean isZeroInterceptAssumed(){return zeroInterceptAssumed};
+    bool isZeroInterceptAssumed() { return this->zeroInterceptAssumed; }
 
-    double getRSquared(){return r2};
+    double getRSquared() { return this->r2; }
 
-    int getN(){return n};
+    int getN() { return this->n; }
 
-    int getNumRegressors(){return regressorNames.size()};
+    int getNumRegressors() { return this->regressorNames.size(); }
 
-    arma::vec getCoef(){return b};
+    arma::vec getCoef() { return this->b; }
 
-    arma::vec getT(){return t};
+    arma::vec getT() { return this->t; }
 
-    arma::vec getP(){return p};
+    arma::vec getP() { return this->p; }
 
-    arma::vec getSe(){return se};
+    arma::vec getSe() { return this->se; }
 
-    std::vector<std::string>(){return regressorNames};
+    std::vector<std::string> getRegressorNames() { return this->regressorNames; }
 
     double getPredictedValue(arma::vec x);
 
@@ -156,12 +156,9 @@ class RegressionResult
     //
     // std::string getPreamble(){}; //Check if necessary
 
-    arma::vec getYHat() {return yHat};
+    arma::vec getYHat() { return this->yHat; }
 
-    arma::vec getResiduals() {return res};
-
-
-
-}
+    arma::vec getResiduals() { return this->res; }
+};
 
 #endif /* REGRESSIONRESULT_HPP_ */
