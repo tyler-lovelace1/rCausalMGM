@@ -11,3 +11,4 @@ Description: More details about what the package does. See
 License: GPL (>= 2)
 Imports: Rcpp (>= 1.0.3)
 LinkingTo: Rcpp, RcppArmadillo
+SystemRequirements: C++11
