@@ -18,15 +18,17 @@ class DataSet;
 #include <exception>
 #include <iostream>
 #include <set>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <typeinfo>
+#include <iostream>
 
 class DataSet {
 private:
   std::vector<Variable*> variables;
   std::vector<std::string> variableNames;
-  std::map<std::string, int> name2idx;
+  std::unordered_map<std::string, int> name2idx;
+  std::unordered_map<Variable*, int> var2idx;
   arma::mat data;
   int maxDiscrete;
   int m, n;
@@ -34,11 +36,27 @@ private:
   std::set<std::string> getUnique(const Rcpp::CharacterVector& col);
 
 public:
-  DataSet(const int& maxDiscrete) { this->maxDiscrete=maxDiscrete; }
-  DataSet(const Rcpp::DataFrame& df, const int& maxDiscrete);
+  DataSet() {}
+  DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
+  DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
   ~DataSet();
 
-  friend Rcpp::RObject rCausalMGMData(const Rcpp::DataFrame& df, const int& maxDiscrete);
+  int getNumRows() { return n; }
+  int getNumColumns() {return m; }
+
+  void set(int i, int j, double val) { data(i,j) = val; }
+  void set(int i, int j, int val) { data(i,j) = (double) val; }
+
+  void addVariable(Variable* v);
+  void addVariable(int i, Variable* v);
+
+  Variable* getVariable(int i) { return variables[i]; }
+  Variable* getVariable(std::string name) { return variables[name2idx[name]]; }
+
+  int getColumn(Variable* v) { return var2idx[v]; }
+
+  friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
+  friend std::ostream& operator<<(std::ostream& os, DataSet& ds);
   
 };
 

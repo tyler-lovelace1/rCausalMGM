@@ -6,16 +6,15 @@
 
 using namespace Rcpp;
 
-// rCausalMGMData
-Rcpp::RObject rCausalMGMData(const Rcpp::DataFrame& df, const int& maxDiscrete);
-RcppExport SEXP _rCausalMGM_rCausalMGMData(SEXP dfSEXP, SEXP maxDiscreteSEXP) {
+// DataSetTest
+void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
+RcppExport SEXP _rCausalMGM_DataSetTest(SEXP dfSEXP, SEXP maxDiscreteSEXP) {
 BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< const int& >::type maxDiscrete(maxDiscreteSEXP);
-    rcpp_result_gen = Rcpp::wrap(rCausalMGMData(df, maxDiscrete));
-    return rcpp_result_gen;
+    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
+    DataSetTest(df, maxDiscrete);
+    return R_NilValue;
 END_RCPP
 }
 // rcpparma_hello_world
@@ -63,7 +62,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rCausalMGM_rCausalMGMData", (DL_FUNC) &_rCausalMGM_rCausalMGMData, 2},
+    {"_rCausalMGM_DataSetTest", (DL_FUNC) &_rCausalMGM_DataSetTest, 2},
     {"_rCausalMGM_rcpparma_hello_world", (DL_FUNC) &_rCausalMGM_rcpparma_hello_world, 0},
     {"_rCausalMGM_rcpparma_outerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_outerproduct, 1},
     {"_rCausalMGM_rcpparma_innerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_innerproduct, 1},

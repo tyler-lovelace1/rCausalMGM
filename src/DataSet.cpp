@@ -12,12 +12,14 @@ std::set<std::string> DataSet::getUnique(const Rcpp::CharacterVector& col) {
   return unique;
 }
 
-DataSet::DataSet(const Rcpp::DataFrame& df, const int& maxDiscrete) {
+DataSet::DataSet(const Rcpp::DataFrame& df, const int maxDiscrete) {
   this->maxDiscrete=maxDiscrete;
   const Rcpp::CharacterVector names = df.names();
   this->m = names.length();
   this->n = df.nrows();
   this->data.set_size(this->n,this->m);
+  this->name2idx = std::unordered_map<std::string, int>();
+  this->var2idx = std::unordered_map<Variable*, int>();
   int numUnique;
   std::string val, curName;
   
@@ -45,23 +47,25 @@ DataSet::DataSet(const Rcpp::DataFrame& df, const int& maxDiscrete) {
       std::sort(categories.begin(), categories.end());
       
       variables.push_back(new DiscreteVariable(curName, categories));
+
     }
 
     variableNames.push_back(curName);
     name2idx.insert(std::pair<std::string, int>(curName, i));
+    var2idx.insert(std::pair<Variable*, int>(variables[i], i));
 
 
     for (int j = 0; j < n; j++) {
 
       val = (std::string) col[j];
 
-      if (variables.at(i)->isMissingValue(val)) {
+      if (variables[i]->isMissingValue(val)) {
 
 	throw std::runtime_error("Missing values not yet implemented");
       
-      } else if (variables.at(i)->isContinuous()) {
+      } else if (variables[i]->isContinuous()) {
 	
-	if (((ContinuousVariable*) variables.at(i))->checkValue(val)) {
+	if (((ContinuousVariable*) variables[i])->checkValue(val)) {
 	  this->data(j,i) = std::stod(val);
 	  
 	} else {
@@ -69,10 +73,10 @@ DataSet::DataSet(const Rcpp::DataFrame& df, const int& maxDiscrete) {
 	  throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of variable " + curName);
 	  
 	}
-      } else if (variables.at(i)->isDiscrete()) {
+      } else if (variables[i]->isDiscrete()) {
 	
-	if (((DiscreteVariable*) variables.at(i))->checkValue(val)) {
-	  this->data(j,i) = (double) ((DiscreteVariable*) variables.at(i))->getIndex(val);
+	if (((DiscreteVariable*) variables[i])->checkValue(val)) {
+	  this->data(j,i) = (double) ((DiscreteVariable*) variables[i])->getIndex(val);
 
 	} else {
 	  
@@ -86,18 +90,83 @@ DataSet::DataSet(const Rcpp::DataFrame& df, const int& maxDiscrete) {
   }
 }
 
+void DataSet::addVariable(Variable* v) {
+  variables.push_back(v);
+  arma::vec col = arma::vec(n);
+  for (int i = 0; i < n; i++) col[i] = arma::datum::nan;
+
+  variableNames.push_back(v->getName());
+  name2idx.insert(std::pair<std::string, int>(v->getName(), m));
+  var2idx.insert(std::pair<Variable*, int>(v, m));
+
+  data.insert_cols(m, col);
+  m++;
+}
+
+void DataSet::addVariable(int i, Variable* v) {
+  if (i > m || i < 0) throw std::invalid_argument("index " + std::to_string(i) + " out of bounds");
+  
+  variables.insert(variables.begin() + i, v);
+  arma::vec col = arma::vec(n);
+  for (int i = 0; i < n; i++) col[i] = arma::datum::nan;
+
+  variableNames.push_back(v->getName());
+  name2idx.insert(std::pair<std::string, int>(v->getName(), i));
+  var2idx.insert(std::pair<Variable*, int>(v, i));
+
+  data.insert_cols(i, col);
+  m++;
+}
+
 DataSet::~DataSet() {
   for (int i = 0; i < variables.size(); i++)
-    delete variables.at(i);
+    delete variables[i];
 }
 
 // [[Rcpp::export]]
-Rcpp::RObject rCausalMGMData(const Rcpp::DataFrame& df, const int& maxDiscrete=5) {
-  DataSet *ds = new DataSet(df, maxDiscrete);
+void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete=5) {
+  DataSet ds = DataSet(df, maxDiscrete);
+  Rcpp::Rcout << ds;
 
-  Rcpp::XPtr<DataSet> data = Rcpp::XPtr<DataSet>(ds);
+  ds.addVariable(new ContinuousVariable("Y1"));
   
-  data.attr("data") = df;
+  Rcpp::Rcout << ds;
+
+  int col = ds.getColumn(ds.getVariable("Y1"));
+  for (int i; i < ds.getNumRows(); i++) ds.set(i, col, ((double) i) / 100.0);
+
+  Rcpp::Rcout << ds;
+
+  col = 3;
+  ds.addVariable(col, new DiscreteVariable("Y2", 4));
   
-  return Rcpp::as<Rcpp::RObject>(data);
+  Rcpp::Rcout << ds;
+
+  col = ds.getColumn(ds.getVariable("Y2"));
+  for (int i; i < ds.getNumRows(); i++) ds.set(i, col, i % 4);
+
+  Rcpp::Rcout << ds;
+}
+
+std::ostream& operator<<(std::ostream& os, DataSet& ds) {
+
+  for (int i = 0; i < ds.getNumColumns(); i++) {
+    if (ds.variables[i]->isContinuous()) os << "C:";
+    else if (ds.variables[i]->isDiscrete()) os << "D:";
+    os << ds.variables[i]->getName();
+    os << "\t";
+  }
+
+  os << "\n";
+
+  for (int i = 0; i < ds.getNumRows(); i++) {
+    for (int j = 0; j < ds.getNumColumns(); j++) {
+      os << ds.data(i,j);
+      os << "\t";
+    }
+    os << "\n";
+  }
+  os << "(" << ds.getNumRows() << ", " << ds.getNumColumns() << ")\n";
+
+  return os;
 }
