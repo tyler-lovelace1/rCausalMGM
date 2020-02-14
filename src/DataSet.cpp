@@ -133,7 +133,7 @@ void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete=5) {
   Rcpp::Rcout << ds;
 
   int col = ds.getColumn(ds.getVariable("Y1"));
-  for (int i; i < ds.getNumRows(); i++) ds.set(i, col, ((double) i) / 100.0);
+  for (int i = 0; i < ds.getNumRows(); i++) ds.set(i, col, ((double) i) / 100.0);
 
   Rcpp::Rcout << ds;
 
@@ -143,7 +143,7 @@ void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete=5) {
   Rcpp::Rcout << ds;
 
   col = ds.getColumn(ds.getVariable("Y2"));
-  for (int i; i < ds.getNumRows(); i++) ds.set(i, col, i % 4);
+  for (int i = 0; i < ds.getNumRows(); i++) ds.set(i, col, i % 4);
 
   Rcpp::Rcout << ds;
 }
