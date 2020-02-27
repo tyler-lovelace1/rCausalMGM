@@ -23,41 +23,47 @@ class DataSet;
 #include <typeinfo>
 #include <iostream>
 
-class DataSet {
+class DataSet
+{
 private:
-  std::vector<Variable*> variables;
-  std::vector<std::string> variableNames;
-  std::unordered_map<std::string, int> name2idx;
-  std::unordered_map<Variable*, int> var2idx;
-  arma::mat data;
-  int maxDiscrete;
-  int m, n;
+    std::vector<Variable *> variables;
+    std::vector<std::string> variableNames;
+    std::unordered_map<std::string, int> name2idx;
+    std::unordered_map<Variable *, int> var2idx;
+    arma::mat data;
+    int maxDiscrete;
+    int m, n;
 
-  std::set<std::string> getUnique(const Rcpp::CharacterVector& col);
+    std::set<std::string> getUnique(const Rcpp::CharacterVector &col);
 
 public:
-  DataSet() {}
-  DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
-  DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
-  ~DataSet();
+    DataSet() {}
+    DataSet(const int maxDiscrete) { this->maxDiscrete = maxDiscrete; }
+    DataSet(const Rcpp::DataFrame &df, const int maxDiscrete);
+    ~DataSet();
 
-  int getNumRows() { return n; }
-  int getNumColumns() {return m; }
+    int getNumRows() { return n; }
+    int getNumColumns() { return m; }
 
-  void set(int i, int j, double val) { data(i,j) = val; }
-  void set(int i, int j, int val) { data(i,j) = (double) val; }
+    void set(int i, int j, double val) { data(i, j) = val; }
+    void set(int i, int j, int val) { data(i, j) = (double)val; }
 
-  void addVariable(Variable* v);
-  void addVariable(int i, Variable* v);
+    void addVariable(Variable *v);
+    void addVariable(int i, Variable *v);
 
-  Variable* getVariable(int i) { return variables[i]; }
-  Variable* getVariable(std::string name) { return variables[name2idx[name]]; }
+    Variable *getVariable(int i) { return variables[i]; }
+    Variable *getVariable(std::string name) { return variables[name2idx[name]]; }
+    std::vector<Variable *> copyVariables();
+    std::vector<Variable *> copyContinuousVariables();
+    std::vector<Variable *> copyDiscreteVariables();
 
-  int getColumn(Variable* v) { return var2idx[v]; }
+    arma::mat getContinuousData();
+    arma::mat getDiscreteData();
 
-  friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
-  friend std::ostream& operator<<(std::ostream& os, DataSet& ds);
-  
+    int getColumn(Variable *v) { return var2idx[v]; }
+
+    friend void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+    friend std::ostream &operator<<(std::ostream &os, DataSet &ds);
 };
 
 #endif /* DATASET_HPP_ */

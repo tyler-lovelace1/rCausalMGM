@@ -26,20 +26,20 @@ protected:
     virtual double smoothValue(arma::vec& X) = 0;
 
     /**
-     * Gradient of smooth function g(X)
-     *
-     * @param X input vector
-     * @return vector containing gradient of g(X)
-     */
-    virtual arma::vec& smoothGradient(arma::vec& X) = 0;
-
-    /**
      * Calculate value of h(X)
      *
      * @param X input vector
      * @return value of h(X)
      */
     virtual double nonSmoothValue(arma::vec& X) = 0;
+
+    /**
+     * Gradient of smooth function g(X)
+     *
+     * @param X input vector
+     * @return vector containing gradient of g(X)
+     */
+    virtual arma::vec smoothGradient(arma::vec& X) = 0;
 
     /**
      * A proximal operator is the solution to this optimization problem:
@@ -49,7 +49,7 @@ protected:
      * @param X input vector
      * @return vector solution to prox_t(X)
      */
-    virtual arma::vec& proximalOperator(double t, arma::vec& X) = 0;
+    virtual arma::vec proximalOperator(double t, arma::vec& X) = 0;
 
 public:
     /**
@@ -60,9 +60,7 @@ public:
      * @return value of g(X)
      */
     double smooth(arma::vec& X, arma::vec& Xout) {
-        arma::vec sg = smoothGradient(X);
-        Xout.copy_size(sg);
-        for (arma::uword i = 0; i < sg.n_elem; i++) { Xout(i) = sg(i); }
+        Xout = smoothGradient(X);
         return smoothValue(X);
     }
 
@@ -75,12 +73,10 @@ public:
      * @return value of h(X)
      */
     double nonSmooth(double t, arma::vec& X, arma::vec& Xout){
-        arma::vec po = proximalOperator(t,X);
-        Xout.copy_size(po);
-        for (arma::uword i = 0; i < po.n_elem; i++) { Xout(i) = po(i); }
+        Xout = proximalOperator(t,X);
         return nonSmoothValue(X);
     }
 
-}
+};
 
 #endif /* CONVEXPROXIMAL_HPP_ */
