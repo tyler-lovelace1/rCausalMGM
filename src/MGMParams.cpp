@@ -31,12 +31,12 @@ MGMParams::MGMParams(arma::vec& vec, int p, int ltot) {
     if (vec.n_elem != lenSums[5])
         throw std::invalid_argument("Param vector dimension doesn't match: Found " + std::to_string(vec.n_elem) + " need " + std::to_string(lenSums[5]));
 
-    beta = arma::reshape(vec.subvec(0, lenSums[0]), p, p);
-    betad = arma::vec(vec.subvec(lenSums[0], lenSums[1]));
-    theta = arma::reshape(vec.subvec(lenSums[1], lenSums[2]), ltot, p);
-    phi = arma::reshape(vec.subvec(lenSums[2], lenSums[3]), ltot, ltot);
-    alpha1 = arma::vec(vec.subvec(lenSums[3], lenSums[4]));
-    alpha2 = arma::vec(vec.subvec(lenSums[4], lenSums[5]));
+    beta = arma::reshape(vec.subvec(0, lenSums[0]-1), p, p);
+    betad = arma::vec(vec.subvec(lenSums[0], lenSums[1]-1));
+    theta = arma::reshape(vec.subvec(lenSums[1], lenSums[2]-1), ltot, p);
+    phi = arma::reshape(vec.subvec(lenSums[2], lenSums[3]-1), ltot, ltot);
+    alpha1 = arma::vec(vec.subvec(lenSums[3], lenSums[4]-1));
+    alpha2 = arma::vec(vec.subvec(lenSums[4], lenSums[5]-1));
 }
 
 /**
@@ -65,12 +65,12 @@ arma::vec MGMParams::toMatrix1D() {
 }
 
 std::ostream& operator<<(std::ostream& os, MGMParams& params) {
-    os << "alpha1: " << params.alpha1 << "\n";
-    os << "alpha2: " << params.alpha2 << "\n";
-    os << "beta: "   << params.beta   << "\n";
-    os << "betad: "  << params.betad  << "\n";
-    os << "theta: "  << params.theta  << "\n";
-    os << "phi: "    << params.phi;
+    os << "alpha1:\n" << params.alpha1.t() << "\n";
+    os << "alpha2:\n" << params.alpha2.t() << "\n";
+    os << "beta:\n"   << params.beta       << "\n";
+    os << "betad:\n"  << params.betad.t()  << "\n";
+    os << "theta:\n"  << params.theta      << "\n";
+    os << "phi:\n"    << params.phi;
     return os;
 }
 

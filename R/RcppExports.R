@@ -5,6 +5,10 @@ DataSetTest <- function(df, maxDiscrete = 5L) {
     invisible(.Call(`_rCausalMGM_DataSetTest`, df, maxDiscrete))
 }
 
+MGMTest <- function(df, maxDiscrete = 5L) {
+    invisible(.Call(`_rCausalMGM_MGMTest`, df, maxDiscrete))
+}
+
 rcpparma_hello_world <- function() {
     .Call(`_rCausalMGM_rcpparma_hello_world`)
 }

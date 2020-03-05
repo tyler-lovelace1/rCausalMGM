@@ -159,6 +159,8 @@ std::vector<Variable *> DataSet::copyContinuousVariables() {
         if (variables[i]->isContinuous())
             result.push_back(new ContinuousVariable(*((ContinuousVariable*) variables[i])));
     }  
+
+    return result;
 }
 
 std::vector<Variable *> DataSet::copyDiscreteVariables() {
@@ -168,6 +170,8 @@ std::vector<Variable *> DataSet::copyDiscreteVariables() {
         if (variables[i]->isDiscrete())
             result.push_back(new DiscreteVariable(*((DiscreteVariable*) variables[i])));
     } 
+
+    return result;
 }
 
 arma::mat DataSet::getContinuousData() {
@@ -190,6 +194,17 @@ arma::mat DataSet::getDiscreteData() {
     }
 
     return data.cols(arma::uvec(discreteColumns));
+}
+
+std::vector<int> DataSet::getDiscLevels() {
+    std::vector<int> result;
+
+    for (arma::uword i = 0; i < m; i++) {
+        if (variables[i]->isDiscrete())
+            result.push_back(((DiscreteVariable*) variables[i])->getNumCategories());
+    }
+
+    return result;
 }
 
 // [[Rcpp::export]]

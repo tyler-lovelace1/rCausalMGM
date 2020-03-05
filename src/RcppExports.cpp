@@ -17,6 +17,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// MGMTest
+void MGMTest(const Rcpp::DataFrame& df, const int maxDiscrete);
+RcppExport SEXP _rCausalMGM_MGMTest(SEXP dfSEXP, SEXP maxDiscreteSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
+    MGMTest(df, maxDiscrete);
+    return R_NilValue;
+END_RCPP
+}
 // rcpparma_hello_world
 arma::mat rcpparma_hello_world();
 RcppExport SEXP _rCausalMGM_rcpparma_hello_world() {
@@ -63,6 +74,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_DataSetTest", (DL_FUNC) &_rCausalMGM_DataSetTest, 2},
+    {"_rCausalMGM_MGMTest", (DL_FUNC) &_rCausalMGM_MGMTest, 2},
     {"_rCausalMGM_rcpparma_hello_world", (DL_FUNC) &_rCausalMGM_rcpparma_hello_world, 0},
     {"_rCausalMGM_rcpparma_outerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_outerproduct, 1},
     {"_rCausalMGM_rcpparma_innerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_innerproduct, 1},

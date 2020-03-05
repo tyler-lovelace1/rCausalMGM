@@ -130,6 +130,8 @@ public:
 
     // Graph search();
 
+    friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+
 };
 
 // margeSum() replaced with sum(M, dim)

@@ -60,6 +60,8 @@ public:
     arma::mat getContinuousData();
     arma::mat getDiscreteData();
 
+    std::vector<int> getDiscLevels();
+
     int getColumn(Variable *v) { return var2idx[v]; }
 
     friend void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete);

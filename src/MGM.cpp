@@ -31,25 +31,26 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vec
 MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
 
     this->xDat = ds.getContinuousData();
+
     this->yDat = ds.getDiscreteData();
 
-    //TODO 
-    // this->l = ???
+    this->l = ds.getDiscLevels();
 
     this->p = xDat.n_cols;
     this->q = yDat.n_cols;
     this->n = xDat.n_rows;
 
     std::vector<Variable*> cVar = ds.copyContinuousVariables();
+
     std::vector<Variable*> dVar = ds.copyDiscreteVariables();
 
     this->variables = std::vector<Variable*>();
+
     this->variables.reserve(p+q);
     this->variables.insert(this->variables.end(), cVar.begin(), cVar.end());
     this->variables.insert(this->variables.end(), dVar.begin(), dVar.end());
     
     this->initVariables = ds.copyVariables();
-
     this->lambda = arma::vec(lambda);
 
     //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
@@ -84,10 +85,10 @@ void MGM::initParameters() {
 
     params = MGMParams(
         arma::mat((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros),  // beta
-        arma::vec(arma::size(xDat),                     arma::fill::ones),   // betad
+        arma::vec((int) xDat.n_cols,                    arma::fill::ones),   // betad
         arma::mat(lsum, (int) xDat.n_cols,              arma::fill::zeros),  // theta
         arma::mat(lsum, lsum,                           arma::fill::zeros),  // phi
-        arma::vec(arma::size(xDat),                     arma::fill::zeros),  // alpha1
+        arma::vec((int) xDat.n_cols,                    arma::fill::zeros),  // alpha1
         arma::vec(lsum,                                 arma::fill::zeros)   // alpha2
     );
 }
@@ -223,7 +224,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.beta = arma::trimatu(gradOut.beta, 1) * 2;
 
     //gradalpha1=diag(betad)*sum(res,0)';
-    gradOut.alpha1 = arma::diagmat(par.betad) * arma::sum(tempLoss, 0);
+    gradOut.alpha1 = arma::diagmat(par.betad) * arma::sum(tempLoss, 0).t();
 
     //gradtheta=D'*(res);
     gradOut.theta = dDat.t() * tempLoss;
@@ -293,7 +294,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.betad = arma::vec(xDat.n_cols);
     for(arma::uword i = 0; i < p; i++){
         gradOut.betad(i) = -n / (2.0 * par.betad(i)) + arma::norm(tempLoss.col(i), 2) / 2.0 -
-                           arma::as_scalar(tempLoss.col(i) * (xBeta.col(i) + dTheta.col(i)));
+                           arma::as_scalar(tempLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i)));
     }
 
     gradOut.alpha1 /= (double) n;
@@ -365,7 +366,6 @@ double MGM::smoothValue(arma::vec& parIn) {
         catloss=catloss+sum(denom);
     end
     */
-
     double catloss = 0;
     for (arma::uword i = 0; i < yDat.n_cols; i++) {
         arma::mat wxTemp = wxProd(0, lcumsum[i], arma::size(n, l[i]));
@@ -402,7 +402,7 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     //betascale=max(0,1-penbeta./abs(beta));
     arma::mat weightMat = weights * weights.t();
 
-    const arma::mat& betaWeight = weightMat.submat(0, 0, p, p);
+    const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
     arma::mat betaScale = betaWeight * -tlam(0);
     arma::mat absBeta = arma::abs(par.beta); 
     
@@ -442,9 +442,9 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     double thetaNorms = 0;
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]);
+            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
             double thetaScale = std::max(0.0, 1 - tlam(0)*weightMat(i,p+j)/arma::norm(tempVec, 2));
-            par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]) = tempVec * thetaScale;
+            par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * thetaScale;
             thetaNorms += weightMat(i, p+j) * std::sqrt(arma::norm(tempVec, 2));
         }
     }
@@ -464,10 +464,10 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     double phiNorms = 0;
     for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
         for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
-            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1], lcumsum[j+1]);
+            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
             double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, 2));
             // Use the tempMat subview again to set the values (doesn't work with const)
-            par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1], lcumsum[j+1]) = tempMat * phiScale;
+            par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
             phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
         }
     }
@@ -495,7 +495,7 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
     //weight beta
     //betaw = (wv(1:p)'*wv(1:p)).*abs(beta);
     //betanorms=sum(betaw(:));
-    double betaNorms = arma::accu(arma::mat(weightMat.submat(0, 0, p, p)) % arma::abs(par.beta));
+    double betaNorms = arma::accu(arma::mat(weightMat.submat(0, 0, p-1, p-1)) % arma::abs(par.beta));
 
     /*
     thetanorms=0;
@@ -509,7 +509,7 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
    double thetaNorms = 0;
    for (arma::uword i = 0; i < p; i++) {
        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-           const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]);
+           const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
            thetaNorms += weightMat(i, p+j) * std::sqrt(arma::norm(tempVec, 2));
        }
    }
@@ -529,7 +529,7 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
    double phiNorms = 0;
    for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
        for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
-           const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1], lcumsum[j+1]);
+           const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
            phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
        }
    }
@@ -562,11 +562,13 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     //Xbeta=X*beta*diag(1./betad);
     //Dtheta=D*theta*diag(1./betad);
+
     arma::mat xBeta = xDat * par.beta * divBetaD;
     arma::mat dTheta = dDat * par.theta * divBetaD;
 
+    //res=Xbeta-X+e*alpha1'+Dtheta;
+    //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat negLoss(n, xDat.n_cols);
-
     arma::mat wxProd = xDat*par.theta.t() + dDat*par.phi;
 
     for (arma::uword i = 0; i < n; i++) {
@@ -587,7 +589,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     grad.beta = arma::trimatu(grad.beta, 1) * 2;
 
     //gradalpha1=diag(betad)*sum(res,0)';
-    grad.alpha1 = arma::diagmat(par.betad) * arma::sum(negLoss, 0);
+    grad.alpha1 = arma::diagmat(par.betad) * arma::sum(negLoss, 0).t();
 
     //gradtheta=D'*(res);
     grad.theta = dDat.t() * negLoss;
@@ -607,7 +609,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     }
 
     //gradalpha2=sum(wxprod,0)';
-    grad.alpha2 = arma::sum(wxProd, 0);
+    grad.alpha2 = arma::sum(wxProd, 0).t();
 
     //gradw=X'*wxprod;
     arma::mat gradW = xDat.t() * wxProd;
@@ -625,7 +627,6 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     for (arma::uword i = 0; i < q; i++) {
         grad.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
-
     //gradphi=tril(gradphi)'+triu(gradphi);
     grad.phi = arma::trimatu(grad.phi, 0) * 2;
     // TODO - is this good?
@@ -638,7 +639,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     grad.betad = arma::vec(xDat.n_cols);
     for(arma::uword i = 0; i < p; i++){
         grad.betad(i) = -n / (2.0 * par.betad(i)) + arma::norm(negLoss.col(i), 2) / 2.0 -
-                           arma::as_scalar(negLoss.col(i) * (xBeta.col(i) + dTheta.col(i)));
+                           arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i)));
     }
 
     grad.alpha1 /= (double) n;
@@ -674,7 +675,7 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     //betascale=max(0,1-penbeta./abs(beta));
     arma::mat weightMat = weights * weights.t();
 
-    const arma::mat& betaWeight = weightMat.submat(0, 0, p, p);
+    const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
     arma::mat betaScale = betaWeight * -tlam(0);
     
     betaScale /= arma::abs(par.beta);
@@ -710,9 +711,9 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     */
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]);
+            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
             double thetaScale = std::max(0.0, 1 - tlam(0)*weightMat(i,p+j)/arma::norm(tempVec, 2));
-            par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]) = tempVec * thetaScale;
+            par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * thetaScale;
         }
     }
 
@@ -730,12 +731,32 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     */
     for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
         for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
-            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1], lcumsum[j+1]);
+            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
             double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, 2));
             // Use the tempMat subview again to set the values (doesn't work with const)
-            par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1], lcumsum[j+1]) = tempMat * phiScale;
+            par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
         }
     }
 
     return par.toMatrix1D();
+}
+
+// [[Rcpp::export]]
+void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
+
+    DataSet ds(df, maxDiscrete);
+
+    std::vector<double> lambda = {0.2, 0.2, 0.2};
+
+    MGM mgm(ds, lambda);
+
+    arma::vec params = mgm.params.toMatrix1D();
+
+    Rcpp::Rcout << "Smooth value: " << mgm.smoothValue(params) << std::endl;
+
+    arma::vec smoothGrad = mgm.smoothGradient(params);
+    Rcpp::Rcout << "Calculated smooth gradient" << std::endl;
+    MGMParams params2(smoothGrad, 5, 20);
+    Rcpp::Rcout << "Smooth gradient: " << params2;
+
 }
