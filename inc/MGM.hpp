@@ -39,7 +39,7 @@ private:
     long timeout = -1;
 
     //parameter weights
-    arma::mat weights;
+    arma::vec weights;
 
     MGMParams params;
 

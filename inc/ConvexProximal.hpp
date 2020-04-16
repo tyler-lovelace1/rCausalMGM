@@ -16,7 +16,7 @@
 
 class ConvexProximal {
 
-protected:
+public:
     /**
      * Calculate value of smooth function g(X)
      *
@@ -51,7 +51,6 @@ protected:
      */
     virtual arma::vec proximalOperator(double t, arma::vec& X) = 0;
 
-public:
     /**
      * Calculate value of g(X) and gradient of g(X) at the same time for efficiency reasons.
      *
