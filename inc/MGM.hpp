@@ -6,8 +6,10 @@
 #include "ContinuousVariable.hpp"
 #include "DiscreteVariable.hpp"
 #include "MGMParams.hpp"
+#include "ProximalGradient.hpp"
 #include <math.h>
 #include <RcppArmadillo.h>
+
 
 class MGM : public ConvexProximal {
 
@@ -126,7 +128,13 @@ public:
     // TODO Graph
     // Graph graphFromMGM();
 
-    arma::mat& adjMatFromMGM();
+    /**
+     * Converts MGM to matrix of doubles. uses 2-norm to combine c-d edge parameters into single value and f-norm for
+     * d-d edge parameters.
+     *
+     * @return
+     */
+    arma::mat adjMatFromMGM();
 
     // Graph search();
 

@@ -19,6 +19,7 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vec
     this->q = y.n_cols;
     this->n = x.n_rows;
     this->variables = variables;
+    this->initVariables = variables;
 
     this->lambda = arma::vec(lambda);
     fixData();
@@ -50,7 +51,7 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     this->variables.insert(this->variables.end(), cVar.begin(), cVar.end());
     this->variables.insert(this->variables.end(), dVar.begin(), dVar.end());
     
-    this->initVariables = ds.copyVariables();
+    this->initVariables = variables;
     this->lambda = arma::vec(lambda);
 
     //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
@@ -69,7 +70,6 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
 MGM::~MGM() {
     for (int i = 0; i < variables.size(); i++) {
         delete variables[i];
-        delete initVariables[i];
     }  
 }
 
@@ -825,6 +825,94 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     }
 
     return par.toMatrix1D();
+}
+
+/**
+ *  Learn MGM traditional way with objective function tolerance. Recommended for inference applications that need
+ *  accurate pseudolikelihood
+ *
+ * @param epsilon tolerance in change of objective function
+ * @param iterLimit iteration limit
+ */
+void MGM::learn(double epsilon, int iterLimit) {
+    ProximalGradient pg = ProximalGradient();
+    arma::vec curParams = params.toMatrix1D();
+    arma::vec newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, epsilon, iterLimit);
+    params = MGMParams(newParams, p, lsum);
+}
+
+/**
+ *  Learn MGM using edge convergence using default 3 iterations of no edge changes. Recommended when we only care about
+ *  edge existence.
+ *
+ * @param iterLimit
+ */
+void MGM::learnEdges(int iterLimit) {
+    ProximalGradient pg(0.5, 0.9, true);
+    arma::vec curParams = params.toMatrix1D();
+    arma::vec newParams;
+    if (timeout != -1)
+        newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 0.0, iterLimit, timeout);
+    else
+        newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 0.0, iterLimit);
+
+    params = MGMParams(newParams, p, lsum);
+
+    timePerIter = pg.timePerIter;
+    iterCount = pg.iterComplete;
+}   
+
+/**
+ *  Learn MGM using edge convergence using edgeChangeTol (see ProximalGradient for documentation). Recommended when we only care about
+ *  edge existence.
+ *
+ * @param iterLimit
+ * @param edgeChangeTol
+ */
+void MGM::learnEdges(int iterLimit, int edgeChangeTol){
+    ProximalGradient pg(0.5, 0.9, true);
+    arma::vec curParams = params.toMatrix1D();
+    pg.setEdgeChangeTol(edgeChangeTol);
+    arma::vec newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 0.0, iterLimit);
+    params = MGMParams(newParams, p, lsum);
+}
+
+/**
+ * Converts MGM to matrix of doubles. uses 2-norm to combine c-d edge parameters into single value and f-norm for
+ * d-d edge parameters.
+ *
+ * @return
+ */
+arma::mat MGM::adjMatFromMGM() {
+    arma::mat outMat(p+q, p+q);
+
+    outMat(0, 0, arma::size(p, p)) = params.beta + params.beta.t();
+
+    for (arma::uword i = 0; i < p; i++) {
+        for (arma::uword j = 0; j < q; j++) {
+            double val = std::sqrt(arma::norm(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1), 2));
+            outMat(i, p+j) = val;
+            outMat(p+j, i) = val;
+        }
+    }
+
+    for (arma::uword i = 0; i < q; i++) {
+        for (arma::uword j = i+1; j < q; j++) {
+            double val = arma::norm(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j])), "fro");
+            outMat(p+i, p+j) = val;
+            outMat(p+j, p+i) = val;
+        }
+    }
+
+    //order the adjmat to be the same as the original DataSet variable ordering
+    arma::uvec varMap(p+q);
+    for(arma::uword i = 0; i < p+q; i++){
+        varMap(i) = std::distance(variables.begin(), std::find(variables.begin(), variables.end(), initVariables[i]));
+    }
+    outMat = outMat.submat(varMap, varMap);
+
+    return outMat;
+
 }
 
 // [[Rcpp::export]]

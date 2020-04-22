@@ -18,10 +18,12 @@ private:
 
     int printIter = 100;
     double backtrackTol = 1e-10;
-    int iterComplete = 0;
-    double timePerIter = 0;
+    
 
 public:
+
+    int iterComplete = 0;
+    double timePerIter = 0;
 
     /**
      * Constructor using defaults from Becker et al 2011. beta = .5, alpha = .9
