@@ -52,3 +52,66 @@ double RegressionResult::getPredictedValue(arma::vec x) {
 
     return yHat;
 }
+
+std::ostream& operator<<(std::ostream& os, RegressionResult& rr) {
+  os << "Regression Result Summary:";
+  os << "\n";
+  os << "Does this model assume a zero intercept? ";
+  os << rr.zeroInterceptAssumed;
+  os << "\n";
+  os << "List of Regressor Names: ";
+  for (int i = 0; i < rr.regressorNames.size(); i++) {
+    os << rr.regressorNames[i];
+    os << "\t";
+  }
+  os << "\n";
+  os << "Number of Data Points: ";
+  os << rr.n;
+  os << "\n";
+  os << "Regression coefficients: ";
+  for (int i = 0; i < rr.b.size(); i++) {
+    os << rr.b[i];
+    os << "\t";
+  }
+  os << "\n";
+  os << "t-statistics: ";
+  for (int i = 0; i < rr.t.size(); i++) {
+    os << rr.t[i];
+    os << "\t";
+  }
+  os << "\n";
+  os << "P-Values: ";
+  for (int i = 0; i < rr.p.size(); i++) {
+    os << rr.p[i];
+    os << "\t";
+  }
+  os << "\n";
+  os << "Standard Errors: ";
+  for (int i = 0; i < rr.se.size(); i++) {
+    os << rr.se[i];
+    os << "\t";
+  }
+  os << "\n";
+  os << "R-Squared: ";
+  os << rr.r2;
+  os << "\n";
+  os << "Alpha value: ";
+  os << rr.alpha;
+  os << "\n";
+  os << "Residual Sum of Squares: ";
+  os << rr.rss;
+  os << "\n";
+  os << "Y-Hat values: ";
+  for (int i = 0; i < rr.yHat.size(); i++) {
+    os << rr.yHat[i];
+    os << "\t";
+  }
+  os << "\n";
+  os << "Residuals: ";
+  for (int i = 0; i < rr.res.size(); i++) {
+    os << rr.res[i];
+    os << "\t";
+  }
+  os << "\n";
+  return os;
+}
