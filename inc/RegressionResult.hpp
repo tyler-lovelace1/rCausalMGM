@@ -4,6 +4,8 @@
 #include "armaLapack.hpp"
 #include <string>
 #include <vector>
+#include <iostream>
+
 
 /**
  * Stores the various components of a regression result so they can be passed
@@ -87,7 +89,7 @@ class RegressionResult
     double alpha;
 
     /**
-     * Teh predicted values.
+     * The predicted values.
      */
     arma::vec yHat;
 
@@ -159,6 +161,9 @@ class RegressionResult
     arma::vec getYHat() { return this->yHat; }
 
     arma::vec getResiduals() { return this->res; }
+
+    friend std::ostream& operator<<(std::ostream& os, RegressionResult& rr);
+
 };
 
 #endif /* REGRESSIONRESULT_HPP_ */
