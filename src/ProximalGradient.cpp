@@ -64,7 +64,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
             arma::vec XmY = X - Y;
 
-            double normXY = std::sqrt(arma::norm(XmY, 2));
+            double normXY = std::pow(arma::norm(XmY, 2), 2);
             if (normXY == 0)
                 break;
 
@@ -112,11 +112,11 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             noEdgeChangeCount++;
             if (noEdgeChangeCount >= noEdgeChangeTol) {
                 break;
-            } else if (noEdgeChangeTol < 0 && diffEdges <= std::abs(noEdgeChangeTol)) {
-                break;
-            } else {
-                noEdgeChangeCount = 0;
-            }
+            } 
+        } else if (noEdgeChangeTol < 0 && diffEdges <= std::abs(noEdgeChangeTol)) {
+            break;
+        } else {
+            noEdgeChangeCount = 0;
         }
 
         //edge converge should happen before params converge, unless epsilon is big
@@ -159,6 +159,10 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
 arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, double epsilon, int iterLimit) {
     arma::vec X = cp->proximalOperator(1.0, Xin);
+
+    // Rcpp::Rcout << "Original X = \n" << X.t() << std::endl;
+
+
     arma::vec Y = arma::vec(X);
     arma::vec Z = arma::vec(X);
 
@@ -196,9 +200,22 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             }
 
             Fy = cp->smooth(Y, GrY);
+            // Rcpp::Rcout << "Y: " << Y.t() << std::endl;
+            // Rcpp::Rcout << "GrY: " << GrY.t() << std::endl;
             arma::vec temp = Y - (GrY * (1.0/L));
+
+            // MGMParams tempParams(temp, 5, 20);
+
+            // Rcpp::Rcout << "tempParams.alpha1: \n" << tempParams.getAlpha1() << std::endl;
+            // Rcpp::Rcout << "tempParams.alpha2: \n" << tempParams.getAlpha2() << std::endl;
+            // Rcpp::Rcout << "tempParams.betad: \n" << tempParams.getBetad() << std::endl;
+            // Rcpp::Rcout << "tempParams.beta: \n" << tempParams.getBeta() << std::endl;
+            // Rcpp::Rcout << "tempParams.theta: \n" << tempParams.getTheta() << std::endl;
+            // Rcpp::Rcout << "tempParams.phi: \n" << tempParams.getPhi() << std::endl;
+
             Gx = cp->nonSmooth(1.0 / L, temp, X);
             if (backtrackSwitch) {
+                // Rcpp::Rcout << "X to be used = \n" << X.t() << std::endl;
                 Fx = cp->smoothValue(X);
             } else {
                 Fx = cp->smooth(X, GrX);
@@ -206,7 +223,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
             arma::vec XmY = X - Y;
 
-            double normXY = std::sqrt(arma::norm(XmY, 2));
+            double normXY = std::pow(arma::norm(XmY, 2), 2);
             if (normXY == 0)
                 break;
 
@@ -221,6 +238,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
                 LocalL = 2 * arma::as_scalar(XmY.t() * (GrX - GrY)) / normXY;
             }
 
+            Rcpp::Rcout << "LocalL: " << LocalL << " L: " << L << std::endl;
             if (LocalL <= L) {
                 break;
             } else if (LocalL != std::numeric_limits<double>::infinity()) {
@@ -254,11 +272,11 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             noEdgeChangeCount++;
             if (noEdgeChangeCount >= noEdgeChangeTol) {
                 break;
-            } else if (noEdgeChangeTol < 0 && diffEdges <= std::abs(noEdgeChangeTol)) {
-                break;
-            } else {
-                noEdgeChangeCount = 0;
-            }
+            } 
+        } else if (noEdgeChangeTol < 0 && diffEdges <= std::abs(noEdgeChangeTol)) {
+            break;
+        } else {
+            noEdgeChangeCount = 0;
         }
 
         //edge converge should happen before params converge, unless epsilon is big
@@ -280,8 +298,16 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
         printIter = 1;
         if (iterCount % printIter == 0) {
-            // TODO - R output?
-            ;
+            Rcpp::Rcout << "Iter: " << iterCount << 
+                " |dx|/|x|: " << dx << 
+                " normX: " << arma::norm(X, 2) << 
+                " Fx: " << Fx << 
+                " Fy: " << Fy <<
+                " Gx: " << Gx << 
+                " DiffEdges: " << diffEdges << 
+                " L: " << L << 
+                " theta: " << theta << std::endl;
+            Rcpp::Rcout << "X = \n" << X.t() << std::endl;
         }
 
         iterCount++;
@@ -289,5 +315,16 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             break;
         }
     }
+
+    Rcpp::Rcout << "X = \n" << X.t() << std::endl;
+
+    // MGMParams XP(X, 5, 20);
+
+    // Rcpp::Rcout << "XP.alpha1: \n" << XP.getAlpha1() << std::endl;
+    // Rcpp::Rcout << "XP.alpha2: \n" << XP.getAlpha2() << std::endl;
+    // Rcpp::Rcout << "XP.betad: \n" << XP.getBetad() << std::endl;
+    // Rcpp::Rcout << "XP.beta: \n" << XP.getBeta() << std::endl;
+    // Rcpp::Rcout << "XP.theta: \n" << XP.getTheta() << std::endl;
+    // Rcpp::Rcout << "XP.phi: \n" << XP.getPhi() << std::endl;
     return X;
  }

@@ -4,6 +4,8 @@
 #include <RcppArmadillo.h>
 #include <ConvexProximal.hpp>
 #include <chrono>
+//TODO
+#include "MGM.hpp" 
 
 class ProximalGradient {
 

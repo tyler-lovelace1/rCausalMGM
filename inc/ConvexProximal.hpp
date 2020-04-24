@@ -58,7 +58,7 @@ public:
      * @param Xout gradient of g(X)
      * @return value of g(X)
      */
-    double smooth(arma::vec& X, arma::vec& Xout) {
+    virtual double smooth(arma::vec& X, arma::vec& Xout) {
         Xout = smoothGradient(X);
         return smoothValue(X);
     }
@@ -71,7 +71,7 @@ public:
      * @param Xout vector solution to prox_t(X)
      * @return value of h(X)
      */
-    double nonSmooth(double t, arma::vec& X, arma::vec& Xout){
+    virtual double nonSmooth(double t, arma::vec& X, arma::vec& Xout){
         Xout = proximalOperator(t,X);
         return nonSmoothValue(X);
     }

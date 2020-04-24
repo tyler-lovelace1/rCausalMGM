@@ -159,8 +159,14 @@ void MGM::fixData() {
  * @return value of g(X)
  */
 double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
-    Rcpp::Rcout << "smooth1" << std::endl;
     MGMParams par(parIn, p, lsum);
+
+    // Rcpp::Rcout << "par.alpha1: \n" << par.alpha1.t() << std::endl;
+    // Rcpp::Rcout << "par.alpha2: \n" << par.alpha2.t() << std::endl;
+    // Rcpp::Rcout << "par.betad: \n" << par.betad.t() << std::endl;
+    // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
+    // Rcpp::Rcout << "par.theta: \n" << par.theta << std::endl;
+    // Rcpp::Rcout << "par.phi: \n" << par.phi << std::endl;
 
     MGMParams gradOut;
 
@@ -179,9 +185,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     par.beta = arma::symmatu(par.beta);
     par.beta.diag(0).zeros();  // TODO: needed?
 
-    Rcpp::Rcout << "smooth2" << std::endl;
-
-
     for (arma::uword i = 0; i < q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
@@ -192,9 +195,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     arma::mat divBetaD = arma::diagmat(arma::vec(p, arma::fill::ones) / par.betad);
     arma::mat xBeta = xDat * par.beta * divBetaD;
 
-    Rcpp::Rcout << "smooth3" << std::endl;
-
-
     //Dtheta=D*theta*diag(1./betad);
     arma::mat dTheta = dDat * par.theta * divBetaD;
 
@@ -204,9 +204,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 
     //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi;
-
-    Rcpp::Rcout << "smooth4" << std::endl;
-
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < xDat.n_cols; j++) {
@@ -219,11 +216,8 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 
     //sqloss=-n/2*sum(log(betad))+...
     //.5*norm((X-e*alpha1'-Xbeta-Dtheta)*diag(sqrt(betad)),'fro')^2;
-    double sqloss = -n*2.0*arma::sum(arma::log(arma::vec(par.betad))) +
+    double sqloss = -n/2.0*arma::sum(arma::log(arma::vec(par.betad))) +
                     0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(arma::vec(par.betad))), "fro"), 2);
-
-    Rcpp::Rcout << "smooth5" << std::endl;
-
 
     //ok now tempLoss = res
     tempLoss *= -1;
@@ -240,9 +234,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 
     //gradtheta=D'*(res);
     gradOut.theta = dDat.t() * tempLoss;
-
-    Rcpp::Rcout << "smooth6" << std::endl;
-
 
     // categorical loss
     /*catloss=0;
@@ -277,9 +268,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
         }
     }
 
-    Rcpp::Rcout << "smooth7" << std::endl;
-
-
     //gradalpha2=sum(wxprod,0)';
     gradOut.alpha2 = arma::sum(wxProd, 0).t();
 
@@ -291,8 +279,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 
     //gradphi=D'*wxprod;
     gradOut.phi = dDat.t() * wxProd;
-    Rcpp::Rcout << "smooth8" << std::endl;
-
 
     //zero out gradphi diagonal
     //for r=1:q
@@ -305,8 +291,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //gradphi=tril(gradphi)'+triu(gradphi);
     gradOut.phi = arma::trimatl(gradOut.phi, 0).t() + arma::trimatu(gradOut.phi, 0);
 
-    Rcpp::Rcout << "smooth9" << std::endl;
-
     /*
     for s=1:p
         gradbetad(s)=-n/(2*betad(s))+1/2*norm(res(:,s))^2-res(:,s)'*(Xbeta(:,s)+Dtheta(:,s));
@@ -318,8 +302,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
                            arma::as_scalar(tempLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i)));
     }
 
-    Rcpp::Rcout << "smooth10" << std::endl;
-
     gradOut.alpha1 /= (double) n;
     gradOut.alpha2 /= (double) n;
     gradOut.betad /= (double) n;
@@ -327,14 +309,27 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.theta /= (double) n;
     gradOut.phi /= (double) n;
 
+    // Rcpp::Rcout << "gradOut.alpha1: \n" << gradOut.alpha1.t() << std::endl;
+    // Rcpp::Rcout << "gradOut.alpha2: \n" << gradOut.alpha2.t() << std::endl;
+    // Rcpp::Rcout << "gradOut.betad: \n" << gradOut.betad.t() << std::endl;
+    // Rcpp::Rcout << "gradOut.beta: \n" << gradOut.beta << std::endl;
+    // Rcpp::Rcout << "gradOut.theta: \n" << gradOut.theta << std::endl;
+    // Rcpp::Rcout << "gradOut.phi: \n" << gradOut.phi << std::endl;
+
     gradOutVec = gradOut.toMatrix1D();
 
-    Rcpp::Rcout << "smooth11" << std::endl;
     return (sqloss + catloss)/((double) n);
 }
 
 double MGM::smoothValue(arma::vec& parIn) {
     MGMParams par(parIn, p, lsum);
+
+    // Rcpp::Rcout << "par.alpha1: \n" << par.alpha1.t() << std::endl;
+    // Rcpp::Rcout << "par.alpha2: \n" << par.alpha2.t() << std::endl;
+    // Rcpp::Rcout << "par.betad: \n" << par.betad.t() << std::endl;
+    // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
+    // Rcpp::Rcout << "par.theta: \n" << par.theta << std::endl;
+    // Rcpp::Rcout << "par.phi: \n" << par.phi << std::endl;
 
     for(arma::uword i = 0; i < par.betad.size(); i++) {
         if(par.betad(i) <= 0)
@@ -361,10 +356,17 @@ double MGM::smoothValue(arma::vec& parIn) {
     arma::mat xBeta = xDat * par.beta * divBetaD;
     arma::mat dTheta = dDat * par.theta * divBetaD;
 
+    // Rcpp::Rcout << "xBeta: \n" << xBeta << std::endl;
+    // Rcpp::Rcout << "dTheta: \n" << dTheta << std::endl;
+
+
+
     // Squared loss
     //sqloss=-n/2*sum(log(betad))+...
     //.5*norm((X-e*alpha1'-Xbeta-Dtheta)*diag(sqrt(betad)),'fro')^2;
     arma::mat tempLoss(n, xDat.n_cols);
+
+
 
     //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi;
@@ -378,9 +380,15 @@ double MGM::smoothValue(arma::vec& parIn) {
         }
     }
 
-    double sqloss = -n*2.0*arma::sum(arma::log(arma::vec(par.betad))) +
+    // Rcpp::Rcout << "tempLoss: \n" << tempLoss << std::endl;
+
+
+    double sqloss = -n/2.0*arma::sum(arma::log(arma::vec(par.betad))) +
                     0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(arma::vec(par.betad))), "fro"), 2);
     
+    // Rcpp::Rcout << "sqloss: " << sqloss << std::endl;
+
+
     // categorical loss
     /*catloss=0;
     wxprod=X*(theta')+D*phi+e*alpha2'; %this is n by Ltot
@@ -402,6 +410,8 @@ double MGM::smoothValue(arma::vec& parIn) {
         }
     }
 
+    // Rcpp::Rcout << "catloss: " << catloss << std::endl;
+
     return (sqloss + catloss) / (double) n;
 }
 
@@ -422,12 +432,19 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     //par is a copy so we can update it
     MGMParams par(X, p, lsum);
 
+    // Rcpp::Rcout << "NS par.alpha1: \n" << par.alpha1.t() << std::endl;
+    // Rcpp::Rcout << "NS par.alpha2: \n" << par.alpha2.t() << std::endl;
+    // Rcpp::Rcout << "NS par.betad: \n" << par.betad.t() << std::endl;
+    // Rcpp::Rcout << "NS par.beta: \n" << par.beta << std::endl;
+    // Rcpp::Rcout << "NS par.theta: \n" << par.theta << std::endl;
+    // Rcpp::Rcout << "NS par.phi: \n" << par.phi << std::endl;
+
     //penbeta = t(1).*(wv(1:p)'*wv(1:p));
     //betascale=zeros(size(beta));
     //betascale=max(0,1-penbeta./abs(beta));
     arma::mat weightMat = weights * weights.t();
 
-    Rcpp::Rcout << "weightMat = " << weightMat << std::endl;
+    // Rcpp::Rcout << "weightMat = \n" << weightMat << std::endl;
 
 
     const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
@@ -438,7 +455,7 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     betaScale += 1;
     betaScale.transform( [](double val) {return std::max(val, 0.0); } );
 
-    Rcpp::Rcout << "betaScale = " << betaScale << std::endl;
+    // Rcpp::Rcout << "betaScale = \n" << betaScale << std::endl;
 
     double betaNorms = 0;
 
@@ -447,15 +464,15 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
             double curVal = par.beta(i,j);
             if (curVal != 0) {
                 curVal *= betaScale(i,j);
-                Rcpp::Rcout << "curVal = " << curVal << std::endl;
+                // Rcpp::Rcout << "curVal = " << curVal << std::endl;
                 par.beta(i,j) = curVal;
                 betaNorms += std::abs(betaWeight(i,j)*curVal);
-                Rcpp::Rcout << "curBetaNorms = " << betaNorms << std::endl;
+                // Rcpp::Rcout << "curBetaNorms = " << betaNorms << std::endl;
 
             }
         }
     }
-    Rcpp::Rcout << "NS betaNorms = " << betaNorms << std::endl;
+    // Rcpp::Rcout << "NS betaNorms = \n" << betaNorms << std::endl;
 
     //weight beta
     //betaw = (wv(1:p)'*wv(1:p)).*beta;
@@ -482,7 +499,7 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
             thetaNorms += weightMat(i, p+j) * arma::norm(tempVec, 2);
         }
     }
-    Rcpp::Rcout << "NS thetaNorms = " << thetaNorms << std::endl;
+    // Rcpp::Rcout << "NS thetaNorms = \n" << thetaNorms << std::endl;
 
 
     /*
@@ -508,7 +525,7 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
         }
     }
 
-    Rcpp::Rcout << "NS phiNorms = " << phiNorms << std::endl;
+    // Rcpp::Rcout << "NS phiNorms = \n" << phiNorms << std::endl;
 
     pX = par.toMatrix1D();
     return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms;
@@ -535,7 +552,7 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
     //betanorms=sum(betaw(:));
     double betaNorms = arma::accu(arma::mat(weightMat.submat(0, 0, p-1, p-1)) % arma::abs(par.beta));
 
-    Rcpp::Rcout << "NSV betaNorms = " << betaNorms << std::endl;
+    // Rcpp::Rcout << "NSV betaNorms = " << betaNorms << std::endl;
 
     /*
     thetanorms=0;
@@ -554,7 +571,7 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
        }
    }
 
-    Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
+    // Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
 
 
     /*
@@ -577,7 +594,7 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
        }
    }
 
-    Rcpp::Rcout << "NSV phiNorms = " << phiNorms << std::endl;
+    // Rcpp::Rcout << "NSV phiNorms = " << phiNorms << std::endl;
 
 
     return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms;
@@ -890,7 +907,7 @@ arma::mat MGM::adjMatFromMGM() {
 
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = 0; j < q; j++) {
-            double val = std::sqrt(arma::norm(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1), 2));
+            double val = arma::norm(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1), 2);
             outMat(i, p+j) = val;
             outMat(p+j, i) = val;
         }
@@ -924,15 +941,14 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     MGM mgm(ds, lambda);
 
-    arma::vec params = mgm.params.toMatrix1D();
+    // arma::vec params = mgm.params.toMatrix1D();
 
     // Rcpp::Rcout << "Smooth value: \n" << mgm.smoothValue(params) << std::endl;
 
-    arma::vec smoothGrad = mgm.smoothGradient(params);
+    // arma::vec smoothGrad = mgm.smoothGradient(params);
     // Rcpp::Rcout << "Calculated smooth gradient" << std::endl;
-    MGMParams params2(smoothGrad, 5, 20);
+    // MGMParams params2(smoothGrad, 5, 20);
     // Rcpp::Rcout << "Smooth gradient: \n" << params2;
-
 
     // Test smooth()
     // arma::vec smoothOut(arma::size(smoothGrad));
@@ -941,18 +957,19 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // MGMParams params3(smoothOut, 5, 20);
     // Rcpp::Rcout << "Smooth() gradient: \n" << params3;
 
-
     // arma::vec proxOperator = mgm.proximalOperator(1, smoothGrad);
     // MGMParams params4(proxOperator, 5, 20);
     // Rcpp::Rcout << "proxOperator: \n" << params4;
 
-    Rcpp::Rcout << "nonSmoothValue: \n" << mgm.nonSmoothValue(smoothGrad) << std::endl;
+    // Rcpp::Rcout << "nonSmoothValue: \n" << mgm.nonSmoothValue(smoothGrad) << std::endl;
 
     // Test smooth()
-    arma::vec nonSmoothOut(arma::size(smoothGrad));
-    Rcpp::Rcout << "Calling nonSmooth()..." << std::endl;
-    Rcpp::Rcout << "nonSmooth() value: \n" << mgm.nonSmooth(1, smoothGrad, nonSmoothOut) << std::endl;
-    MGMParams params5(nonSmoothOut, 5, 20);
-    Rcpp::Rcout << "nonSmooth() gradient: \n" << params5;
+    // arma::vec nonSmoothOut(arma::size(smoothGrad));
+    // Rcpp::Rcout << "Calling nonSmooth()..." << std::endl;
+    // Rcpp::Rcout << "nonSmooth() value: \n" << mgm.nonSmooth(1, smoothGrad, nonSmoothOut) << std::endl;
+    // MGMParams params5(nonSmoothOut, 5, 20);
+    // Rcpp::Rcout << "nonSmooth() gradient: \n" << params5;
+
+    mgm.learnEdges(500);
 
 }
