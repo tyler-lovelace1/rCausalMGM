@@ -41,9 +41,9 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     this->q = yDat.n_cols;
     this->n = xDat.n_rows;
 
-    std::vector<Variable*> cVar = ds.copyContinuousVariables();
+    std::vector<Variable*> cVar = ds.getContinuousVariables();
 
-    std::vector<Variable*> dVar = ds.copyDiscreteVariables();
+    std::vector<Variable*> dVar = ds.getDiscreteVariables();
 
     this->variables = std::vector<Variable*>();
 
@@ -67,10 +67,11 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     makeDummy();
 }
 
+// Variables are deleted in the DataSet destructor
 MGM::~MGM() {
-    for (int i = 0; i < variables.size(); i++) {
-        delete variables[i];
-    }  
+    // for (int i = 0; i < variables.size(); i++) {
+    //     delete variables[i];
+    // }  
 }
 
 void MGM::initParameters() {
@@ -932,6 +933,65 @@ arma::mat MGM::adjMatFromMGM() {
 
 }
 
+
+/**
+ * Converts MGM object to Graph object with edges if edge parameters are non-zero. Loses all edge param information
+ *
+ * @return
+ */
+Graph MGM::graphFromMGM() {
+    Graph g(p+q);
+
+    // Set vertices to be variables
+    for (int i = 0; i < p+q; i++) {
+        g[i] = variables[i];
+    }
+
+    for (arma::uword i = 0; i < p; i++) {
+        for (arma::uword j = i+1; j < p; j++) {
+            double v1 = params.beta(i,j);
+
+            if (std::abs(v1) > 0) {
+                boost::add_edge(i, j, g);
+            }
+        }
+    }
+
+    for (arma::uword i = 0; i < p; i++) {
+        for (arma::uword j = 0; j < q; j++) {
+            double v1 = arma::accu(arma::abs(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1)));
+
+            if (v1 > 0) {
+                boost::add_edge(i, p+j, g);
+            }
+        }
+    }
+
+    for (arma::uword i = 0; i < q; i++) {
+        for (arma::uword j = i+1; j < q; j++) {
+            double v1 = arma::accu(arma::abs(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j]))));
+
+            if (v1 > 0) {
+                boost::add_edge(p+i, p+j, g);
+            }
+        }
+    }
+
+    return g;
+}
+
+/**
+ * Simple search command for GraphSearch implementation. Uses default edge convergence, 1000 iter limit.
+ *
+ * @return
+ */
+Graph MGM::search() {
+    auto start = std::chrono::high_resolution_clock::now();
+    learnEdges(500);
+    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    return graphFromMGM();
+}
+
 // [[Rcpp::export]]
 void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
@@ -970,6 +1030,27 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // MGMParams params5(nonSmoothOut, 5, 20);
     // Rcpp::Rcout << "nonSmooth() gradient: \n" << params5;
 
-    mgm.learnEdges(500);
+    // mgm.learnEdges(500);
+
+    // Rcpp::Rcout << "mgm.params.alpha1: \n" << mgm.params.getAlpha1() << std::endl;
+    // Rcpp::Rcout << "mgm.params.alpha2: \n" << mgm.params.getAlpha2() << std::endl;
+    // Rcpp::Rcout << "mgm.params.betad: \n" << mgm.params.getBetad() << std::endl;
+    // Rcpp::Rcout << "mgm.params.beta: \n" << mgm.params.getBeta() << std::endl;
+    // Rcpp::Rcout << "mgm.params.theta: \n" << mgm.params.getTheta() << std::endl;
+    // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
+
+    // Rcpp::Rcout << "DUDEK MGM MATRIX:\n" << mgm.adjMatFromMGM() << std::endl; 
+
+    Graph g = mgm.search();
+
+    typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
+    IndexMap index = boost::get(boost::vertex_index, g);
+
+    Rcpp::Rcout << "edges(g) = ";
+    boost::graph_traits<Graph>::edge_iterator ei, ei_end;
+    for (boost::tie(ei, ei_end) = boost::edges(g); ei != ei_end; ++ei)
+        Rcpp::Rcout << "(" << g[boost::source(*ei, g)]->getName()
+                    << "," << g[boost::target(*ei, g)]->getName() << ") ";
+    Rcpp::Rcout << std::endl;
 
 }

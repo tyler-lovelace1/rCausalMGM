@@ -53,9 +53,12 @@ public:
 
     Variable *getVariable(int i) { return variables[i]; }
     Variable *getVariable(std::string name) { return variables[name2idx[name]]; }
+    std::vector<Variable *> getContinuousVariables();
+    std::vector<Variable *> getDiscreteVariables();
     std::vector<Variable *> copyVariables();
     std::vector<Variable *> copyContinuousVariables();
     std::vector<Variable *> copyDiscreteVariables();
+    
 
     arma::mat getContinuousData();
     arma::mat getDiscreteData();

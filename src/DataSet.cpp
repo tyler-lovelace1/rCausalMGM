@@ -152,6 +152,28 @@ std::vector<Variable *> DataSet::copyVariables() {
     return result;
 }
 
+std::vector<Variable *> DataSet::getContinuousVariables() {
+    std::vector<Variable *> result = std::vector<Variable *>();
+
+    for (int i = 0; i < m; i++) {
+        if (variables[i]->isContinuous())
+            result.push_back(variables[i]);
+    }  
+
+    return result;
+}
+
+std::vector<Variable *> DataSet::getDiscreteVariables() {
+    std::vector<Variable *> result = std::vector<Variable *>();
+
+    for (int i = 0; i < m; i++) {
+        if (variables[i]->isDiscrete())
+            result.push_back(variables[i]);
+    } 
+
+    return result;
+}
+
 std::vector<Variable *> DataSet::copyContinuousVariables() {
     std::vector<Variable *> result = std::vector<Variable *>();
 

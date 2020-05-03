@@ -7,8 +7,10 @@
 #include "DiscreteVariable.hpp"
 #include "MGMParams.hpp"
 #include "ProximalGradient.hpp"
+#include "Graph.hpp"
 #include <math.h>
 #include <RcppArmadillo.h>
+#include <chrono>
 
 
 class MGM : public ConvexProximal {
@@ -43,8 +45,6 @@ private:
     //parameter weights
     arma::vec weights;
 
-    MGMParams params;
-
     double logsumexp(const arma::vec& x);
 
     void initParameters();
@@ -56,6 +56,9 @@ private:
     static void runTests2();
 
 public:
+//TODO - move back to private
+    MGMParams params;
+
     double timePerIter = 0;
     int iterCount = 0;
 
@@ -121,12 +124,38 @@ public:
      */
     arma::vec proximalOperator(double t, arma::vec& X);
 
+    /**
+     *  Learn MGM traditional way with objective function tolerance. Recommended for inference applications that need
+     *  accurate pseudolikelihood
+     *
+     * @param epsilon tolerance in change of objective function
+     * @param iterLimit iteration limit
+     */
     void learn(double epsilon, int iterLimit);
+
+    /**
+     *  Learn MGM using edge convergence using default 3 iterations of no edge changes. Recommended when we only care about
+     *  edge existence.
+     *
+     * @param iterLimit
+     */
     void learnEdges(int iterlimit);
+
+    /**
+     *  Learn MGM using edge convergence using edgeChangeTol (see ProximalGradient for documentation). Recommended when we only care about
+     *  edge existence.
+     *
+     * @param iterLimit
+     * @param edgeChangeTol
+     */
     void learnEdges(int iterlimit, int edgeChangeTol);
 
-    // TODO Graph
-    // Graph graphFromMGM();
+    /**
+     * Converts MGM object to Graph object with edges if edge parameters are non-zero. Loses all edge param information
+     *
+     * @return
+     */
+    Graph graphFromMGM();
 
     /**
      * Converts MGM to matrix of doubles. uses 2-norm to combine c-d edge parameters into single value and f-norm for
@@ -136,7 +165,12 @@ public:
      */
     arma::mat adjMatFromMGM();
 
-    // Graph search();
+    /**
+     * Simple search command for GraphSearch implementation. Uses default edge convergence, 1000 iter limit.
+     *
+     * @return
+     */
+    Graph search();
 
     friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 
