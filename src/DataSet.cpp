@@ -22,7 +22,7 @@ DataSet::DataSet(const Rcpp::DataFrame& df, const int maxDiscrete) {
   this->var2idx = std::unordered_map<Variable*, int>();
   int numUnique;
   std::string val, curName;
-  
+
   for (int i = 0; i < m; i++) {
 
     Rcpp::CharacterVector col = df[i];
@@ -30,22 +30,22 @@ DataSet::DataSet(const Rcpp::DataFrame& df, const int maxDiscrete) {
     curName = (std::string) names[i];
 
     std::set<std::string> unique = getUnique(col);
-    
+
     numUnique = unique.size();
-      
+
     if (numUnique > maxDiscrete) {
-      
+
       variables.push_back(new ContinuousVariable(curName));
 
     } else {
-      
+
       std::vector<std::string> categories;
-      
+
       for (std::set<std::string>::iterator it=unique.begin(); it!=unique.end(); it++)
 	categories.push_back(*it);
 
       std::sort(categories.begin(), categories.end());
-      
+
       variables.push_back(new DiscreteVariable(curName, categories));
 
     }
@@ -62,28 +62,28 @@ DataSet::DataSet(const Rcpp::DataFrame& df, const int maxDiscrete) {
       if (variables[i]->isMissingValue(val)) {
 
 	throw std::runtime_error("Missing values not yet implemented");
-      
+
       } else if (variables[i]->isContinuous()) {
-	
+
 	if (((ContinuousVariable*) variables[i])->checkValue(val)) {
 	  this->data(j,i) = std::stod(val);
-	  
+
 	} else {
-	  
+
 	  throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of variable " + curName);
-	  
+
 	}
       } else if (variables[i]->isDiscrete()) {
-	
+
 	if (((DiscreteVariable*) variables[i])->checkValue(val)) {
 	  this->data(j,i) = (double) ((DiscreteVariable*) variables[i])->getIndex(val);
 
 	} else {
-	  
+
 	  throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of variable " + curName);
 	}
       } else {
-	
+
 	throw std::runtime_error("invalid variable type");
       }
     }
@@ -105,7 +105,7 @@ void DataSet::addVariable(Variable* v) {
 
 void DataSet::addVariable(int i, Variable* v) {
   if (i > m || i < 0) throw std::invalid_argument("index " + std::to_string(i) + " out of bounds");
-  
+
   variables.insert(variables.begin() + i, v);
   arma::vec col = arma::vec(n);
   for (int i = 0; i < n; i++) col[i] = arma::datum::nan;
@@ -129,21 +129,21 @@ void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete=5) {
   Rcpp::Rcout << ds;
 
   ds.addVariable(new ContinuousVariable("Y1"));
-  
+
   Rcpp::Rcout << ds;
 
   int col = ds.getColumn(ds.getVariable("Y1"));
-  for (int i; i < ds.getNumRows(); i++) ds.set(i, col, ((double) i) / 100.0);
+  for (int i = 0; i < ds.getNumRows(); i++) ds.set(i, col, ((double) i) / 100.0);
 
   Rcpp::Rcout << ds;
 
   col = 3;
   ds.addVariable(col, new DiscreteVariable("Y2", 4));
-  
+
   Rcpp::Rcout << ds;
 
   col = ds.getColumn(ds.getVariable("Y2"));
-  for (int i; i < ds.getNumRows(); i++) ds.set(i, col, i % 4);
+  for (int i = 0; i < ds.getNumRows(); i++) ds.set(i, col, i % 4);
 
   Rcpp::Rcout << ds;
 }
