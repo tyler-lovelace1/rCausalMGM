@@ -53,11 +53,16 @@ public:
   Variable* getVariable(int i) { return variables[i]; }
   Variable* getVariable(std::string name) { return variables[name2idx[name]]; }
 
+  std::vector<Variable*> getVariables() { return variables; }
+
+
   int getColumn(Variable* v) { return var2idx[v]; }
+
+  arma::mat getData() { return data; }
 
   friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
   friend std::ostream& operator<<(std::ostream& os, DataSet& ds);
-  
+
 };
 
 #endif /* DATASET_HPP_ */
