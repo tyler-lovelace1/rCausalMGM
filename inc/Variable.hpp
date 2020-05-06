@@ -8,7 +8,7 @@
  *
  * @author Willie Wheeler 7/99
  * @author Joseph Ramsey modifications 12/00
-`* @author Tyler Lovelace conversion to C++ 1/20
+ * @author Tyler Lovelace conversion to C++ 1/20
  */
 
 #ifndef VARIABLE_HPP_

@@ -32,26 +32,21 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vec
 MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
 
     this->xDat = ds.getContinuousData();
-
     this->yDat = ds.getDiscreteData();
-
     this->l = ds.getDiscLevels();
-
     this->p = xDat.n_cols;
     this->q = yDat.n_cols;
     this->n = xDat.n_rows;
 
+    //the variables are now ordered continuous first then discrete
     std::vector<Variable*> cVar = ds.getContinuousVariables();
-
     std::vector<Variable*> dVar = ds.getDiscreteVariables();
-
     this->variables = std::vector<Variable*>();
-
     this->variables.reserve(p+q);
     this->variables.insert(this->variables.end(), cVar.begin(), cVar.end());
     this->variables.insert(this->variables.end(), dVar.begin(), dVar.end());
     
-    this->initVariables = variables;
+    this->initVariables = ds.getVariables();
     this->lambda = arma::vec(lambda);
 
     //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
@@ -74,6 +69,7 @@ MGM::~MGM() {
     // }  
 }
 
+// init all parameters to zeros except for betad which is set to 1s
 void MGM::initParameters() {
     lcumsum = std::vector<int>(l.size()+1);
     lcumsum[0] = 0;
@@ -123,9 +119,7 @@ void MGM::calcWeights() {
     }
 }
 
-/**
- * Convert discrete data (in yDat) to a matrix of dummy variables (stored in dDat)
- */
+// convert discrete data (in yDat) to a matrix of dummy variables (stored in dDat)
 void MGM::makeDummy() {
     dDat = arma::mat(n, lsum, arma::fill::zeros);
     for(int i = 0; i < q; i++) {
@@ -138,6 +132,7 @@ void MGM::makeDummy() {
     }
 }
 
+// checks if yDat is zero indexed and converts to 1 index. zscores x
 void MGM::fixData() {
     double ymin = yDat.min();
     if(ymin < 0 || ymin > 1)
@@ -147,7 +142,6 @@ void MGM::fixData() {
         yDat += 1;
     }
 
-    //TODO??
     // z-score of columns of x
     xDat.each_col( [](arma::vec& c) {c = (c - arma::mean(c)) / arma::stddev(c); } );
 }
@@ -162,12 +156,7 @@ void MGM::fixData() {
 double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     MGMParams par(parIn, p, lsum);
 
-    // Rcpp::Rcout << "par.alpha1: \n" << par.alpha1.t() << std::endl;
-    // Rcpp::Rcout << "par.alpha2: \n" << par.alpha2.t() << std::endl;
-    // Rcpp::Rcout << "par.betad: \n" << par.betad.t() << std::endl;
-    // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
-    // Rcpp::Rcout << "par.theta: \n" << par.theta << std::endl;
-    // Rcpp::Rcout << "par.phi: \n" << par.phi << std::endl;
+    // Rcpp::Rcout << "par: \n" << par << std::endl;
 
     MGMParams gradOut;
 
@@ -184,7 +173,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //beta=beta+beta';
     //phi=phi+phi';
     par.beta = arma::symmatu(par.beta);
-    par.beta.diag(0).zeros();  // TODO: needed?
+    par.beta.diag(0).zeros();
 
     for (arma::uword i = 0; i < q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
@@ -296,7 +285,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     for s=1:p
         gradbetad(s)=-n/(2*betad(s))+1/2*norm(res(:,s))^2-res(:,s)'*(Xbeta(:,s)+Dtheta(:,s));
     end
-        */
+    */
     gradOut.betad = arma::vec(xDat.n_cols);
     for(arma::uword i = 0; i < p; i++){
         gradOut.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(tempLoss.col(i), 2), 2) / 2.0 -
@@ -310,12 +299,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.theta /= (double) n;
     gradOut.phi /= (double) n;
 
-    // Rcpp::Rcout << "gradOut.alpha1: \n" << gradOut.alpha1.t() << std::endl;
-    // Rcpp::Rcout << "gradOut.alpha2: \n" << gradOut.alpha2.t() << std::endl;
-    // Rcpp::Rcout << "gradOut.betad: \n" << gradOut.betad.t() << std::endl;
-    // Rcpp::Rcout << "gradOut.beta: \n" << gradOut.beta << std::endl;
-    // Rcpp::Rcout << "gradOut.theta: \n" << gradOut.theta << std::endl;
-    // Rcpp::Rcout << "gradOut.phi: \n" << gradOut.phi << std::endl;
+    // Rcpp::Rcout << "gradOut: \n" << gradOut << std::endl;
 
     gradOutVec = gradOut.toMatrix1D();
 
@@ -325,12 +309,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 double MGM::smoothValue(arma::vec& parIn) {
     MGMParams par(parIn, p, lsum);
 
-    // Rcpp::Rcout << "par.alpha1: \n" << par.alpha1.t() << std::endl;
-    // Rcpp::Rcout << "par.alpha2: \n" << par.alpha2.t() << std::endl;
-    // Rcpp::Rcout << "par.betad: \n" << par.betad.t() << std::endl;
-    // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
-    // Rcpp::Rcout << "par.theta: \n" << par.theta << std::endl;
-    // Rcpp::Rcout << "par.phi: \n" << par.phi << std::endl;
+    // Rcpp::Rcout << "par: \n" << par << std::endl;
 
     for(arma::uword i = 0; i < par.betad.size(); i++) {
         if(par.betad(i) <= 0)
@@ -342,7 +321,7 @@ double MGM::smoothValue(arma::vec& parIn) {
     //beta=beta+beta';
     //phi=phi+phi';
     par.beta = arma::symmatu(par.beta);
-    par.beta.diag(0).zeros();  // TODO: needed?
+    par.beta.diag(0).zeros();
 
     for (arma::uword i = 0; i < q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
@@ -360,14 +339,10 @@ double MGM::smoothValue(arma::vec& parIn) {
     // Rcpp::Rcout << "xBeta: \n" << xBeta << std::endl;
     // Rcpp::Rcout << "dTheta: \n" << dTheta << std::endl;
 
-
-
     // Squared loss
     //sqloss=-n/2*sum(log(betad))+...
     //.5*norm((X-e*alpha1'-Xbeta-Dtheta)*diag(sqrt(betad)),'fro')^2;
     arma::mat tempLoss(n, xDat.n_cols);
-
-
 
     //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi;
@@ -383,12 +358,10 @@ double MGM::smoothValue(arma::vec& parIn) {
 
     // Rcpp::Rcout << "tempLoss: \n" << tempLoss << std::endl;
 
-
     double sqloss = -n/2.0*arma::sum(arma::log(arma::vec(par.betad))) +
                     0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(arma::vec(par.betad))), "fro"), 2);
     
     // Rcpp::Rcout << "sqloss: " << sqloss << std::endl;
-
 
     // categorical loss
     /*catloss=0;
@@ -433,12 +406,7 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     //par is a copy so we can update it
     MGMParams par(X, p, lsum);
 
-    // Rcpp::Rcout << "NS par.alpha1: \n" << par.alpha1.t() << std::endl;
-    // Rcpp::Rcout << "NS par.alpha2: \n" << par.alpha2.t() << std::endl;
-    // Rcpp::Rcout << "NS par.betad: \n" << par.betad.t() << std::endl;
-    // Rcpp::Rcout << "NS par.beta: \n" << par.beta << std::endl;
-    // Rcpp::Rcout << "NS par.theta: \n" << par.theta << std::endl;
-    // Rcpp::Rcout << "NS par.phi: \n" << par.phi << std::endl;
+    // Rcpp::Rcout << "NS par: \n" << par << std::endl;
 
     //penbeta = t(1).*(wv(1:p)'*wv(1:p));
     //betascale=zeros(size(beta));
@@ -446,7 +414,6 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     arma::mat weightMat = weights * weights.t();
 
     // Rcpp::Rcout << "weightMat = \n" << weightMat << std::endl;
-
 
     const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
     arma::mat betaScale = betaWeight * -tlam(0);
@@ -501,7 +468,6 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
         }
     }
     // Rcpp::Rcout << "NS thetaNorms = \n" << thetaNorms << std::endl;
-
 
     /*
     for r=1:q
@@ -564,16 +530,14 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
         end
     end
     */
-   double thetaNorms = 0;
-   for (arma::uword i = 0; i < p; i++) {
-       for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-           const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-           thetaNorms += weightMat(i, p+j) * arma::norm(tempVec, 2);
-       }
-   }
-
+    double thetaNorms = 0;
+    for (arma::uword i = 0; i < p; i++) {
+        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+            thetaNorms += weightMat(i, p+j) * arma::norm(tempVec, 2);
+        }
+    }
     // Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
-
 
     /*
     for r=1:q
@@ -587,16 +551,15 @@ double MGM::nonSmoothValue(arma::vec& parIn) {
         end
     end
     */
-   double phiNorms = 0;
-   for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
-       for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
-           const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-           phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
-       }
-   }
+    double phiNorms = 0;
+    for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+        for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+            phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
+        }
+    }
 
     // Rcpp::Rcout << "NSV phiNorms = " << phiNorms << std::endl;
-
 
     return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms;
 }
@@ -613,15 +576,10 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     MGMParams par(parIn, p, lsum);
 
-    // Rcpp::Rcout << "par.alpha1: \n" << par.alpha1 << std::endl;
-    // Rcpp::Rcout << "par.alpha2: \n" << par.alpha2 << std::endl;
-    // Rcpp::Rcout << "par.betad: \n" << par.betad << std::endl;
-    // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
-    // Rcpp::Rcout << "par.theta: \n" << par.theta << std::endl;
-    // Rcpp::Rcout << "par.phi: \n" << par.phi << std::endl;
+    // Rcpp::Rcout << "par: \n" << par << std::endl;
 
     par.beta = arma::symmatu(par.beta);
-    par.beta.diag(0).zeros();  // TODO: needed?
+    par.beta.diag(0).zeros();
     // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
 
     for (arma::uword i = 0; i < q; i++) {
@@ -636,11 +594,9 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     //Xbeta=X*beta*diag(1./betad);
     //Dtheta=D*theta*diag(1./betad);
-
     arma::mat xBeta = xDat * par.beta * divBetaD;
-    // Rcpp::Rcout << "xBeta: \n" << xBeta << std::endl;
-
     arma::mat dTheta = dDat * par.theta * divBetaD;
+    // Rcpp::Rcout << "xBeta: \n" << xBeta << std::endl;
     // Rcpp::Rcout << "dTheta: \n" << dTheta << std::endl;
 
     //res=Xbeta-X+e*alpha1'+Dtheta;
@@ -649,7 +605,6 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     arma::mat wxProd = xDat*par.theta.t() + dDat*par.phi;
     // Rcpp::Rcout << "wxProd1: \n" << wxProd << std::endl;
-
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < p; j++) {
@@ -662,7 +617,6 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     // Rcpp::Rcout << "negLoss: \n" << negLoss << std::endl;
     // Rcpp::Rcout << "wxProd2: \n" << wxProd << std::endl;
 
-
     //gradbeta=X'*(res);
     grad.beta = xDat.t() * negLoss;
     // Rcpp::Rcout << "grad.beta1: \n" << grad.beta << std::endl;
@@ -673,19 +627,16 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     grad.beta = arma::trimatl(grad.beta, -1).t() + arma::trimatu(grad.beta, 1);
     // Rcpp::Rcout << "grad.beta2: \n" << grad.beta << std::endl;
 
-    // Rcpp::Rcout << "VALUE OF NEGLOSS: \n" << negLoss << std::endl;
+    // Rcpp::Rcout << "negLoss: \n" << negLoss << std::endl;
 
     //gradalpha1=diag(betad)*sum(res,0)';
     grad.alpha1 = arma::diagmat(par.betad) * arma::sum(negLoss, 0).t();
-    // Rcpp::Rcout << "PRODUCT 1: \n" << arma::diagmat(par.betad) << std::endl;
-    // Rcpp::Rcout << "PRODUCT 2: \n" << arma::sum(negLoss, 0).t() << std::endl;
 
     // Rcpp::Rcout << "grad.alpha1: \n" << grad.alpha1 << std::endl;
 
     //gradtheta=D'*(res);
     grad.theta = dDat.t() * negLoss;
     // Rcpp::Rcout << "grad.theta: \n" << grad.theta << std::endl;
-
 
     for (arma::uword i = 0; i < yDat.n_cols; i++) {
         arma::subview<double> wxTemp = wxProd(0, lcumsum[i], arma::size(n, l[i]));
@@ -702,26 +653,21 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     }
     // Rcpp::Rcout << "wxProd: \n" << wxProd << std::endl;
 
-
     //gradalpha2=sum(wxprod,0)';
     grad.alpha2 = arma::sum(wxProd, 0).t();
     // Rcpp::Rcout << "grad.alpha2: \n" << grad.alpha2 << std::endl;
-
 
     //gradw=X'*wxprod;
     arma::mat gradW = xDat.t() * wxProd;
     // Rcpp::Rcout << "gradW: \n" << gradW << std::endl;
 
-
     //gradtheta=gradtheta+gradw';
     grad.theta += gradW.t();
     // Rcpp::Rcout << "grad.theta: \n" << grad.theta << std::endl;
 
-
     //gradphi=D'*wxprod;
     grad.phi = dDat.t() * wxProd;
     // Rcpp::Rcout << "grad.phi1: \n" << grad.phi << std::endl;
-
 
     //zero out gradphi diagonal
     //for r=1:q
@@ -786,21 +732,11 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     betaScale += 1;
     betaScale.transform( [](double val) {return std::max(val, 0.0); } );
 
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < p; j++) {
-            double curVal = par.beta(i,j);
-            if (curVal != 0) {
-                par.beta(i,j) = curVal*betaScale(i,j);
-            }
-        }
-    }
-
-    // TODO - same as par.beta = par.beta % betaScale ??
+    par.beta = par.beta % betaScale;
 
     //weight beta
     //betaw = (wv(1:p)'*wv(1:p)).*beta;
     //betanorms=sum(abs(betaw(:)));
-    //double betaNorm = betaWeight.copy().assign(par.beta, Functions.mult).assign(Functions.abs).zSum();
 
     /*
     thetanorms=0;
@@ -902,7 +838,7 @@ void MGM::learnEdges(int iterLimit, int edgeChangeTol){
  * @return
  */
 arma::mat MGM::adjMatFromMGM() {
-    arma::mat outMat(p+q, p+q);
+    arma::mat outMat(p+q, p+q, arma::fill::zeros);
 
     outMat(0, 0, arma::size(p, p)) = params.beta + params.beta.t();
 
@@ -930,7 +866,6 @@ arma::mat MGM::adjMatFromMGM() {
     outMat = outMat.submat(varMap, varMap);
 
     return outMat;
-
 }
 
 
@@ -1039,9 +974,9 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // Rcpp::Rcout << "mgm.params.theta: \n" << mgm.params.getTheta() << std::endl;
     // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
 
-    // Rcpp::Rcout << "DUDEK MGM MATRIX:\n" << mgm.adjMatFromMGM() << std::endl; 
-
     Graph g = mgm.search();
+
+    Rcpp::Rcout << "MGM MATRIX:\n" << mgm.adjMatFromMGM() << std::endl; 
 
     typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
     IndexMap index = boost::get(boost::vertex_index, g);
@@ -1052,5 +987,4 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
         Rcpp::Rcout << "(" << g[boost::source(*ei, g)]->getName()
                     << "," << g[boost::target(*ei, g)]->getName() << ") ";
     Rcpp::Rcout << std::endl;
-
 }

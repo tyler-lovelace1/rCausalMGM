@@ -55,23 +55,11 @@ arma::vec MGMParams::toMatrix1D() {
     arma::vec outVec(p*p + p + p*ltot + ltot*ltot + p + ltot);
     
     outVec.subvec(0,          arma::size(beta.as_col())) = beta.as_col();
-    // Rcpp::Rcout << "MGMParams1" << std::endl;
-
     outVec.subvec(lenSums[0], arma::size(betad)) = betad;
-    // Rcpp::Rcout << "MGMParams2" << std::endl;
-
     outVec.subvec(lenSums[1], arma::size(theta.as_col())) = theta.as_col();
-    // Rcpp::Rcout << "MGMParams3" << std::endl;
-
     outVec.subvec(lenSums[2], arma::size(phi.as_col())) = phi.as_col();
-    // Rcpp::Rcout << "MGMParams4" << std::endl;
-
     outVec.subvec(lenSums[3], arma::size(alpha1)) = alpha1;
-    // Rcpp::Rcout << "MGMParams5" << alpha2 << arma::size(alpha2) << std::endl;
-
     outVec.subvec(lenSums[4], arma::size(alpha2)) = alpha2;
-    // Rcpp::Rcout << "MGMParams6" << std::endl;
-
     
     return outVec;
 }
@@ -85,4 +73,3 @@ std::ostream& operator<<(std::ostream& os, MGMParams& params) {
     os << "phi:\n"    << params.phi;
     return os;
 }
-

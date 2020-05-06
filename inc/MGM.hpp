@@ -12,7 +12,12 @@
 #include <RcppArmadillo.h>
 #include <chrono>
 
-
+/**
+ * Implementation of Lee and Hastie's (2012) pseudolikelihood method for learning
+ * Mixed Gaussian-Categorical Graphical Models
+ * Created by ajsedgewick on 7/15/15.
+ * Converted to C++ by Max Dudek on 5/5/20.
+ */
 class MGM : public ConvexProximal {
 
 private:
@@ -42,22 +47,19 @@ private:
     int n;
     long timeout = -1;
 
+    MGMParams params;
+
     //parameter weights
     arma::vec weights;
 
     double logsumexp(const arma::vec& x);
 
-    void initParameters();
-    void calcWeights();
-    void makeDummy();
-    void fixData();
-
-    static void runTests1();
-    static void runTests2();
+    void initParameters();  // init all parameters to zeros except for betad which is set to 1s
+    void calcWeights();     // calculate parameter weights as in Lee and Hastie 
+    void makeDummy();       // convert discrete data (in yDat) to a matrix of dummy variables (stored in dDat)
+    void fixData();         // checks if yDat is zero indexed and converts to 1 index. zscores x
 
 public:
-//TODO - move back to private
-    MGMParams params;
 
     double timePerIter = 0;
     int iterCount = 0;
@@ -67,6 +69,7 @@ public:
     MGM(DataSet& ds, std::vector<double>& lambda);
     ~MGM();
 
+    MGMParams getParams() {return params;}
     void setParams(MGMParams& newParams) {params = newParams;}
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
@@ -175,8 +178,5 @@ public:
     friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 
 };
-
-// margeSum() replaced with sum(M, dim)
-// upperTri and lowerTri replaced with trimatu() / trimatl()
 
 #endif /* MGM_HPP_ */

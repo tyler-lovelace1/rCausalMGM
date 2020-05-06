@@ -5,6 +5,16 @@
 #include <ConvexProximal.hpp>
 #include <chrono>
 
+
+/**
+ * Implementation of Nesterov's 83 method as described in Beck and Teboulle, 2009
+ * aka Fast Iterative Shrinkage Thresholding Algorithm
+ *
+ * with step size scaling from Becker et all 2011
+ *
+ * Created by ajsedgewick on 7/29/15.
+ * Converted to C++ by Max Dudek on 5/5/20
+ */
 class ProximalGradient {
 
 private:
@@ -18,7 +28,6 @@ private:
 
     int printIter = 100;
     double backtrackTol = 1e-10;
-    
 
 public:
 
@@ -54,6 +63,5 @@ public:
     arma::vec learnBackTrack(ConvexProximal *cp, arma::vec& Xin, double epsilon, int iterLimit);
 
 };
-
 
 #endif /* PROXIMAL_GRADIENT_HPP_ */

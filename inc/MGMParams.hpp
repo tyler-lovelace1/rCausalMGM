@@ -6,12 +6,12 @@
 class MGMParams {
 
 private:
-    arma::mat beta;
-    arma::vec betad;
-    arma::mat theta;
-    arma::mat phi;
-    arma::vec alpha1;
-    arma::vec alpha2;
+    arma::mat beta;   //continuous-continuous
+    arma::vec betad;  //cont squared node pot
+    arma::mat theta;  //continuous-discrete
+    arma::mat phi;    //discrete-discrete
+    arma::vec alpha1; //cont linear node pot
+    arma::vec alpha2; //disc node pot
 
     friend class MGM;
 
@@ -19,7 +19,7 @@ public:
     MGMParams() {}
     MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::mat& theta, const arma::mat& phi, const arma::vec& alpha1, const arma::vec& alpha2);
     MGMParams(MGMParams& parIn);
-    MGMParams(arma::vec& vec, int p, int ltot);
+    MGMParams(arma::vec& vec, int p, int ltot);  //copy params from flattened vector
 
     /**
      * Copy all params into a single vector
