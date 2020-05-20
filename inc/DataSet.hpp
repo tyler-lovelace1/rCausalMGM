@@ -58,6 +58,8 @@ public:
 
   int getColumn(Variable* v) { return var2idx[v]; }
 
+  int getInt(int row, int col);
+
   arma::mat getData() { return data; }
 
   friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
