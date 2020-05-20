@@ -123,6 +123,14 @@ DataSet::~DataSet() {
     delete variables[i];
 }
 
+int getInt(int row, int col) {
+  Variable* var = data.getVariable(col);
+  if (!var->isDiscrete()) {
+      throw std::invalid_argument("Column indicated is not of type DISCRETE");
+  }
+  return (int)data(row, col);
+}
+
 // [[Rcpp::export]]
 void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete=5) {
   DataSet ds = DataSet(df, maxDiscrete);
