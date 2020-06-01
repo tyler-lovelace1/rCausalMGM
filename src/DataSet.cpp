@@ -123,12 +123,14 @@ DataSet::~DataSet() {
     delete variables[i];
 }
 
-int getInt(int row, int col) {
-  Variable* var = data.getVariable(col);
+int DataSet::getInt(int row, int col) {
+
+  Variable* var = getVariable(col);
+
   if (!var->isDiscrete()) {
       throw std::invalid_argument("Column indicated is not of type DISCRETE");
   }
-  return (int)data(row, col);
+  return (int) data(row, col);
 }
 
 // [[Rcpp::export]]
