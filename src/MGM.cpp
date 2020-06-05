@@ -987,4 +987,5 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
         Rcpp::Rcout << "(" << g[boost::source(*ei, g)]->getName()
                     << "," << g[boost::target(*ei, g)]->getName() << ") ";
     Rcpp::Rcout << std::endl;
+
 }

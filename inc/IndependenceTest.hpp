@@ -1,9 +1,8 @@
-#include "DataSet.hpp";
-#include "Variable.hpp";
-
 #ifndef INDEPENDENCETEST_HPP_
 #define INDEPENDENCETEST_HPP_
 
+#include "DataSet.hpp";
+#include "Variable.hpp";
 #include "armaLapack.hpp"
 #include <list>
 #include <string>
