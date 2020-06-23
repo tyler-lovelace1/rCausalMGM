@@ -1,5 +1,7 @@
 #include "MGM.hpp"
 
+#include "SepsetMap.hpp"
+
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
     if (l.size() != y.n_cols)
@@ -974,18 +976,20 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // Rcpp::Rcout << "mgm.params.theta: \n" << mgm.params.getTheta() << std::endl;
     // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
 
-    Graph g = mgm.search();
+    // Graph g = mgm.search();
 
-    Rcpp::Rcout << "MGM MATRIX:\n" << mgm.adjMatFromMGM() << std::endl; 
+    // Rcpp::Rcout << "MGM MATRIX:\n" << mgm.adjMatFromMGM() << std::endl; 
 
-    typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
-    IndexMap index = boost::get(boost::vertex_index, g);
+    // typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
+    // IndexMap index = boost::get(boost::vertex_index, g);
 
-    Rcpp::Rcout << "edges(g) = ";
-    boost::graph_traits<Graph>::edge_iterator ei, ei_end;
-    for (boost::tie(ei, ei_end) = boost::edges(g); ei != ei_end; ++ei)
-        Rcpp::Rcout << "(" << g[boost::source(*ei, g)]->getName()
-                    << "," << g[boost::target(*ei, g)]->getName() << ") ";
-    Rcpp::Rcout << std::endl;
+    // Rcpp::Rcout << "edges(g) = ";
+    // boost::graph_traits<Graph>::edge_iterator ei, ei_end;
+    // for (boost::tie(ei, ei_end) = boost::edges(g); ei != ei_end; ++ei)
+    //     Rcpp::Rcout << "(" << g[boost::source(*ei, g)]->getName()
+    //                 << "," << g[boost::target(*ei, g)]->getName() << ") ";
+    // Rcpp::Rcout << std::endl;
+
+    SepsetMap test();
 
 }

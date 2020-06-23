@@ -1,8 +1,11 @@
 #ifndef SEPSETMAP_HPP_
 #define SEPSETMAP_HPP_
 
-#include "boost/optional/optional.hpp"
+#include <boost/optional/optional.hpp>
+#include <boost/functional/hash.hpp>
 #include "Variable.hpp"
+
+typedef std::pair<Variable*, Variable*> VariablePair;
 
 /**
  * <p>Stores a map from pairs of variables to separating sets--that is, for each unordered pair of variables {variable1, variable2} in a
@@ -21,21 +24,21 @@ class SepsetMap {
 
 private:
 
-    std::unordered_map<std::unordered_set<Variable*>, boost::optional<std::vector<Variable*>>> sepsets;
-    std::unordered_map<std::unordered_set<Variable*>, double> pValues;
+    std::unordered_map<VariablePair, boost::optional<std::vector<Variable*>>, boost::hash<VariablePair>> sepsets;
+    std::unordered_map<VariablePair, double, boost::hash<VariablePair>> pValues;
 
     std::unordered_map<Variable*, boost::optional<std::unordered_set<Variable*>>> parents;
-    boost::optional<std::unordered_set<std::unordered_set<Variable*>>> correlations = boost::none;
+    boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>> correlations = boost::none;
+    std::unordered_map<double, int> testMap;
     bool returnEmptyIfNotSet = false;
 
 public:
 
-    // TODO
     SepsetMap() {}
     SepsetMap(SepsetMap& map) { this->sepsets = map.sepsets; this->pValues = map.pValues; }
 
 
-    void setCorrelations(boost::optional<std::unordered_set<std::unordered_set<Variable*>>>& pairs) { this->correlations = pairs; }
+    void setCorrelations(boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>>& pairs) { this->correlations = pairs; }
     bool isReturnEmptyIfNotSet() { return returnEmptyIfNotSet; }
     void setReturnEmptyIfNotSet(bool returnEmptyIfNotSet) { this->returnEmptyIfNotSet = returnEmptyIfNotSet; }
 
