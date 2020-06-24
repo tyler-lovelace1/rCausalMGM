@@ -934,9 +934,9 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     DataSet ds(df, maxDiscrete);
 
-    std::vector<double> lambda = {0.2, 0.2, 0.2};
+    // std::vector<double> lambda = {0.2, 0.2, 0.2};
 
-    MGM mgm(ds, lambda);
+    // MGM mgm(ds, lambda);
 
     // arma::vec params = mgm.params.toMatrix1D();
 
@@ -990,6 +990,22 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     //                 << "," << g[boost::target(*ei, g)]->getName() << ") ";
     // Rcpp::Rcout << std::endl;
 
-    SepsetMap test();
+    SepsetMap test;
+    SepsetMap test2;
+
+    std::vector<Variable*> variables = ds.getVariables();
+    std::vector<Variable*> varList1 = {variables[2], variables[3]};
+    std::vector<Variable*> varList2 = {variables[4], variables[5], variables[6]};
+
+    std::unordered_set<Variable*> varSet1 = {variables[1], variables[2]};
+    std::unordered_set<Variable*> varSet2 = {variables[3], variables[4]};
+
+    test.set(variables[0], variables[1], varList1);
+    test2.set(variables[1], variables[0], varList1);
+
+    test.set(variables[0], varSet1);
+    test.set(variables[0], varSet2);
+
+    Rcpp::Rcout << "Sepset = " << test << std::endl;
 
 }

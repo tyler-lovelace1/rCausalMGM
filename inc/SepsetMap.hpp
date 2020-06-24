@@ -24,12 +24,11 @@ class SepsetMap {
 
 private:
 
-    std::unordered_map<VariablePair, boost::optional<std::vector<Variable*>>, boost::hash<VariablePair>> sepsets;
+    std::unordered_map<VariablePair, std::vector<Variable*>, boost::hash<VariablePair>> sepsets;
     std::unordered_map<VariablePair, double, boost::hash<VariablePair>> pValues;
 
-    std::unordered_map<Variable*, boost::optional<std::unordered_set<Variable*>>> parents;
+    std::unordered_map<Variable*, std::unordered_set<Variable*>> parents;
     boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>> correlations = boost::none;
-    std::unordered_map<double, int> testMap;
     bool returnEmptyIfNotSet = false;
 
 public:
@@ -45,7 +44,12 @@ public:
     /**
      * Sets the sepset for {x, y} to be z. Note that {x, y} is unordered.
      */
-    void set(Variable* x, Variable* y, boost::optional<std::vector<Variable*>>& z);
+    void set(Variable* x, Variable* y, std::vector<Variable*>& z);
+
+    /** 
+     * Removes the list associated with the pair
+     */
+    void remove(Variable* x, Variable* y);
 
     void setPValue(Variable* x, Variable* y, double p);
 
@@ -60,13 +64,12 @@ public:
 
     std::unordered_set<Variable*> get(Variable* x);
 
-    //TODO: overload equals operator
-
-    //TODO: overload << operator
-
     void addAll(SepsetMap newSepsets);
 
     int size();
+
+    friend std::ostream& operator<<(std::ostream& os, SepsetMap& ssm);
+    friend bool operator==(const SepsetMap& ssm1, const SepsetMap& ssm2);
 
 };
 

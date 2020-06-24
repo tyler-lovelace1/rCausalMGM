@@ -4,13 +4,17 @@
 /**
  * Sets the sepset for {x, y} to be z. Note that {x, y} is unordered.
  */
-void SepsetMap::set(Variable* x, Variable* y, boost::optional<std::vector<Variable*>>& z) {
+void SepsetMap::set(Variable* x, Variable* y, std::vector<Variable*>& z) {
     VariablePair pair = std::minmax(x, y);
-    if (z == boost::none) {
-        sepsets.erase(pair);
-    } else {
-        sepsets[pair] = z;
-    }
+    sepsets[pair] = z;
+}
+
+/** 
+ * Removes the list associated with the pair
+ */
+void SepsetMap::remove(Variable* x, Variable* y) {
+    VariablePair pair = std::minmax(x, y);
+    sepsets.erase(pair);
 }
 
 void SepsetMap::setPValue(Variable* x, Variable* y, double p) {
@@ -45,15 +49,15 @@ double SepsetMap::getPValue(Variable* x, Variable* y) {
 
 void SepsetMap::set(Variable* x, std::unordered_set<Variable*>& z) {
     if (parents.count(x) != 0) {
-        parents[x].get().insert(z.begin(), z.end());
+        parents[x].insert(z.begin(), z.end());
     } else {
-        parents[x].get() = z;
+        parents[x] = z;
     }
 }
 
 std::unordered_set<Variable*> SepsetMap::get(Variable* x) {
     if (parents.count(x) == 0) return std::unordered_set<Variable*>();
-    else return parents[x].get();
+    else return parents[x];
 }
 
 void SepsetMap::addAll(SepsetMap newSepsets) {
@@ -62,4 +66,33 @@ void SepsetMap::addAll(SepsetMap newSepsets) {
 
 int SepsetMap::size() {
     return sepsets.size();
+}
+
+std::ostream& operator<<(std::ostream& os, SepsetMap& ssm) {
+    // Sepsets
+    os << "Sepsets:\n";
+    for (std::pair<VariablePair, std::vector<Variable*>> element : ssm.sepsets) {
+        VariablePair varPair = element.first;
+        os << "{" << varPair.first->getName() << ", " << varPair.second->getName() << "} -> [";
+        for (Variable* var : element.second) {
+            os << var->getName() << ", ";
+        }
+        os << "]\n";
+    }
+
+    // Parents
+    os << "Parents:\n";
+    for (std::pair<Variable*, std::unordered_set<Variable*>> element : ssm.parents) {
+        os << element.first->getName() << " -> {";
+        for (Variable* par : element.second) {
+            os << par->getName() << ", ";
+        }
+        os << "}\n";
+    }
+
+    return os;
+}
+
+bool operator==(const SepsetMap& ssm1, const SepsetMap& ssm2) {
+    return ssm1.sepsets == ssm2.sepsets;
 }
