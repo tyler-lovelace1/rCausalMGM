@@ -64,7 +64,7 @@ public:
 
     std::unordered_set<Variable*> get(Variable* x);
 
-    void addAll(SepsetMap newSepsets);
+    void addAll(SepsetMap& newSepsets);
 
     int size();
 

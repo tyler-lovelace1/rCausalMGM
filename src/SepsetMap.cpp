@@ -60,7 +60,7 @@ std::unordered_set<Variable*> SepsetMap::get(Variable* x) {
     else return parents[x];
 }
 
-void SepsetMap::addAll(SepsetMap newSepsets) {
+void SepsetMap::addAll(SepsetMap& newSepsets) {
     sepsets.insert(newSepsets.sepsets.begin(), newSepsets.sepsets.end());
 }
 
