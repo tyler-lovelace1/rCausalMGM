@@ -37,6 +37,9 @@ public:
 
     Edge(Edge& edge);
 
+    // Used by both constructors
+    void init(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoint2);
+
     Variable* getNode1() { return node1; }
     Variable* getNode2() { return node2; }
     Endpoint getEndpoint1() { return endpoint1; }
@@ -88,9 +91,11 @@ public:
 
     void addProperty(EdgeProperty property) { properties.insert(property); }
     void removeProperty(EdgeProperty property) { properties.erase(property); }
+    std::unordered_set<EdgeProperty> getProperties() { return properties; }
 
     friend std::ostream& operator<<(std::ostream& os, Edge& Edge);
     friend bool operator==(const Edge& e1, const Edge& e2);
+    friend bool operator!=(const Edge& e1, const Edge& e2);
     friend bool operator> (const Edge& e1, const Edge& e2);
     friend bool operator<= (const Edge& e1, const Edge& e2);
     friend bool operator< (const Edge& e1, const Edge& e2);
@@ -152,7 +157,7 @@ public:
     /**
      * @return the node opposite the given node along the given edge.
      */
-    static Variable* traverse (Variable*, Edge& edge);
+    static Variable* traverse(Variable* node, Edge& edge);
 
     /**
      * For A -> B, given A, returns B; otherwise returns null.
@@ -171,7 +176,8 @@ public:
      */
     static Variable* traverseSemiDirected(Variable* node, Edge& edge);
 
-    static Variable* traverseUndirected(Variable* node, Edge& edge);
+    // Same as traverse()
+    // static Variable* traverseUndirected(Variable* node, Edge& edge);
 
     /**
      * For a directed edge, returns the node adjacent to the arrow endpoint.
@@ -187,7 +193,7 @@ public:
      * @throws std::invalid_argument if the given edge is not a directed
      *                                  edge.
      */
-    static Variable* getDirectedEdgeTail(Edge edge);
+    static Variable* getDirectedEdgeTail(Edge& edge);
 
     static void sortEdges(std::vector<Edge> edges);
 
