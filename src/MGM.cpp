@@ -876,20 +876,17 @@ arma::mat MGM::adjMatFromMGM() {
  *
  * @return
  */
-Graph MGM::graphFromMGM() {
-    Graph g(p+q);
-
-    // Set vertices to be variables
-    for (int i = 0; i < p+q; i++) {
-        g[i] = variables[i];
-    }
+EdgeListGraph MGM::graphFromMGM() {
+    EdgeListGraph g(variables);
 
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = i+1; j < p; j++) {
             double v1 = params.beta(i,j);
 
             if (std::abs(v1) > 0) {
-                boost::add_edge(i, j, g);
+                if(!g.isAdjacentTo(variables[i], variables[j])) {
+                    g.addUndirectedEdge(variables[i], variables[j]);
+                }
             }
         }
     }
@@ -899,7 +896,9 @@ Graph MGM::graphFromMGM() {
             double v1 = arma::accu(arma::abs(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1)));
 
             if (v1 > 0) {
-                boost::add_edge(i, p+j, g);
+                if(!g.isAdjacentTo(variables[i], variables[p+j])) {
+                    g.addUndirectedEdge(variables[i], variables[p+j]);
+                }
             }
         }
     }
@@ -909,7 +908,9 @@ Graph MGM::graphFromMGM() {
             double v1 = arma::accu(arma::abs(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j]))));
 
             if (v1 > 0) {
-                boost::add_edge(p+i, p+j, g);
+                if(!g.isAdjacentTo(variables[p+i], variables[p+j])) {
+                    g.addUndirectedEdge(variables[p+i], variables[p+j]);
+                }
             }
         }
     }
@@ -922,7 +923,7 @@ Graph MGM::graphFromMGM() {
  *
  * @return
  */
-Graph MGM::search() {
+EdgeListGraph MGM::search() {
     auto start = std::chrono::high_resolution_clock::now();
     learnEdges(500);
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
@@ -934,9 +935,9 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     DataSet ds(df, maxDiscrete);
 
-    // std::vector<double> lambda = {0.2, 0.2, 0.2};
+    std::vector<double> lambda = {0.2, 0.2, 0.2};
 
-    // MGM mgm(ds, lambda);
+    MGM mgm(ds, lambda);
 
     // arma::vec params = mgm.params.toMatrix1D();
 
@@ -976,36 +977,28 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // Rcpp::Rcout << "mgm.params.theta: \n" << mgm.params.getTheta() << std::endl;
     // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
 
-    // Graph g = mgm.search();
+    Rcpp::Rcout << "DUDEK INIT SEARCH" << std::endl;
+    EdgeListGraph g = mgm.search();
 
-    // Rcpp::Rcout << "MGM MATRIX:\n" << mgm.adjMatFromMGM() << std::endl; 
+    Rcpp::Rcout << "GRAPH\n" << g << std::endl;
+    
 
-    // typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
-    // IndexMap index = boost::get(boost::vertex_index, g);
+    // SepsetMap test;
+    // SepsetMap test2;
 
-    // Rcpp::Rcout << "edges(g) = ";
-    // boost::graph_traits<Graph>::edge_iterator ei, ei_end;
-    // for (boost::tie(ei, ei_end) = boost::edges(g); ei != ei_end; ++ei)
-    //     Rcpp::Rcout << "(" << g[boost::source(*ei, g)]->getName()
-    //                 << "," << g[boost::target(*ei, g)]->getName() << ") ";
-    // Rcpp::Rcout << std::endl;
+    // std::vector<Variable*> variables = ds.getVariables();
+    // std::vector<Variable*> varList1 = {variables[2], variables[3]};
+    // std::vector<Variable*> varList2 = {variables[4], variables[5], variables[6]};
 
-    SepsetMap test;
-    SepsetMap test2;
+    // std::unordered_set<Variable*> varSet1 = {variables[1], variables[2]};
+    // std::unordered_set<Variable*> varSet2 = {variables[3], variables[4]};
 
-    std::vector<Variable*> variables = ds.getVariables();
-    std::vector<Variable*> varList1 = {variables[2], variables[3]};
-    std::vector<Variable*> varList2 = {variables[4], variables[5], variables[6]};
+    // test.set(variables[0], variables[1], varList1);
+    // test2.set(variables[1], variables[0], varList1);
 
-    std::unordered_set<Variable*> varSet1 = {variables[1], variables[2]};
-    std::unordered_set<Variable*> varSet2 = {variables[3], variables[4]};
+    // test.set(variables[0], varSet1);
+    // test.set(variables[0], varSet2);
 
-    test.set(variables[0], variables[1], varList1);
-    test2.set(variables[1], variables[0], varList1);
-
-    test.set(variables[0], varSet1);
-    test.set(variables[0], varSet2);
-
-    Rcpp::Rcout << "Sepset = " << test << std::endl;
+    // Rcpp::Rcout << "Sepset = " << test << std::endl;
 
 }

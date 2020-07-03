@@ -13,7 +13,7 @@ Edge::Edge(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoi
     init(node1, node2, endpoint1, endpoint2);
 }
 
-Edge::Edge(Edge& edge) {
+Edge::Edge(const Edge& edge) {
     init(edge.node1, edge.node2, edge.endpoint1, edge.endpoint2);
 }
 
@@ -109,47 +109,11 @@ Edge Edge::reverse() {
     return newEdge;
 }
 
-std::ostream& operator<<(std::ostream& os, Edge& Edge) {
-    os << Edge.node1->getName() << " ";
-
-    switch(Edge.endpoint1) {
-        case ENDPOINT_TAIL:
-            os << "-";
-            break;
-        case ENDPOINT_ARROW:
-            os << "<";
-            break;
-        case ENDPOINT_CIRCLE:
-            os << "o";
-            break;
-    }
-
-    os << "-";
-
-    switch(Edge.endpoint2) {
-        case ENDPOINT_TAIL:
-            os << "-";
-            break;
-        case ENDPOINT_ARROW:
-            os << ">";
-            break;
-        case ENDPOINT_CIRCLE:
-            os << "o";
-            break;
-    }
-
-    os << " " << Edge.node2->getName();
-}
-
 bool Edge::pointingLeft(Endpoint endpoint1, Endpoint endpoint2) {
     return (endpoint1 == ENDPOINT_ARROW && (endpoint2 == ENDPOINT_TAIL || endpoint2 == ENDPOINT_CIRCLE));
 }
 
-struct std::hash<Edge> {
-    std::size_t operator()(const Edge& k) const {
-        return std::hash<Variable*>()(k.node1) + std::hash<Variable*>()(k.node2);
-    }
-};
+
 
 /* STATIC FUNCTIONS (From Edges.java) */
 
@@ -323,6 +287,40 @@ Variable* Edge::getDirectedEdgeTail(Edge& edge) {
     std::ostringstream ss;
     ss << edge;
     throw std::invalid_argument("Not a directed edge: " + ss.str());
+}
+
+std::ostream& operator<<(std::ostream& os, Edge& edge) {
+    os << edge.node1->getName() << " ";
+
+    switch(edge.endpoint1) {
+        case ENDPOINT_TAIL:
+            os << "-";
+            break;
+        case ENDPOINT_ARROW:
+            os << "<";
+            break;
+        case ENDPOINT_CIRCLE:
+            os << "o";
+            break;
+    }
+
+    os << "-";
+
+    switch(edge.endpoint2) {
+        case ENDPOINT_TAIL:
+            os << "-";
+            break;
+        case ENDPOINT_ARROW:
+            os << ">";
+            break;
+        case ENDPOINT_CIRCLE:
+            os << "o";
+            break;
+    }
+
+    os << " " << edge.node2->getName();
+
+    return os;
 }
 
 /**

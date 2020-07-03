@@ -24,6 +24,8 @@ private:
     bool pointingLeft(Endpoint endpoint1, Endpoint endpoint2);
 
 public:
+    Edge() {}
+
     /**
      * Constructs a new edge by specifying the nodes it connects and the
      * endpoint types.
@@ -35,7 +37,7 @@ public:
      */
     Edge(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoint2);
 
-    Edge(Edge& edge);
+    Edge(const Edge& edge);
 
     // Used by both constructors
     void init(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoint2);
@@ -199,6 +201,11 @@ public:
 
 };
 
-
+template<> struct std::hash<Edge> {
+public:
+    std::size_t operator()(const Edge& k) const {
+        return std::hash<Variable*>()(k.node1) + std::hash<Variable*>()(k.node2);
+    }
+};
 
 #endif /* EDGE_HPP_ */

@@ -7,7 +7,7 @@
 #include "DiscreteVariable.hpp"
 #include "MGMParams.hpp"
 #include "ProximalGradient.hpp"
-#include "Graph.hpp"
+#include "EdgeListGraph.hpp"
 #include <math.h>
 #include <RcppArmadillo.h>
 #include <chrono>
@@ -154,11 +154,11 @@ public:
     void learnEdges(int iterlimit, int edgeChangeTol);
 
     /**
-     * Converts MGM object to Graph object with edges if edge parameters are non-zero. Loses all edge param information
+     * Converts MGM object to EdgeListGraph object with edges if edge parameters are non-zero. Loses all edge param information
      *
      * @return
      */
-    Graph graphFromMGM();
+    EdgeListGraph graphFromMGM();
 
     /**
      * Converts MGM to matrix of doubles. uses 2-norm to combine c-d edge parameters into single value and f-norm for
@@ -173,7 +173,7 @@ public:
      *
      * @return
      */
-    Graph search();
+    EdgeListGraph search();
 
     friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 

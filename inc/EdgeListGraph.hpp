@@ -3,6 +3,7 @@
 
 #include "Variable.hpp"
 #include "Edge.hpp"
+#include "Triple.hpp"
 #include <RcppArmadillo.h>
 
 class EdgeListGraph {
@@ -25,6 +26,10 @@ private:
 
     // TODO - PCS?
     // TODO - Triples?
+
+    std::unordered_set<Triple> ambiguousTriples;
+    std::unordered_set<Triple> underLineTriples;
+    std::unordered_set<Triple> dottedUnderLineTriples;
 
     /**
      * True iff nodes were removed since the last call to an accessor for ambiguous, underline, or dotted underline
@@ -90,7 +95,7 @@ public:
      *              extracted.
      * @throws std::invalid_argument if a duplicate edge is added.
      */
-    EdgeListGraph(EdgeListGraph& graph);
+    EdgeListGraph(const EdgeListGraph& graph);
 
     /**
      * Constructs a new graph, with no edges, using the the given variable
@@ -134,8 +139,6 @@ public:
      * @param node2 the "to" node.
      */
     bool addBidirectedEdge(Variable* node1, Variable* node2);
-
-    bool existsDirectedCycle();
 
     bool existsDirectedCycle();
 
@@ -327,7 +330,7 @@ public:
      *                                  node or edge violates one of the
      *                                  basicConstraints of this graph.
      */
-    void transferNodesAndEdges(EdgeListGraph& graph);
+    void transferNodesAndEdges(const EdgeListGraph& graph);
 
     /**
      * Determines whether a node in a graph is exogenous.
@@ -402,21 +405,47 @@ public:
      */
     std::unordered_set<Edge> getEdges() { return edgesSet; }
 
+    std::unordered_set<Triple> getAmbiguousTriples() { return ambiguousTriples; }
+    std::unordered_set<Triple> getUnderLines() { return underLineTriples; }
+    std::unordered_set<Triple> getDottedUnderlines() { return dottedUnderLineTriples; }
+
+    bool isAmbiguousTriple(Variable* x, Variable* y, Variable* z);
+    bool isUnderlineTriple(Variable* x, Variable* y, Variable* z);
+    bool isDottedUnderlineTriple(Variable* x, Variable* y, Variable* z);
+
+    void addAmbiguousTriple(Variable* x, Variable* y, Variable* z);
+    void addUnderlineTriple(Variable* x, Variable* y, Variable* z);
+    void addDottedUnderlineTriple(Variable* x, Variable* y, Variable* z);
+
+    void removeAmbiguousTriple(Variable* x, Variable* y, Variable* z);
+    void removeUnderlineTriple(Variable* x, Variable* y, Variable* z);
+    void removeDottedUnderlineTriple(Variable* x, Variable* y, Variable* z);
+
+    void setAmbiguousTriples(std::unordered_set<Triple>& triples);
+    void setUnderLineTriples(std::unordered_set<Triple>& triples);
+    void setDottedUnderLineTriples(std::unordered_set<Triple>& triples);
+
+    void removeTriplesNotInGraph();
+
+    std::vector<std::vector<Triple>> getTriplesLists(Variable* node);
+
     /**
      * Determines if the graph contains a particular edge.
      */
     bool containsEdge(Edge& edge) { return edgesSet.count(edge); }
 
+
+
     /**
      * @return the list of edges connected to a particular node. No particular
      * ordering of the edges in the list is guaranteed.
      */
-    std::vector<Edge> getEdges(Variable* node) { return edgeLists[node]; }
+    std::vector<Edge> getEdges(Variable* node) { 
+        // Rcpp::Rcout << "Getting edges..." << std::endl;
+        return edgeLists[node]; 
+    }
 
     // TODO - hash code?
-
-
-    
 
     /**
      * Resets the graph so that it is fully connects it using #-# edges, where #
@@ -429,7 +458,7 @@ public:
     /**
      * @return the node with the given name, or null if no such node exists.
      */
-    Variable* getNode(std::string name) { return namesHash[name]; }
+    Variable* getNode(std::string name) { auto itr = namesHash.find(name); return itr == namesHash.end() ? NULL : itr->second; }
 
     /**
      * @return the number of nodes in the graph.
@@ -509,9 +538,10 @@ public:
 
     std::vector<Variable*> getCausalOrdering();
 
-    void setHighlighted(Edge& edge, bool highlighted);
+    // TODO - highlighted?
+    // void setHighlighted(Edge& edge, bool highlighted);
 
-    bool isHighlighted(Edge& edge);
+    // bool isHighlighted(Edge& edge);
 
     void changeName(std::string name, std::string newName);
 
@@ -520,8 +550,8 @@ public:
      * in the sense that it contains the same nodes and the edges are
      * isomorphic.
      */
-    friend bool operator==(const EdgeListGraph& e1, const EdgeListGraph& e2);
-    friend std::ostream& operator<<(std::ostream& os, EdgeListGraph& Edge);
+    friend bool operator==(const EdgeListGraph& g1, const EdgeListGraph& g2);
+    friend std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph);
 
 
 };
