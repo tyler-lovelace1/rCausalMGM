@@ -4,6 +4,7 @@
 #include "Variable.hpp"
 #include "Edge.hpp"
 #include "Triple.hpp"
+#include "GraphUtils.hpp"
 #include <RcppArmadillo.h>
 
 class EdgeListGraph {
@@ -38,6 +39,7 @@ private:
      */
     bool stuffRemovedSinceLastTripleAccess = false;
 
+    std::unordered_set<Edge> highlightedEdges;
 
     std::unordered_map<std::string, Variable*> namesHash;
 
@@ -400,10 +402,15 @@ public:
     bool addNode(Variable* node);
 
     /**
+     * @return the set of edges in the graph.
+     */
+    std::unordered_set<Edge> getEdges() { return edgesSet; }
+
+    /**
      * @return the list of edges in the graph.  No particular ordering of the
      * edges in the list is guaranteed.
      */
-    std::unordered_set<Edge> getEdges() { return edgesSet; }
+    std::vector<Edge> getEdgeList() { return std::vector<Edge>(edgesSet.begin(), edgesSet.end()); }
 
     std::unordered_set<Triple> getAmbiguousTriples() { return ambiguousTriples; }
     std::unordered_set<Triple> getUnderLines() { return underLineTriples; }
@@ -501,7 +508,7 @@ public:
      * @param edges the collection of edges to remove.
      * @return true if any edges in the collection were removed, false if not.
      */
-    bool removeEdges(std::vector<Edge>& edges);
+    bool removeEdges(const std::vector<Edge>& edges);
 
     /**
      * Removes all edges connecting node A to node B.
@@ -538,10 +545,9 @@ public:
 
     std::vector<Variable*> getCausalOrdering();
 
-    // TODO - highlighted?
-    // void setHighlighted(Edge& edge, bool highlighted);
+    void setHighlighted(Edge& edge, bool highlighted) { if (highlighted) highlightedEdges.insert(edge); else highlightedEdges.erase(edge); } ;
 
-    // bool isHighlighted(Edge& edge);
+    bool isHighlighted(Edge& edge) { return highlightedEdges.count(edge); }
 
     void changeName(std::string name, std::string newName);
 

@@ -44,7 +44,11 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     underLineTriples = graph.underLineTriples;
     dottedUnderLineTriples = graph.dottedUnderLineTriples;
 
-    // TODO - highlighted Edges?
+    for (Edge edge : graph.edgesSet) {
+        if (graph.highlightedEdges.count(edge)) {
+            setHighlighted(edge, true);
+        }
+    }
 
     namesHash = graph.namesHash;
 
@@ -156,6 +160,53 @@ bool EdgeListGraph::addNode(Variable* node) {
     edgeLists[node] = {};
     nodes.push_back(node);
     namesHash[node->getName()] = node;
+
+    return true;
+}
+
+/**
+ * Removes any relevant edge objects found in this collection. G
+ *
+ * @param edges the collection of edges to remove.
+ * @return true if any edges in the collection were removed, false if not.
+ */
+bool EdgeListGraph::removeEdges(const std::vector<Edge>& edges) {
+    bool change = false;
+
+    for (Edge edge : edges) {
+        bool _change = removeEdge(edge);
+        change = change || _change;
+    }
+
+    return change;
+}
+
+/**
+ * Removes an edge from the graph. (Note: It is dangerous to make a
+ * recursive call to this method (as it stands) from a method containing
+ * certain types of iterators. The problem is that if one uses an iterator
+ * that iterates over the edges of node A or node B, and tries in the
+ * process to remove those edges using this method, a concurrent
+ * modification exception will be thrown.)
+ *
+ * @param edge the edge to remove.
+ * @return true if the edge was removed, false if not.
+ */
+bool EdgeListGraph::removeEdge(Edge& edge) {
+    if (!edgesSet.count(edge)) return false;
+
+    std::vector<Edge> edgeList1 = edgeLists[edge.getNode1()];
+    std::vector<Edge> edgeList2 = edgeLists[edge.getNode2()];
+
+    edgesSet.erase(edge);
+    std::remove(edgeList1.begin(), edgeList1.end(), edge);
+    std::remove(edgeList2.begin(), edgeList2.end(), edge);
+
+    edgeLists[edge.getNode1()] = edgeList1;
+    edgeLists[edge.getNode2()] = edgeList2;
+
+    highlightedEdges.erase(edge);
+    stuffRemovedSinceLastTripleAccess = true;
 
     return true;
 }

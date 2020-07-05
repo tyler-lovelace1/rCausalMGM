@@ -1,20 +1,20 @@
 #ifndef FAS_HPP_
 #define FAS_HPP_
 
-#include "Graph.hpp"
+#include "EdgeListGraph.hpp"
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
+#include "ChoiceGenerator.hpp"
 
 class Fas {
 
 private:
 
-    // TODO - Graph
     /**
      * The search graph. It is assumed going in that all of the true adjacencies of x are in this graph for every node
      * x. It is hoped (i.e. true in the large sample limit) that true adjacencies are never removed.
      */
-    Graph graph;
+    EdgeListGraph graph;
 
     /**
      * The search nodes.
@@ -26,7 +26,7 @@ private:
      */
     IndependenceTest *test;
 
-    //TODO
+    //Knowledge
     /**
      * Specification of which edges are forbidden or required.
      */
@@ -49,7 +49,7 @@ private:
     /**
      * The true graph, for purposes of comparison. Temporary.
      */
-    Graph trueGraph;
+    EdgeListGraph trueGraph;
 
     /**
      * The number of false dependence judgements, judged from the true graph using d-separation. Temporary.
@@ -77,7 +77,10 @@ private:
     /**
      * The depth 0 graph, specified initially.
      */
-    Graph initialGraph;
+    EdgeListGraph initialGraph;
+
+    // True if no initial graph is provided
+    bool initialGraphIsNull = true;
 
     bool sepsetsReturnEmptyIfNotFixed;
 
@@ -85,19 +88,16 @@ private:
 
     int freeDegree(std::vector<Variable*>& nodes, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacencies);
 
-    bool forbiddenEdge(Variable* x, Variable* y);
+    bool searchAtDepth(std::vector<Variable*>& nodes, IndependenceTest *test, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacencies, int depth);
 
-    bool searchAtDepth(std::vector<Variable*>& nodes, const IndependenceTest *test, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacencies, int depth);
-
-    // TODO
+    // Knowlegde
     // std::vector<Variable*> possibleParents(Variable* x, std::vector<Variable*>& adjx, IKnowledge knowledge);
-
-    // TODO
     // bool possibleParentOf(std::string z, std::string x, IKnowledge knowledge);
+    // bool forbiddenEdge(Variable* x, Variable* y);
 
 public:
 
-    Fas(Graph& initialGraph, IndependenceTest *test);
+    Fas(EdgeListGraph& initialGraph, IndependenceTest *test);
     Fas(IndependenceTest *test);
 
     /**
@@ -110,7 +110,7 @@ public:
      *
      * @return a SepSet, which indicates which variables are independent conditional on which other variables
      */
-    Graph search();
+    EdgeListGraph search();
 
     std::unordered_map<Variable*, std::unordered_set<Variable*>> searchMapOnly();
 
@@ -123,7 +123,7 @@ public:
 
     int getNumIndependenceTests() { return numIndependenceTests; }
 
-    void setTrueGraph(Graph& trueGraph) { this->trueGraph = trueGraph; }
+    void setTrueGraph(EdgeListGraph& trueGraph) { this->trueGraph = trueGraph; }
 
     int getNumFalseDependenceJudgments() { return numFalseDependenceJudgments; }
 
@@ -131,15 +131,10 @@ public:
 
     SepsetMap getSepsets() { return sepset; }
 
-    // TODO?
-    // bool isVerbose() { return verbose; }
-    // void setVerbose(bool verbose) { this->verbose = verbose; }
-
     // TODO - Override?
     // bool isAggressivelyPreventCycles() { return false; }
     // void setAggressivelyPreventCycles(bool aggressivelyPreventCycles) {}
 
-    // TODO - Jack has been using std::list
     std::vector<Variable*> getNodes() { return test->getVariables(); }
 
     int getNumIndependenceJudgements() { return numIndependenceJudgements; }

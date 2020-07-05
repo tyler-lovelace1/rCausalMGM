@@ -1,6 +1,8 @@
 #include "MGM.hpp"
 
+// Tetsing
 #include "SepsetMap.hpp"
+#include "ChoiceGenerator.hpp"
 
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
@@ -981,6 +983,8 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     EdgeListGraph g = mgm.search();
 
     Rcpp::Rcout << "GRAPH\n" << g << std::endl;
+
+    ChoiceGenerator::testPrint(5, 3);
     
 
     // SepsetMap test;

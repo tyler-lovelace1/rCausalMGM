@@ -46,6 +46,16 @@ public:
      */
     static std::vector<Triple> getDottedUnderlinedTriplesFromGraph(Variable* node, EdgeListGraph& graph);
 
+    /**
+     * Constructs a list of nodes from the given <code>nodes</code> list at the
+     * given indices in that list.
+     *
+     * @param indices The indices of the desired nodes in <code>nodes</code>.
+     * @param nodes The list of nodes from which we select a sublist.
+     * @return the The sublist selected.
+     */
+    static std::vector<Variable*> asList(std::vector<int>& indices, std::vector<Variable*>& nodes);
+
 };
 
 #endif /* GRAPHUTILS_HPP_ */
