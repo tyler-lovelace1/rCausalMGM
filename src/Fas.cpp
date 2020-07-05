@@ -1,8 +1,7 @@
 #include "Fas.hpp"
 
-Fas::Fas(EdgeListGraph& initialGraph, IndependenceTest *test) {
+Fas::Fas(EdgeListGraph *initialGraph, IndependenceTest *test) {
     this->initialGraph = initialGraph;
-    this->initialGraphIsNull = false;
     this->test = test;
     this->nodes = test->getVariables();
 }
@@ -118,11 +117,11 @@ bool Fas::searchAtDepth0(std::vector<Variable*>& nodes, IndependenceTest *test, 
         for (int j = i+1; j < nodes.size(); j++) {
             Variable* y = nodes[j];
 
-            if (!initialGraphIsNull) {
-                Variable* x2 = initialGraph.getNode(x->getName());
-                Variable* y2 = initialGraph.getNode(y->getName());
+            if (initialGraph != NULL) {
+                Variable* x2 = initialGraph->getNode(x->getName());
+                Variable* y2 = initialGraph->getNode(y->getName());
 
-                if (!initialGraph.isAdjacentTo(x2, y2))
+                if (!initialGraph->isAdjacentTo(x2, y2))
                     continue;
             }
 

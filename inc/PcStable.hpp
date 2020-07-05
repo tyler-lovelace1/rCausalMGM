@@ -2,8 +2,11 @@
 #define PCSTABLE_HPP_
 
 #include "IndependenceTest.hpp"
-#include "Graph.hpp"
+#include "EdgeListGraph.hpp"
 #include "Variable.hpp"
+#include "SepsetMap.hpp"
+#include "Fas.hpp"
+#include <chrono>
 
 class PcStable {
 
@@ -14,10 +17,6 @@ private:
      */
     IndependenceTest *independenceTest;
 
-
-
-
-    // TODO
     /**
      * Forbidden and required edges for the search.
      */
@@ -26,7 +25,7 @@ private:
     /**
      * Sepset information accumulated in the search.
      */
-    // SepsetMap sepsets;
+    SepsetMap sepsets;
 
     /**
      * The maximum number of nodes conditioned on in the search. The default it 1000.
@@ -38,12 +37,12 @@ private:
     /**
      * The graph that's constructed during the search.
      */
-    Graph graph;
+    EdgeListGraph graph;
 
     /**
      * The initial graph for the Fast Adjacency Search, or null if there is none.
      */
-    Graph *initialGraph = NULL;
+    EdgeListGraph *initialGraph = NULL;
 
     /**
      * Elapsed time of the most recent search.
@@ -103,7 +102,7 @@ public:
     /**
      * @return the sepset map from the most recent search. Non-null after the first call to <code>search()</code>.
      */
-    // SepsetMap getSepsets() { return sepsets; }
+    SepsetMap getSepsets() { return sepsets; }
 
     /**
      * Sets the depth of the search--that is, the maximum number of conditioning nodes for any conditional independence
@@ -121,7 +120,7 @@ public:
     //     return graph.getNodes();
     // }
 
-    void setInitialGraph(Graph *initialGraph) { this->initialGraph = initialGraph; }
+    void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
 
@@ -132,7 +131,7 @@ public:
      * however, contain cycles or bidirected edges if this assumption is not born out, either due to the actual presence
      * of latent common causes, or due to statistical errors in conditional independence judgments.
      */
-    Graph search();
+    EdgeListGraph search();
 
     /**
      * Runs PC starting with a commplete graph over the given list of nodes, using the given independence test and
@@ -143,7 +142,7 @@ public:
      * <p>
      * All of the given nodes must be in the domain of the given conditional independence test.
      */
-    Graph search(std::vector<Variable*>& nodes);
+    EdgeListGraph search(std::vector<Variable*>& nodes);
 
 };
 

@@ -45,7 +45,6 @@ private:
 
     //TODO - Logger?
 
-    //TODO - Graph
     /**
      * The true graph, for purposes of comparison. Temporary.
      */
@@ -73,14 +72,10 @@ private:
      */
     bool fci = false;
 
-    //TODO - Graph
     /**
      * The depth 0 graph, specified initially.
      */
-    EdgeListGraph initialGraph;
-
-    // True if no initial graph is provided
-    bool initialGraphIsNull = true;
+    EdgeListGraph *initialGraph = NULL;
 
     bool sepsetsReturnEmptyIfNotFixed;
 
@@ -97,7 +92,7 @@ private:
 
 public:
 
-    Fas(EdgeListGraph& initialGraph, IndependenceTest *test);
+    Fas(EdgeListGraph *initialGraph, IndependenceTest *test);
     Fas(IndependenceTest *test);
 
     /**
