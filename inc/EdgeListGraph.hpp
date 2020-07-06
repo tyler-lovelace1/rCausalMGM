@@ -103,7 +103,7 @@ public:
      * Constructs a new graph, with no edges, using the the given variable
      * names.
      */
-    EdgeListGraph(std::vector<Variable*>& nodes);
+    EdgeListGraph(const std::vector<Variable*>& nodes);
 
     // Shallow copy isn't possible because Edges aren't stored by reference (is it neccesary?)
 

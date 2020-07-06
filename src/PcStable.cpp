@@ -51,7 +51,7 @@ EdgeListGraph PcStable::search() {
  * <p>
  * All of the given nodes must be in the domain of the given conditional independence test.
  */
-EdgeListGraph PcStable::search(std::vector<Variable*>& nodes) {
+EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
     if (independenceTest == NULL)
         throw std::invalid_argument("independenceTest of PcStable may not be NULL.");
 
@@ -77,7 +77,7 @@ EdgeListGraph PcStable::search(std::vector<Variable*>& nodes) {
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     Rcpp::Rcout << "Returning this graph: " << graph << std::endl;
-    Rcpp::Rcout << "Elapsed time =  " << elapsedTime << std::endl;
+    Rcpp::Rcout << "PcStable Elapsed time =  " << elapsedTime << " ms" << std::endl;
     Rcpp::Rcout << "Finishing PC Algorithm" << std::endl;
 
     return graph;

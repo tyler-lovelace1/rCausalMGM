@@ -142,7 +142,7 @@ public:
      * <p>
      * All of the given nodes must be in the domain of the given conditional independence test.
      */
-    EdgeListGraph search(std::vector<Variable*>& nodes);
+    EdgeListGraph search(const std::vector<Variable*>& nodes);
 
 };
 

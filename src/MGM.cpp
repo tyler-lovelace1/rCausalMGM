@@ -3,6 +3,8 @@
 // Tetsing
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
+#include "IndependenceTestRandom.hpp"
+#include "PcStable.hpp"
 
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
@@ -980,11 +982,18 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
 
     Rcpp::Rcout << "DUDEK INIT SEARCH" << std::endl;
-    EdgeListGraph g = mgm.search();
+    EdgeListGraph mgmGraph = mgm.search();
+    Rcpp::Rcout << "MGM elapsed time = " << mgm.getElapsedTime() << " ms" << std::endl;
 
-    Rcpp::Rcout << "GRAPH\n" << g << std::endl;
+    Rcpp::Rcout << "MGM GRAPH\n" << mgmGraph << std::endl;
 
-    ChoiceGenerator::testPrint(5, 3);
+    std::vector<Variable*> nodes = ds.getVariables();
+    IndependenceTestRandom itr(nodes);
+    PcStable pcs((IndependenceTest*) &itr);
+    pcs.setInitialGraph(&mgmGraph);
+    EdgeListGraph pcGraph = pcs.search();
+
+    Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
     
 
     // SepsetMap test;

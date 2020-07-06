@@ -1,6 +1,8 @@
 #ifndef GRAPHUTILS_HPP_
 #define GRAPHUTILS_HPP_
 
+class EdgeListGraph; // Forward declaration
+
 #include "EdgeListGraph.hpp"
 
 class GraphUtils {

@@ -1,8 +1,8 @@
 #ifndef INDEPENDENCETEST_HPP_
 #define INDEPENDENCETEST_HPP_
 
-#include "DataSet.hpp";
-#include "Variable.hpp";
+#include "DataSet.hpp"
+#include "Variable.hpp"
 #include "armaLapack.hpp"
 #include <list>
 #include <string>
@@ -22,21 +22,21 @@ class IndependenceTest
           /**
            * @return an Independence test for a subset of the variables.
            */
-          virtual IndependenceTest indTestSubset(std::vector<Variable*>& vars) = 0;
+        //   virtual IndependenceTest indTestSubset(std::vector<Variable*>& vars) = 0;
 
           /**
            * @return true if the given independence question is judged true, false if not. The independence question is of the
            * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are variables in the list returned by
            * getVariableNames().
            */
-          virtual boolean isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) = 0;
+          virtual bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) = 0;
 
           /**
            * @return true if the given independence question is judged false, true if not. The independence question is of the
            * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are variables in the list returned by
            * getVariableNames().
            */
-          virtual boolean isDependent(Variable* x, Variable* y, std::vector<Variable*>& z) = 0;
+          virtual bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z) = 0;
 
           /**
            * @return the probability associated with the most recently executed independence test, of Double.NaN if p value is
@@ -48,7 +48,7 @@ class IndependenceTest
            * @return the list of variables over which this independence checker is capable of determinining independence
            * relations.
            */
-          virtual std::vector<Variable*>& getVariables() = 0;
+          virtual std::vector<Variable*> getVariables() = 0;
 
           /**
            * @return the variable by the given name.
@@ -58,12 +58,12 @@ class IndependenceTest
           /**
            * @return the list of names for the variables in getNodesInEvidence.
            */
-          virtual std::vector<std::string*>& getVariableNames() = 0;
+          virtual std::vector<std::string*> getVariableNames() = 0;
 
           /**
            * @return true if y is determined the variable in z.
            */
-          virtual boolean determines(std::vector<Variable*>& z, Node y) = 0;
+          virtual bool determines(std::vector<Variable*>& z, Variable* y) = 0;
 
           /**
            * @return the significance level of the independence test.
@@ -76,7 +76,7 @@ class IndependenceTest
            */
           virtual void setAlpha(double alpha) = 0;
 
-          virtual std::vector<DataSet*>& get getDataSets() = 0;
+          virtual std::vector<DataSet*> getDataSets() = 0;
 
           virtual int getSampleSize() = 0;
 

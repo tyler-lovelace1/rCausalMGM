@@ -19,7 +19,7 @@ EdgeListGraph::EdgeListGraph() {
  * Constructs a new graph, with no edges, using the the given variable
  * names.
  */
-EdgeListGraph::EdgeListGraph(std::vector<Variable*>& nodes) {
+EdgeListGraph::EdgeListGraph(const std::vector<Variable*>& nodes) {
     for (Variable* variable : nodes) {
         if(!addNode(variable))
             throw std::invalid_argument("Issue adding variable to graph");
