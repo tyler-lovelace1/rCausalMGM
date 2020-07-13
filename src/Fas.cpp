@@ -181,7 +181,7 @@ bool Fas::searchAtDepth(std::vector<Variable*>& nodes, IndependenceTest *test, s
         for (Variable* y : adjx) {
 
             std::vector<Variable*> _adjx(adjx.begin(), adjx.end());
-            std::remove(_adjx.begin(), _adjx.end(), y);
+            _adjx.erase(std::remove(_adjx.begin(), _adjx.end(), y), _adjx.end());
 
             // Knowledge: possible parents
             std::vector<Variable*> ppx = _adjx;

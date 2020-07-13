@@ -182,6 +182,17 @@ bool EdgeListGraph::removeEdges(const std::vector<Edge>& edges) {
 }
 
 /**
+ * Removes all edges connecting node A to node B.
+ *
+ * @param node1 the first node.,
+ * @param node2 the second node.
+ * @return true if edges were removed between A and B, false if not.
+ */
+bool EdgeListGraph::removeEdges(Variable* node1, Variable* node2) {
+    return removeEdges(getEdges(node1, node2));
+}
+
+/**
  * Removes an edge from the graph. (Note: It is dangerous to make a
  * recursive call to this method (as it stands) from a method containing
  * certain types of iterators. The problem is that if one uses an iterator
@@ -199,8 +210,8 @@ bool EdgeListGraph::removeEdge(Edge& edge) {
     std::vector<Edge> edgeList2 = edgeLists[edge.getNode2()];
 
     edgesSet.erase(edge);
-    std::remove(edgeList1.begin(), edgeList1.end(), edge);
-    std::remove(edgeList2.begin(), edgeList2.end(), edge);
+    edgeList1.erase(std::remove(edgeList1.begin(), edgeList1.end(), edge), edgeList1.end());
+    edgeList2.erase(std::remove(edgeList2.begin(), edgeList2.end(), edge), edgeList2.end());
 
     edgeLists[edge.getNode1()] = edgeList1;
     edgeLists[edge.getNode2()] = edgeList2;
@@ -209,6 +220,19 @@ bool EdgeListGraph::removeEdge(Edge& edge) {
     stuffRemovedSinceLastTripleAccess = true;
 
     return true;
+}
+
+/**
+ * Removes the edge connecting the two given nodes.
+ */
+bool EdgeListGraph::removeEdge(Variable* node1, Variable* node2) {
+    std::vector<Edge> edges = getEdges(node1, node2);
+
+    if (edges.size() > 1) {
+        throw std::invalid_argument("There is more than one edge between " + node1->getName() + " and " + node2->getName());
+    }
+
+    return removeEdges(edges);
 }
 
 /**
@@ -226,6 +250,157 @@ bool EdgeListGraph::isAdjacentTo(Variable* node1, Variable* node2) {
     }
 
     return false;
+}
+
+bool EdgeListGraph::isDirectedFromTo(Variable* node1, Variable* node2) {
+    std::vector<Edge> edges = getEdges(node1, node2);
+    if (edges.size() != 1) return false;
+    Edge edge = edges[0];
+    return edge.pointsTowards(node2);
+}
+
+bool EdgeListGraph::isUndirectedFromTo(Variable* node1, Variable* node2) {
+
+    Edge edge;
+    try {
+        edge = getEdge(node1, node2);
+    } catch (std::invalid_argument& e) {
+        return false;
+    }
+    
+    return edge.getEndpoint1() == ENDPOINT_TAIL && edge.getEndpoint2() == ENDPOINT_TAIL;
+}
+
+bool EdgeListGraph::isAmbiguousTriple(Variable* x, Variable* y, Variable* z) {
+    return ambiguousTriples.count(Triple(x, y, z));
+}
+
+/**
+ * @return the set of nodes adjacent to the given node. If there are multiple edges between X and Y, Y will show
+ * up twice in the list of adjacencies for X, for optimality; simply create a list an and array from these to
+ * eliminate the duplication.
+ */
+std::vector<Variable*> EdgeListGraph::getAdjacentNodes(Variable* node) {
+    std::vector<Edge> edges = edgeLists[node];
+    std::unordered_set<Variable*> adj;
+
+    for (Edge edge : edges) {
+        Variable* z = edge.getDistalNode(node);
+        adj.insert(z);
+    }
+
+    return std::vector<Variable*>(adj.begin(), adj.end());
+
+}
+
+/**
+ * @return the edge connecting node1 and node2, provided a unique such edge
+ * exists.
+ * 
+ * Throws std::invalid_argument if not
+ */
+Edge EdgeListGraph::getEdge(Variable* node1, Variable* node2) {
+
+    std::vector<Edge> edges = edgeLists[node1];
+
+    if (edges.size() == 0)
+        throw std::invalid_argument("No edges coming from node1");
+
+    for (Edge edge : edges) {
+        if (edge.getNode1() == node1 && edge.getNode2() == node2) {
+            return edge;
+        } else if (edge.getNode1() == node2 && edge.getNode2() == node1) {
+            return edge;
+        }
+    }
+
+    throw std::invalid_argument("node1 and node2 not connected by edge");
+
+}
+
+/**
+ * @return the edges connecting node1 and node2.
+ */
+std::vector<Edge> EdgeListGraph::getEdges(Variable* node1, Variable* node2) {
+    std::vector<Edge> edges = edgeLists[node1];
+    std::vector<Edge> _edges;
+
+    for (Edge edge : edges) {
+        if (edge.getDistalNode(node1) == node2) {
+            _edges.push_back(edge);
+        }
+    }
+
+    return _edges;
+}
+
+/**
+ * @return the endpoint along the edge from node to node2 at the node2 end.
+ */
+Endpoint EdgeListGraph::getEndpoint(Variable* node1, Variable* node2) {
+    std::vector<Edge> edges = getEdges(node2);
+
+    for (Edge edge : edges) {
+        if (edge.getDistalNode(node2) == node1) return edge.getProximalEndpoint(node2);
+    }
+
+    return ENDPOINT_NULL;
+}
+
+/**
+ * @return the list of parents for a node.
+ */
+std::vector<Variable*> EdgeListGraph::getParents(Variable* node) {
+    std::vector<Variable*> parents;
+    std::vector<Edge> edges = edgeLists[node];
+
+    for (Edge edge : edges) {
+        Endpoint endpoint1 = edge.getDistalEndpoint(node);
+        Endpoint endpoint2 = edge.getProximalEndpoint(node);
+
+        if (endpoint1 == ENDPOINT_TAIL && endpoint2 == ENDPOINT_ARROW) {
+            parents.push_back(edge.getDistalNode(node));
+        }
+    }
+
+    return parents;
+}
+
+/**
+ * If there is currently an edge from node1 to node2, sets the endpoint at
+ * node2 to the given endpoint; if there is no such edge, adds an edge --#
+ * where # is the given endpoint. Setting an endpoint to null, provided
+ * there is exactly one edge connecting the given nodes, removes the edge.
+ * (If there is more than one edge, an exception is thrown.)
+ *
+ * @throws std::invalid_argument if the edge with the revised endpoint
+ *                                  cannot be added to the graph.
+ */
+bool EdgeListGraph::setEndpoint(Variable* from, Variable* to, Endpoint endPoint) {
+    std::vector<Edge> edges = getEdges(from, to);
+
+    if (endPoint == ENDPOINT_NULL)
+        throw std::invalid_argument("Endpoint cannot be NULL");
+
+    if (edges.size() == 0) {
+        removeEdges(from, to);
+        Edge newEdge(from, to, ENDPOINT_TAIL, endPoint);
+        addEdge(newEdge);
+        return true;
+    }
+
+    Edge edge = edges[0];
+    Edge newEdge(from, to, edge.getProximalEndpoint(from), endPoint);
+
+    try {
+        removeEdges(edge.getNode1(), edge.getNode2());
+        addEdge(newEdge);
+        return true;
+    } catch (std::invalid_argument& e) {
+        return false;
+    }
+
+    return false; // Unreachable
 }
 
 std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {

@@ -29,7 +29,7 @@ void SepsetMap::setPValue(Variable* x, Variable* y, double p) {
 boost::optional<std::vector<Variable*>> SepsetMap::get(Variable* a, Variable* b) {
     VariablePair pair = std::minmax(a, b);
 
-    if (correlations == boost::none && correlations.get().count(pair) == 0) {
+    if (correlations != boost::none && correlations.get().count(pair) == 0) {
         return std::vector<Variable*>();
     }
 

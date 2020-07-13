@@ -145,6 +145,7 @@ public:
     bool existsDirectedCycle();
 
     bool isDirectedFromTo(Variable* node1, Variable* node2);
+    bool isUndirectedFromTo(Variable* node1, Variable* node2);
 
     /**
      * added by ekorber, 2004/06/11
@@ -346,7 +347,7 @@ public:
      */
     std::vector<Variable*> getAdjacentNodes(Variable* node);
 
-     /**
+    /**
      * Removes the edge connecting the two given nodes.
      */
     bool removeEdge(Variable* node1, Variable* node2);

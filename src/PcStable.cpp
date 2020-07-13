@@ -72,7 +72,11 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
     graph = fas.search();
     sepsets = fas.getSepsets();
 
-    // TODO orient?
+    SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph);
+
+    MeekRules rules;
+    rules.setAggressivelyPreventCycles(aggressivelyPreventCycles);
+    rules.orientImplied(graph);
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 

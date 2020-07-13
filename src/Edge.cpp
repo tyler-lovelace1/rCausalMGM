@@ -160,14 +160,14 @@ Edge Edge::undirectedEdge(Variable* nodeA, Variable* nodeB) {
 /**
  * @return true iff an edge is a bidirected edge (<->).
  */
-bool Edge::isBidirectionalEdge(Edge& edge) {
+bool Edge::isBidirectionalEdge(const Edge& edge) {
     return (edge.endpoint1 == ENDPOINT_ARROW) && (edge.endpoint2 == ENDPOINT_ARROW);
 }
 
 /**
  * @return true iff an edge is a directed edge (-->).
  */
-bool Edge::isDirectedEdge(Edge& edge) {
+bool Edge::isDirectedEdge(const Edge& edge) {
     return ((edge.endpoint1 == ENDPOINT_TAIL) && (edge.endpoint2 == ENDPOINT_ARROW)) ||
             (edge.endpoint2 == ENDPOINT_TAIL) && (edge.endpoint1 == ENDPOINT_ARROW);
 }
@@ -175,7 +175,7 @@ bool Edge::isDirectedEdge(Edge& edge) {
 /**
  * @return true iff an edge is a partially oriented edge (o->)
  */
-bool Edge::isPartiallyOrientedEdge(Edge& edge) {
+bool Edge::isPartiallyOrientedEdge(const Edge& edge) {
     return ((edge.endpoint1 == ENDPOINT_CIRCLE) && (edge.endpoint2 == ENDPOINT_ARROW)) ||
             (edge.endpoint2 == ENDPOINT_CIRCLE) && (edge.endpoint1 == ENDPOINT_ARROW);
 }
@@ -183,14 +183,14 @@ bool Edge::isPartiallyOrientedEdge(Edge& edge) {
 /**
  * @return true iff an edge is a nondirected edge (o-o).
  */
-bool Edge::isNondirectedEdge(Edge& edge) {
+bool Edge::isNondirectedEdge(const Edge& edge) {
     return (edge.endpoint1 == ENDPOINT_CIRCLE) && (edge.endpoint2 == ENDPOINT_CIRCLE);
 }
 
 /**
  * @return true iff an edge is a undirected edge (-).
  */
-bool Edge::isUndirectedEdge(Edge& edge) {
+bool Edge::isUndirectedEdge(const Edge& edge) {
     return (edge.endpoint1 == ENDPOINT_TAIL) && (edge.endpoint2 == ENDPOINT_TAIL);
 }
 

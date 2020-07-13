@@ -134,27 +134,27 @@ public:
     /**
      * @return true iff an edge is a bidirected edge (<->).
      */
-    static bool isBidirectionalEdge(Edge& edge);
+    static bool isBidirectionalEdge(const Edge& edge);
 
     /**
      * @return true iff an edge is a directed edge (-->).
      */
-    static bool isDirectedEdge(Edge& edge);
+    static bool isDirectedEdge(const Edge& edge);
 
     /**
      * @return true iff an edge is a partially oriented edge (o->)
      */
-    static bool isPartiallyOrientedEdge(Edge& edge);
+    static bool isPartiallyOrientedEdge(const Edge& edge);
 
     /**
      * @return true iff an edge is a nondirected edge (o-o).
      */
-    static bool isNondirectedEdge(Edge& edge);
+    static bool isNondirectedEdge(const Edge& edge);
 
     /**
      * @return true iff an edge is a undirected edge (-).
      */
-    static bool isUndirectedEdge(Edge& edge);
+    static bool isUndirectedEdge(const Edge& edge);
 
     /**
      * @return the node opposite the given node along the given edge.

@@ -6,6 +6,8 @@
 #include "Variable.hpp"
 #include "SepsetMap.hpp"
 #include "Fas.hpp"
+#include "SearchGraphUtils.hpp"
+#include "MeekRules.hpp"
 #include <chrono>
 
 class PcStable {
