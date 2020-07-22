@@ -1,5 +1,5 @@
-#ifndef PCSTABLE_HPP_
-#define PCSTABLE_HPP_
+#ifndef CPCSTABLE_HPP_
+#define CPCSTABLE_HPP_
 
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
@@ -10,7 +10,14 @@
 #include "MeekRules.hpp"
 #include <chrono>
 
-class PcStable {
+/**
+ * Implements a convervative version of PC, in which the Markov condition is assumed but faithfulness is tested
+ * locally. Uses the PC-Stable adjacency search.
+ *
+ * @author Joseph Ramsey (this version).
+ * @author Max Dudek (conversion to C++)
+ */
+class CpcStable {
 
 private:
 
@@ -25,7 +32,7 @@ private:
     // IKnowledge knowledge();
 
     /**
-     * Sepset information accumulated in the search.
+     * The sepsets
      */
     SepsetMap sepsets;
 
@@ -50,12 +57,16 @@ private:
     long elapsedTime;
 
     /**
+     * The list of all unshielded triples.
+     */
+    std::unordered_set<Triple> allTriples;
+
+    /**
      * True if cycles are to be aggressively prevented. May be expensive for large graphs (but also useful for large
      * graphs).
      */
     bool aggressivelyPreventCycles = false;
 
-    // TODO?
     /**
      * The logger for this class. The config needs to be set.
      */ 
@@ -63,20 +74,24 @@ private:
 
     bool verbose = false;
 
+    void orientUnshieldedTriples();
+
+    std::vector<std::vector<Variable*>> getSepsets(Variable* i, Variable* k, EdgeListGraph& g);
+
+    bool isColliderSepset(Variable* j, std::vector<std::vector<Variable*>>& sepsets);
+
 public:
 
     /**
-     * Constructs a new PC search using the given independence test as oracle.
-     *
-     * @param independenceTest The oracle for conditional independence facts. This does not make a copy of the
-     *                         independence test, for fear of duplicating the data set!
+     * Constructs a CPC algorithm that uses the given independence test as oracle. This does not make a copy of the
+     * independence test, for fear of duplicating the data set!
      */
-    PcStable(IndependenceTest *independenceTest);
+    CpcStable(IndependenceTest *independenceTest);
 
     /**
      * @return true iff edges will not be added if they would create cycles.
      */
-    bool isAggressivelyPreventCycles() { return aggressivelyPreventCycles; }
+    bool isAggressivelyPreventCycles() const { return aggressivelyPreventCycles; }
 
     /**
      * @param aggressivelyPreventCycles Set to true just in case edges will not be addeds if they would create cycles.
@@ -86,12 +101,12 @@ public:
     /**
      * @return the independence test being used in the search.
      */
-    IndependenceTest *getIndependenceTest() { return independenceTest; }
+    IndependenceTest *getIndependenceTest() const { return independenceTest; }
 
     /**
      * @return the elapsed time of the search, in milliseconds.
      */
-    long getElapsedTime() { return elapsedTime; }
+    long getElapsedTime() const { return elapsedTime; }
 
     /**
      * @return the knowledge specification used in the search. Non-null.
@@ -102,6 +117,16 @@ public:
      * @return the sepset map from the most recent search. Non-null after the first call to <code>search()</code>.
      */
     SepsetMap getSepsets() { return sepsets; }
+
+    /**
+     * @return the set of all triples found during the most recent run of the algorithm. Non-null after a call to
+     * <code>search()</code>.
+     */
+    std::unordered_set<Triple> getAllTriples() const { return allTriples; }
+
+    std::unordered_set<Edge> getAdjacencies();
+
+    std::unordered_set<Edge> getNonadjacencies();
 
     /**
      * Sets the depth of the search--that is, the maximum number of conditioning nodes for any conditional independence
@@ -120,25 +145,15 @@ public:
     void setVerbose(bool verbose) { this->verbose = verbose; }
 
     /**
-     * Runs PC starting with a complete graph over all nodes of the given conditional independence test, using the given
-     * independence test and knowledge and returns the resultant graph. The returned graph will be a pattern if the
-     * independence information is consistent with the hypothesis that there are no latent common causes. It may,
-     * however, contain cycles or bidirected edges if this assumption is not born out, either due to the actual presence
-     * of latent common causes, or due to statistical errors in conditional independence judgments.
+     * Runs PC starting with a fully connected graph over all of the variables in the domain of the independence test.
+     * See PC for caveats. The number of possible cycles and bidirected edges is far less with CPC than with PC.
      */
     EdgeListGraph search();
 
-    /**
-     * Runs PC starting with a commplete graph over the given list of nodes, using the given independence test and
-     * knowledge and returns the resultant graph. The returned graph will be a pattern if the independence information
-     * is consistent with the hypothesis that there are no latent common causes. It may, however, contain cycles or
-     * bidirected edges if this assumption is not born out, either due to the actual presence of latent common causes,
-     * or due to statistical errors in conditional independence judgments.
-     * <p>
-     * All of the given nodes must be in the domain of the given conditional independence test.
-     */
     EdgeListGraph search(const std::vector<Variable*>& nodes);
+
+    EdgeListGraph search(FasStable& fas, const std::vector<Variable*>& nodes);
 
 };
 
-#endif /* PCSTABLE_HPP_ */
+#endif /* CPCSTABLE_HPP_ */

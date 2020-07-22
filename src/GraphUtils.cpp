@@ -17,3 +17,31 @@ std::vector<Variable*> GraphUtils::asList(std::vector<int>& indices, std::vector
 
     return list;
 }
+
+EdgeListGraph GraphUtils::completeGraph(EdgeListGraph& graph) {
+    EdgeListGraph graph2(graph.getNodes());
+
+    graph2.removeEdges();
+
+    std::vector<Variable*> nodes = graph2.getNodes();
+
+    for (int i = 0; i < nodes.size(); i++) {
+        for (int j = i+1; j < nodes.size(); j++) {
+            Variable* node1 = nodes[i];
+            Variable* node2 = nodes[j];
+            graph2.addUndirectedEdge(node1, node2);
+        }
+    }
+
+    return graph2;
+}
+
+EdgeListGraph GraphUtils::undirectedGraph(EdgeListGraph& graph) {
+    EdgeListGraph graph2(graph.getNodes());
+
+    for (Edge edge : graph.getEdges()) {
+        graph2.addUndirectedEdge(edge.getNode1(), edge.getNode2());
+    }
+
+    return graph2;
+}

@@ -521,6 +521,11 @@ public:
     bool removeEdges(Variable* node1, Variable* node2);
 
     /**
+     * Removes all edges
+     */
+    void removeEdges();
+
+    /**
      * Removes a node from the graph.
      */
     bool removeNode(Variable* node);

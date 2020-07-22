@@ -193,6 +193,14 @@ bool EdgeListGraph::removeEdges(Variable* node1, Variable* node2) {
 }
 
 /**
+ * Removes all edges
+ */
+void EdgeListGraph::removeEdges() {
+    std::vector<Edge> edges(edgesSet.begin(), edgesSet.end());
+    removeEdges(edges);
+}
+
+/**
  * Removes an edge from the graph. (Note: It is dangerous to make a
  * recursive call to this method (as it stands) from a method containing
  * certain types of iterators. The problem is that if one uses an iterator
