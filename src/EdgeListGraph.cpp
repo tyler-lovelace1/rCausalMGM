@@ -279,10 +279,6 @@ bool EdgeListGraph::isUndirectedFromTo(Variable* node1, Variable* node2) {
     return edge.getEndpoint1() == ENDPOINT_TAIL && edge.getEndpoint2() == ENDPOINT_TAIL;
 }
 
-bool EdgeListGraph::isAmbiguousTriple(Variable* x, Variable* y, Variable* z) {
-    return ambiguousTriples.count(Triple(x, y, z));
-}
-
 /**
  * @return the set of nodes adjacent to the given node. If there are multiple edges between X and Y, Y will show
  * up twice in the list of adjacencies for X, for optimality; simply create a list an and array from these to
@@ -298,7 +294,6 @@ std::vector<Variable*> EdgeListGraph::getAdjacentNodes(Variable* node) {
     }
 
     return std::vector<Variable*>(adj.begin(), adj.end());
-
 }
 
 /**

@@ -417,13 +417,13 @@ public:
     std::unordered_set<Triple> getUnderLines() { return underLineTriples; }
     std::unordered_set<Triple> getDottedUnderlines() { return dottedUnderLineTriples; }
 
-    bool isAmbiguousTriple(Variable* x, Variable* y, Variable* z);
-    bool isUnderlineTriple(Variable* x, Variable* y, Variable* z);
-    bool isDottedUnderlineTriple(Variable* x, Variable* y, Variable* z);
+    bool isAmbiguousTriple(Variable* x, Variable* y, Variable* z) { return ambiguousTriples.count(Triple(x, y, z)); }
+    bool isUnderlineTriple(Variable* x, Variable* y, Variable* z) { return underLineTriples.count(Triple(x, y, z)); }
+    bool isDottedUnderlineTriple(Variable* x, Variable* y, Variable* z) { return dottedUnderLineTriples.count(Triple(x, y, z)); }
 
-    void addAmbiguousTriple(Variable* x, Variable* y, Variable* z);
-    void addUnderlineTriple(Variable* x, Variable* y, Variable* z);
-    void addDottedUnderlineTriple(Variable* x, Variable* y, Variable* z);
+    void addAmbiguousTriple(Variable* x, Variable* y, Variable* z) { ambiguousTriples.insert(Triple(x, y, z)); } 
+    void addUnderlineTriple(Variable* x, Variable* y, Variable* z) { underLineTriples.insert(Triple(x, y, z)); } 
+    void addDottedUnderlineTriple(Variable* x, Variable* y, Variable* z) { dottedUnderLineTriples.insert(Triple(x, y, z)); }
 
     void removeAmbiguousTriple(Variable* x, Variable* y, Variable* z);
     void removeUnderlineTriple(Variable* x, Variable* y, Variable* z);

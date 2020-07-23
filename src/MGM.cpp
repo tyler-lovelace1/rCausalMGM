@@ -5,6 +5,7 @@
 #include "ChoiceGenerator.hpp"
 #include "IndependenceTestRandom.hpp"
 #include "PcStable.hpp"
+#include "CpcStable.hpp"
 
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
@@ -989,11 +990,17 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     std::vector<Variable*> nodes = ds.getVariables();
     IndependenceTestRandom itr(nodes);
-    PcStable pcs((IndependenceTest*) &itr);
-    pcs.setInitialGraph(&mgmGraph);
-    EdgeListGraph pcGraph = pcs.search();
+    // PcStable pcs((IndependenceTest*) &itr);
+    // pcs.setInitialGraph(&mgmGraph);
+    // EdgeListGraph pcGraph = pcs.search();
 
-    Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
+    // Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
+
+    CpcStable cpcs((IndependenceTest*) &itr);
+    cpcs.setInitialGraph(&mgmGraph);
+    EdgeListGraph cpcGraph = cpcs.search();
+
+    Rcpp::Rcout << "CPC GRAPH\n" << cpcGraph << std::endl;
     
 
     // SepsetMap test;

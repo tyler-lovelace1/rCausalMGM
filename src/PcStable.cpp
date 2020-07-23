@@ -63,8 +63,8 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
         if (std::find(allNodes.begin(), allNodes.end(), node) == allNodes.end())
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
-
-    graph = EdgeListGraph(nodes);
+    
+    // graph = EdgeListGraph(nodes);
 
     FasStable fas(initialGraph, independenceTest);
     fas.setDepth(depth);
