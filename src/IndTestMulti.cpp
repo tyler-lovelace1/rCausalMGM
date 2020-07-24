@@ -3,11 +3,13 @@
 
 
 IndTestMulti::IndTestMulti(DataSet& data, double alpha){
+  Rcpp::Rcout << "Step 0 \n";
   this->searchVariables = data.getVariables();
   DataSet originalData(data);
   this->originalData = originalData;
   DataSet internalData(data);
   this->alpha = alpha;
+  Rcpp::Rcout << "Step 1 \n";
 
   std::vector<Variable*> variables = internalData.getVariables();
 
@@ -15,22 +17,28 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha){
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
       variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
   }
+  Rcpp::Rcout << "Step 3 \n";
 
   this->internalData = internalData;
   LogisticRegression logReg (internalData);
   this->logisticRegression = logReg;
   LinearRegression linReg (internalData);
   this->regression = linReg;
+  Rcpp::Rcout << "Step 4 \n";
 }
 
 
 IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
+  Rcpp::Rcout << "Step 0 \n";
+
   this->preferLinear = preferLinear;
   this->searchVariables = data.getVariables();
   DataSet originalData(data);
   this->originalData = originalData;
   DataSet internalData(data);
   this->alpha = alpha;
+  Rcpp::Rcout << "Step 1 \n";
+
 
   std::vector<Variable*> variables = internalData.getVariables();
 
@@ -38,12 +46,15 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
       variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
   }
+  Rcpp::Rcout << "Step 3 \n";
 
   this->internalData = internalData;
   LogisticRegression logReg (internalData);
   this->logisticRegression = logReg;
   LinearRegression linReg (internalData);
   this->regression = linReg;
+  Rcpp::Rcout << "Step 4 \n";
+
 }
 
 int IndTestMulti::reset() {
@@ -168,13 +179,12 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
 
     /*********************************************************************/
     for (int i = 0; i < variablesPerNode.at(x).size(); i++) {
-        DiscreteVariable* varX = variablesPerNode.at(x).at(i);
+        Variable* varX = variablesPerNode.at(x).at(i);
+        LogisticRegressionResult* result0 = logisticRegression.regress((DiscreteVariable*)varX, zList);
+        LogisticRegressionResult* result1 = logisticRegression.regress((DiscreteVariable*)varX, yzList);
 
-        LogisticRegressionResult result0 = logisticRegression.regress(varX, zList);
-        LogisticRegressionResult result1 = logisticRegression.regress(varX, yzList);
-
-        coeffsNull.insert_cols(i, result0.getCoefs());
-        coeffsDep.insert_cols(i, result1.getCoefs());
+        coeffsNull.insert_cols(i, result0->getCoefs());
+        coeffsDep.insert_cols(i, result1->getCoefs());
     }
     /*********************************************************************/
 
@@ -199,7 +209,6 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     return indep;
 }
 
-/***************************************************************************************************************/
     // This takes an inordinate amount of time. -jdramsey 20150929
 arma::uvec IndTestMulti::getNonMissingRows(Variable* x, Variable* y, std::vector<Variable*> z) {
 
@@ -210,7 +219,6 @@ arma::uvec IndTestMulti::getNonMissingRows(Variable* x, Variable* y, std::vector
 
     return rows;
 }
-/***************************************************************************************************************/
 
 bool IndTestMulti::isMissing(Variable* x, int i) {
     int j = internalData.getColumn(x);
@@ -220,7 +228,7 @@ bool IndTestMulti::isMissing(Variable* x, int i) {
 
         if (v == -99) {
             return true;
-        } // will -99 work for our datasets?
+        }
     }
 
     if (x->isContinuous()) {
@@ -266,7 +274,6 @@ double IndTestMulti::multiLL(arma::mat coeffs, Variable* dep, std::vector<Variab
         arma::vec curRow = probs.row(i);
         curRow = curRow/(arma::sum(curRow));
         ll += std::log(curRow.at((int)depData.at(i)));
-        //ll += Math.log(curRow.get((int)depData.get(i,0)));
     }
     return ll;
 }
@@ -342,12 +349,18 @@ Variable* IndTestMulti::getVariable(std::string name) {
 
 arma::mat IndTestMulti::getSubsetData(DataSet& origData, std::vector<Variable*> varSubset) {
   arma::mat origMat = origData.getData();
-  std::vector<arma::uword> colIndices (varSubset.size());
-  for (Variable* var : varSubset){
-    arma::uword i = origData.getColumn(var);
-    colIndices.push_back(i);
+  arma::uvec colIndices (varSubset.size());
+  arma::uvec rowIndices (origMat.n_rows);
+  // for (Variable* var : varSubset){
+  for (int i = 0; i < varSubset.size(); i++){
+    Variable* var = varSubset.at(i);
+    arma::uword j = origData.getColumn(var);
+    colIndices[i] = j;
   }
-  return origMat.submat(colIndices, arma::span::all);
+  for (int i = 0; i < origMat.n_rows; i++){
+    rowIndices[i] = i;
+  }
+  return origMat.submat(rowIndices, colIndices);
 }
 
 void indTestMultiTest(const Rcpp::DataFrame& df) {
@@ -356,7 +369,7 @@ void indTestMultiTest(const Rcpp::DataFrame& df) {
   Rcpp::Rcout << "Dataset Constructed \n";
   IndTestMulti itm(data, 0.05);
   Rcpp::Rcout << "Independence Test Constructed \n";
-  std::vector<std::string> varNames = itm.getVariableNames(); // unnecessary but this would be how you would normally retrieve the data
+  // std::vector<std::string> varNames = itm.getVariableNames(); // unnecessary but this would be how you would normally retrieve the data
   Variable* x = itm.getVariable("X1");
   Variable* y = itm.getVariable("X6");
   std::vector<Variable*> z;
@@ -372,10 +385,6 @@ void indTestMultiTest(const Rcpp::DataFrame& df) {
   x = itm.getVariable("X2.1");
   Rcpp::Rcout << "X IS DISCRETE CASE: " << itm.isIndependent(x,y,z);
   Rcpp::Rcout << "DISCRETE CASE P: " << itm.getPValue();
-
-
-  //Intentionally only used continuous data for the moment
-  //Will need to use the discrete data as well and mix the two to make sure that will work as well.
 
   // try the case where there are values for x and y but z is empty, or when z has 1 or more variables
   //when x and y are mixed between    at least one where x is discrete
