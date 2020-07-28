@@ -133,6 +133,7 @@ int DataSet::getInt(int row, int col) {
   return (int) data(row, col);
 }
 
+
 // [[Rcpp::export]]
 void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete=5) {
   DataSet ds = DataSet(df, maxDiscrete);

@@ -4,14 +4,17 @@
 
 IndTestMulti::IndTestMulti(DataSet& data, double alpha){
   Rcpp::Rcout << "Step 0 \n";
+  this->timesCalled = 0;
   this->searchVariables = data.getVariables();
   DataSet originalData(data);
   this->originalData = originalData;
   DataSet internalData(data);
   this->alpha = alpha;
+  this->lastP = 0;
   Rcpp::Rcout << "Step 1 \n";
 
   std::vector<Variable*> variables = internalData.getVariables();
+  this->variablesPerNode = std::map<Variable*, std::vector<Variable*>>();
 
   for (Variable* var : variables) {
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
@@ -24,6 +27,8 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha){
   this->logisticRegression = logReg;
   LinearRegression linReg (internalData);
   this->regression = linReg;
+  this->verbose = false;
+  this->preferLinear = false;
   Rcpp::Rcout << "Step 4 \n";
 }
 
@@ -31,16 +36,19 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha){
 IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
   Rcpp::Rcout << "Step 0 \n";
 
+  this->timesCalled = 0;
   this->preferLinear = preferLinear;
   this->searchVariables = data.getVariables();
   DataSet originalData(data);
   this->originalData = originalData;
   DataSet internalData(data);
   this->alpha = alpha;
+  this->lastP = 0;
   Rcpp::Rcout << "Step 1 \n";
 
 
   std::vector<Variable*> variables = internalData.getVariables();
+  this->variablesPerNode = std::map<Variable*, std::vector<Variable*>>();
 
   for (Variable* var : variables) {
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
@@ -53,6 +61,7 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
   this->logisticRegression = logReg;
   LinearRegression linReg (internalData);
   this->regression = linReg;
+  this->verbose = false;
   Rcpp::Rcout << "Step 4 \n";
 
 }
@@ -362,12 +371,12 @@ arma::mat IndTestMulti::getSubsetData(DataSet& origData, std::vector<Variable*> 
   }
   return origMat.submat(rowIndices, colIndices);
 }
-
+// [[Rcpp::export]]
 void indTestMultiTest(const Rcpp::DataFrame& df) {
   Rcpp::Rcout << "*******Start******* \n";
   DataSet data = DataSet(df, 5);
   Rcpp::Rcout << "Dataset Constructed \n";
-  IndTestMulti itm(data, 0.05);
+  IndTestMulti itm = IndTestMulti(data, 0.05, false);
   Rcpp::Rcout << "Independence Test Constructed \n";
   // std::vector<std::string> varNames = itm.getVariableNames(); // unnecessary but this would be how you would normally retrieve the data
   Variable* x = itm.getVariable("X1");
@@ -388,6 +397,4 @@ void indTestMultiTest(const Rcpp::DataFrame& df) {
 
   // try the case where there are values for x and y but z is empty, or when z has 1 or more variables
   //when x and y are mixed between    at least one where x is discrete
-  // [[Rcpp::export]]
-
 }
