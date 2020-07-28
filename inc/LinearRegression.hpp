@@ -1,7 +1,3 @@
-// make a test function that takes in a data frame into the dataset class
-// alll the distribution stuff we need is in the boost library   t distribution and chi squared
-// p value and regression coefficients must be checked for correctness
-
 #ifndef LINEARREGRESSION_HPP_
 #define LINEARREGRESSION_HPP_
 
@@ -39,8 +35,8 @@ class LinearRegression
 
   public:
     //============================CONSTRUCTORS==========================//
-
-    LinearRegression(DataSet data);
+    LinearRegression() {}
+    LinearRegression(DataSet& data);
     // LinearRegression(arma::mat data, std::vector<Variable*>&  variables);
 
     //===========================PUBLIC METHODS========================//

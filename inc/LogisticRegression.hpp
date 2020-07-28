@@ -5,7 +5,6 @@
 #include "DataSet.hpp"
 #include "Variable.hpp"
 #include "LogisticRegressionResult.hpp"
-#include <list>
 
 class LogisticRegression
 {
@@ -17,6 +16,7 @@ class LogisticRegression
     arma::uvec rows;
 
   public:
+    LogisticRegression() {}
     LogisticRegression(DataSet& data);
 
     LogisticRegressionResult* regress(DiscreteVariable* x, std::vector<Variable*> regressors); // double regressors[][]
