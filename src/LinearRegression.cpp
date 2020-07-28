@@ -36,8 +36,6 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
 
   arma::mat x;
 
-  Rcpp::Rcout << "CHECKPOINT 2 :: \n";
-
 
   if (regressors.size() > 0) {
       x = arma::mat(xSub.n_rows, xSub.n_cols + 1);
@@ -91,7 +89,7 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
   arma::vec p = arma::vec(x.n_cols);
 
   boost::math::students_t dist(n-k);
-  for (int i = 0; i < x.n_cols; i++) {
+  for (arma::uword i = 0; i < x.n_cols; i++) {
       double s_ = se * se * xTxInv(i, i);
       double se_ = std::sqrt(s_);
       double t_ = b(i, 0) / se_;
@@ -165,6 +163,5 @@ void LinearRegressionTest(const Rcpp::DataFrame& df) {
     RegressionResult* result = reg.regress(target, regressors);
     Rcpp::Rcout << *result;
     Rcpp::Rcout << "-----END----- \n";
-
   }
 }
