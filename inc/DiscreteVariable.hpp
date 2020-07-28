@@ -52,7 +52,7 @@ public:
   int getMissingValueMarker() { return MISSING_VALUE; }
 
   int getIndex(const std::string& category);
-  
+
   int getNumCategories() { return categories.size(); }
 
   std::vector<std::string> getCategories() { return categories; }
@@ -64,11 +64,11 @@ public:
   // bool checkValue(const int& category) { return (category >= 0) && (category < getNumCategories()); }
 
   bool checkValue(const std::string& val);
-  
+
   DiscreteVariable* like(const std::string& name) { return new DiscreteVariable(name); }
 
   // friend void test_discrete(const std::string& name, const int& numCats, const std::string& val);
-  
+
 };
 
 #endif /* DISCRETEVARIABLE_HPP_ */
