@@ -62,6 +62,8 @@ public:
 
   arma::mat getData() { return data; }
 
+  std::vector<std::string> getVariableNames() { return variableNames; }
+
   friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
   friend std::ostream& operator<<(std::ostream& os, DataSet& ds);
 

@@ -22,6 +22,7 @@ class IndTestMulti {
       bool preferLinear;
 
   public:
+    IndTestMulti() {}
 
     IndTestMulti(DataSet& data, double alpha);
 
