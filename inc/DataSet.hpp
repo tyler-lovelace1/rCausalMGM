@@ -39,6 +39,10 @@ public:
   DataSet() {}
   DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
   DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
+  DataSet(DataSet& ds);
+  DataSet& operator=(DataSet& ds);
+  DataSet(DataSet&& ds);
+  DataSet& operator=(DataSet&& ds);
   ~DataSet();
 
   int getNumRows() { return n; }
@@ -58,8 +62,17 @@ public:
 
   int getColumn(Variable* v) { return var2idx[v]; }
 
+<<<<<<< HEAD
+  int getInt(int row, int col);
+
   arma::mat getData() { return data; }
 
+  std::vector<std::string> getVariableNames() { return variableNames; }
+
+=======
+  arma::mat getData() { return data; }
+
+>>>>>>> origin/master
   friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
   friend std::ostream& operator<<(std::ostream& os, DataSet& ds);
 

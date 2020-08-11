@@ -20,7 +20,6 @@ RegressionResult::RegressionResult(bool zeroInterceptAssumed, std::vector<std::s
 
   this->zeroInterceptAssumed = zeroInterceptAssumed;
 
-  // Need to set this one before calling getNumRegressors.
   this->regressorNames = regressorNames;
 
   this->n = n;
@@ -101,6 +100,19 @@ std::ostream& operator<<(std::ostream& os, RegressionResult& rr) {
   os << "Residual Sum of Squares: ";
   os << rr.rss;
   os << "\n";
+<<<<<<< HEAD
+  // os << "Y-Hat values: ";
+  // for (int i = 0; i < rr.yHat.size(); i++) {
+  //   os << rr.yHat[i];
+  //   os << "\n";
+  // }
+  // os << "\n";
+  // os << "Residuals: ";
+  // for (int i = 0; i < rr.res.size(); i++) {
+  //   os << rr.res[i];
+  //   os << "\n";
+  // }
+=======
   os << "Y-Hat values: ";
   for (int i = 0; i < rr.yHat.size(); i++) {
     os << rr.yHat[i];
@@ -112,6 +124,7 @@ std::ostream& operator<<(std::ostream& os, RegressionResult& rr) {
     os << rr.res[i];
     os << "\t";
   }
+>>>>>>> origin/master
   os << "\n";
   return os;
 }

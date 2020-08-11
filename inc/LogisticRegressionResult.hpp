@@ -4,158 +4,114 @@
 #include "armaLapack.hpp"
 #include <string>
 #include <vector>
+#include <iostream>
 
 /**
- * Stores the various components of a logistic regression result in a single class so
- * that they can be passed together as an argument or return value.
+ * Stores the various components of a logisitc regression result so they can be passed
+ * around together more easily.
  *
- * @author Frank Wimberly
- * @author Jack Fiore Conversion to c++ 2/30
+ * @author Joseph Ramsey
+ * @author Jack Fiore Conversion to c++ 5/11
  */
 
-class LogisticRegressionResult {
+class LogisticRegressionResult
+{
   private:
-    /**
-     * String representation of the result
-     */
-    std::string result;
+    std::vector<std::string> sigMarker;
+    double chiSq;
+    double alpha;
+    std::vector<std::string> regressorNames;
+    std::string target;
+    int ny0;
+    int ny1;
+    int numRegressors;
+    arma::vec coefs;
+    arma::vec stdErrs;
+    arma::vec probs;
+    arma::vec xMeans;
+    arma::vec xStdDevs;
+    double intercept;
+    double logLikelihood;
+
+
+  /**
+   * Constructs a new LogRegrResult.
+   *
+   * @param ny0           the number of cases with target = 0.
+   * @param ny1           the number of cases with target = 1.
+   * @param numRegressors the number of regressors
+   * @param coefs         the array of regression coefficients.
+   * @param stdErrs       the array of std errors of the coefficients.
+   * @param probs         the array of P-values for the regression
+   *                      coefficients.
+   */
+  public:
+     LogisticRegressionResult(std::string target, std::vector<std::string> regressorNames,
+                arma::vec xMeans, arma::vec xStdDevs, int numRegressors, int ny0,
+                int ny1, arma::vec coefs, arma::vec stdErrs, arma::vec probs,
+                double intercept, double logLikelihood, std::vector<std::string> sigmMarker,
+                double chiSq, double alpha);
 
     /**
      * The variables.
      */
-    std::vector<std::string> variableNames;
-
+    std::vector<std::string> getRegressorNames() { return this->regressorNames; }
 
     /**
      * The target.
      */
-    std::string target;
+    std::string getTarget() { return this->target; }
 
     /**
      * The number of data points with target = 0.
      */
-    int ny0;
+    int getNy0() { return this->ny0; }
 
     /**
      * The number of data points with target = 1.
      */
-    int ny1;
-
+    int getNy1() { return this->ny1; }
 
     /**
      * The number of regressors.
      */
-    int numRegressors;
+    int getNumRegressors() { return this->numRegressors; }
 
     /**
-     * The array of regression coefficients.
+     * The vector of regression coefficients.
      */
-    arma::vec coefs;
+    arma::vec getCoefs() { return this->coefs; }
 
     /**
      * The array of standard errors for the regression coefficients.
      */
-    arma::vec stdErrs;
+    arma::vec getStdErrs() { return this->stdErrs; }
 
     /**
-     * The array of coefP-values for the regression coefficients.
+     * The array of P-values for the regression coefficients.
      */
-    arma::vec probs;
-
+    arma::vec getProbs() { return this->probs; }
 
     /**
      * THe array of means.
      */
-    arma::vec xMeans;
-
+    arma::vec getxMeans() { return this->xMeans; }
 
     /**
      * The array of standard devs.
      */
-    arma::vec xStdDevs;
+    arma::vec getxStdDevs() { return this->xStdDevs; }
 
-
-    double intercept;
-
-    /**
-     * The log likelyhood of the regression
-     */
-    double logLikelihood;
+    double getIntercept() { return this->intercept; }
 
     /**
-     * Constructs a new LinRegrResult.
-     *
-     * @param ny0           the number of cases with target = 0.
-     * @param ny1           the number of cases with target = 1.
-     * @param numRegressors the number of regressors
-     * @param coefs         the array of regression coefficients.
-     * @param stdErrs       the array of std errors of the coefficients.
-     * @param probs         the array of P-values for the regression
-     *                      coefficients.
+     * The log likelihood of the regression
      */
-   public:
-    LogisticRegressionResult(std::string target, std::vector<std::string> variableNames,
-                    arma::vec xMeans, arma::vec xStdDevs, int numRegressors, int ny0,
-                    int ny1, arma::vec coefs, arma::vec stdErrs, arma::vec probs,
-                    double intercept, std::string result, double logLikelihood);
+    double getLogLikelihood() { return this->logLikelihood; }
 
-    std::string getTarget() {return this->target;}
-
-    double getIntercept() {return this->intercept;}
-
-    /**
-     * @return the number of regressors.
-     */
-    int getNumRegressors() {return numRegressors;}
-
-    /**
-     * @return the number of cases with target = 0.
-     */
-    int getNy0() {return ny0;}
-
-    /**
-     * @return the number of cases with target = 1.
-     */
-    int getNy1() {return ny1;}
-
-    /**
-     * @return the total number of cases.
-     */
-    int getnCases() {return ny0 + ny1;}
-
-    /**
-     * @return the array of strings containing the variable names.
-     */
-    std::vector<std::string> getVariableNames() {return variableNames;}
-
-    /**
-     * @return the array of regression coeffients.
-     */
-    arma::vec getCoefs() {return coefs;}
-
-    /**
-     * @return the array of coefT-statistics for the regression coefficients.
-     */
-     arma::vec getStdErrs() {return stdErrs;}
-
-    /**
-     * @return the array of coefP-values for the regression coefficients.
-     */
-    arma::vec getProbs() {return probs;}
-
-    std::vector<std::string> getVarNames() {return variableNames;}
-
-    std::string toString() {return result;}
-
-    arma::vec getxMeans() {return xMeans;}
-
-    arma::vec getxStdDevs() {return xStdDevs;}
-
-    /**
-     * @return -2LogLiklihood
-     */
-    double getLogLikelihood() {return logLikelihood;}
+    friend std::ostream& operator<<(std::ostream& os, LogisticRegressionResult& lrr);
 
 };
+
 
 #endif /* LOGISTICREGRESSIONRESULT_HPP_ */

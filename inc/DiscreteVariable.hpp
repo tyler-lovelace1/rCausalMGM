@@ -49,10 +49,29 @@ public:
       this->categories.push_back(var.categories.at(i));
   }
 
+  DiscreteVariable& operator=(const DiscreteVariable& var) {
+    this->name = var.name;
+    this->type = var.type;
+    for (int i = 0; i < var.categories.size(); i++)
+      this->categories.push_back(var.categories.at(i));
+  }
+
+  DiscreteVariable(DiscreteVariable&& var) {
+    this->name = var.name;
+    this->type = var.type;
+    this ->categories = var.categories;
+  }
+
+  DiscreteVariable& operator=(DiscreteVariable&& var) {
+    this->name = var.name;
+    this->type = var.type;
+    this ->categories = var.categories;
+  }
+
   int getMissingValueMarker() { return MISSING_VALUE; }
 
   int getIndex(const std::string& category);
-  
+
   int getNumCategories() { return categories.size(); }
 
   std::vector<std::string> getCategories() { return categories; }
@@ -64,11 +83,11 @@ public:
   // bool checkValue(const int& category) { return (category >= 0) && (category < getNumCategories()); }
 
   bool checkValue(const std::string& val);
-  
+
   DiscreteVariable* like(const std::string& name) { return new DiscreteVariable(name); }
 
   // friend void test_discrete(const std::string& name, const int& numCats, const std::string& val);
-  
+
 };
 
 #endif /* DISCRETEVARIABLE_HPP_ */

@@ -17,6 +17,36 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// indTestMultiTest
+void indTestMultiTest(const Rcpp::DataFrame& df);
+RcppExport SEXP _rCausalMGM_indTestMultiTest(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    indTestMultiTest(df);
+    return R_NilValue;
+END_RCPP
+}
+// LinearRegressionTest
+void LinearRegressionTest(const Rcpp::DataFrame& df);
+RcppExport SEXP _rCausalMGM_LinearRegressionTest(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    LinearRegressionTest(df);
+    return R_NilValue;
+END_RCPP
+}
+// LogisticRegressionTest
+void LogisticRegressionTest(const Rcpp::DataFrame& df);
+RcppExport SEXP _rCausalMGM_LogisticRegressionTest(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    LogisticRegressionTest(df);
+    return R_NilValue;
+END_RCPP
+}
 // rcpparma_hello_world
 arma::mat rcpparma_hello_world();
 RcppExport SEXP _rCausalMGM_rcpparma_hello_world() {
@@ -63,6 +93,9 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_DataSetTest", (DL_FUNC) &_rCausalMGM_DataSetTest, 2},
+    {"_rCausalMGM_indTestMultiTest", (DL_FUNC) &_rCausalMGM_indTestMultiTest, 1},
+    {"_rCausalMGM_LinearRegressionTest", (DL_FUNC) &_rCausalMGM_LinearRegressionTest, 1},
+    {"_rCausalMGM_LogisticRegressionTest", (DL_FUNC) &_rCausalMGM_LogisticRegressionTest, 1},
     {"_rCausalMGM_rcpparma_hello_world", (DL_FUNC) &_rCausalMGM_rcpparma_hello_world, 0},
     {"_rCausalMGM_rcpparma_outerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_outerproduct, 1},
     {"_rCausalMGM_rcpparma_innerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_innerproduct, 1},
