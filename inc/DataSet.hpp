@@ -62,12 +62,17 @@ public:
 
   int getColumn(Variable* v) { return var2idx[v]; }
 
+<<<<<<< HEAD
   int getInt(int row, int col);
 
   arma::mat getData() { return data; }
 
   std::vector<std::string> getVariableNames() { return variableNames; }
 
+=======
+  arma::mat getData() { return data; }
+
+>>>>>>> origin/master
   friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
   friend std::ostream& operator<<(std::ostream& os, DataSet& ds);
 
