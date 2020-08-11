@@ -49,6 +49,25 @@ public:
       this->categories.push_back(var.categories.at(i));
   }
 
+  DiscreteVariable& operator=(const DiscreteVariable& var) {
+    this->name = var.name;
+    this->type = var.type;
+    for (int i = 0; i < var.categories.size(); i++)
+      this->categories.push_back(var.categories.at(i));
+  }
+
+  DiscreteVariable(DiscreteVariable&& var) {
+    this->name = var.name;
+    this->type = var.type;
+    this ->categories = var.categories;
+  }
+
+  DiscreteVariable& operator=(DiscreteVariable&& var) {
+    this->name = var.name;
+    this->type = var.type;
+    this ->categories = var.categories;
+  }
+
   int getMissingValueMarker() { return MISSING_VALUE; }
 
   int getIndex(const std::string& category);

@@ -6,15 +6,13 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha){
   Rcpp::Rcout << "Step 0 \n";
   this->timesCalled = 0;
   this->searchVariables = data.getVariables();
-  DataSet originalData(data);
-  this->originalData = originalData;
-  DataSet internalData(data);
+  this->originalData = DataSet(data);
+  this->internalData = DataSet(data);
   this->alpha = alpha;
   this->lastP = 0;
   Rcpp::Rcout << "Step 1 \n";
 
   std::vector<Variable*> variables = internalData.getVariables();
-  this->variablesPerNode = std::map<Variable*, std::vector<Variable*>>();
 
   for (Variable* var : variables) {
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
@@ -22,11 +20,8 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha){
   }
   Rcpp::Rcout << "Step 3 \n";
 
-  this->internalData = internalData;
-  LogisticRegression logReg (internalData);
-  this->logisticRegression = logReg;
-  LinearRegression linReg (internalData);
-  this->regression = linReg;
+  this->logisticRegression = LogisticRegression(internalData);
+  this->regression = LinearRegression(internalData);
   this->verbose = false;
   this->preferLinear = false;
   Rcpp::Rcout << "Step 4 \n";
@@ -48,9 +43,9 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
 
 
   std::vector<Variable*> variables = internalData.getVariables();
-  this->variablesPerNode = std::map<Variable*, std::vector<Variable*>>();
 
   for (Variable* var : variables) {
+      Rcpp::Rcout << var->getName() << std::endl;
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
       variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
   }
@@ -113,23 +108,14 @@ std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* 
 
     std::vector<std::string> varCats = ((DiscreteVariable*) var)->getCategories();
 
-    // first category is reference
-    // varCats.remove(0);
 
     std::vector<Variable*> variables;
     /*********************************************************************/
-    for (int i = 1; i < varCats.size(); i++) {
-        std::string cat = varCats.at(i);
-        DiscreteVariable* newVar;
-        std::vector<std::string> varNames = dataSet.getVariableNames();
-        for (std::string temp : varNames) {
-            std::string newVarName = temp + "MULTINOM" + "." + cat;
-            DiscreteVariable newVar (newVarName, 2);
-            // newVar = newVar(newVarName, 2);
-        }
-    /*********************************************************************/
+    std::string temp = var->getName();
+    for (auto it = varCats.begin()+1; it != varCats.end(); it++) {
+        DiscreteVariable* newVar = new DiscreteVariable(temp + "MULTINOM." + *it, 2);
 
-        // while (dataSet.getVariable(newVar.getName()) != null); //???? does name2idx have null references?
+    /*********************************************************************/
 
         variables.push_back(newVar);
 
@@ -140,8 +126,12 @@ std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* 
 
         for (int l = 0; l < numCases; l++) {
             int dataCellIndex = dataSet.getInt(l, dataSet.getColumn(var));
-            if (dataCellIndex == ((DiscreteVariable*) var)->getIndex(cat)) dataSet.set(l, newVarIndex, 1);
-            else dataSet.set(l, newVarIndex, 0);
+            if (dataCellIndex == ((DiscreteVariable*) var)->getIndex(*it)) {
+	        dataSet.set(l, newVarIndex, 1);
+	    }
+            else {
+		dataSet.set(l, newVarIndex, 0);
+	    }
         }
     }
 
@@ -268,8 +258,6 @@ double IndTestMulti::multiLL(arma::mat coeffs, Variable* dep, std::vector<Variab
     if(indep.size()==0)
         indepData = arma::mat(N,1,arma::fill::ones); // filling it with ones
     else {
-        // DataSet& indepSubset = getSubsetData(internalData, indep);
-        // indepData = indepSubset.getData();
         indepData = getSubsetData(internalData, indep);
         indepData.insert_cols(0, arma::mat(N,1,arma::fill::ones));
     }
@@ -287,7 +275,7 @@ double IndTestMulti::multiLL(arma::mat coeffs, Variable* dep, std::vector<Variab
     return ll;
 }
 
-bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*> z) {
+bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*> z) {    
     if (variablesPerNode.count(x) < 1) {
         throw std::invalid_argument("Unrecogized node: " + x->getName());
     }
@@ -303,7 +291,7 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
     }
 
     std::vector<Variable*> regressors;
-    regressors.push_back(internalData.getVariable(y->getName()));
+    regressors.push_back(y);
 
     for (Variable* varZ : z) {
         std::vector<Variable*> temp = variablesPerNode.at(varZ);
@@ -371,29 +359,32 @@ arma::mat IndTestMulti::getSubsetData(DataSet& origData, std::vector<Variable*> 
   }
   return origMat.submat(rowIndices, colIndices);
 }
+
 // [[Rcpp::export]]
 void indTestMultiTest(const Rcpp::DataFrame& df) {
   Rcpp::Rcout << "*******Start******* \n";
-  DataSet data = DataSet(df, 5);
+  DataSet data(df, 5);
   Rcpp::Rcout << "Dataset Constructed \n";
-  IndTestMulti itm = IndTestMulti(data, 0.05, false);
+  IndTestMulti itm(data, 0.05);
   Rcpp::Rcout << "Independence Test Constructed \n";
   // std::vector<std::string> varNames = itm.getVariableNames(); // unnecessary but this would be how you would normally retrieve the data
   Variable* x = itm.getVariable("X1");
   Variable* y = itm.getVariable("X6");
+  Rcpp::Rcout << "FIRST X: " << x->getName() << " Continuous: " << x->isContinuous() << std::endl;
+  Rcpp::Rcout << "FIRST Y: " << y->getName() << " Continuous: " << y->isContinuous() << std::endl;
   std::vector<Variable*> z;
-  Rcpp::Rcout << "FIRST CASE: " << itm.isIndependent(x,y,z);
-  Rcpp::Rcout << "First P: " << itm.getPValue();
+  Rcpp::Rcout << "FIRST CASE: " << itm.isIndependent(x,y,z) << std::endl;
+  Rcpp::Rcout << "First P: " << itm.getPValue() << std::endl;
   z.push_back(itm.getVariable("X9"));
-  Rcpp::Rcout << "SECOND CASE: " << itm.isIndependent(x,y,z);
-  Rcpp::Rcout << "Second P: " << itm.getPValue();
+  Rcpp::Rcout << "SECOND CASE: " << itm.isIndependent(x,y,z) << std::endl;
+  Rcpp::Rcout << "Second P: " << itm.getPValue() << std::endl;
   z.push_back(itm.getVariable("X10"));
   z.push_back(itm.getVariable("X8"));
-  Rcpp::Rcout << "THIRD CASE: " << itm.isIndependent(x,y,z);
-  Rcpp::Rcout << "Third P: " << itm.getPValue();
-  x = itm.getVariable("X2.1");
-  Rcpp::Rcout << "X IS DISCRETE CASE: " << itm.isIndependent(x,y,z);
-  Rcpp::Rcout << "DISCRETE CASE P: " << itm.getPValue();
+  Rcpp::Rcout << "THIRD CASE: " << itm.isIndependent(x,y,z) << std::endl;
+  Rcpp::Rcout << "Third P: " << itm.getPValue() << std::endl;
+  x = itm.getVariable("X2");
+  Rcpp::Rcout << "X IS DISCRETE CASE: " << itm.isIndependent(x,y,z) << std::endl;
+  Rcpp::Rcout << "DISCRETE CASE P: " << itm.getPValue() << std::endl;
 
   // try the case where there are values for x and y but z is empty, or when z has 1 or more variables
   //when x and y are mixed between    at least one where x is discrete

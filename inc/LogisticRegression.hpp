@@ -18,6 +18,11 @@ class LogisticRegression
   public:
     LogisticRegression() {}
     LogisticRegression(DataSet& data);
+    LogisticRegression(LogisticRegression& lr);
+    LogisticRegression(LogisticRegression&& lr);
+
+    LogisticRegression& operator=(LogisticRegression& lr);
+    LogisticRegression& operator=(LogisticRegression&& lr);
 
     LogisticRegressionResult* regress(DiscreteVariable* x, std::vector<Variable*> regressors); // double regressors[][]
 

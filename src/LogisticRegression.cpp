@@ -15,6 +15,34 @@ LogisticRegression::LogisticRegression(DataSet& data){
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
 }
 
+LogisticRegression::LogisticRegression(LogisticRegression& lr){
+  this->data = lr.data;
+  this->dataCols = this->data.getData().t();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+}
+
+LogisticRegression::LogisticRegression(LogisticRegression&& lr){
+  this->data = lr.data;
+  this->dataCols = this->data.getData().t();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+}
+
+LogisticRegression& LogisticRegression::operator=(LogisticRegression& lr) {
+  this->data = lr.data;
+  this->dataCols = this->data.getData().t();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+}
+
+LogisticRegression& LogisticRegression::operator=(LogisticRegression&& lr) {
+  this->data = lr.data;
+  this->dataCols = this->data.getData().t();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+}
+
 LogisticRegressionResult* LogisticRegression::regress(DiscreteVariable* x, std::vector<Variable*> regressors){
   // if (!binary(x)) {
   //     throw new IllegalArgumentException("Target must be binary.");

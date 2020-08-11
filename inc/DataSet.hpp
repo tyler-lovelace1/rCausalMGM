@@ -39,6 +39,10 @@ public:
   DataSet() {}
   DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
   DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
+  DataSet(DataSet& ds);
+  DataSet& operator=(DataSet& ds);
+  DataSet(DataSet&& ds);
+  DataSet& operator=(DataSet&& ds);
   ~DataSet();
 
   int getNumRows() { return n; }

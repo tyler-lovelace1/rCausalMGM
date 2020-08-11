@@ -90,6 +90,128 @@ DataSet::DataSet(const Rcpp::DataFrame& df, const int maxDiscrete) {
   }
 }
 
+DataSet::DataSet(DataSet& ds) {
+  this->maxDiscrete=ds.maxDiscrete;
+  this->m = ds.m;
+  this->n = ds.n;
+  this->variables = ds.variables;
+  this->variableNames = ds.variableNames;
+  this->name2idx = ds.name2idx;
+  this->var2idx = ds.var2idx;
+  this->data = ds.data;
+  
+  // this->maxDiscrete=ds.maxDiscrete;
+  // this->m = ds.m;
+  // this->n = ds.n;
+  // this->data.set_size(this->n,this->m);
+  // this->variables = std::vector<Variable*>();
+  // this->variableNames = std::vector<std::string>();
+  // this->name2idx = std::unordered_map<std::string, int>();
+  // this->var2idx = std::unordered_map<Variable*, int>();
+
+  // for (int j = 0; j < this->m; j++) {
+  //   this->variableNames.push_back(ds.variableNames[j]);
+  //   // this->variables.push_back(ds.variables.at(j));
+  //   if (ds.variables.at(j)->isDiscrete())
+  //     this->variables.push_back(new DiscreteVariable(*((DiscreteVariable*)ds.variables[j])));
+  //   else if (ds.variables.at(j)->isContinuous())
+  //     this->variables.push_back(new ContinuousVariable(*((ContinuousVariable*)ds.variables[j])));
+
+  //   // Rcpp::Rcout << this->variables[j]->getName() << std::endl;
+  //   name2idx.insert(std::pair<std::string, int>(this->variableNames[j], j));
+  //   var2idx.insert(std::pair<Variable*, int>(this->variables[j], j));
+    
+  //   for (int i = 0; i < this->n; i++) {
+  //     this->data(i,j) = ds.data(i,j);
+  //   }
+  // }
+}
+
+DataSet& DataSet::operator=(DataSet& ds) {
+  this->maxDiscrete=ds.maxDiscrete;
+  this->m = ds.m;
+  this->n = ds.n;
+  this->variables = ds.variables;
+  this->variableNames = ds.variableNames;
+  this->name2idx = ds.name2idx;
+  this->var2idx = ds.var2idx;
+  this->data = ds.data;
+  
+  // this->maxDiscrete=ds.maxDiscrete;
+  // this->m = ds.m;
+  // this->n = ds.n;
+  // this->data.set_size(this->n,this->m);
+  // this->variables = std::vector<Variable*>();
+  // this->variableNames = std::vector<std::string>();
+  // this->name2idx = std::unordered_map<std::string, int>();
+  // this->var2idx = std::unordered_map<Variable*, int>();
+
+  // for (int j = 0; j < this->m; j++) {
+  //   this->variableNames.push_back(ds.variableNames.at(j));
+  //   // this->variables.push_back(ds.variables.at(j));
+  //   if (ds.variables.at(j)->isDiscrete())
+  //     this->variables.push_back(new DiscreteVariable(*((DiscreteVariable*)ds.variables.at(j))));
+  //   else if (ds.variables.at(j)->isContinuous())
+  //     this->variables.push_back(new ContinuousVariable(*((ContinuousVariable*)ds.variables.at(j))));
+
+  //   name2idx.insert(std::pair<std::string, int>(this->variableNames.at(j), j));
+  //   var2idx.insert(std::pair<Variable*, int>(this->variables.at(j), j));
+    
+  //   for (int i = 0; i < this->n; i++) {
+  //     this->data.at(i,j) = ds.data.at(i,j);
+  //   }
+  // }
+  return *this;
+}
+
+DataSet::DataSet(DataSet&& ds) {
+  this->maxDiscrete=ds.maxDiscrete;
+  this->m = ds.m;
+  this->n = ds.n;
+  this->variables = ds.variables;
+  this->variableNames = ds.variableNames;
+  this->name2idx = ds.name2idx;
+  this->var2idx = ds.var2idx;
+  this->data = ds.data;
+  
+  // this->variables.clear();
+  // this->var2idx.clear();
+  
+  // for (int j = 0; j < this->m; j++) {
+  //   if (ds.variables.at(j)->isDiscrete())
+  //     this->variables.push_back(new DiscreteVariable(*((DiscreteVariable*)ds.variables.at(j))));
+  //   else if (ds.variables.at(j)->isContinuous())
+  //     this->variables.push_back(new ContinuousVariable(*((ContinuousVariable*)ds.variables.at(j))));
+
+  //   var2idx.insert(std::pair<Variable*, int>(this->variables.at(j), j));
+  // }
+  
+}
+
+DataSet& DataSet::operator=(DataSet&& ds) {
+  this->maxDiscrete=ds.maxDiscrete;
+  this->m = ds.m;
+  this->n = ds.n;
+  this->variables = ds.variables;
+  this->variableNames = ds.variableNames;
+  this->name2idx = ds.name2idx;
+  this->var2idx = ds.var2idx;
+  this->data = ds.data;
+
+  // this->variables.clear();
+  // this->var2idx.clear();
+  
+  // for (int j = 0; j < this->m; j++) {
+  //   if (ds.variables.at(j)->isDiscrete())
+  //     this->variables.push_back(new DiscreteVariable(*((DiscreteVariable*)ds.variables.at(j))));
+  //   else if (ds.variables.at(j)->isContinuous())
+  //     this->variables.push_back(new ContinuousVariable(*((ContinuousVariable*)ds.variables.at(j))));
+
+  //   var2idx.insert(std::pair<Variable*, int>(this->variables.at(j), j));
+  // }
+  return *this;
+}
+
 void DataSet::addVariable(Variable* v) {
   variables.push_back(v);
   arma::vec col = arma::vec(n);
@@ -119,8 +241,8 @@ void DataSet::addVariable(int i, Variable* v) {
 }
 
 DataSet::~DataSet() {
-  for (int i = 0; i < variables.size(); i++)
-    delete variables[i];
+  // for (int i = 0; i < variables.size(); i++)
+  //   delete variables[i];
 }
 
 int DataSet::getInt(int row, int col) {
@@ -136,7 +258,7 @@ int DataSet::getInt(int row, int col) {
 
 // [[Rcpp::export]]
 void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete=5) {
-  DataSet ds = DataSet(df, maxDiscrete);
+  DataSet ds(df, maxDiscrete);
   Rcpp::Rcout << ds;
 
   ds.addVariable(new ContinuousVariable("Y1"));

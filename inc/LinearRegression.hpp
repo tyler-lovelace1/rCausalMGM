@@ -37,7 +37,12 @@ class LinearRegression
     //============================CONSTRUCTORS==========================//
     LinearRegression() {}
     LinearRegression(DataSet& data);
+    LinearRegression(LinearRegression& lr);
+    LinearRegression(LinearRegression&& lr);
     // LinearRegression(arma::mat data, std::vector<Variable*>&  variables);
+
+    LinearRegression& operator=(LinearRegression& lr);
+    LinearRegression& operator=(LinearRegression&& lr);
 
     //===========================PUBLIC METHODS========================//
 

@@ -12,6 +12,34 @@ LinearRegression::LinearRegression(DataSet& data){
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
 }
 
+LinearRegression::LinearRegression(LinearRegression& lr) {
+  this->data = lr.data;
+  this->variables = this->data.getVariables();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+}
+
+LinearRegression::LinearRegression(LinearRegression&& lr) {
+  this->data = lr.data;
+  this->variables = this->data.getVariables();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+}
+
+LinearRegression& LinearRegression::operator=(LinearRegression& lr) {
+  this->data = lr.data;
+  this->variables = this->data.getVariables();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+}
+
+LinearRegression& LinearRegression::operator=(LinearRegression&& lr) {
+  this->data = lr.data;
+  this->variables = this->data.getVariables();
+  this->rows = arma::uvec(this->data.getNumRows());
+  for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+}
+
 RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variable*>& regressors){
   int n = rows.size();
   int k = regressors.size() + 1;
