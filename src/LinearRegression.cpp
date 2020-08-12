@@ -6,10 +6,12 @@
 #include <boost/math/distributions/students_t.hpp>
 
 LinearRegression::LinearRegression(DataSet& data){
+  Rcpp::Rcout << "LinReg0" << std::endl;
   this->data = data;
   this->variables = data.getVariables();
   this->rows = arma::uvec(data.getNumRows());
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+  Rcpp::Rcout << "LinReg1" << std::endl;
 }
 
 LinearRegression::LinearRegression(LinearRegression& lr) {

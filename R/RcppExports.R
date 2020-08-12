@@ -17,6 +17,10 @@ LogisticRegressionTest <- function(df) {
     invisible(.Call(`_rCausalMGM_LogisticRegressionTest`, df))
 }
 
+MGMTest <- function(df, maxDiscrete = 5L) {
+    invisible(.Call(`_rCausalMGM_MGMTest`, df, maxDiscrete))
+}
+
 rcpparma_hello_world <- function() {
     .Call(`_rCausalMGM_rcpparma_hello_world`)
 }

@@ -9,10 +9,12 @@
 #include <boost/math/distributions/chi_squared.hpp>
 
 LogisticRegression::LogisticRegression(DataSet& data){
-  this->data = data;
-  this->dataCols = data.getData().t();
-  this->rows = arma::uvec(data.getNumRows());
-  for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+    Rcpp::Rcout << "LogReg0" << std::endl;
+    this->data = data;
+    this->dataCols = data.getData().t();
+    this->rows = arma::uvec(data.getNumRows());
+    for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+    Rcpp::Rcout << "LogReg1" << std::endl;
 }
 
 LogisticRegression::LogisticRegression(LogisticRegression& lr){

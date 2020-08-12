@@ -59,13 +59,13 @@ public:
   DiscreteVariable(DiscreteVariable&& var) {
     this->name = var.name;
     this->type = var.type;
-    this ->categories = var.categories;
+    this->categories = var.categories;
   }
 
   DiscreteVariable& operator=(DiscreteVariable&& var) {
     this->name = var.name;
     this->type = var.type;
-    this ->categories = var.categories;
+    this->categories = var.categories;
   }
 
   int getMissingValueMarker() { return MISSING_VALUE; }

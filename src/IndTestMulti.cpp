@@ -19,8 +19,10 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha){
       variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
   }
   Rcpp::Rcout << "Step 3 \n";
+  Rcpp::Rcout << "DUDEK TEST 0" << std::endl;
 
   this->logisticRegression = LogisticRegression(internalData);
+  Rcpp::Rcout << "DUDEK TEST 1" << std::endl;
   this->regression = LinearRegression(internalData);
   this->verbose = false;
   this->preferLinear = false;
@@ -71,7 +73,7 @@ int IndTestMulti::reset() {
  * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are searchVariables in the list returned by
  * getVariableNames().
  */
-bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*> z) {
+bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) {
         this->timesCalled++;
 
         if (x->isDiscrete()) {
@@ -138,7 +140,7 @@ std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* 
     return variables;
 }
 
-bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*> z) {
+bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z) {
     if (variablesPerNode.count(x) < 1) {
       throw std::invalid_argument("Unrecogized variable: " + x->getName());
     }
@@ -209,7 +211,7 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
 }
 
     // This takes an inordinate amount of time. -jdramsey 20150929
-arma::uvec IndTestMulti::getNonMissingRows(Variable* x, Variable* y, std::vector<Variable*> z) {
+arma::uvec IndTestMulti::getNonMissingRows(Variable* x, Variable* y, std::vector<Variable*>& z) {
 
 
     // std::vector<int> rows = std::vec(internalData.getNumRows());
@@ -242,7 +244,7 @@ bool IndTestMulti::isMissing(Variable* x, int i) {
 }
 
 
-double IndTestMulti::multiLL(arma::mat coeffs, Variable* dep, std::vector<Variable*> indep){
+double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Variable*>& indep){
 
     if(dep->getName() == "??") throw std::invalid_argument("must have a dependent node to regress on!");
     std::vector<Variable*> depList;
@@ -275,7 +277,7 @@ double IndTestMulti::multiLL(arma::mat coeffs, Variable* dep, std::vector<Variab
     return ll;
 }
 
-bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*> z) {    
+bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z) {    
     if (variablesPerNode.count(x) < 1) {
         throw std::invalid_argument("Unrecogized node: " + x->getName());
     }
@@ -344,7 +346,7 @@ Variable* IndTestMulti::getVariable(std::string name) {
     return emptyVar;
 }
 
-arma::mat IndTestMulti::getSubsetData(DataSet& origData, std::vector<Variable*> varSubset) {
+arma::mat IndTestMulti::getSubsetData(DataSet& origData, std::vector<Variable*>& varSubset) {
   arma::mat origMat = origData.getData();
   arma::uvec colIndices (varSubset.size());
   arma::uvec rowIndices (origMat.n_rows);

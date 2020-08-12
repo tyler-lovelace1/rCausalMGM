@@ -23,53 +23,62 @@ class DataSet;
 #include <typeinfo>
 #include <iostream>
 
-class DataSet {
+class DataSet
+{
 private:
-  std::vector<Variable*> variables;
-  std::vector<std::string> variableNames;
-  std::unordered_map<std::string, int> name2idx;
-  std::unordered_map<Variable*, int> var2idx;
-  arma::mat data;
-  int maxDiscrete;
-  int m, n;
+    std::vector<Variable *> variables;
+    std::vector<std::string> variableNames;
+    std::unordered_map<std::string, int> name2idx;
+    std::unordered_map<Variable *, int> var2idx;
+    arma::mat data;
+    int maxDiscrete;
+    int m, n;
 
-  std::set<std::string> getUnique(const Rcpp::CharacterVector& col);
+    std::set<std::string> getUnique(const Rcpp::CharacterVector &col);
 
 public:
-  DataSet() {}
-  DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
-  DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
-  DataSet(DataSet& ds);
-  DataSet& operator=(DataSet& ds);
-  DataSet(DataSet&& ds);
-  DataSet& operator=(DataSet&& ds);
-  ~DataSet();
+    DataSet() {}
+    DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
+    DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
+    DataSet(DataSet& ds);
+    DataSet& operator=(DataSet& ds);
+    DataSet(DataSet&& ds);
+    DataSet& operator=(DataSet&& ds);
+    ~DataSet();
 
-  int getNumRows() { return n; }
-  int getNumColumns() {return m; }
+    int getNumRows() { return n; }
+    int getNumColumns() { return m; }
 
-  void set(int i, int j, double val) { data(i,j) = val; }
-  void set(int i, int j, int val) { data(i,j) = (double) val; }
+    void set(int i, int j, double val) { data(i, j) = val; }
+    void set(int i, int j, int val) { data(i, j) = (double)val; }
 
-  void addVariable(Variable* v);
-  void addVariable(int i, Variable* v);
+    void addVariable(Variable *v);
+    void addVariable(int i, Variable *v);
 
-  Variable* getVariable(int i) { return variables[i]; }
-  Variable* getVariable(std::string name) { return variables[name2idx[name]]; }
+    Variable *getVariable(int i) { return variables[i]; }
+    Variable *getVariable(std::string name) { return variables[name2idx[name]]; }
+    std::vector<Variable *> getVariables() { return variables; }
+    std::vector<Variable *> getContinuousVariables();
+    std::vector<Variable *> getDiscreteVariables();
+    std::vector<Variable *> copyVariables();
+    std::vector<Variable *> copyContinuousVariables();
+    std::vector<Variable *> copyDiscreteVariables();
 
-  std::vector<Variable*> getVariables() { return variables; }
+    int getInt(int row, int col);
 
+    std::vector<std::string> getVariableNames() { return variableNames; }
 
-  int getColumn(Variable* v) { return var2idx[v]; }
+    arma::mat getData() { return data; }
+    
+    arma::mat getContinuousData();
+    arma::mat getDiscreteData();
 
-  int getInt(int row, int col);
+    std::vector<int> getDiscLevels();
 
-  std::vector<std::string> getVariableNames() { return variableNames; }
+    int getColumn(Variable *v) { return var2idx[v]; }
 
-  arma::mat getData() { return data; }
-
-  friend void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
-  friend std::ostream& operator<<(std::ostream& os, DataSet& ds);
+    friend void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+    friend std::ostream &operator<<(std::ostream &os, DataSet &ds);
 
 };
 
