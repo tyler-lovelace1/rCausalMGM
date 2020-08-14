@@ -989,6 +989,8 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     Rcpp::Rcout << "MGM GRAPH\n" << mgmGraph << std::endl;
 
+    std::cout << "DUDEK COUT TEST" << std::endl;
+
     IndTestMulti itm(ds, 0.05);
     PcStable pcs((IndependenceTest*) &itm);
     pcs.setInitialGraph(&mgmGraph);

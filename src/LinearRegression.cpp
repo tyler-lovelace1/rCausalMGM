@@ -15,31 +15,41 @@ LinearRegression::LinearRegression(DataSet& data){
 }
 
 LinearRegression::LinearRegression(LinearRegression& lr) {
+  Rcpp::Rcout << "LinReg2" << std::endl;
   this->data = lr.data;
   this->variables = this->data.getVariables();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+  Rcpp::Rcout << "LinReg3" << std::endl;
 }
 
 LinearRegression::LinearRegression(LinearRegression&& lr) {
+  Rcpp::Rcout << "LinReg4" << std::endl;
   this->data = lr.data;
   this->variables = this->data.getVariables();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+  Rcpp::Rcout << "LinReg5" << std::endl;
 }
 
 LinearRegression& LinearRegression::operator=(LinearRegression& lr) {
+  Rcpp::Rcout << "LinReg6" << std::endl;
   this->data = lr.data;
   this->variables = this->data.getVariables();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+  return *this;
+  Rcpp::Rcout << "LinReg7" << std::endl;
 }
 
 LinearRegression& LinearRegression::operator=(LinearRegression&& lr) {
+  Rcpp::Rcout << "LinReg8" << std::endl;
   this->data = lr.data;
   this->variables = this->data.getVariables();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+  return *this;
+  Rcpp::Rcout << "LinReg9" << std::endl;
 }
 
 RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variable*>& regressors){
@@ -123,6 +133,7 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
       double s_ = se * se * xTxInv(i, i);
       double se_ = std::sqrt(s_);
       double t_ = b(i, 0) / se_;
+      Rcpp::Rcout << "CDF CALL 2" << std::endl;
       double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
 
       sqErr[i] = se_;

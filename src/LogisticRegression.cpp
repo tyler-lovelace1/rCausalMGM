@@ -18,31 +18,41 @@ LogisticRegression::LogisticRegression(DataSet& data){
 }
 
 LogisticRegression::LogisticRegression(LogisticRegression& lr){
+    Rcpp::Rcout << "LogReg2" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+  Rcpp::Rcout << "LogReg3" << std::endl;
 }
 
 LogisticRegression::LogisticRegression(LogisticRegression&& lr){
+    Rcpp::Rcout << "LogReg4" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+  Rcpp::Rcout << "LogReg5" << std::endl;
 }
 
 LogisticRegression& LogisticRegression::operator=(LogisticRegression& lr) {
+    Rcpp::Rcout << "LogReg6" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+  return *this;
+  Rcpp::Rcout << "LogReg7" << std::endl;
 }
 
 LogisticRegression& LogisticRegression::operator=(LogisticRegression&& lr) {
+    Rcpp::Rcout << "LogReg8" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
+  return *this;
+  Rcpp::Rcout << "LogReg9" << std::endl;
 }
 
 LogisticRegressionResult* LogisticRegression::regress(DiscreteVariable* x, std::vector<Variable*> regressors){
@@ -289,6 +299,7 @@ double LogisticRegression::norm(double z) {
                 (std::abs(z) * std::sqrt(piOver2));
     } else {
       boost::math::chi_squared dist(1);
+      Rcpp::Rcout << "CDF CALL 3" << std::endl;
       double p = cdf(dist, q);
       return (p);
     }

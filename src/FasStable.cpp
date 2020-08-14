@@ -29,7 +29,7 @@ void FasStable::setDepth(int depth) {
  * @return a SepSet, which indicates which variables are independent conditional on which other variables
  */
 EdgeListGraph FasStable::search() {
-    Rcpp::Rcout << "Starting FasStablet Adjacency Search." << std::endl;
+    Rcpp::Rcout << "Starting FasStable Adjacency Search." << std::endl;
 
     sepset = SepsetMap();
     sepset.setReturnEmptyIfNotSet(sepsetsReturnEmptyIfNotFixed);

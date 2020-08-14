@@ -192,6 +192,9 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     double chisq = 2*(multiLL(coeffsDep, x, yzList) - multiLL(coeffsNull, x, zList)); // Need to make multiLL
     int df = variablesPerNode.at(y).size()*variablesPerNode.at(x).size();
     boost::math::chi_squared dist(df);
+    Rcpp::Rcout << "CDF CALL 1" << std::endl;
+    Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+    Rcpp::Rcout << "chisq = " << chisq << std::endl;
     double p = 1.0 - cdf(dist, chisq);
 
     // // double p = 1.0;
