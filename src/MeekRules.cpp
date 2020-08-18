@@ -60,10 +60,10 @@ void MeekRules::meekR1(Variable* b, EdgeListGraph& graph) {
     }
 
     ChoiceGenerator cg(adjacentNodes.size(), 2);
-    std::vector<int> choice;
+    std::vector<int> *choice;
 
-    for (choice = cg.next(); choice.size() > 0; choice = cg.next()) {
-        std::vector<Variable*> nodes = GraphUtils::asList(choice, adjacentNodes);
+    for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+        std::vector<Variable*> nodes = GraphUtils::asList(*choice, adjacentNodes);
         Variable* a = nodes[0];
         Variable* c = nodes[1];
 
@@ -99,10 +99,10 @@ void MeekRules::meekR2(Variable* c, EdgeListGraph& graph) {
     }
 
     ChoiceGenerator cg(adjacentNodes.size(), 2);
-    std::vector<int> choice;
+    std::vector<int> *choice;
 
-    for (choice = cg.next(); choice.size() > 0; choice = cg.next()) {
-        std::vector<Variable*> nodes = GraphUtils::asList(choice, adjacentNodes);
+    for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+        std::vector<Variable*> nodes = GraphUtils::asList(*choice, adjacentNodes);
         Variable* a = nodes[0];
         Variable* b = nodes[1];
 
@@ -139,10 +139,10 @@ void MeekRules::meekR3(Variable* a, EdgeListGraph& graph) {
             otherAdjacents.erase(std::remove(otherAdjacents.begin(), otherAdjacents.end(), d), otherAdjacents.end());
 
             ChoiceGenerator cg(otherAdjacents.size(), 2);
-            std::vector<int> choice;
+            std::vector<int> *choice;
 
-            for (choice = cg.next(); choice.size() > 0; choice = cg.next()) {
-                std::vector<Variable*> nodes = GraphUtils::asList(choice, otherAdjacents);
+            for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+                std::vector<Variable*> nodes = GraphUtils::asList(*choice, otherAdjacents);
                 Variable* b = nodes[0];
                 Variable* c = nodes[1];
 

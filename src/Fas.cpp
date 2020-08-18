@@ -188,10 +188,10 @@ bool Fas::searchAtDepth(std::vector<Variable*>& nodes, IndependenceTest *test, s
 
             if (ppx.size() >= depth) {
                 ChoiceGenerator cg(ppx.size(), depth);
-                std::vector<int> choice;
+                std::vector<int> *choice;
 
-                for (choice = cg.next(); choice.size() > 0; choice = cg.next()) {
-                    std::vector<Variable*> condSet = GraphUtils::asList(choice, ppx);
+                for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+                    std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
                     
                     numIndependenceTests++;
                     bool independent;

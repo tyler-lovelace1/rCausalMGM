@@ -10,8 +10,8 @@
  * @param b the number of objects in the desired selection.
  */
 ChoiceGenerator::ChoiceGenerator(int a, int b) {
-    if (a <= 0 || b <= 0 || a < b)
-        throw std::invalid_argument("For 'a choose b', a and b must be positive with a >= b: a = " + std::to_string(a) + "b = " + std::to_string(b));
+    if ((a < 0) || (b < 0) || (a < b))
+        throw std::invalid_argument("For 'a choose b', a and b must be nonnegative with a >= b: a = " + std::to_string(a) + " b = " + std::to_string(b));
 
     this->a = a;
     this->b = b;
@@ -24,20 +24,22 @@ ChoiceGenerator::ChoiceGenerator(int a, int b) {
     // a series, ([0 1 2 ... b - 2]) so that on the first call to next()
     // the first combination ([0 1 2 ... b - 1]) is returned correctly.
 
-    for (int i = 0; i < b-1; i++) {
-        choiceLocal[i] = i;
+    if (b > 0) {
+        for (int i = 0; i < b-1; i++) {
+            choiceLocal[i] = i;
+        }
+
+        choiceLocal[b-1] = b-2;
     }
-
-    choiceLocal[b-1] = b-2;
-
+        
     begun = false;
 }
 
 /**
- * @return the next combination in the series, or an empty list if the series is
+ * @return the next combination in the series, or NULL if the series is
  * finished.
  */
-std::vector<int> ChoiceGenerator::next() {
+std::vector<int>* ChoiceGenerator::next() {
     int i = b;
 
     // Scan from the right for the first index whose value is less than
@@ -48,16 +50,16 @@ std::vector<int> ChoiceGenerator::next() {
             fill(i);
             begun = true;
             choiceReturned = choiceLocal;
-            return choiceReturned;
+            return &choiceReturned;
         }
     }
 
     if (begun) {
-        return {};
+        return NULL;
     } else {
         begun = true;
         choiceReturned = choiceLocal;
-        return choiceReturned;
+        return &choiceReturned;
     }
 }
 
@@ -85,12 +87,12 @@ void ChoiceGenerator::fill(int index) {
 void ChoiceGenerator::testPrint(int a, int b) {
     ChoiceGenerator cg(a, b);
 
-    std::vector<int> choice;
+    std::vector<int>* choice;
 
     Rcpp::Rcout << "\nPrinting combinations for " << a << " choose " << b << ":" << std::endl;
 
-    for (choice = cg.next(); choice.size() > 0; choice = cg.next()) {
-        for (int aChoice : choice) {
+    while ((choice = cg.next()) != NULL) {
+        for (int aChoice : *choice) {
             Rcpp::Rcout << aChoice << "\t";
         }
 

@@ -20,11 +20,11 @@ std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set
 
         ChoiceGenerator cg(adjacentNodes.size(), 2);
 
-        std::vector<int> combination;
+        std::vector<int> *combination;
 
-        for (combination = cg.next(); combination.size() > 0; combination = cg.next()) {
-            Variable* a = adjacentNodes[combination[0]];
-            Variable* c = adjacentNodes[combination[1]];
+        for (combination = cg.next(); combination != NULL; combination = cg.next()) {
+            Variable* a = adjacentNodes[(*combination)[0]];
+            Variable* c = adjacentNodes[(*combination)[1]];
 
             // Skip triples that are shielded.
             if (graph.isAdjacentTo(a, c)) continue;

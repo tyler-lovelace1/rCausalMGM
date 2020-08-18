@@ -983,6 +983,10 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // Rcpp::Rcout << "mgm.params.theta: \n" << mgm.params.getTheta() << std::endl;
     // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
 
+    ChoiceGenerator::testPrint(5, 3);
+
+    ChoiceGenerator::testPrint(5, 0);
+
     Rcpp::Rcout << "DUDEK INIT SEARCH" << std::endl;
     EdgeListGraph mgmGraph = mgm.search();
     Rcpp::Rcout << "MGM elapsed time = " << mgm.getElapsedTime() << " ms" << std::endl;

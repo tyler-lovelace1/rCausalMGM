@@ -20,9 +20,9 @@ std::vector<std::vector<Variable*>> CpcStable::getSepsets(Variable* i, Variable*
         if (adji.size() >= 2 && d <= adji.size()) {
             ChoiceGenerator gen(adji.size(), d);
 
-            std::vector<int> choice;
-            for (choice = gen.next(); choice.size() > 0; choice = gen.next()) {
-                std::vector<Variable*> v = GraphUtils::asList(choice, adji);
+            std::vector<int> *choice;
+            for (choice = gen.next(); choice != NULL; choice = gen.next()) {
+                std::vector<Variable*> v = GraphUtils::asList(*choice, adji);
                 if (independenceTest->isIndependent(i, k, v)) sepsets.push_back(v);
             }
         }
@@ -30,9 +30,9 @@ std::vector<std::vector<Variable*>> CpcStable::getSepsets(Variable* i, Variable*
         if (adjk.size() >= 2 && d <= adjk.size()) {
             ChoiceGenerator gen(adjk.size(), d);
 
-            std::vector<int> choice;
-            for (choice = gen.next(); choice.size() > 0; choice = gen.next()) {
-                std::vector<Variable*> v = GraphUtils::asList(choice, adjk);
+            std::vector<int> *choice;
+            for (choice = gen.next(); choice != NULL; choice = gen.next()) {
+                std::vector<Variable*> v = GraphUtils::asList(*choice, adjk);
                 if (independenceTest->isIndependent(i, k, v)) sepsets.push_back(v);
             }
 
@@ -52,10 +52,10 @@ void CpcStable::orientUnshieldedTriples() {
             continue;
 
         ChoiceGenerator cg(adjacentNodes.size(), 2);
-        std::vector<int> combination;
-        for (combination = cg.next(); combination.size() > 0; combination = cg.next()) {
-            Variable* x = adjacentNodes[combination[0]];
-            Variable* z = adjacentNodes[combination[1]];
+        std::vector<int> *combination;
+        for (combination = cg.next(); combination != NULL; combination = cg.next()) {
+            Variable* x = adjacentNodes[(*combination)[0]];
+            Variable* z = adjacentNodes[(*combination)[1]];
 
             if (graph.isAdjacentTo(x, z))
                 continue;
