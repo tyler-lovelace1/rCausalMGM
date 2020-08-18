@@ -76,6 +76,14 @@ int IndTestMulti::reset() {
 bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) {
         this->timesCalled++;
 
+	Rcpp::Rcout << "X: " << x->getName() << std::endl;
+	Rcpp::Rcout << "Y: " << y->getName() << std::endl;
+	
+	Rcpp::Rcout << "Z: ";
+	for (Variable* zVar : z)
+	    Rcpp::Rcout << zVar->getName() << " ";
+	Rcpp::Rcout << std::endl;
+
         if (x->isDiscrete()) {
             return isIndependentMultinomialLogisticRegression(x, y, z);
         } else if (y->isDiscrete()) {
@@ -175,8 +183,8 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     }
 
     // //double[][] coeffsDep = new double[variablesPerNode.get(x).size()][];
-    arma::mat coeffsNull = arma::mat(zList.size()+1, variablesPerNode.at(x).size());
-    arma::mat coeffsDep = arma::mat(yzList.size()+1, variablesPerNode.at(x).size());
+    arma::mat coeffsNull = arma::mat(); //zList.size()+1, variablesPerNode.at(x).size());
+    arma::mat coeffsDep = arma::mat(); //yzList.size()+1, variablesPerNode.at(x).size());
 
     /*********************************************************************/
     for (int i = 0; i < variablesPerNode.at(x).size(); i++) {
@@ -188,6 +196,32 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
         coeffsDep.insert_cols(i, result1->getCoefs());
     }
     /*********************************************************************/
+
+    // Rcpp::Rcout << "coeffsDep:" << std::endl << "Intercept\t";
+    // for (Variable* v1 : yzList)
+    //     for (Variable* v2 : variablesPerNode.at(v1))
+    //         Rcpp::Rcout << v2->getName() << "\t";
+    // Rcpp::Rcout << std::endl;
+    // for (int i = 0; i < coeffsDep.n_cols; i++) {
+    //     for (int j = 0; j < coeffsDep.n_rows; j++) {
+    // 	    Rcpp::Rcout << coeffsDep(j,i) << "\t";
+    // 	}
+    // 	Rcpp::Rcout << std::endl;
+    // }
+    // Rcpp::Rcout << std::endl;
+
+    // Rcpp::Rcout << "coeffsNull:" << std::endl << "Intercept\t";
+    // for (Variable* v1 : zList)
+    //     for (Variable* v2 : variablesPerNode.at(v1))
+    //         Rcpp::Rcout << v2->getName() << "\t";
+    // Rcpp::Rcout << std::endl;
+    // for (int i = 0; i < coeffsNull.n_cols; i++) {
+    //     for (int j = 0; j < coeffsNull.n_rows; j++) {
+    // 	    Rcpp::Rcout << coeffsNull(j,i) << "\t";
+    // 	}
+    // 	Rcpp::Rcout << std::endl;
+    // }
+    // Rcpp::Rcout << std::endl;
 
     double chisq = 2*(multiLL(coeffsDep, x, yzList) - multiLL(coeffsNull, x, zList)); // Need to make multiLL
     int df = variablesPerNode.at(y).size()*variablesPerNode.at(x).size();
@@ -206,6 +240,15 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     // //}
 
     bool indep = p > alpha;
+
+    Rcpp::Rcout << "p = " << p << std::endl;
+    if (indep)
+        Rcpp::Rcout << x->getName() << " _||_ " << y->getName() << " | { ";
+    else
+        Rcpp::Rcout << x->getName() << " _|/_ " << y->getName() << " | { ";
+    for (Variable* zVar : z)
+        Rcpp::Rcout << zVar->getName() << " ";
+    Rcpp::Rcout << "}" << std::endl;
 
     this->lastP = p;
 
@@ -319,6 +362,15 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
     this->lastP = p;
 
     bool indep = p > alpha;
+
+    Rcpp::Rcout << "p = " << p << std::endl;
+    if (indep)
+        Rcpp::Rcout << x->getName() << " _||_ " << y->getName() << " | { ";
+    else
+        Rcpp::Rcout << x->getName() << " _|/_ " << y->getName() << " | { ";
+    for (Variable* zVar : z)
+        Rcpp::Rcout << zVar->getName() << " ";
+    Rcpp::Rcout << "}" << std::endl;
 
     return indep;
 }

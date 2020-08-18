@@ -134,6 +134,8 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
       double se_ = std::sqrt(s_);
       double t_ = b(i, 0) / se_;
       Rcpp::Rcout << "CDF CALL 2" << std::endl;
+      Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+      Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
       double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
 
       sqErr[i] = se_;

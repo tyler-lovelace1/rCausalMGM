@@ -294,12 +294,15 @@ double LogisticRegression::norm(double z) {
     const double pi = boost::math::constants::pi<double>();
     double piOver2 = pi / 2.0;
 
+    Rcpp::Rcout << "chisq = " << q << std::endl;
+
     if (std::abs(q) > 7.0) {
         return (1.0 - 1.0 / q + 3.0 / (q * q)) * std::exp(-q / 2.0) /
                 (std::abs(z) * std::sqrt(piOver2));
     } else {
       boost::math::chi_squared dist(1);
       Rcpp::Rcout << "CDF CALL 3" << std::endl;
+      Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
       double p = cdf(dist, q);
       return (p);
     }
