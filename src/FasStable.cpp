@@ -69,13 +69,15 @@ EdgeListGraph FasStable::search() {
         }
     }
 
-    Rcpp::Rcout << "Finishing FasStablet Adjacency Search." << std::endl;
+    Rcpp::Rcout << "Finishing FasStable Adjacency Search." << std::endl;
+
+    Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
 
     return graph;
 }
 
 std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStable::searchMapOnly() {
-    Rcpp::Rcout << "Starting FasStablet Adjacency Search." << std::endl;
+    Rcpp::Rcout << "Starting FasStable Adjacency Search." << std::endl;
 
     graph.removeEdges(graph.getEdgeList());
 
@@ -104,7 +106,7 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStable::searchMa
         if (!more) break;
     }
 
-    Rcpp::Rcout << "Finishing FasStablet Adjacency Search." << std::endl;
+    Rcpp::Rcout << "Finishing FasStable Adjacency Search." << std::endl;
     return adjacencies;
 }
 
@@ -209,8 +211,15 @@ bool FasStable::searchAtDepth(std::vector<Variable*>& nodes, IndependenceTest *t
                     bool noEdgeRequired = true;
 
                     if (independent && noEdgeRequired) {
+                        // Rcpp::Rcout << "x = " << x->getName() << " y = " << y->getName() << std::endl;
+                        // Rcpp::Rcout << "adjacencies[x] BEFORE = { ";
+                        // for (Variable* v : adjacencies[x]) { Rcpp::Rcout << v->getName() << " "; }
+                        // Rcpp::Rcout << "}" << std::endl;
                         adjacencies[x].erase(y);
                         adjacencies[y].erase(x);
+                        // Rcpp::Rcout << "adjacencies[x] AFTER = { ";
+                        // for (Variable* v : adjacencies[x]) { Rcpp::Rcout << v->getName() << " "; }
+                        // Rcpp::Rcout << "}" << std::endl;
 
                         sepset.set(x, y, condSet);
 

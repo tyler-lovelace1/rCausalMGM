@@ -9,50 +9,40 @@
 #include <boost/math/distributions/chi_squared.hpp>
 
 LogisticRegression::LogisticRegression(DataSet& data){
-    Rcpp::Rcout << "LogReg0" << std::endl;
     this->data = data;
     this->dataCols = data.getData().t();
     this->rows = arma::uvec(data.getNumRows());
     for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
-    Rcpp::Rcout << "LogReg1" << std::endl;
 }
 
 LogisticRegression::LogisticRegression(LogisticRegression& lr){
-    Rcpp::Rcout << "LogReg2" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
-  Rcpp::Rcout << "LogReg3" << std::endl;
 }
 
 LogisticRegression::LogisticRegression(LogisticRegression&& lr){
-    Rcpp::Rcout << "LogReg4" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
-  Rcpp::Rcout << "LogReg5" << std::endl;
 }
 
 LogisticRegression& LogisticRegression::operator=(LogisticRegression& lr) {
-    Rcpp::Rcout << "LogReg6" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
   return *this;
-  Rcpp::Rcout << "LogReg7" << std::endl;
 }
 
 LogisticRegression& LogisticRegression::operator=(LogisticRegression&& lr) {
-    Rcpp::Rcout << "LogReg8" << std::endl;
   this->data = lr.data;
   this->dataCols = this->data.getData().t();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < this->data.getNumRows(); i++) rows[i] = i;
   return *this;
-  Rcpp::Rcout << "LogReg9" << std::endl;
 }
 
 LogisticRegressionResult* LogisticRegression::regress(DiscreteVariable* x, std::vector<Variable*> regressors){
@@ -294,15 +284,14 @@ double LogisticRegression::norm(double z) {
     const double pi = boost::math::constants::pi<double>();
     double piOver2 = pi / 2.0;
 
-    Rcpp::Rcout << "chisq = " << q << std::endl;
+    // Rcpp::Rcout << "chisq = " << q << std::endl;
 
     if (std::abs(q) > 7.0) {
         return (1.0 - 1.0 / q + 3.0 / (q * q)) * std::exp(-q / 2.0) /
                 (std::abs(z) * std::sqrt(piOver2));
     } else {
       boost::math::chi_squared dist(1);
-      Rcpp::Rcout << "CDF CALL 3" << std::endl;
-      Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+    //   Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
       double p = cdf(dist, q);
       return (p);
     }
