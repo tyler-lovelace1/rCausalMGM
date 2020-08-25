@@ -997,11 +997,11 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     IndTestMulti itm(ds, 0.05);
     
-    // PcStable pcs((IndependenceTest*) &itm);
-    // pcs.setInitialGraph(&mgmGraph);
-    // EdgeListGraph pcGraph = pcs.search();
+    PcStable pcs((IndependenceTest*) &itm);
+    pcs.setInitialGraph(&mgmGraph);
+    EdgeListGraph pcGraph = pcs.search();
 
-    // Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
+    Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
 
     CpcStable cpcs((IndependenceTest*) &itm);
     cpcs.setInitialGraph(&mgmGraph);

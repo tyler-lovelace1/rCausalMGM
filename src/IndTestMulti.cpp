@@ -221,11 +221,13 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     // Rcpp::Rcout << std::endl;
 
     double chisq = 2*(multiLL(coeffsDep, x, yzList) - multiLL(coeffsNull, x, zList)); // Need to make multiLL
+    Rcpp::Rcout << "chisq value = " << chisq << std::endl;
     int df = variablesPerNode.at(y).size()*variablesPerNode.at(x).size();
     boost::math::chi_squared dist(df);
-    // Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+    Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
     // Rcpp::Rcout << "chisq = " << chisq << std::endl;
     double p = 1.0 - cdf(dist, chisq);
+    Rcpp::Rcout << "p-value = " << p << std::endl;
 
     // // double p = 1.0;
     //
@@ -311,12 +313,19 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
 
     probs.insert_cols(0,arma::mat(indepData.n_rows, 1,arma::fill::ones));
     probs = arma::exp(probs);
+    // Rcpp::Rcout << "probs = " << probs << std::endl;
     double ll = 0;
     for(int i = 0; i < N; i++){
-        arma::vec curRow = probs.row(i);
-        curRow = curRow/(arma::sum(curRow));
+        arma::rowvec curRow = probs.row(i);
+	double sum = arma::sum(curRow);
+	// Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
+	// Rcpp::Rcout << "sum(curRow) " << i << " = " << sum << std::endl;
+        curRow = curRow / sum;
+	// Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
+	// Rcpp::Rcout << "loglikelihood " << i << " = " << std::log(curRow.at((int)depData.at(i))) << std::endl;
         ll += std::log(curRow.at((int)depData.at(i)));
     }
+    Rcpp::Rcout << "multiLL loglikelihood = " << ll << std::endl;
     return ll;
 }
 
