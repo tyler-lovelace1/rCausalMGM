@@ -127,10 +127,10 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
       double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
 
       if (i == 1) {
-	  Rcpp::Rcout << "beta = " << b(i,0) << std::endl;
-	  Rcpp::Rcout << "SE = " << se_ << std::endl;
-	  Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
-	  Rcpp::Rcout << "p-value = " << p_ << std::endl;
+	  // Rcpp::Rcout << "beta = " << b(i,0) << std::endl;
+	  // Rcpp::Rcout << "SE = " << se_ << std::endl;
+	  // Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
+	  // Rcpp::Rcout << "p-value = " << p_ << std::endl;
       }
 
       sqErr[i] = se_;

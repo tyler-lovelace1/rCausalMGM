@@ -29,14 +29,14 @@ std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set
             // Skip triples that are shielded.
             if (graph.isAdjacentTo(a, c)) continue;
 
-            boost::optional<std::vector<Variable*>> sepset = set.get(a, c);
+            std::vector<Variable*>* sepset = set.get(a, c);
 
-            if (sepset != boost::none && 
-                std::find(sepset.get().begin(), sepset.get().end(), b) == sepset.get().end()) { // !sepset.contains(b)
-
-                graph.setEndpoint(a, b, ENDPOINT_ARROW);
-                graph.setEndpoint(c, b, ENDPOINT_ARROW);
-                colliders.push_back(Triple(a, b, c));
+            if (sepset != NULL) {
+                if (std::find(sepset->begin(), sepset->end(), b) == sepset->end()) { // !sepset.contains(b)
+                    graph.setEndpoint(a, b, ENDPOINT_ARROW);
+                    graph.setEndpoint(c, b, ENDPOINT_ARROW);
+                    colliders.push_back(Triple(a, b, c));
+                }
             }
         }
     }

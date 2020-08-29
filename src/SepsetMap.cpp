@@ -1,6 +1,14 @@
 #include "SepsetMap.hpp"
 
 
+SepsetMap::SepsetMap(SepsetMap& map) { 
+    this->sepsets = map.sepsets; 
+    this->pValues = map.pValues;  
+    this->parents = map.parents;
+    this->correlations = map.correlations;
+    this->returnEmptyIfNotSet = map.returnEmptyIfNotSet;
+}
+
 /**
  * Sets the sepset for {x, y} to be z. Note that {x, y} is unordered.
  */
@@ -24,22 +32,22 @@ void SepsetMap::setPValue(Variable* x, Variable* y, double p) {
 
 
 /**
- * Retrieves the sepset previously set for {a, b}, or null if no such set was previously set.
+ * Retrieves the sepset previously set for {a, b}, or NULL if no such set was previously set.
  */
-boost::optional<std::vector<Variable*>> SepsetMap::get(Variable* a, Variable* b) {
+std::vector<Variable*>* SepsetMap::get(Variable* a, Variable* b) {
     VariablePair pair = std::minmax(a, b);
 
     if (correlations != boost::none && correlations.get().count(pair) == 0) {
-        return std::vector<Variable*>();
+        return &emptyList;
     }
 
     // If the pair is not set
     if (sepsets.count(pair) == 0) {
-        if (returnEmptyIfNotSet) return std::vector<Variable*>();
-        else return boost::none;
+        if (returnEmptyIfNotSet) return &emptyList;
+        else return NULL;
     }
 
-    return sepsets[pair];
+    return &sepsets[pair];
 }
 
 double SepsetMap::getPValue(Variable* x, Variable* y) {

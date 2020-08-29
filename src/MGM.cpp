@@ -983,17 +983,10 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // Rcpp::Rcout << "mgm.params.theta: \n" << mgm.params.getTheta() << std::endl;
     // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
 
-    ChoiceGenerator::testPrint(5, 3);
-
-    ChoiceGenerator::testPrint(5, 0);
-
-    Rcpp::Rcout << "DUDEK INIT SEARCH" << std::endl;
     EdgeListGraph mgmGraph = mgm.search();
     Rcpp::Rcout << "MGM elapsed time = " << mgm.getElapsedTime() << " ms" << std::endl;
 
     Rcpp::Rcout << "MGM GRAPH\n" << mgmGraph << std::endl;
-
-    std::cout << "DUDEK COUT TEST" << std::endl;
 
     IndTestMulti itm(ds, 0.05);
     
@@ -1003,11 +996,13 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
 
-    CpcStable cpcs((IndependenceTest*) &itm);
-    cpcs.setInitialGraph(&mgmGraph);
-    EdgeListGraph cpcGraph = cpcs.search();
+    // CpcStable cpcs((IndependenceTest*) &itm);
+    // cpcs.setInitialGraph(&mgmGraph);
+    // EdgeListGraph cpcGraph = cpcs.search();
 
-    Rcpp::Rcout << "CPC GRAPH\n" << cpcGraph << std::endl;
+    // Rcpp::Rcout << "CPC GRAPH\n" << cpcGraph << std::endl;
+    // Rcpp::Rcout << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):" << std::endl;
+    // for (Triple t : cpcGraph.getAmbiguousTriples()) Rcpp::Rcout << t << std::endl;
     
 
     // SepsetMap test;

@@ -81,17 +81,22 @@ bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*
 	// for (Variable* zVar : z)
 	//     Rcpp::Rcout << zVar->getName() << " ";
 	// Rcpp::Rcout << std::endl;
+    // bool debug = (x->getName() == "X5" && y->getName() == "X6");
 
     if (x->isDiscrete()) {
+        // if (debug) Rcpp::Rcout << "Path 1" << std::endl;
         return isIndependentMultinomialLogisticRegression(x, y, z);
     } else if (y->isDiscrete()) {
         if(preferLinear) {
+            // if (debug) Rcpp::Rcout << "Path 2" << std::endl;
             return isIndependentRegression(x,y,z);
         }
         else {
+            // if (debug) Rcpp::Rcout << "Path 3" << std::endl;
             return isIndependentMultinomialLogisticRegression(y, x, z);
         }
     } else {
+        // if (debug) Rcpp::Rcout << "Path 4" << std::endl;
         return isIndependentRegression(x, y, z);
     }
 }
@@ -160,6 +165,8 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
         }
     }
 
+    // bool debug = (x->getName() == "X5" && y->getName() == "X6");
+
     arma::vec pValues;
 
     arma::uvec rows_ = getNonMissingRows(x, y, z);
@@ -221,13 +228,19 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     // Rcpp::Rcout << std::endl;
 
     double chisq = 2*(multiLL(coeffsDep, x, yzList) - multiLL(coeffsNull, x, zList)); // Need to make multiLL
-    Rcpp::Rcout << "chisq value = " << chisq << std::endl;
+    
     int df = variablesPerNode.at(y).size()*variablesPerNode.at(x).size();
     boost::math::chi_squared dist(df);
-    Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+    
     // Rcpp::Rcout << "chisq = " << chisq << std::endl;
     double p = 1.0 - cdf(dist, chisq);
-    Rcpp::Rcout << "p-value = " << p << std::endl;
+    
+
+    // if(debug) {
+    //     Rcpp::Rcout << "DUDEK_DEBUG_MultiLogistic" << std::endl;
+    //     Rcpp::Rcout << "chisq value = " << chisq << std::endl;
+    //     Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+    // }
 
     // // double p = 1.0;
     //
@@ -325,7 +338,7 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
 	// Rcpp::Rcout << "loglikelihood " << i << " = " << std::log(curRow.at((int)depData.at(i))) << std::endl;
         ll += std::log(curRow.at((int)depData.at(i)));
     }
-    Rcpp::Rcout << "multiLL loglikelihood = " << ll << std::endl;
+    // Rcpp::Rcout << "multiLL loglikelihood = " << ll << std::endl;
     return ll;
 }
 

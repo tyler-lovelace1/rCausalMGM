@@ -77,7 +77,7 @@ private:
      */
     EdgeListGraph *initialGraph = NULL;
 
-    bool sepsetsReturnEmptyIfNotFixed;
+    bool sepsetsReturnEmptyIfNotFixed = true;
 
     bool searchAtDepth0(std::vector<Variable*>& nodes, IndependenceTest *test, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacencies);
 
