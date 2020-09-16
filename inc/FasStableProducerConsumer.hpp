@@ -5,14 +5,9 @@
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
-#include "IndependenceTask.hpp"
-#include <queue>
+#include "ProducerConsumerQueue.hpp"
 #include <thread>
 #include <mutex>
-#include <condition_variable>
-#include <boost/circular_buffer.hpp>
-
-using TaskQueue = std::queue<IndependenceTask, boost::circular_buffer<IndependenceTask>>;
 
 class FasStableProducerConsumer {
 
@@ -95,19 +90,24 @@ private:
     // bool possibleParentOf(std::string z, std::string x, IKnowledge knowledge);
     // bool forbiddenEdge(Variable* x, Variable* y);
 
+// public:
     // Concurrency
+    struct IndependenceTask {
+        Variable* x;
+        Variable* y;
+        std::vector<Variable*> z;
+        IndependenceTask(Variable* _x, Variable* _y, std::vector<Variable*>& _z) : x(_x), y(_y), z(_z) {} 
+        IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
+    };
+    
+// private:
+
     const int MAX_QUEUE_SIZE = 10;
-    TaskQueue taskQueue;
+    ProducerConsumerQueue<IndependenceTask> taskQueue;
     
     const int parallelism = 1; //TODO - change to number of processors
     
-    std::mutex queueMutex;
     std::mutex adjacencyMutex;
-
-    std::condition_variable producerGo;
-    std::condition_variable consumerGo;
-
-    std::atomic<bool> stillProducing;
 
     void consumerDepth0();
     void producerDepth0();

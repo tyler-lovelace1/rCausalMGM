@@ -1,12 +1,14 @@
 #include "FasStableProducerConsumer.hpp"
 
-FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) {
+FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
+{
     this->initialGraph = initialGraph;
     this->test = test;
     this->nodes = test->getVariables();
 }
 
-FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) {
+FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
+{
     this->test = test;
     this->nodes = test->getVariables();
 }
@@ -43,8 +45,6 @@ EdgeListGraph FasStableProducerConsumer::search() {
     for (Variable* node : nodes) {
         adjacencies[node] = {};
     }
-
-    taskQueue = TaskQueue(boost::circular_buffer<IndependenceTask>(MAX_QUEUE_SIZE));
 
     for (int d = 0; d <= _depth; d++) {
         bool more;
@@ -113,7 +113,6 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
 }
 
 bool FasStableProducerConsumer::searchAtDepth0() {
-    stillProducing = true;
 
     std::vector<std::thread> threads;
 
@@ -147,53 +146,50 @@ void FasStableProducerConsumer::producerDepth0() {
                     continue;
             }
 
-            std::unique_lock<std::mutex> queueLock(queueMutex);
-            producerGo.wait(queueLock, [&]() { return taskQueue.size() < MAX_QUEUE_SIZE; }); // Wait for space in buffer
-            taskQueue.push(IndependenceTask(x, y, empty));
-            queueLock.unlock();
-            consumerGo.notify_one();
+            IndependenceTask newTask(x, y, empty);
+            taskQueue.push(newTask);
         }
     }
 
-    stillProducing = false;
-    consumerGo.notify_all(); // Tell all consumers to end
+    // add poison elements to stop consumers
+    IndependenceTask poisonPill(NULL, NULL, empty);
+    for (int i = 0; i < parallelism; i++) {
+        taskQueue.push(poisonPill);
+    }
 
 }
 
 void FasStableProducerConsumer::consumerDepth0() {
-    while(true) {
-        std::unique_lock<std::mutex> queueLock(queueMutex);
-        consumerGo.wait(queueLock, [&]() { return !taskQueue.empty() || !stillProducing; });
-        if (taskQueue.empty()) return; // If the queue is empty at this point, then we must be done procuding
-        IndependenceTask task = taskQueue.front();
-        taskQueue.pop();
-        queueLock.unlock();
-        producerGo.notify_one();
+    // while(true) {
+    //     IndependenceTask task = taskQueue.pop();
 
-        numIndependenceTests++;
-        bool independent = test->isIndependent(task.x, task.y, task.z);
+    //     //If poison, return
+    //     if (task.x == NULL && task.y == NULL) return;
 
-        if (independent) {
-            numIndependenceJudgements++;
-        } else {
-            numDependenceJudgement++;
-        }
+    //     numIndependenceTests++;
+    //     bool independent = test->isIndependent(task.x, task.y, task.z);
 
-        // Knowledge
-        bool noEdgeRequired = true;
-        bool forbiddenEdge = false;
+    //     if (independent) {
+    //         numIndependenceJudgements++;
+    //     } else {
+    //         numDependenceJudgement++;
+    //     }
 
-        std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-        if (independent && noEdgeRequired) {
-            if (!sepset.isReturnEmptyIfNotSet()) {
-                sepset.set(task.x, task.y, task.z);
-            }
-        } else if (!forbiddenEdge) {
-            adjacencies[task.x].insert(task.y);
-            adjacencies[task.y].insert(task.x);
-        } 
-        adjacencyLock.unlock();
-    }
+    //     // Knowledge
+    //     bool noEdgeRequired = true;
+    //     bool forbiddenEdge = false;
+
+    //     std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
+    //     if (independent && noEdgeRequired) {
+    //         if (!sepset.isReturnEmptyIfNotSet()) {
+    //             sepset.set(task.x, task.y, task.z);
+    //         }
+    //     } else if (!forbiddenEdge) {
+    //         adjacencies[task.x].insert(task.y);
+    //         adjacencies[task.y].insert(task.x);
+    //     } 
+    //     adjacencyLock.unlock();
+    // }
 }
 
 

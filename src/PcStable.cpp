@@ -66,7 +66,7 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
     
     // graph = EdgeListGraph(nodes);
 
-    FasStableProducerConsumer fas(initialGraph, independenceTest);
+    FasStable fas(initialGraph, independenceTest);
     fas.setDepth(depth);
 
     graph = fas.search();
