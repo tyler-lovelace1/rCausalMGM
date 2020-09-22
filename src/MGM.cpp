@@ -7,6 +7,11 @@
 #include "IndependenceTestRandom.hpp"
 #include "PcStable.hpp"
 #include "CpcStable.hpp"
+#include "BlockingQueue.hpp"
+#include <thread>
+#include <atomic>
+#include <cstdlib>
+
 
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
@@ -939,6 +944,87 @@ EdgeListGraph MGM::search() {
 // [[Rcpp::export]]
 void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
+    BlockingQueue<int> q(100);
+
+    std::mutex cout_lock;
+
+    int NTHREADS = 32;
+
+    int COUNT = NTHREADS * 10000;
+
+    std::atomic<int> countDownLatch(NTHREADS);
+
+    std::vector<bool> present(COUNT);
+    for (int i = 0; i < COUNT; i++)
+	present[i] = false;
+
+    std::vector<int> outputs[NTHREADS];
+
+    std::thread producers[NTHREADS];
+
+    std::thread consumers[NTHREADS];
+
+    std::atomic<int> prodCount(0);
+
+    std::atomic<int> consCount(0);
+
+    for (int i = 0; i < NTHREADS; i++) {
+    	producers[i] = std::thread([&]() {
+    		int id = prodCount.fetch_add(1, std::memory_order_relaxed);
+    		for(int j = id * COUNT / NTHREADS + 1; j <= (id+1) * COUNT / NTHREADS; ++j) {
+    		    q.push(j);
+    		}
+    		countDownLatch--;
+    		if (countDownLatch == 0) {
+    		    q.push(-1);
+    		}
+    	    });
+    }
+
+    for (int i = 0; i < NTHREADS; i++) {
+	consumers[i] = std::thread([&]() {
+		int id = consCount.fetch_add(1, std::memory_order_relaxed);
+		int v = q.pop();
+		while (v != -1) {
+		    outputs[id].push_back(v);
+		    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+		    v = q.pop();
+		}
+		q.push(-1);
+		q.push(-1);
+	    });
+    }
+    
+
+    for (int i = 0; i < NTHREADS; i++)
+    	producers[i].join();
+    for (int i = 0; i < NTHREADS; i++)
+	consumers[i].join();
+
+    for (int i = 0; i < NTHREADS; i++) {
+	Rcpp::Rcout << "\nconsumer " << i+1 << " size: " << outputs[i].size() << "\n";
+	for (int j = 0; j < outputs[i].size(); j++) {
+	    // Rcpp::Rcout << outputs[i][j] << " ";
+	    present[outputs[i][j]-1] = true;
+	}
+	// Rcpp::Rcout << "\n";
+    }
+    Rcpp::Rcout << "\n";
+
+    bool missing;
+    for (int i = 0; i < COUNT; i++) {
+	missing = !present[i];
+	if (missing)
+	    break;
+    }
+
+    if (missing)
+	Rcpp::Rcout << "Value missing from output\n";
+    else
+	Rcpp::Rcout << "All values present in output\n";
+
+    
+    
     DataSet ds(df, maxDiscrete);
 
     std::vector<double> lambda = {0.2, 0.2, 0.2};

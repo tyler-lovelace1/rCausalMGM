@@ -1,0 +1,28 @@
+#include "BlockingQueue.hpp"
+
+template <typename T>
+void BlockingQueue<T>::push(const T& t) {
+    std::unique_lock<std::mutex> lck(tail);
+    freeTail.wait(lck, [&]{ return queue.size() < capacity; });
+    lck.lock();
+    queue.push_back(t);
+    lck.unlock();
+    freeTail.notify_one();
+    // std::unique_lock<std::mutex> lk(mu);
+    // producerGo.wait(lk, [&]() { return queue.size() < capacity; }); // Wait for space in buffer
+    // queue.push_back(t);
+    // lk.unlock();
+    // consumerGo.notify_one();
+}
+
+template <typename T>
+T BlockingQueue<T>::pop() {
+    std::unique_lock<std::mutex> lck(head);
+    freeHead.wait(lck, [&]{ return !queue.empty(); });
+    lck.lock();
+    T ret = queue.front();
+    queue.pop_front();
+    lck.unlock();
+    freeHead.notify_one();
+    return ret;
+}

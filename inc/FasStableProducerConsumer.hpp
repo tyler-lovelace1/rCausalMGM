@@ -5,7 +5,7 @@
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
-#include "ProducerConsumerQueue.hpp"
+#include "BlockingQueue.hpp"
 #include <thread>
 #include <mutex>
 
@@ -96,14 +96,19 @@ private:
         Variable* x;
         Variable* y;
         std::vector<Variable*> z;
-        IndependenceTask(Variable* _x, Variable* _y, std::vector<Variable*>& _z) : x(_x), y(_y), z(_z) {} 
+	IndependenceTask() : x(new ContinuousVariable("EJWMX3RCpPi0qbp")),
+			     y(new ContinuousVariable("nLtWU7DmeZyYPZs")),
+			     z(std::vector<Variable*>()) {}
+        IndependenceTask(Variable* _x, Variable* _y, std::vector<Variable*>& _z) : x(_x),
+										   y(_y),
+										   z(_z) {} 
         IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
     };
     
 // private:
 
     const int MAX_QUEUE_SIZE = 10;
-    ProducerConsumerQueue<IndependenceTask> taskQueue;
+    BlockingQueue<IndependenceTask> taskQueue;
     
     const int parallelism = 1; //TODO - change to number of processors
     

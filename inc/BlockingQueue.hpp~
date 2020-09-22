@@ -1,32 +1,34 @@
-#ifndef PRODUCERCONSUMERQUEUE_HPP_
-#define PRODUCERCONSUMERQUEUE_HPP_
+#ifndef BLOCKINGQUEUE_HPP_
+#define BLOCKINGQUEUE_HPP_
 
 #include <mutex>
 #include <condition_variable>
-#include <boost/circular_buffer.hpp>
+#include <list>
+// #include <boost/circular_buffer.hpp>
 
 /**
  * A fixed capacity, thread stable queue used to store
  * tasks in a producer/consumer setup
  */ 
 template <typename T>
-class ProducerConsumerQueue {
+class BlockingQueue {
 
 private:
 
     int capacity;
 
-    std::mutex mu;
+    std::mutex head;
+    std::mutex tail;
 
-    std::condition_variable producerGo;
-    std::condition_variable consumerGo;
+    std::condition_variable freeHead;
+    std::condition_variable freeTail;
 
-    boost::circular_buffer<T> queue;
+    std::list<T> queue;
 
 public:
-    ProducerConsumerQueue(int _capacity) {
+    BlockingQueue(int _capacity) {
         capacity = _capacity;
-        queue = boost::circular_buffer<T>(capacity);
+        queue = std::list<T>(capacity);
     }
 
     void push(const T& t);
@@ -40,4 +42,4 @@ public:
 
 };
 
-#endif /* PRODUCERCONSUMERQUEUE_HPP_ */
+#endif /* BLOCKINGQUEUE_HPP_ */
