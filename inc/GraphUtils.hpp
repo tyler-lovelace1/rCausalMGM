@@ -58,6 +58,8 @@ public:
      */
     static std::vector<Variable*> asList(std::vector<int>& indices, std::vector<Variable*>& nodes);
 
+    static std::unordered_set<Variable*> asSet(std::vector<int>& indices, std::vector<Variable*>& nodes);
+
     static EdgeListGraph completeGraph(EdgeListGraph& graph);
 
     static EdgeListGraph undirectedGraph(EdgeListGraph& graph);

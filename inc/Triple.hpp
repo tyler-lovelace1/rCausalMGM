@@ -11,7 +11,8 @@ private:
 
 public:
 
-    Triple(Variable* x, Variable* y, Variable* z);
+    Triple(Variable* x, Variable* y, Variable* z) : x(x), y(y), z(z) {}
+    Triple() {}
 
     Variable* getX() { return x; }
     Variable* getY() { return y; }

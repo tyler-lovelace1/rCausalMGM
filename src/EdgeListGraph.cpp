@@ -91,6 +91,17 @@ bool EdgeListGraph::addUndirectedEdge(Variable* node1, Variable* node2) {
 }
 
 /**
+ * Adds a directed edge to the graph from node A to node B.
+ *
+ * @param node1 the "from" node.
+ * @param node2 the "to" node.
+ */
+bool EdgeListGraph::addDirectedEdge(Variable* node1, Variable* node2) {
+    Edge newEdge = Edge::directedEdge(node1, node2);
+    return addEdge(newEdge);
+}
+
+/**
  * Adds an edge to the graph.
  *
  * @param edge the edge to be added
@@ -317,7 +328,7 @@ Edge EdgeListGraph::getEdge(Variable* node1, Variable* node2) {
         }
     }
 
-    throw std::invalid_argument("node1 and node2 not connected by edge");
+    throw std::invalid_argument("node1 and node2 not connected by edge. node1: " + node1->getName() + " node2: " + node2->getName());
 
 }
 

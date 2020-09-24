@@ -18,6 +18,16 @@ std::vector<Variable*> GraphUtils::asList(std::vector<int>& indices, std::vector
     return list;
 }
 
+std::unordered_set<Variable*> GraphUtils::asSet(std::vector<int>& indices, std::vector<Variable*>& nodes) {
+    std::unordered_set<Variable*> set;
+
+    for (int i : indices) {
+        set.insert(nodes[i]);
+    }
+
+    return set;
+}
+
 EdgeListGraph GraphUtils::completeGraph(EdgeListGraph& graph) {
     EdgeListGraph graph2(graph.getNodes());
 

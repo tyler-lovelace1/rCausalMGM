@@ -82,8 +82,8 @@ void MeekRules::r1Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& g
 
         if (isArrowpointAllowed(b, c)) {
             direct(b, c, graph);
-            Edge edge = graph.getEdge(a, c);
-            Rcpp::Rcout << "Meek R1 triangle (" << b << "-->" << a << "---" << c << ") " << "Edge: " << edge << std::endl;
+            // Edge edge = graph.getEdge(a, c);
+            Rcpp::Rcout << "Meek R1 triangle (" << b->getName() << "-->" << a->getName() << "---" << c->getName() << ")" << std::endl;
         }
     }
 }

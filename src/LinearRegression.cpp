@@ -55,7 +55,7 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
   }
 
   if (target_ == -1) {
-      Rcpp::Rcout <<"\n";
+      // Rcpp::Rcout <<"\n";
   }
 
   arma::uvec target_Vec(1);

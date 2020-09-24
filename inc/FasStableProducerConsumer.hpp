@@ -90,13 +90,12 @@ private:
     // bool possibleParentOf(std::string z, std::string x, IKnowledge knowledge);
     // bool forbiddenEdge(Variable* x, Variable* y);
 
-// public:
     // Concurrency
     struct IndependenceTask {
         Variable* x;
         Variable* y;
         std::vector<Variable*> z;
-	IndependenceTask() : x(new ContinuousVariable("EJWMX3RCpPi0qbp")),
+	    IndependenceTask() : x(new ContinuousVariable("EJWMX3RCpPi0qbp")),
 			     y(new ContinuousVariable("nLtWU7DmeZyYPZs")),
 			     z(std::vector<Variable*>()) {}
         IndependenceTask(Variable* _x, Variable* _y, std::vector<Variable*>& _z) : x(_x),
@@ -104,8 +103,6 @@ private:
 										   z(_z) {} 
         IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
     };
-    
-// private:
 
     const int MAX_QUEUE_SIZE = 10;
     BlockingQueue<IndependenceTask> taskQueue;
@@ -116,6 +113,9 @@ private:
 
     void consumerDepth0();
     void producerDepth0();
+
+    void consumerDepth(int depth);
+    void producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy);
 
 public:
 

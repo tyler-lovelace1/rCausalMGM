@@ -146,12 +146,11 @@ void FasStableProducerConsumer::producerDepth0() {
                     continue;
             }
 
-            IndependenceTask newTask(x, y, empty);
-            taskQueue.push(newTask);
+            taskQueue.push(IndependenceTask(x, y, empty));
         }
     }
 
-    // add poison elements to stop consumers
+    // add poison pill to stop consumers
     IndependenceTask poisonPill(NULL, NULL, empty);
     for (int i = 0; i < parallelism; i++) {
         taskQueue.push(poisonPill);
@@ -160,36 +159,106 @@ void FasStableProducerConsumer::producerDepth0() {
 }
 
 void FasStableProducerConsumer::consumerDepth0() {
-    // while(true) {
-    //     IndependenceTask task = taskQueue.pop();
+    while(true) {
+        IndependenceTask task = taskQueue.pop();
 
-    //     //If poison, return
-    //     if (task.x == NULL && task.y == NULL) return;
+        //If poison, return
+        if (task.x == NULL && task.y == NULL) return;
 
-    //     numIndependenceTests++;
-    //     bool independent = test->isIndependent(task.x, task.y, task.z);
+        numIndependenceTests++;
+        bool independent = test->isIndependent(task.x, task.y, task.z);
 
-    //     if (independent) {
-    //         numIndependenceJudgements++;
-    //     } else {
-    //         numDependenceJudgement++;
-    //     }
+        if (independent) {
+            numIndependenceJudgements++;
+        } else {
+            numDependenceJudgement++;
+        }
 
-    //     // Knowledge
-    //     bool noEdgeRequired = true;
-    //     bool forbiddenEdge = false;
+        // Knowledge
+        bool noEdgeRequired = true;
+        bool forbiddenEdge = false;
 
-    //     std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-    //     if (independent && noEdgeRequired) {
-    //         if (!sepset.isReturnEmptyIfNotSet()) {
-    //             sepset.set(task.x, task.y, task.z);
-    //         }
-    //     } else if (!forbiddenEdge) {
-    //         adjacencies[task.x].insert(task.y);
-    //         adjacencies[task.y].insert(task.x);
-    //     } 
-    //     adjacencyLock.unlock();
-    // }
+        std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
+        if (independent && noEdgeRequired) {
+            if (!sepset.isReturnEmptyIfNotSet()) {
+                sepset.set(task.x, task.y, task.z);
+            }
+        } else if (!forbiddenEdge) {
+            adjacencies[task.x].insert(task.y);
+            adjacencies[task.y].insert(task.x);
+        } 
+        adjacencyLock.unlock();
+    }
+}
+
+void FasStableProducerConsumer::consumerDepth(int depth) {
+    while(true) {
+        IndependenceTask task = taskQueue.pop();
+
+        //If poison, return
+        if (task.x == NULL && task.y == NULL) return;
+
+        std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
+        bool edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
+        adjacencyLock.unlock();
+
+        if (!edgeExists) continue; // Skip if the edge no longer exists
+
+        numIndependenceTests++;
+        bool independent;
+        independent = test->isIndependent(task.x, task.y, task.z);
+
+        if (independent) {
+            numIndependenceJudgements++;
+        } else {
+            numDependenceJudgement++;
+        }
+
+        // Knowledge
+        bool noEdgeRequired = true;
+
+        adjacencyLock.lock();
+        if (independent && noEdgeRequired) {
+            adjacencies[task.x].erase(task.y);
+            adjacencies[task.y].erase(task.x);
+            sepset.set(task.x, task.y, task.z);
+        }
+        adjacencyLock.unlock();
+    }
+}
+
+void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy) {
+    for (Variable* x : nodes) {
+
+        std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
+
+        for (Variable* y : adjx) {
+
+            std::vector<Variable*> _adjx(adjx.begin(), adjx.end());
+            _adjx.erase(std::remove(_adjx.begin(), _adjx.end(), y), _adjx.end());
+
+            // Knowledge: possible parents
+            std::vector<Variable*> ppx = _adjx;
+
+            if (ppx.size() >= depth) {
+                ChoiceGenerator cg(ppx.size(), depth);
+                std::vector<int> *choice;
+
+                for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+                    std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
+                    
+                    taskQueue.push(IndependenceTask(x, y, condSet));
+                }
+            }
+        }
+    }
+
+    // add poison pill to stop consumers
+    std::vector<Variable*> empty = {};
+    IndependenceTask poisonPill(NULL, NULL, empty);
+    for (int i = 0; i < parallelism; i++) {
+        taskQueue.push(poisonPill);
+    }
 }
 
 
@@ -213,61 +282,19 @@ int FasStableProducerConsumer::freeDegree() {
 }
 
 bool FasStableProducerConsumer::searchAtDepth(int depth) {
-    int count = 0;
 
     std::unordered_map<Variable*, std::unordered_set<Variable*>> adjacenciesCopy = adjacencies;
 
-    for (Variable* x : nodes) {
+    std::vector<std::thread> threads;
 
-        std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
+    threads.push_back(std::thread( [&] { producerDepth(depth, adjacenciesCopy); } ));
 
-        for (Variable* y : adjx) {
+    for (int i = 0; i < parallelism; i++) {
+        threads.push_back(std::thread( [&] { consumerDepth(depth); } ));
+    }
 
-            std::vector<Variable*> _adjx(adjx.begin(), adjx.end());
-            _adjx.erase(std::remove(_adjx.begin(), _adjx.end(), y), _adjx.end());
-
-            // Knowledge: possible parents
-            std::vector<Variable*> ppx = _adjx;
-
-            if (ppx.size() >= depth) {
-                ChoiceGenerator cg(ppx.size(), depth);
-                std::vector<int> *choice;
-
-                for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-                    std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
-                    
-                    numIndependenceTests++;
-                    bool independent;
-                    independent = test->isIndependent(x, y, condSet);
-
-                    if (independent) {
-                        numIndependenceJudgements++;
-                    } else {
-                        numDependenceJudgement++;
-                    }
-
-                    // Knowledge
-                    bool noEdgeRequired = true;
-
-                    if (independent && noEdgeRequired) {
-                        // Rcpp::Rcout << "x = " << x->getName() << " y = " << y->getName() << std::endl;
-                        // Rcpp::Rcout << "adjacencies[x] BEFORE = { ";
-                        // for (Variable* v : adjacencies[x]) { Rcpp::Rcout << v->getName() << " "; }
-                        // Rcpp::Rcout << "}" << std::endl;
-                        adjacencies[x].erase(y);
-                        adjacencies[y].erase(x);
-                        // Rcpp::Rcout << "adjacencies[x] AFTER = { ";
-                        // for (Variable* v : adjacencies[x]) { Rcpp::Rcout << v->getName() << " "; }
-                        // Rcpp::Rcout << "}" << std::endl;
-
-                        sepset.set(x, y, condSet);
-
-                        goto EDGE_CONTINUE; // No need to test other combinations
-                    }
-                }
-            }
-            EDGE_CONTINUE:;
-        }
+    for (int i = 0; i < threads.size(); i++) {
+        threads[i].join();
     }
 
     return freeDegree() > depth;

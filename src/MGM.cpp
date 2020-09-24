@@ -7,6 +7,7 @@
 #include "IndependenceTestRandom.hpp"
 #include "PcStable.hpp"
 #include "CpcStable.hpp"
+#include "PcMax.hpp"
 #include "BlockingQueue.hpp"
 #include <thread>
 #include <atomic>
@@ -944,86 +945,86 @@ EdgeListGraph MGM::search() {
 // [[Rcpp::export]]
 void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
-    BlockingQueue<int> q(100);
+    {
+    // BlockingQueue<int> q(100);
 
-    std::mutex cout_lock;
+    // std::mutex cout_lock;
 
-    int NTHREADS = 32;
+    // int NTHREADS = 32;
 
-    int COUNT = NTHREADS * 10000;
+    // int COUNT = NTHREADS * 10000;
 
-    std::atomic<int> countDownLatch(NTHREADS);
+    // std::atomic<int> countDownLatch(NTHREADS);
 
-    std::vector<bool> present(COUNT);
-    for (int i = 0; i < COUNT; i++)
-	present[i] = false;
+    // std::vector<bool> present(COUNT);
+    // for (int i = 0; i < COUNT; i++)
+	// present[i] = false;
 
-    std::vector<int> outputs[NTHREADS];
+    // std::vector<int> outputs[NTHREADS];
 
-    std::thread producers[NTHREADS];
+    // std::thread producers[NTHREADS];
 
-    std::thread consumers[NTHREADS];
+    // std::thread consumers[NTHREADS];
 
-    std::atomic<int> prodCount(0);
+    // std::atomic<int> prodCount(0);
 
-    std::atomic<int> consCount(0);
+    // std::atomic<int> consCount(0);
 
-    for (int i = 0; i < NTHREADS; i++) {
-    	producers[i] = std::thread([&]() {
-    		int id = prodCount.fetch_add(1, std::memory_order_relaxed);
-    		for(int j = id * COUNT / NTHREADS + 1; j <= (id+1) * COUNT / NTHREADS; ++j) {
-    		    q.push(j);
-    		}
-    		countDownLatch--;
-    		if (countDownLatch == 0) {
-    		    q.push(-1);
-    		}
-    	    });
-    }
+    // for (int i = 0; i < NTHREADS; i++) {
+    // 	producers[i] = std::thread([&]() {
+    // 		int id = prodCount.fetch_add(1, std::memory_order_relaxed);
+    // 		for(int j = id * COUNT / NTHREADS + 1; j <= (id+1) * COUNT / NTHREADS; ++j) {
+    // 		    q.push(j);
+    // 		}
+    // 		countDownLatch--;
+    // 		if (countDownLatch == 0) {
+    // 		    q.push(-1);
+    // 		}
+    // 	    });
+    // }
 
-    for (int i = 0; i < NTHREADS; i++) {
-	consumers[i] = std::thread([&]() {
-		int id = consCount.fetch_add(1, std::memory_order_relaxed);
-		int v = q.pop();
-		while (v != -1) {
-		    outputs[id].push_back(v);
-		    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
-		    v = q.pop();
-		}
-		q.push(-1);
-		q.push(-1);
-	    });
-    }
+    // for (int i = 0; i < NTHREADS; i++) {
+	// consumers[i] = std::thread([&]() {
+	// 	int id = consCount.fetch_add(1, std::memory_order_relaxed);
+	// 	int v = q.pop();
+	// 	while (v != -1) {
+	// 	    outputs[id].push_back(v);
+	// 	    std::this_thread::sleep_for(std::chrono::nanoseconds(100));
+	// 	    v = q.pop();
+	// 	}
+	// 	q.push(-1);
+	// 	q.push(-1);
+	//     });
+    // }
     
 
-    for (int i = 0; i < NTHREADS; i++)
-    	producers[i].join();
-    for (int i = 0; i < NTHREADS; i++)
-	consumers[i].join();
+    // for (int i = 0; i < NTHREADS; i++)
+    // 	producers[i].join();
+    // for (int i = 0; i < NTHREADS; i++)
+	// consumers[i].join();
 
-    for (int i = 0; i < NTHREADS; i++) {
-	Rcpp::Rcout << "\nconsumer " << i+1 << " size: " << outputs[i].size() << "\n";
-	for (int j = 0; j < outputs[i].size(); j++) {
-	    // Rcpp::Rcout << outputs[i][j] << " ";
-	    present[outputs[i][j]-1] = true;
-	}
-	// Rcpp::Rcout << "\n";
+    // for (int i = 0; i < NTHREADS; i++) {
+	// Rcpp::Rcout << "\nconsumer " << i+1 << " size: " << outputs[i].size() << "\n";
+	// for (int j = 0; j < outputs[i].size(); j++) {
+	//     // Rcpp::Rcout << outputs[i][j] << " ";
+	//     present[outputs[i][j]-1] = true;
+	// }
+	// // Rcpp::Rcout << "\n";
+    // }
+    // Rcpp::Rcout << "\n";
+
+    // bool missing;
+    // for (int i = 0; i < COUNT; i++) {
+	// missing = !present[i];
+	// if (missing)
+	//     break;
+    // }
+
+    // if (missing)
+	// Rcpp::Rcout << "Value missing from output\n";
+    // else
+	// Rcpp::Rcout << "All values present in output\n";
     }
-    Rcpp::Rcout << "\n";
-
-    bool missing;
-    for (int i = 0; i < COUNT; i++) {
-	missing = !present[i];
-	if (missing)
-	    break;
-    }
-
-    if (missing)
-	Rcpp::Rcout << "Value missing from output\n";
-    else
-	Rcpp::Rcout << "All values present in output\n";
-
-    
     
     DataSet ds(df, maxDiscrete);
 
@@ -1078,11 +1079,11 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     
     // IndependenceTestRandom itm();
     
-    PcStable pcs((IndependenceTest*) &itm);
-    pcs.setInitialGraph(&mgmGraph);
-    EdgeListGraph pcGraph = pcs.search();
+    // PcStable pcs((IndependenceTest*) &itm);
+    // pcs.setInitialGraph(&mgmGraph);
+    // EdgeListGraph pcGraph = pcs.search();
 
-    Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
+    // Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
 
     // CpcStable cpcs((IndependenceTest*) &itm);
     // cpcs.setInitialGraph(&mgmGraph);
@@ -1092,6 +1093,13 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     // Rcpp::Rcout << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):" << std::endl;
     // for (Triple t : cpcGraph.getAmbiguousTriples()) Rcpp::Rcout << t << std::endl;
     
+    DepthChoiceGenerator::testPrint(5, -1);
+
+    PcMax pcm((IndependenceTest*) &itm);
+    pcm.setInitialGraph(&mgmGraph);
+    EdgeListGraph pcmGraph = pcm.search();
+    Rcpp::Rcout << "PCM GRAPH\n" << pcmGraph << std::endl;
+
 
     // SepsetMap test;
     // SepsetMap test2;
