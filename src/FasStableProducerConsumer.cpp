@@ -1,16 +1,20 @@
 #include "FasStableProducerConsumer.hpp"
 
-FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
+FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test) 
 {
     this->initialGraph = initialGraph;
-    this->test = test;
-    this->nodes = test->getVariables();
 }
 
 FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
 {
     this->test = test;
     this->nodes = test->getVariables();
+
+    Rcpp::Rcout << "paralellism = " << parallelism << std::endl;
+    if (parallelism == 0) {
+        parallelism = 4;
+        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+    }
 }
 
 void FasStableProducerConsumer::setDepth(int depth) {

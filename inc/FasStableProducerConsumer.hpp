@@ -107,7 +107,7 @@ private:
     const int MAX_QUEUE_SIZE = 10;
     BlockingQueue<IndependenceTask> taskQueue;
     
-    const int parallelism = 1; //TODO - change to number of processors
+    int parallelism = std::thread::hardware_concurrency();
     
     std::mutex adjacencyMutex;
 

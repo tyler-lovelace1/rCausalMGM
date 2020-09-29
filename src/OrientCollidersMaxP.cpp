@@ -12,6 +12,12 @@ OrientCollidersMaxP::OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *
         throw std::invalid_argument("graph may not be NULL.");
 
     this->graph = graph;
+
+    Rcpp::Rcout << "paralellism = " << parallelism << std::endl;
+    if (parallelism == 0) {
+        parallelism = 4;
+        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+    }
 }
 
 void OrientCollidersMaxP::setDepth(int depth) {
@@ -45,64 +51,68 @@ void OrientCollidersMaxP::producer() {
                 continue;
             }
 
-            taskQueue.push(Triple(a, b, c));
+            if (useHeuristic) {
+                if (existsShortPath(a, c, maxPathLength)) {
+                    testColliderMaxP(a, b, c);
+                } else {
+                    testColliderHeuristic(a, b, c);
+                }
+            } else {
+                testColliderMaxP(a, b, c);
+            }
         }
-
     }
 
     // Poison pill
     for (int i = 0; i < parallelism; i++) {
-        taskQueue.push(Triple(NULL, NULL, NULL));
+        taskQueue.push(IndependenceTask(NULL, NULL, NULL, {}));
     }
 }
 
 void OrientCollidersMaxP::consumer() {
-    while(true) {
-        Triple triple = taskQueue.pop();
-        Variable* a = triple.getX();
-        Variable* b = triple.getY();
-        Variable* c = triple.getZ();
-
-        // Poison Pill
-        if (a == NULL && b == NULL && c == NULL) break;
-
-        if (useHeuristic) {
-            if (existsShortPath(a, c, maxPathLength)) {
-                testColliderMaxP(a, b, c);
-            } else {
-                testColliderHeuristic(a, b, c);
-            }
-        } else {
-            testColliderMaxP(a, b, c);
-        }
-    }
-}
-
-void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c) {
     std::ofstream logfile;
     logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
 
+    while(true) {
+        IndependenceTask it = taskQueue.pop();
+
+        // Poison Pill
+        if (it.a == NULL && it.b == NULL && it.c == NULL) break;
+
+        double score;
+        independenceTest->isIndependent(it.a, it.c, it.s, &score);
+
+        logfile << "Testing " << it.a->getName() << " || " << it.c->getName() << " _||_ {";
+        for (Variable* n : it.s) logfile << " " << n->getName() << " ";
+        logfile << "} with p = " << score << std::endl;
+
+        std::unique_lock<std::mutex> mapLock(mapMutex);
+        if (score > scores[Triple(it.a, it.b, it.c)]) {
+            scores[Triple(it.a, it.b, it.c)] = score;
+        }
+        
+    }
+
+    logfile.close();
+}
+
+void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c) {
+    
     std::vector<Variable*> adja = graph->getAdjacentNodes(a);
     std::vector<Variable*> adjc = graph->getAdjacentNodes(c);
 
-    double score = std::numeric_limits<double>::infinity();
-    std::vector<Variable*> S;
+    std::unique_lock<std::mutex> mapLock(mapMutex);
+    scores[Triple(a, b, c)] = 0;
+    mapMutex.unlock();
 
     DepthChoiceGenerator cg1(adja.size(), -1);
     std::vector<int> *comb2;
     for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
         std::vector<Variable*> s = GraphUtils::asList(*comb2, adja);
 
-        double _score;
-        independenceTest->isIndependent(c, a, s, &_score);
-
-        logfile << "Testing " << c->getName() << " || " << a->getName() << " _||_ {";
-        for (Variable* n : s) logfile << " " << n->getName() << " ";
-        logfile << "} with p = " << _score << std::endl;
-
-        if (_score < score) {
-            score = _score;
-            S = s;
+        // If !s.contains(b) TODO - should this condition be here?
+        if (std::find(s.begin(), s.end(), b) == s.end()) {
+            taskQueue.push(IndependenceTask(a, b, c, s));
         }
     }
 
@@ -110,58 +120,22 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
     std::vector<int> *comb3;
     for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
         std::vector<Variable*> s = GraphUtils::asList(*comb3, adjc);
-
-        double _score;
-        independenceTest->isIndependent(c, a, s, &_score);
-
-        logfile << "Testing " << c->getName() << " || " << a->getName() << " _||_ {";
-        for (Variable* n : s) logfile << " " << n->getName() << " ";
-        logfile << "} with p = " << _score << std::endl;
-
-        if (_score < score) {
-            score = _score;
-            S = s;
+        // If !s.contains(b) TODO - should this condition be here?
+        if (std::find(s.begin(), s.end(), b) == s.end()) {
+            taskQueue.push(IndependenceTask(c, b, a, s));
         }
     }
-
-    // If !S.contains(b)
-    if (std::find(S.begin(), S.end(), b) == S.end()) {
-        std::unique_lock<std::mutex> mapLock(mapMutex);
-        scores[Triple(a, b, c)] = score;
-    }
-
-    logfile.close();
 
 }
 
 void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variable* c) {
-    std::ofstream logfile;
-    logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
-    logfile << "DUDEK USING HEURISTIC " << Triple(a, b, c) << std::endl;
-
-    std::vector<Variable*> empty = {};
-    double s1;
-    independenceTest->isIndependent(a, c, empty, &s1);
-
-    std::vector<Variable*> bList = {b};
-    double s2;
-    independenceTest->isIndependent(a, c, bList, &s2);
-
-    bool mycollider2 = s2 > s1;
-
-    // Skip triples that are shielded.
-    if (graph->isAdjacentTo(a, c)) return;
-
+    // TODO - should this be here?
     if (graph->getEdges(a, b).size() > 1 || graph->getEdges(b, c).size() > 1) {
         return;
     }
 
-    if (mycollider2) {
-        std::unique_lock<std::mutex> mapLock(mapMutex);
-        scores[Triple(a, b, c)] = std::abs(s2);
-    }
-
-    logfile.close();
+    taskQueue.push(IndependenceTask(a, b, c, {}));
+    taskQueue.push(IndependenceTask(a, b, c, {b}));
 }
 
 void OrientCollidersMaxP::orientCollider(Variable* a, Variable* b, Variable* c) {
@@ -267,19 +241,14 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
 
         for (Variable* u : graph->getAdjacentNodes(t)) {
             logfile << "u = " << u->getName() << std::endl;
-            Edge edge = graph->getEdge(t, u);
-            Variable* c = Edge::traverse(t, edge);
-            if (c == NULL) continue;
-            logfile << "c = " << c->getName() << std::endl;
-
-            if (c == z && distance > 2) {
+            if (u == z && distance > 2) {
                 logfile.close();
                 return true;
             } 
 
-            if (v.count(c) == 0) {
-                v.insert(c);
-                q.push(c);
+            if (v.count(u) == 0) {
+                v.insert(u);
+                q.push(u);
 
                 if (e == NULL) {
                     e = u;

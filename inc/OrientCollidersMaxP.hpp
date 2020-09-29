@@ -56,13 +56,30 @@ private:
     bool existsShortPath(Variable* x, Variable* z, int bound);
 
     // Concurrency
+    /**
+     * Represents testing if a and c are independent
+     * b is used to determine the corresponding Triple
+     */ 
+    struct IndependenceTask {
+        Variable* a;
+        Variable* b;
+        Variable* c;
+        std::vector<Variable*> s;
+	    IndependenceTask() {}
+        IndependenceTask(Variable* _a, Variable* _b, Variable* _c, const std::vector<Variable*>& _s) : a(_a),
+										   b(_b),
+										   c(_c),
+                                           s(_s) {} 
+        IndependenceTask(const IndependenceTask& it) { a = it.a; b = it.b; c = it.c; s = it.s; }
+    };
+
     void producer();
     void consumer();
 
     const int MAX_QUEUE_SIZE = 10;
-    BlockingQueue<Triple> taskQueue;
+    BlockingQueue<IndependenceTask> taskQueue;
 
-    const int parallelism = 1; //TODO - change to number of processors
+    int parallelism = std::thread::hardware_concurrency();
     
     std::mutex mapMutex;
 
