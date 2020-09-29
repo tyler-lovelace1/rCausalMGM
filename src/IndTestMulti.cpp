@@ -59,8 +59,9 @@ int IndTestMulti::reset() {
  * @return true if the given independence question is judged true, false if not. The independence question is of the
  * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are searchVariables in the list returned by
  * getVariableNames().
+ * Optionally return the p-value into pReturn
  */
-bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) {
+bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
     this->timesCalled++;
 
 	// Rcpp::Rcout << "X: " << x->getName() << std::endl;
@@ -74,19 +75,19 @@ bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*
 
     if (x->isDiscrete()) {
         // if (debug) Rcpp::Rcout << "Path 1" << std::endl;
-        return isIndependentMultinomialLogisticRegression(x, y, z);
+        return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
     } else if (y->isDiscrete()) {
         if(preferLinear) {
             // if (debug) Rcpp::Rcout << "Path 2" << std::endl;
-            return isIndependentRegression(x,y,z);
+            return isIndependentRegression(x, y, z, pReturn);
         }
         else {
             // if (debug) Rcpp::Rcout << "Path 3" << std::endl;
-            return isIndependentMultinomialLogisticRegression(y, x, z);
+            return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
         }
     } else {
         // if (debug) Rcpp::Rcout << "Path 4" << std::endl;
-        return isIndependentRegression(x, y, z);
+        return isIndependentRegression(x, y, z, pReturn);
     }
 }
 
@@ -139,7 +140,7 @@ std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* 
     return variables;
 }
 
-bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z) {
+bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
     if (variablesPerNode.count(x) < 1) {
       throw std::invalid_argument("Unrecogized variable: " + x->getName());
     }
@@ -223,6 +224,8 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     
     // Rcpp::Rcout << "chisq = " << chisq << std::endl;
     double p = 1.0 - cdf(dist, chisq);
+
+    if (pReturn != NULL) *pReturn = p;
     
 
     // if(debug) {
@@ -332,7 +335,7 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
     return ll;
 }
 
-bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z) {    
+bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {    
     if (variablesPerNode.count(x) < 1) {
         throw std::invalid_argument("Unrecogized node: " + x->getName());
     }
@@ -369,6 +372,8 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
 
     double p = result->getP().at(1); // double check on .at(1)
     this->lastP = p;
+
+    if (pReturn != NULL) *pReturn = p;
 
     bool indep = p > alpha;
 

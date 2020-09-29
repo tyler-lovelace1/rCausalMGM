@@ -92,8 +92,8 @@ public:
     void setUseHeuristic(bool useHeuristic) { this->useHeuristic = useHeuristic; }
     bool isUseHeuristic() { return useHeuristic; }
 
-    void setMaxPathLength(bool maxPathLength) { this->maxPathLength = maxPathLength; }
-    bool getMaxPathLength() { return maxPathLength; }
+    void setMaxPathLength(int maxPathLength) { this->maxPathLength = maxPathLength; }
+    int getMaxPathLength() { return maxPathLength; }
 
     void orient() { addColliders(); }
 

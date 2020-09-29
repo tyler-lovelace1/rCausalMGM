@@ -1,5 +1,7 @@
 #include "OrientCollidersMaxP.hpp"
 
+#include <fstream>
+
 OrientCollidersMaxP::OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph) : taskQueue(MAX_QUEUE_SIZE) {
     if (test == NULL) 
         throw std::invalid_argument("independenceTest may not be NULL.");
@@ -77,6 +79,9 @@ void OrientCollidersMaxP::consumer() {
 }
 
 void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c) {
+    std::ofstream logfile;
+    logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
+
     std::vector<Variable*> adja = graph->getAdjacentNodes(a);
     std::vector<Variable*> adjc = graph->getAdjacentNodes(c);
 
@@ -88,8 +93,12 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
     for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
         std::vector<Variable*> s = GraphUtils::asList(*comb2, adja);
 
-        independenceTest->isIndependent(c, a, s);
-        double _score = independenceTest->getScore();
+        double _score;
+        independenceTest->isIndependent(c, a, s, &_score);
+
+        logfile << "Testing " << c->getName() << " || " << a->getName() << " _||_ {";
+        for (Variable* n : s) logfile << " " << n->getName() << " ";
+        logfile << "} with p = " << _score << std::endl;
 
         if (_score < score) {
             score = _score;
@@ -102,8 +111,12 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
     for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
         std::vector<Variable*> s = GraphUtils::asList(*comb3, adjc);
 
-        independenceTest->isIndependent(c, a, s);
-        double _score = independenceTest->getScore();
+        double _score;
+        independenceTest->isIndependent(c, a, s, &_score);
+
+        logfile << "Testing " << c->getName() << " || " << a->getName() << " _||_ {";
+        for (Variable* n : s) logfile << " " << n->getName() << " ";
+        logfile << "} with p = " << _score << std::endl;
 
         if (_score < score) {
             score = _score;
@@ -117,17 +130,22 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
         scores[Triple(a, b, c)] = score;
     }
 
+    logfile.close();
+
 }
 
 void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variable* c) {
+    std::ofstream logfile;
+    logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
+    logfile << "DUDEK USING HEURISTIC " << Triple(a, b, c) << std::endl;
 
     std::vector<Variable*> empty = {};
-    independenceTest->isIndependent(a, c, empty);
-    double s1 = independenceTest->getScore();
+    double s1;
+    independenceTest->isIndependent(a, c, empty, &s1);
 
     std::vector<Variable*> bList = {b};
-    independenceTest->isIndependent(a, c, bList);
-    double s2 = independenceTest->getScore();
+    double s2;
+    independenceTest->isIndependent(a, c, bList, &s2);
 
     bool mycollider2 = s2 > s1;
 
@@ -143,6 +161,7 @@ void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variab
         scores[Triple(a, b, c)] = std::abs(s2);
     }
 
+    logfile.close();
 }
 
 void OrientCollidersMaxP::orientCollider(Variable* a, Variable* b, Variable* c) {
@@ -154,6 +173,7 @@ void OrientCollidersMaxP::orientCollider(Variable* a, Variable* b, Variable* c) 
     graph->removeEdge(c, b);
     graph->addDirectedEdge(a, b);
     graph->addDirectedEdge(c, b);
+    Rcpp::Rcout << "ORIENTED SUCCESSFULLY" << std::endl;
 }
 
 bool OrientCollidersMaxP::wouldCreateBadCollider(Variable* x, Variable* y) {
@@ -197,8 +217,8 @@ bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Va
                 v2.erase(c);
 
                 std::vector<Variable*> v2List(v2.begin(), v2.end());
-                independenceTest->isIndependent(a, c, v2List);
-                double p2 = independenceTest->getScore();
+                double p2;
+                independenceTest->isIndependent(a, c, v2List, &p2);
 
                 if (p2 < 0) {
                     if (output != NULL) {
@@ -216,6 +236,10 @@ bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Va
 
 // Returns true if there is an undirected path from x to either y or z within the given number of steps.
 bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
+    std::ofstream logfile;
+    logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
+    logfile << "Testing if a path exists between " << x->getName() << " and " << z->getName() << std::endl;
+    
     std::queue<Variable*> q;
     std::unordered_set<Variable*> v;
     q.push(x);
@@ -226,21 +250,34 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
     while(!q.empty()) {
         Variable* t = q.front();
         q.pop();
+        logfile << "t = " << t->getName() << std::endl;
+
+        if (e == NULL) logfile << "e = NULL" << std::endl;
+        else logfile << "e = " << e->getName() << std::endl;
 
         if (e == t) {
             e = NULL;
             distance++;
-            if (distance > (bound == -1 ? 1000 : bound)) return false;
+            logfile << "distance = " << distance << " bound = " << bound << std::endl;
+            if (distance > (bound == -1 ? 1000 : bound)) {
+                logfile.close();
+                return false;
+            }
         }
 
         for (Variable* u : graph->getAdjacentNodes(t)) {
+            logfile << "u = " << u->getName() << std::endl;
             Edge edge = graph->getEdge(t, u);
             Variable* c = Edge::traverse(t, edge);
             if (c == NULL) continue;
+            logfile << "c = " << c->getName() << std::endl;
 
-            if (c == z && distance > 2) return true;
+            if (c == z && distance > 2) {
+                logfile.close();
+                return true;
+            } 
 
-            if (!v.count(c)) {
+            if (v.count(c) == 0) {
                 v.insert(c);
                 q.push(c);
 
@@ -251,10 +288,20 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
         }
     }
 
+    logfile.close();
+
     return false;
 }
 
 void OrientCollidersMaxP::addColliders() {
+    std::ofstream logfile;
+
+    logfile.open("../test_results/orientCollidersMaxP.log");
+
+    logfile << "Starting colliders" << std::endl;
+
+    logfile.close();
+
     scores.clear();
 
     std::vector<std::thread> threads;
@@ -274,6 +321,9 @@ void OrientCollidersMaxP::addColliders() {
     tripleList.reserve(scores.size());
     for (auto pair : scores) {
         tripleList.push_back(pair.first);
+
+        // Print scores
+        Rcpp::Rcout << pair.first << " score = " << pair.second << std::endl;
     }
 
     // Most independent ones first.
@@ -288,8 +338,10 @@ void OrientCollidersMaxP::addColliders() {
         Variable* c = triple.getZ();
 
         if (!(graph->getEndpoint(b, a) == ENDPOINT_ARROW || graph->getEndpoint(b, c) == ENDPOINT_ARROW)) {
+            Rcpp::Rcout << "orienting collider " << Triple(a, b, c) << std::endl;
             orientCollider(a, b, c);
         }
     }
 
+    
 }

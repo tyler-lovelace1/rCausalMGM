@@ -18,7 +18,7 @@ public:
     Variable* getY() { return y; }
     Variable* getZ() { return z; }
 
-    friend std::ostream& operator<<(std::ostream& os, Triple& triple);
+    friend std::ostream& operator<<(std::ostream& os, const Triple& triple);
     friend bool operator==(const Triple& t1, const Triple& t2);
     friend struct std::hash<Triple>;
 

@@ -31,12 +31,12 @@ public:
 
     int reset();
 
-    bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z);
+    bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
 
     // private synchronized List<Node> expandVariable(DataSet dataSet, Node node)
     std::vector<Variable*> expandVariable(DataSet& dataSet, Variable* var);
 
-    bool isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z);
+    bool isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
 
     // This takes an inordinate amount of time. -jdramsey 20150929
     arma::uvec getNonMissingRows(Variable* x, Variable* y, std::vector<Variable*>& z);
@@ -45,14 +45,15 @@ public:
 
     double multiLL(arma::mat& coeffs, Variable* dep, std::vector<Variable*>& indep);
 
-    bool isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z);
+    bool isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
 
     /**
      * @return true if the given independence question is judged false, true if not. The independence question is of the
      * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are searchVariables in the list returned by
      * getVariableNames().
+     * Optionally return the p-value into pReturn
      */
-    bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z) { return !this->isIndependent(x, y, z); }
+    bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) { return !isIndependent(x, y, z, pReturn); }
 
     /**
      * @return the probability associated with the most recently executed independence test, of Double.NaN if p value is

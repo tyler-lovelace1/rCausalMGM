@@ -81,12 +81,13 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     orientCollidersMaxP.setMaxPathLength(maxPathLength);
     orientCollidersMaxP.orient();
 
+    Rcpp::Rcout << "Graph before Meek Rules: " << graph << std::endl;
+
     MeekRules meekRules;
     meekRules.orientImplied(graph);
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Returning this graph: " << graph << std::endl;
     Rcpp::Rcout << "PCMax Elapsed time =  " << elapsedTime << " ms" << std::endl;
     Rcpp::Rcout << "Finishing PCM Algorithm" << std::endl;
 

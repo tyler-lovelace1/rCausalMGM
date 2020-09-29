@@ -55,7 +55,7 @@ private:
     // TODO - what should the default be?
     bool useHeuristic = true;
 
-    int maxPathLength;
+    int maxPathLength = 3;
 
     bool verbose = false;
 

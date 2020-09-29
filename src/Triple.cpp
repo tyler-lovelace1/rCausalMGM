@@ -1,6 +1,6 @@
 #include "Triple.hpp"
 
-std::ostream& operator<<(std::ostream& os, Triple& triple) {
+std::ostream& operator<<(std::ostream& os, const Triple& triple) {
     os << "<" << triple.x->getName() << "," << triple.y->getName() << "," << triple.z->getName() << ">";
     return os;
 }
