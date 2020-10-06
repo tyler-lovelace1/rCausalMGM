@@ -59,6 +59,8 @@ private:
     void makeDummy();       // convert discrete data (in yDat) to a matrix of dummy variables (stored in dDat)
     void fixData();         // checks if yDat is zero indexed and converts to 1 index. zscores x
 
+    friend class Tests;
+
 public:
 
     double timePerIter = 0;

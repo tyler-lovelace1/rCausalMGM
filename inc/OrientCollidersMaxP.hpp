@@ -76,7 +76,7 @@ private:
     void producer();
     void consumer();
 
-    const int MAX_QUEUE_SIZE = 10;
+    const int MAX_QUEUE_SIZE = 10000;
     BlockingQueue<IndependenceTask> taskQueue;
 
     int parallelism = std::thread::hardware_concurrency();

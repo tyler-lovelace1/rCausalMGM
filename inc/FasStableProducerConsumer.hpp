@@ -104,7 +104,7 @@ private:
         IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
     };
 
-    const int MAX_QUEUE_SIZE = 10;
+    const int MAX_QUEUE_SIZE = 10000;
     BlockingQueue<IndependenceTask> taskQueue;
     
     int parallelism = std::thread::hardware_concurrency();

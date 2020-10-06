@@ -10,7 +10,7 @@ FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : t
     this->test = test;
     this->nodes = test->getVariables();
 
-    Rcpp::Rcout << "paralellism = " << parallelism << std::endl;
+    Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
     if (parallelism == 0) {
         parallelism = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
