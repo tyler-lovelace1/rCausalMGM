@@ -5,6 +5,8 @@
 #include <math.h>
 #include <boost/math/distributions/students_t.hpp>
 
+#include <fstream>
+
 LinearRegression::LinearRegression(DataSet& data){
   this->data = data;
   this->variables = data.getVariables();
@@ -43,6 +45,9 @@ LinearRegression& LinearRegression::operator=(LinearRegression&& lr) {
 }
 
 RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variable*>& regressors){
+  std::ofstream logfile;
+  logfile.open("../test_results/debug.log", std::ios_base::app);
+
   int n = rows.size();
   int k = regressors.size() + 1;
 
@@ -123,7 +128,14 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
       double s_ = se * se * xTxInv(i, i);
       double se_ = std::sqrt(s_);
       double t_ = b(i, 0) / se_;
-      // Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+
+      // logfile << "LINEAR REGRESSION" << std::endl;
+      // logfile << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+      // logfile << "se_ = " << se_ << std::endl;
+      // logfile << "s_ = " << s_ << std::endl;
+      // logfile << "t_ = " << t_ << std::endl;
+      logfile.close();
+
       double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
 
       if (i == 1) {

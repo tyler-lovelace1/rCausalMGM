@@ -1,6 +1,8 @@
 #include "IndTestMulti.hpp"
 #include <boost/math/distributions/chi_squared.hpp>
 
+#include <fstream>
+
 
 IndTestMulti::IndTestMulti(DataSet& data, double alpha){
   this->timesCalled = 0;
@@ -141,6 +143,9 @@ std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* 
 }
 
 bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
+    std::ofstream logfile;
+    logfile.open("../test_results/debug.log", std::ios_base::app);
+    
     if (variablesPerNode.count(x) < 1) {
       throw std::invalid_argument("Unrecogized variable: " + x->getName());
     }
@@ -222,7 +227,10 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     int df = variablesPerNode.at(y).size()*variablesPerNode.at(x).size();
     boost::math::chi_squared dist(df);
     
-    // Rcpp::Rcout << "chisq = " << chisq << std::endl;
+    // logfile << "IND TEST" << std::endl;
+    // logfile << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+    // logfile << "chisq = " << chisq << std::endl << std::endl;
+    logfile.close();
     double p = 1.0 - cdf(dist, chisq);
 
     if (pReturn != NULL) *pReturn = p;

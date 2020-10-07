@@ -1,5 +1,5 @@
 library(rCausalMGM)
 
-df <- read.table("data/data0.csv", header=T)
+df <- read.table("data/data0_smaller.txt", header=T)
 
 rCausalMGM::MGMTest(df)

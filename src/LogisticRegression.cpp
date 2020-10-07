@@ -8,6 +8,8 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/math/distributions/chi_squared.hpp>
 
+#include <fstream>
+
 LogisticRegression::LogisticRegression(DataSet& data){
     this->data = data;
     this->dataCols = data.getData().t();
@@ -257,11 +259,24 @@ LogisticRegressionResult* LogisticRegression::regress(arma::uvec target,
   arma::vec pValues = arma::vec(numRegressors + 1);
   arma::vec zScores = arma::vec(numRegressors + 1);
 
+  std::ofstream logfile;
+  
+
   for (arma::uword j = 1; j <= numRegressors; j++) {
      par[j] = par[j] / xStdDevs[j];
      parStdErr[j] = std::sqrt(arr(j,j)) / xStdDevs[j];
      par[0] = par[0] - par[j] * xMeans[j];
      double zScore = par[j] / parStdErr[j];
+
+    logfile.open("../test_results/debug.log", std::ios_base::app);
+    logfile << "xStdDevs[" << j << "] = " << xStdDevs[j] << std::endl;
+    logfile << "xMeans[" << j << "] = " << xMeans[j] << std::endl;
+    logfile << "arr(" << j << "," << j << ") = " << arr(j,j) << std::endl;
+    logfile << "par[" << j << "] = " << par[j] << std::endl;
+    logfile << "parStdErr[" << j << "] = " << parStdErr[j] << std::endl;
+    logfile << "zScore = " << zScore << std::endl << std::endl;
+    logfile.close();
+
      double prob = norm(std::abs(zScore));
      pValues[j] = prob;
      zScores[j] = zScore;
@@ -269,6 +284,13 @@ LogisticRegressionResult* LogisticRegression::regress(arma::uvec target,
 
   parStdErr[0] = std::sqrt(arr(0,0));
   double zScore = par[0] / parStdErr[0];
+
+    // logfile.open("../test_results/debug.log", std::ios_base::app);
+    // logfile << "zScore = " << zScore << std::endl;
+    // logfile << "parStdErr[" << 0 << "] = " << parStdErr[0] << std::endl << std::endl;
+    // logfile << "par[" << 0 << "] = " << par[0] << std::endl << std::endl;
+    // logfile.close();
+
   pValues[0] = norm(zScore);
   zScores[0] = zScore;
   double intercept = par[0];
@@ -280,6 +302,9 @@ LogisticRegressionResult* LogisticRegression::regress(arma::uvec target,
 }
 
 double LogisticRegression::norm(double z) {
+    std::ofstream logfile;
+    logfile.open("../test_results/debug.log", std::ios_base::app);
+
     double q = z * z;
     const double pi = boost::math::constants::pi<double>();
     double piOver2 = pi / 2.0;
@@ -291,7 +316,12 @@ double LogisticRegression::norm(double z) {
                 (std::abs(z) * std::sqrt(piOver2));
     } else {
       boost::math::chi_squared dist(1);
-    //   Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+
+
+      logfile << "LOGISTIC REGRESSION" << std::endl;
+      logfile << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+      logfile << "q = " << q << std::endl << std::endl;
+      logfile.close();
       double p = cdf(dist, q);
       return (p);
     }

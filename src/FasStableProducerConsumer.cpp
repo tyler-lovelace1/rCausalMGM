@@ -3,6 +3,14 @@
 FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test) 
 {
     this->initialGraph = initialGraph;
+    this->test = test;
+    this->nodes = test->getVariables();
+
+    Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
+    if (parallelism == 0) {
+        parallelism = 4;
+        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+    }
 }
 
 FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
@@ -64,14 +72,21 @@ EdgeListGraph FasStableProducerConsumer::search() {
 
     graph = EdgeListGraph(nodes);
 
-    for (int i = 0; i < nodes.size(); i++) {
-        for (int j = i+1; j < nodes.size(); j++) {
-            Variable* x = nodes[i];
-            Variable* y = nodes[j];
+    // for (int i = 0; i < nodes.size(); i++) {
+    //     for (int j = i+1; j < nodes.size(); j++) {
+    //         Variable* x = nodes[i];
+    //         Variable* y = nodes[j];
 
-            if (adjacencies[x].count(y)) {
-                graph.addUndirectedEdge(x, y);
-            }
+    //         if (adjacencies[x].count(y)) {
+    //             graph.addUndirectedEdge(x, y);
+    //         }
+    //     }
+    // }
+
+    // Should be more efficient than the above code
+    for (Variable* x : nodes) {
+        for (Variable* y : adjacencies[x]) {
+            graph.addUndirectedEdge(x, y);
         }
     }
 
