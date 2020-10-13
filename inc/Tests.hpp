@@ -22,6 +22,8 @@ public:
 
     static void testMGMFunctions(const Rcpp::DataFrame &df, const int maxDiscrete = 5);
 
+    static void testMGMTiming(const Rcpp::DataFrame &df, const int maxDiscrete = 5);
+
     static void testPcStable(const Rcpp::DataFrame &df, const int maxDiscrete = 5);
 
     static void testCpcStable(const Rcpp::DataFrame &df, const int maxDiscrete = 5);

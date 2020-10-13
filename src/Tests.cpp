@@ -132,6 +132,40 @@ void Tests::testMGMFunctions(const Rcpp::DataFrame &df, const int maxDiscrete) {
     Rcpp::Rcout << "MGM GRAPH\n" << mgmGraph << std::endl;
 }
 
+void Tests::testMGMTiming(const Rcpp::DataFrame &df, const int maxDiscrete) {
+    DataSet ds(df, maxDiscrete);
+
+    std::vector<double> lambda = {0.05, 0.05, 0.05};
+    MGM mgm(ds, lambda);
+    EdgeListGraph mgmGraph = mgm.search();
+    Rcpp::Rcout << "MGM elapsed time (l: " << lambda[0] << ") = " << mgm.getElapsedTime() << " ms" << std::endl;
+
+    lambda = {0.1, 0.1, 0.1};
+    mgm = MGM(ds, lambda);
+    mgmGraph = mgm.search();
+    Rcpp::Rcout << "MGM elapsed time (l: " << lambda[0] << ") = " << mgm.getElapsedTime() << " ms" << std::endl;
+
+    lambda = {0.15, 0.15, 0.15};
+    mgm = MGM(ds, lambda);
+    mgmGraph = mgm.search();
+    Rcpp::Rcout << "MGM elapsed time (l: " << lambda[0] << ") = " << mgm.getElapsedTime() << " ms" << std::endl;
+
+    lambda = {0.2, 0.2, 0.2};
+    mgm = MGM(ds, lambda);
+    mgmGraph = mgm.search();
+    Rcpp::Rcout << "MGM elapsed time (l: " << lambda[0] << ") = " << mgm.getElapsedTime() << " ms" << std::endl;
+
+    lambda = {0.25, 0.25, 0.25};
+    mgm = MGM(ds, lambda);
+    mgmGraph = mgm.search();
+    Rcpp::Rcout << "MGM elapsed time (l: " << lambda[0] << ") = " << mgm.getElapsedTime() << " ms" << std::endl;
+
+    lambda = {0.3, 0.3, 0.3};
+    mgm = MGM(ds, lambda);
+    mgmGraph = mgm.search();
+    Rcpp::Rcout << "MGM elapsed time (l: " << lambda[0] << ") = " << mgm.getElapsedTime() << " ms" << std::endl;
+}
+
 void Tests::testPcStable(const Rcpp::DataFrame &df, const int maxDiscrete) {
     DataSet ds(df, maxDiscrete);
     std::vector<double> lambda = {0.2, 0.2, 0.2};
