@@ -190,6 +190,17 @@ DataSet::DataSet(DataSet& ds) {
   // }
 }
 
+DataSet::DataSet(DataSet& ds, const arma::urowvec& rows) {
+    this->maxDiscrete=ds.maxDiscrete;
+    this->m = ds.m;
+    this->n = rows.n_elem;
+    this->variables = ds.variables;
+    this->variableNames = ds.variableNames;
+    this->name2idx = ds.name2idx;
+    this->var2idx = ds.var2idx;
+    this->data = ds.data.rows(rows);
+}
+
 DataSet& DataSet::operator=(DataSet& ds) {
   this->maxDiscrete=ds.maxDiscrete;
   this->m = ds.m;

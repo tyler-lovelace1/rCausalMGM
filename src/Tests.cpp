@@ -212,3 +212,14 @@ void Tests::testPcMax(const Rcpp::DataFrame &df, const int maxDiscrete) {
     EdgeListGraph pcmGraph = pcm.search();
     Rcpp::Rcout << "PCM GRAPH\n" << pcmGraph << std::endl;
 }
+
+void Tests::testSTEPS(const Rcpp::DataFrame &df, const int maxDiscrete) {
+    DataSet ds(df, maxDiscrete);
+    std::vector<double> lambdas = {0.05, 0.1, 0.15, 0.2, 0.25, 0.3};
+
+    STEPS steps(ds, lambdas, 0.5, 20);
+
+    EdgeListGraph g = steps.runStepsPar();
+
+    Rcpp::Rcout << "STEPS graph:\n" << g << std::endl;
+}

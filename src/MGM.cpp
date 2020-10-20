@@ -87,8 +87,8 @@ void MGM::initParameters() {
     params = MGMParams(
         arma::mat((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros),  // beta
         arma::vec((int) xDat.n_cols,                    arma::fill::ones),   // betad
-        arma::mat(lsum, (int) xDat.n_cols,              arma::fill::zeros),  // theta
-        arma::mat(lsum, lsum,                           arma::fill::zeros),  // phi
+        arma::mat(lsum,              (int) xDat.n_cols, arma::fill::zeros),  // theta
+        arma::mat(lsum,              lsum,              arma::fill::zeros),  // phi
         arma::vec((int) xDat.n_cols,                    arma::fill::zeros),  // alpha1
         arma::vec(lsum,                                 arma::fill::zeros)   // alpha2
     );
@@ -945,6 +945,8 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     // Tests::testPcMax(df, maxDiscrete);
 
-    Tests::testMGMTiming(df, maxDiscrete);
+    // Tests::testMGMTiming(df, maxDiscrete);
+
+    Tests::testSTEPS(df, maxDiscrete);
 
 }
