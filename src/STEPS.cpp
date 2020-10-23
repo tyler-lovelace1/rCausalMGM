@@ -29,7 +29,7 @@ EdgeListGraph STEPS::runStepsPar() {
 
     // go until we break by having instability better than threshold
     while(true) {
-        Rcpp::Rcout << "Lambda: " << lambda[currIndex] << std::endl;
+        // Rcpp::Rcout << "lambdaCurr = " << lambda[currIndex] << std::endl;
 
         std::vector<double> lambdaCurr = { lambda[currIndex], lambda[currIndex], lambda[currIndex] };
 
@@ -40,6 +40,8 @@ EdgeListGraph STEPS::runStepsPar() {
         } else {
             adjMat = StabilityUtils::stabilitySearchPar(d, lambdaCurr, N, b);
         }
+
+        // Rcpp::Rcout << "adjMat = " << adjMat << std::endl;
 
         double ccDestable = 0;
         double cdDestable = 0;
@@ -81,6 +83,7 @@ EdgeListGraph STEPS::runStepsPar() {
         ccDestable = ccDestable / numCC;
         cdDestable = cdDestable / numCD;
         ddDestable = ddDestable / numDD;
+
         if (ccDestable <= gamma && CC == -1)
             CC = lambda[currIndex];
         if (cdDestable <= gamma && CD == -1)

@@ -418,10 +418,31 @@ bool EdgeListGraph::setEndpoint(Variable* from, Variable* to, Endpoint endPoint)
 }
 
 std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
-    os << "edges(g) = \n";
-    for (Edge edge : graph.edgesSet) {
-        os << edge << "\n";
+    
+    os << "Graph Nodes: ";
+    std::vector<Variable*> nodes = graph.getNodes();
+    int size = nodes.size();
+    int count = 0;
+    for (Variable* node : nodes) {
+        count++;
+        os << node->getName();
+        if (count < size) {
+            os << ",";
+        }
     }
+    os << "\n\n";
+
+    os << "Graph Edges: \n";
+    std::vector<Edge> edges = graph.getEdgeList();
+    Edge::sortEdges(edges);
+    count = 1;
+    
+    for (Edge edge : edges) {
+        os << count << ". " << edge << "\n";
+        count++;
+    }
+
+    //TODO - print triples?
 
     return os;
 }

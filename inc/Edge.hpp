@@ -197,7 +197,7 @@ public:
      */
     static Variable* getDirectedEdgeTail(Edge& edge);
 
-    static void sortEdges(std::vector<Edge> edges);
+    static void sortEdges(std::vector<Edge>& edges);
 
 };
 

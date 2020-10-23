@@ -76,6 +76,7 @@ arma::mat StabilityUtils::skeletonToMatrix(EdgeListGraph& graph, DataSet& d) {
         Variable* node2 = edge.getNode2();
 
         matrix(map[node1], map[node2]) = 1.0;
+        matrix(map[node2], map[node1]) = 1.0;
     }
 
     return matrix;
