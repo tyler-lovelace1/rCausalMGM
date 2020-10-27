@@ -941,10 +941,10 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     // Tests::testPcStable(df, maxDiscrete);
 
-    // Tests::testCpcStable(df, maxDiscrete);
+    Tests::testCpcStable(df, maxDiscrete);
 
     // Tests::testPcMax(df, maxDiscrete);
 
-    Tests::testMGMTiming(df, maxDiscrete);
+    // Tests::testMGMTiming(df, maxDiscrete);
 
 }
