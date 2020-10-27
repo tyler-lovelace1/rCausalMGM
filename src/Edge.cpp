@@ -363,6 +363,6 @@ bool operator> (const Edge& e1, const Edge& e2) {
     return !(e1 <= e2);
 }
 
-void Edge::sortEdges(std::vector<Edge> edges) {
+void Edge::sortEdges(std::vector<Edge>& edges) {
     std::sort(edges.begin(), edges.end());
 }

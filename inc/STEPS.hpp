@@ -13,7 +13,7 @@ private:
     int b;
     std::vector<double> lambda;
     double gamma;
-    bool includeZeros = true;
+    // bool includeZeros = true;
     int iterLimit = 500;
     double origLambda;
     // Graph pdGraph;
@@ -21,11 +21,11 @@ private:
     std::vector<double> lastLambda;
     bool leaveOneOut = false;
     arma::mat stabilities;
-    arma::umat subs;
-    bool computeStabs;
+    // arma::umat subs;
+    bool computeStabs = false;
 
 public:
-    STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, bool loo) :
+    STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, bool loo = false) :
         d(dat),
         leaveOneOut(loo),
         N(numSub),
@@ -35,7 +35,8 @@ public:
 
     EdgeListGraph runStepsPar();
 
-
+    void setComputeStabs(bool cs) { computeStabs = cs; }
+    bool getComputeStabs() { return computeStabs; }
 
 };
 
