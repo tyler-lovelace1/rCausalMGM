@@ -1,5 +1,12 @@
 #include "EdgeListGraph.hpp"
 
+#include "GraphUtils.hpp"
+#include <RcppArmadillo.h>
+#include <string.h> 
+#include <fstream>
+#include <stdlib.h>
+#include <iostream>
+
 
 // Used by constructors
 void EdgeListGraph::initNamesHash() {
@@ -56,6 +63,68 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     pattern = graph.pattern;
 }
 
+EdgeListGraph EdgeListGraph::graphFromFile(const std::string& filename, const DataSet& ds) {
+
+    // Get lines from file
+    std::vector<std::string> lines;
+    try {
+        std::ifstream f(filename);
+
+        if(!f) {
+            Rcpp::Rcout << "ERROR: Cannot open " << filename << std::endl;
+            exit(1);
+        }
+        std::string line;
+
+        while (std::getline(f,line)) {
+            lines.push_back(line);     
+        }
+    }
+    catch(const std::exception& ex) {
+        std::cerr << "Exception: '" << ex.what() << "'!" << std::endl;
+        exit(1);
+    }
+
+    std::vector<std::string>   nodeNames = GraphUtils::splitString(lines[1], ";");
+    if (nodeNames.size() <= 1) nodeNames = GraphUtils::splitString(lines[1], ","); // Check for comma delimiter
+
+    std::vector<Variable*> nodes;
+
+    for (std::string name : nodeNames) {
+        try {
+            nodes.push_back(ds.getVariable(name));
+        } catch (const std::exception& ex) {
+            throw std::invalid_argument("ERROR: In graph " + filename + ", could not find node " + name + " in the provided data set");
+        }
+    }
+
+    EdgeListGraph graph(nodes);
+
+    // Start the line after you read 'Graph Edges:'
+    auto edgeStart = std::find(lines.begin(), lines.end(), "Graph Edges:");
+    edgeStart++;
+
+    if (edgeStart == lines.end())
+        throw std::invalid_argument("Unable to find 'Graph Edges:' line in " + filename);
+
+    for (auto i = edgeStart; i != lines.end(); i++) {
+        std::string edgeString = *i;
+
+        if (edgeString == "") continue; // Skip empty lines
+        
+        if (edgeString.find(". ") == std::string::npos)
+            throw std::invalid_argument("Error reading graph " + filename + ": edge is not formatted correctly: " + edgeString);
+
+        edgeString = GraphUtils::splitString(edgeString, ". ")[1];
+
+        if (!graph.addEdge(edgeString)) {
+            throw std::invalid_argument("Error reading graph " + filename + ": error adding edge: " + edgeString);
+        }
+    }
+
+    return graph;
+}
+
 /**
  * Transfers nodes and edges from one graph to another.  One way this is
  * used is to change graph types.  One constructs a new graph based on the
@@ -102,6 +171,17 @@ bool EdgeListGraph::addDirectedEdge(Variable* node1, Variable* node2) {
 }
 
 /**
+ * Adds a bidirected edge to the graph from node A to node B.
+ *
+ * @param node1 the "from" node.
+ * @param node2 the "to" node.
+ */
+bool EdgeListGraph::addBidirectedEdge(Variable* node1, Variable* node2) {
+    Edge newEdge = Edge::bidirectedEdge(node1, node2);
+    return addEdge(newEdge);
+}
+
+/**
  * Adds an edge to the graph.
  *
  * @param edge the edge to be added
@@ -144,6 +224,46 @@ bool EdgeListGraph::addEdge(Edge& edge) {
     edgesSet.insert(edge);
 
     return true;
+}
+
+bool EdgeListGraph::addEdge(std::string edgeString) {
+    std::vector<std::string> edgeComponents = GraphUtils::splitString(edgeString, " ");
+
+    if (edgeComponents.size() != 3)
+        throw std::invalid_argument("Edge from string must have 3 components (node edge node): " + edgeString);
+
+    Variable* node1 = getNode(edgeComponents[0]);
+    Variable* node2 = getNode(edgeComponents[2]);
+
+    if (node1 == NULL) 
+        throw std::invalid_argument("Edge node not found in graph: " + edgeComponents[0]);
+
+    if (node2 == NULL) 
+        throw std::invalid_argument("Edge node not found in graph: " + edgeComponents[2]);
+
+    std::string edgeMid = edgeComponents[1];
+
+    if (edgeMid.length() < 3) 
+        throw std::invalid_argument("Invalid edge: " + edgeString);
+
+    char endpoint1 = edgeMid[0];
+    char endpoint2 = edgeMid[edgeMid.length()-1];
+
+    if (endpoint1 == '-') {
+        if (endpoint2 == '>') {
+            return addDirectedEdge(node1, node2);
+        } else if (endpoint2 == '-') {
+            return addUndirectedEdge(node1, node2);
+        }
+    } else if (endpoint1 == '<') {
+        if (endpoint2 == '>') {
+            return addBidirectedEdge(node1, node2);
+        } else if (endpoint2 == '-') {
+            return addDirectedEdge(node2, node1);
+        }
+    }
+
+    throw std::invalid_argument("Endpoints not recognized: " + edgeString);
 }
 
 /**
@@ -419,7 +539,7 @@ bool EdgeListGraph::setEndpoint(Variable* from, Variable* to, Endpoint endPoint)
 
 std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
     
-    os << "Graph Nodes: ";
+    os << "Graph Nodes:\n";
     std::vector<Variable*> nodes = graph.getNodes();
     int size = nodes.size();
     int count = 0;
@@ -432,7 +552,7 @@ std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
     }
     os << "\n\n";
 
-    os << "Graph Edges: \n";
+    os << "Graph Edges:\n";
     std::vector<Edge> edges = graph.getEdgeList();
     Edge::sortEdges(edges);
     count = 1;

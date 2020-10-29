@@ -3,14 +3,9 @@
 
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"
-#include "ContinuousVariable.hpp"
-#include "DiscreteVariable.hpp"
 #include "MGMParams.hpp"
 #include "ProximalGradient.hpp"
 #include "EdgeListGraph.hpp"
-#include <math.h>
-#include <RcppArmadillo.h>
-#include <chrono>
 
 /**
  * Implementation of Lee and Hastie's (2012) pseudolikelihood method for learning

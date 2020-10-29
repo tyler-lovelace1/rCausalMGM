@@ -1,5 +1,8 @@
 #include "FasStableProducerConsumer.hpp"
 
+#include "ChoiceGenerator.hpp"
+#include "GraphUtils.hpp"
+
 FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test) 
 {
     this->initialGraph = initialGraph;

@@ -1,5 +1,11 @@
 #include "MGM.hpp"
 
+#include "ContinuousVariable.hpp"
+#include "DiscreteVariable.hpp"
+#include <math.h>
+#include <RcppArmadillo.h>
+#include <chrono>
+
 // Tetsing
 #include "Tests.hpp"
 
@@ -941,12 +947,14 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     // Tests::testPcStable(df, maxDiscrete);
 
-    Tests::testCpcStable(df, maxDiscrete);
+    // Tests::testCpcStable(df, maxDiscrete);
 
     // Tests::testPcMax(df, maxDiscrete);
 
     // Tests::testMGMTiming(df, maxDiscrete);
 
     // Tests::testSTEPS(df, maxDiscrete);
+
+    Tests::testGraphFromFile(df, "data/graph/graph5.txt", maxDiscrete);
 
 }

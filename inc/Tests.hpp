@@ -1,20 +1,7 @@
 #ifndef TESTS_HPP
 #define TESTS_HPP
 
-#include "MGM.hpp"
-#include "IndTestMulti.hpp"
-#include "SepsetMap.hpp"
-#include "ChoiceGenerator.hpp"
-#include "IndependenceTestRandom.hpp"
-#include "PcStable.hpp"
-#include "CpcStable.hpp"
-#include "PcMax.hpp"
-#include "BlockingQueue.hpp"
-#include "STEPS.hpp"
-#include <thread>
-#include <atomic>
-#include <cstdlib>
-
+#include <RcppArmadillo.h>
 
 class Tests {
 
@@ -32,6 +19,8 @@ public:
     static void testPcMax(const Rcpp::DataFrame &df, const int maxDiscrete = 5);
 
     static void testSTEPS(const Rcpp::DataFrame &df, const int maxDiscrete = 5);
+
+    static void testGraphFromFile(const Rcpp::DataFrame &df, const std::string& filename, const int maxDiscrete = 5);
 
 };
 

@@ -134,6 +134,10 @@ void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variab
         return;
     }
 
+    std::unique_lock<std::mutex> mapLock(mapMutex);
+    scores[Triple(a, b, c)] = 0;
+    mapMutex.unlock();
+
     taskQueue.push(IndependenceTask(a, b, c, {}));
     taskQueue.push(IndependenceTask(a, b, c, {b}));
 }
@@ -147,7 +151,7 @@ void OrientCollidersMaxP::orientCollider(Variable* a, Variable* b, Variable* c) 
     graph->removeEdge(c, b);
     graph->addDirectedEdge(a, b);
     graph->addDirectedEdge(c, b);
-    Rcpp::Rcout << "ORIENTED SUCCESSFULLY" << std::endl;
+    // Rcpp::Rcout << "ORIENTED SUCCESSFULLY" << std::endl;
 }
 
 bool OrientCollidersMaxP::wouldCreateBadCollider(Variable* x, Variable* y) {
@@ -224,24 +228,26 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
     while(!q.empty()) {
         Variable* t = q.front();
         q.pop();
-        logfile << "t = " << t->getName() << std::endl;
+        // logfile << "t = " << t->getName() << std::endl;
 
-        if (e == NULL) logfile << "e = NULL" << std::endl;
-        else logfile << "e = " << e->getName() << std::endl;
+        // if (e == NULL) logfile << "e = NULL" << std::endl;
+        // else logfile << "e = " << e->getName() << std::endl;
 
         if (e == t) {
             e = NULL;
             distance++;
-            logfile << "distance = " << distance << " bound = " << bound << std::endl;
+            // logfile << "distance = " << distance << " bound = " << bound << std::endl;
             if (distance > (bound == -1 ? 1000 : bound)) {
+                logfile << "No" << std::endl;
                 logfile.close();
                 return false;
             }
         }
 
         for (Variable* u : graph->getAdjacentNodes(t)) {
-            logfile << "u = " << u->getName() << std::endl;
+            // logfile << "u = " << u->getName() << std::endl;
             if (u == z && distance > 2) {
+                logfile << "Yes" << std::endl;
                 logfile.close();
                 return true;
             } 
@@ -257,6 +263,7 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
         }
     }
 
+    logfile << "No" << std::endl;
     logfile.close();
 
     return false;
@@ -307,7 +314,7 @@ void OrientCollidersMaxP::addColliders() {
         Variable* c = triple.getZ();
 
         if (!(graph->getEndpoint(b, a) == ENDPOINT_ARROW || graph->getEndpoint(b, c) == ENDPOINT_ARROW)) {
-            Rcpp::Rcout << "orienting collider " << Triple(a, b, c) << std::endl;
+            // Rcpp::Rcout << "orienting collider " << Triple(a, b, c) << std::endl;
             orientCollider(a, b, c);
         }
     }

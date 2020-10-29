@@ -1,5 +1,21 @@
 #include "GraphUtils.hpp"
 
+std::vector<std::string> GraphUtils::splitString(std::string s, const std::string& delim) {
+    std::vector<std::string> tokens;
+    
+    std::size_t find;
+
+    while ((find = s.find(delim)) != std::string::npos) {
+        std::string token = s.substr(0, find);
+        tokens.push_back(token);
+        s.erase(0, find + delim.length());
+    }
+
+    tokens.push_back(s);
+
+    return tokens;
+}
+
 /**
  * Constructs a list of nodes from the given <code>nodes</code> list at the
  * given indices in that list.

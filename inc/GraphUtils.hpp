@@ -15,6 +15,9 @@ private:
                                 EdgeListGraph& graph, std::unordered_set<Triple>& colliders, int bound);
 
 public:
+
+    static std::vector<std::string> splitString(std::string s, const std::string& delim);
+
     /**
      * @return true just in case there is a nonempty path from one node to
      * another. Because the path needs to be non-empty, this can distinguish

@@ -4,10 +4,9 @@
 #include "EdgeListGraph.hpp"
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
-#include "ChoiceGenerator.hpp"
 #include "BlockingQueue.hpp"
-#include <thread>
 #include <mutex>
+#include <thread>
 
 class FasStableProducerConsumer {
 

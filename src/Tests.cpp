@@ -1,5 +1,20 @@
 #include "Tests.hpp"
 
+#include "MGM.hpp"
+#include "IndTestMulti.hpp"
+#include "SepsetMap.hpp"
+#include "ChoiceGenerator.hpp"
+#include "IndependenceTestRandom.hpp"
+#include "PcStable.hpp"
+#include "CpcStable.hpp"
+#include "PcMax.hpp"
+#include "BlockingQueue.hpp"
+#include "STEPS.hpp"
+#include <thread>
+#include <atomic>
+#include <cstdlib>
+
+
 void Tests::testConcurrentQueue() {
     BlockingQueue<int> q(100);
 
@@ -223,4 +238,12 @@ void Tests::testSTEPS(const Rcpp::DataFrame &df, const int maxDiscrete) {
     EdgeListGraph g = steps.runStepsPar();
 
     Rcpp::Rcout << "STEPS graph:\n" << g << std::endl;
+}
+
+void Tests::testGraphFromFile(const Rcpp::DataFrame &df, const std::string& filename, const int maxDiscrete) {
+    DataSet ds(df, maxDiscrete);
+
+    EdgeListGraph graph = EdgeListGraph::graphFromFile(filename, ds);
+
+    Rcpp::Rcout << "Graph from file:\n" << graph << std::endl;
 }

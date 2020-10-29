@@ -4,8 +4,8 @@
 #include "Variable.hpp"
 #include "Edge.hpp"
 #include "Triple.hpp"
-#include "GraphUtils.hpp"
-#include <RcppArmadillo.h>
+#include "DataSet.hpp"
+
 
 class EdgeListGraph {
 
@@ -104,6 +104,8 @@ public:
      * names.
      */
     EdgeListGraph(const std::vector<Variable*>& nodes);
+
+    static EdgeListGraph graphFromFile(const std::string& filename, const DataSet& ds);
 
     // Shallow copy isn't possible because Edges aren't stored by reference (is it neccesary?)
 
@@ -392,6 +394,11 @@ public:
      * @return true if the edge was added, false if not.
      */
     bool addEdge(Edge& edge);
+
+    /**
+     * Add edge from string
+     */ 
+    bool addEdge(std::string edgeString);
 
     /**
      * Adds a node to the graph. Precondition: The proposed name of the node
