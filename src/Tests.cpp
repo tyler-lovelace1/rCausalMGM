@@ -211,6 +211,7 @@ void Tests::testCpcStable(const Rcpp::DataFrame &df, const int maxDiscrete) {
     Rcpp::Rcout << "CPC GRAPH\n" << cpcGraph << std::endl;
     Rcpp::Rcout << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):" << std::endl;
     for (Triple t : cpcGraph.getAmbiguousTriples()) Rcpp::Rcout << t << std::endl;
+
 }
 
 void Tests::testPcMax(const Rcpp::DataFrame &df, const int maxDiscrete) {

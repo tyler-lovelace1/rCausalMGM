@@ -33,11 +33,13 @@ private:
 
     long elapsedTime = 0;
 
-    bool useHeuristic = true;
+    bool useHeuristic = false;
 
     int maxPathLength = 3;
 
     std::unordered_map<Triple, double> scores;
+
+    std::unordered_map<Triple, bool> colliders; // True if Triple is a collider, false otherwise
 
     void testColliderMaxP(Variable* a, Variable* b, Variable* c);
 

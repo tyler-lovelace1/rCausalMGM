@@ -37,18 +37,15 @@ private:
      * triples. If there are triples in the lists involving removed nodes, these need to be removed from the lists
      * first, so as not to cause confusion.
      */
-    bool stuffRemovedSinceLastTripleAccess = false;
+    // bool stuffRemovedSinceLastTripleAccess = false;
 
-    std::unordered_set<Edge> highlightedEdges;
+    // std::unordered_set<Edge> highlightedEdges;
 
     std::unordered_map<std::string, Variable*> namesHash;
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> ancestors;
+    // std::unordered_map<Variable*, std::unordered_set<Variable*>> ancestors;
 
-    bool pattern = false;
-    bool pag = false;
-
-    void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*>& ancestors);
+    // void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*>& ancestors);
 
     void collectDescendantsVisit(Variable* node, std::unordered_set<Variable*>& descendants);
 
@@ -234,9 +231,9 @@ public:
      * @return true iff node1 is a possible ancestor of at least one member of
      * nodes2
      */
-    bool possibleAncestorSet(Variable* node1, std::vector<Variable*>& nodes2);
+    // bool possibleAncestorSet(Variable* node1, std::vector<Variable*>& nodes2);
 
-    std::vector<Variable*> getAncestors(std::vector<Variable*>& nodes);
+    // std::vector<Variable*> getAncestors(std::vector<Variable*>& nodes);
 
     /**
      * Determines whether one node is a child of another.
@@ -261,15 +258,9 @@ public:
 
     void setNodes(std::vector<Variable*>& nodes);
 
-    std::unordered_set<Variable*> zAncestors(std::vector<Variable*>& z);
+    // std::unordered_set<Variable*> zAncestors(std::vector<Variable*>& z);
 
     bool isDSeparatedFrom(std::vector<Variable*>& x, std::vector<Variable*>& y, std::vector<Variable*>& z);
-
-    bool isPattern() { return pattern; }
-    void setPattern(bool pattern) { this->pattern = pattern; }
-
-    bool isPag() { return pag; }
-    void setPag(bool pag) { this->pag = pag; }
 
     /**
      * Determines whether one n ode is d-separated from another. According to
@@ -558,9 +549,9 @@ public:
 
     std::vector<Variable*> getCausalOrdering();
 
-    void setHighlighted(Edge& edge, bool highlighted) { if (highlighted) highlightedEdges.insert(edge); else highlightedEdges.erase(edge); } ;
+    // void setHighlighted(Edge& edge, bool highlighted) { if (highlighted) highlightedEdges.insert(edge); else highlightedEdges.erase(edge); } ;
 
-    bool isHighlighted(Edge& edge) { return highlightedEdges.count(edge); }
+    // bool isHighlighted(Edge& edge) { return highlightedEdges.count(edge); }
 
     void changeName(std::string name, std::string newName);
 

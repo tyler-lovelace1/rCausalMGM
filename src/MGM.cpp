@@ -949,12 +949,14 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     // Tests::testCpcStable(df, maxDiscrete);
 
-    // Tests::testPcMax(df, maxDiscrete);
+    // Rcpp::Rcout << "Dudek finished everything" << std::endl;
+
+    Tests::testPcMax(df, maxDiscrete);
 
     // Tests::testMGMTiming(df, maxDiscrete);
 
     // Tests::testSTEPS(df, maxDiscrete);
 
-    Tests::testGraphFromFile(df, "data/graph/graph5.txt", maxDiscrete);
+    // Tests::testGraphFromFile(df, "data/graph/graph5.txt", maxDiscrete);
 
 }

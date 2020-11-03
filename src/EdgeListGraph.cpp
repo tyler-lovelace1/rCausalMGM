@@ -51,16 +51,14 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     underLineTriples = graph.underLineTriples;
     dottedUnderLineTriples = graph.dottedUnderLineTriples;
 
-    for (Edge edge : graph.edgesSet) {
-        if (graph.highlightedEdges.count(edge)) {
-            setHighlighted(edge, true);
-        }
-    }
+    // for (Edge edge : graph.edgesSet) {
+    //     if (graph.highlightedEdges.count(edge)) {
+    //         setHighlighted(edge, true);
+    //     }
+    // }
 
     namesHash = graph.namesHash;
 
-    pag = graph.pag;
-    pattern = graph.pattern;
 }
 
 EdgeListGraph EdgeListGraph::graphFromFile(const std::string& filename, const DataSet& ds) {
@@ -355,8 +353,8 @@ bool EdgeListGraph::removeEdge(Edge& edge) {
     edgeLists[edge.getNode1()] = edgeList1;
     edgeLists[edge.getNode2()] = edgeList2;
 
-    highlightedEdges.erase(edge);
-    stuffRemovedSinceLastTripleAccess = true;
+    // highlightedEdges.erase(edge);
+    // stuffRemovedSinceLastTripleAccess = true;
 
     return true;
 }

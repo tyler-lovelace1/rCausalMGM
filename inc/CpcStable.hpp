@@ -5,7 +5,7 @@
 #include "EdgeListGraph.hpp"
 #include "Variable.hpp"
 #include "SepsetMap.hpp"
-#include "FasStable.hpp"
+#include "FasStableProducerConsumer.hpp"
 #include "SearchGraphUtils.hpp"
 #include "MeekRules.hpp"
 #include <chrono>
@@ -152,7 +152,7 @@ public:
 
     EdgeListGraph search(const std::vector<Variable*>& nodes);
 
-    EdgeListGraph search(FasStable& fas, const std::vector<Variable*>& nodes);
+    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes);
 
 };
 

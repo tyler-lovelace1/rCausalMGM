@@ -1,6 +1,7 @@
 #include "OrientCollidersMaxP.hpp"
 
 #include <fstream>
+#include "GraphUtils.hpp"
 
 OrientCollidersMaxP::OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph) : taskQueue(MAX_QUEUE_SIZE) {
     if (test == NULL) 
@@ -89,6 +90,7 @@ void OrientCollidersMaxP::consumer() {
         std::unique_lock<std::mutex> mapLock(mapMutex);
         if (score > scores[Triple(it.a, it.b, it.c)]) {
             scores[Triple(it.a, it.b, it.c)] = score;
+            colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
         }
         
     }
@@ -111,9 +113,7 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
         std::vector<Variable*> s = GraphUtils::asList(*comb2, adja);
 
         // If !s.contains(b) TODO - should this condition be here?
-        if (std::find(s.begin(), s.end(), b) == s.end()) {
-            taskQueue.push(IndependenceTask(a, b, c, s));
-        }
+        taskQueue.push(IndependenceTask(a, b, c, s));
     }
 
     DepthChoiceGenerator cg2(adjc.size(), -1);
@@ -121,9 +121,7 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
     for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
         std::vector<Variable*> s = GraphUtils::asList(*comb3, adjc);
         // If !s.contains(b) TODO - should this condition be here?
-        if (std::find(s.begin(), s.end(), b) == s.end()) {
-            taskQueue.push(IndependenceTask(c, b, a, s));
-        }
+        taskQueue.push(IndependenceTask(c, b, a, s));
     }
 
 }
@@ -212,6 +210,7 @@ bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Va
     return false;
 }
 
+//TODO - what should this be testing?
 // Returns true if there is an undirected path from x to either y or z within the given number of steps.
 bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
     std::ofstream logfile;
@@ -293,22 +292,25 @@ void OrientCollidersMaxP::addColliders() {
     }
 
     // Get a list of keys in scores
-    std::vector<Triple> tripleList;
-    tripleList.reserve(scores.size());
+    std::vector<Triple> colliderList;
+    colliderList.reserve(scores.size());
     for (auto pair : scores) {
-        tripleList.push_back(pair.first);
+        // We only care about triples that are colliders
+        if (colliders[pair.first]) {
+            colliderList.push_back(pair.first);
 
-        // Print scores
-        Rcpp::Rcout << pair.first << " score = " << pair.second << std::endl;
+            // Print scores
+            Rcpp::Rcout << pair.first << " score = " << pair.second << std::endl;
+        }
     }
 
     // Most independent ones first.
-    std::sort(tripleList.begin(), tripleList.end(),
+    std::sort(colliderList.begin(), colliderList.end(),
         [&](const Triple& t1, const Triple& t2) {
             return scores[t1] > scores[t2];
         });
 
-    for (Triple triple : tripleList) {
+    for (Triple triple : colliderList) {
         Variable* a = triple.getX();
         Variable* b = triple.getY();
         Variable* c = triple.getZ();

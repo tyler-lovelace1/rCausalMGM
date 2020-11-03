@@ -4,7 +4,7 @@
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
 #include "Variable.hpp"
-#include "FasStable.hpp"
+#include "FasStableProducerConsumer.hpp"
 #include "OrientCollidersMaxP.hpp"
 #include "MeekRules.hpp"
 #include <chrono>
@@ -52,8 +52,7 @@ private:
      */
     long elapsedTime;
 
-    // TODO - what should the default be?
-    bool useHeuristic = true;
+    bool useHeuristic = false;
 
     int maxPathLength = 3;
 

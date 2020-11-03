@@ -1,5 +1,7 @@
 #include "PcMax.hpp"
 
+#include "GraphUtils.hpp"
+
 /**
  * Constructs a new PC search using the given independence test as oracle.
  *
@@ -71,7 +73,7 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
 
-    FasStable fas(initialGraph, independenceTest);
+    FasStableProducerConsumer fas(initialGraph, independenceTest);
     fas.setDepth(depth);
     graph = fas.search();
 
@@ -93,3 +95,4 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
 
     return graph;
 }
+
