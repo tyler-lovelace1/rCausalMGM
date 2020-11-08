@@ -54,18 +54,20 @@ public:
     this->type = var.type;
     for (int i = 0; i < var.categories.size(); i++)
       this->categories.push_back(var.categories.at(i));
+    return *this;
   }
 
   DiscreteVariable(DiscreteVariable&& var) {
     this->name = var.name;
     this->type = var.type;
-    this ->categories = var.categories;
+    this->categories = var.categories;
   }
 
   DiscreteVariable& operator=(DiscreteVariable&& var) {
     this->name = var.name;
     this->type = var.type;
-    this ->categories = var.categories;
+    this->categories = var.categories;
+    return *this;
   }
 
   int getMissingValueMarker() { return MISSING_VALUE; }
