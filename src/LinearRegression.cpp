@@ -31,6 +31,7 @@ LinearRegression& LinearRegression::operator=(LinearRegression& lr) {
   this->variables = this->data.getVariables();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+  return *this;
 }
 
 LinearRegression& LinearRegression::operator=(LinearRegression&& lr) {
@@ -38,6 +39,7 @@ LinearRegression& LinearRegression::operator=(LinearRegression&& lr) {
   this->variables = this->data.getVariables();
   this->rows = arma::uvec(this->data.getNumRows());
   for (int i = 0; i < data.getNumRows(); i++) rows[i] = i;
+  return *this;
 }
 
 RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variable*>& regressors){
@@ -121,7 +123,15 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
       double s_ = se * se * xTxInv(i, i);
       double se_ = std::sqrt(s_);
       double t_ = b(i, 0) / se_;
+      // Rcpp::Rcout << "dist.df = " << dist.degrees_of_freedom() << std::endl;
       double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+
+      if (i == 1) {
+	  // Rcpp::Rcout << "beta = " << b(i,0) << std::endl;
+	  // Rcpp::Rcout << "SE = " << se_ << std::endl;
+	  // Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
+	  // Rcpp::Rcout << "p-value = " << p_ << std::endl;
+      }
 
       sqErr[i] = se_;
       t[i] = t_;
@@ -131,7 +141,7 @@ RegressionResult* LinearRegression::regress(Variable* target, std::vector<Variab
   std::vector<std::string> vNames(regressors.size());
 
   for (int i = 0; i < regressors.size(); i++) {
-    Rcpp::Rcout << regressors[i]->getName() << "\n";
+    // Rcpp::Rcout << regressors[i]->getName() << "\n";
     vNames[i] = regressors[i]->getName(); // getName Function may not be implemented
   }
 
