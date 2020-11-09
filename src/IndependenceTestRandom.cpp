@@ -3,7 +3,7 @@
 /**
  * @return true about 25% of the time
  */
-bool IndependenceTestRandom::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) {
+bool IndependenceTestRandom::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
     uint seed = 13 * std::hash<std::string>()(x->getName()) + 17 * std::hash<std::string>()(y->getName());
 
     for (Variable* node : z) {

@@ -1,12 +1,14 @@
 #include "MGM.hpp"
 
+#include "ContinuousVariable.hpp"
+#include "DiscreteVariable.hpp"
+#include <math.h>
+#include <RcppArmadillo.h>
+#include <chrono>
+
 // Tetsing
-#include "IndTestMulti.hpp"
-#include "SepsetMap.hpp"
-#include "ChoiceGenerator.hpp"
-#include "IndependenceTestRandom.hpp"
-#include "PcStable.hpp"
-#include "CpcStable.hpp"
+#include "Tests.hpp"
+
 
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
@@ -91,8 +93,8 @@ void MGM::initParameters() {
     params = MGMParams(
         arma::mat((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros),  // beta
         arma::vec((int) xDat.n_cols,                    arma::fill::ones),   // betad
-        arma::mat(lsum, (int) xDat.n_cols,              arma::fill::zeros),  // theta
-        arma::mat(lsum, lsum,                           arma::fill::zeros),  // phi
+        arma::mat(lsum,              (int) xDat.n_cols, arma::fill::zeros),  // theta
+        arma::mat(lsum,              lsum,              arma::fill::zeros),  // phi
         arma::vec((int) xDat.n_cols,                    arma::fill::zeros),  // alpha1
         arma::vec(lsum,                                 arma::fill::zeros)   // alpha2
     );
@@ -939,88 +941,22 @@ EdgeListGraph MGM::search() {
 // [[Rcpp::export]]
 void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
-    DataSet ds(df, maxDiscrete);
+    // Tests::testMGMFunctions(df, maxDiscrete);
 
-    std::vector<double> lambda = {0.2, 0.2, 0.2};
+    // Tests::testConcurrentQueue();
 
-    MGM mgm(ds, lambda);
+    // Tests::testPcStable(df, maxDiscrete);
 
-    // arma::vec params = mgm.params.toMatrix1D();
+    // Tests::testCpcStable(df, maxDiscrete);
 
-    // Rcpp::Rcout << "Smooth value: \n" << mgm.smoothValue(params) << std::endl;
+    // Rcpp::Rcout << "Dudek finished everything" << std::endl;
 
-    // arma::vec smoothGrad = mgm.smoothGradient(params);
-    // Rcpp::Rcout << "Calculated smooth gradient" << std::endl;
-    // MGMParams params2(smoothGrad, 5, 20);
-    // Rcpp::Rcout << "Smooth gradient: \n" << params2;
+    Tests::testPcMax(df, maxDiscrete);
 
-    // Test smooth()
-    // arma::vec smoothOut(arma::size(smoothGrad));
-    // Rcpp::Rcout << "Calling smooth()..." << std::endl;
-    // Rcpp::Rcout << "Smooth() value: \n" << mgm.smooth(params, smoothOut) << std::endl;
-    // MGMParams params3(smoothOut, 5, 20);
-    // Rcpp::Rcout << "Smooth() gradient: \n" << params3;
+    // Tests::testMGMTiming(df, maxDiscrete);
 
-    // arma::vec proxOperator = mgm.proximalOperator(1, smoothGrad);
-    // MGMParams params4(proxOperator, 5, 20);
-    // Rcpp::Rcout << "proxOperator: \n" << params4;
+    // Tests::testSTEPS(df, maxDiscrete);
 
-    // Rcpp::Rcout << "nonSmoothValue: \n" << mgm.nonSmoothValue(smoothGrad) << std::endl;
-
-    // Test smooth()
-    // arma::vec nonSmoothOut(arma::size(smoothGrad));
-    // Rcpp::Rcout << "Calling nonSmooth()..." << std::endl;
-    // Rcpp::Rcout << "nonSmooth() value: \n" << mgm.nonSmooth(1, smoothGrad, nonSmoothOut) << std::endl;
-    // MGMParams params5(nonSmoothOut, 5, 20);
-    // Rcpp::Rcout << "nonSmooth() gradient: \n" << params5;
-
-    // mgm.learnEdges(500);
-
-    // Rcpp::Rcout << "mgm.params.alpha1: \n" << mgm.params.getAlpha1() << std::endl;
-    // Rcpp::Rcout << "mgm.params.alpha2: \n" << mgm.params.getAlpha2() << std::endl;
-    // Rcpp::Rcout << "mgm.params.betad: \n" << mgm.params.getBetad() << std::endl;
-    // Rcpp::Rcout << "mgm.params.beta: \n" << mgm.params.getBeta() << std::endl;
-    // Rcpp::Rcout << "mgm.params.theta: \n" << mgm.params.getTheta() << std::endl;
-    // Rcpp::Rcout << "mgm.params.phi: \n" << mgm.params.getPhi() << std::endl;
-
-    EdgeListGraph mgmGraph = mgm.search();
-    Rcpp::Rcout << "MGM elapsed time = " << mgm.getElapsedTime() << " ms" << std::endl;
-
-    Rcpp::Rcout << "MGM GRAPH\n" << mgmGraph << std::endl;
-
-    IndTestMulti itm(ds, 0.05);
-    
-    PcStable pcs((IndependenceTest*) &itm);
-    pcs.setInitialGraph(&mgmGraph);
-    EdgeListGraph pcGraph = pcs.search();
-
-    Rcpp::Rcout << "PC GRAPH\n" << pcGraph << std::endl;
-
-    // CpcStable cpcs((IndependenceTest*) &itm);
-    // cpcs.setInitialGraph(&mgmGraph);
-    // EdgeListGraph cpcGraph = cpcs.search();
-
-    // Rcpp::Rcout << "CPC GRAPH\n" << cpcGraph << std::endl;
-    // Rcpp::Rcout << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):" << std::endl;
-    // for (Triple t : cpcGraph.getAmbiguousTriples()) Rcpp::Rcout << t << std::endl;
-    
-
-    // SepsetMap test;
-    // SepsetMap test2;
-
-    // std::vector<Variable*> variables = ds.getVariables();
-    // std::vector<Variable*> varList1 = {variables[2], variables[3]};
-    // std::vector<Variable*> varList2 = {variables[4], variables[5], variables[6]};
-
-    // std::unordered_set<Variable*> varSet1 = {variables[1], variables[2]};
-    // std::unordered_set<Variable*> varSet2 = {variables[3], variables[4]};
-
-    // test.set(variables[0], variables[1], varList1);
-    // test2.set(variables[1], variables[0], varList1);
-
-    // test.set(variables[0], varSet1);
-    // test.set(variables[0], varSet2);
-
-    // Rcpp::Rcout << "Sepset = " << test << std::endl;
+    // Tests::testGraphFromFile(df, "data/graph/graph5.txt", maxDiscrete);
 
 }

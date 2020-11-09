@@ -82,8 +82,9 @@ void MeekRules::r1Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& g
 
         if (isArrowpointAllowed(b, c)) {
             direct(b, c, graph);
-            Edge edge = graph.getEdge(a, c);
-            Rcpp::Rcout << "Meek R1 triangle (" << b << "-->" << a << "---" << c << ") " << "Edge: " << edge << std::endl;
+            Edge edge = graph.getEdge(b, c);
+            // Rcpp::Rcout << "Meek R1 edge: " << edge << std::endl;
+            // Rcpp::Rcout << "Meek R1 triangle (" << b->getName() << "-->" << a->getName() << "---" << c->getName() << ")" << std::endl;
         }
     }
 }
@@ -117,8 +118,8 @@ void MeekRules::r2Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& g
     if (graph.isDirectedFromTo(a, b) && graph.isDirectedFromTo(b, c) && graph.isUndirectedFromTo(a, c)) {
         if (isArrowpointAllowed(a, c)) {
             direct(a, c, graph);
-            Edge edge = graph.getEdge(b, c);
-            Rcpp::Rcout << "Meek R2 Edge: " << edge << std::endl;
+            Edge edge = graph.getEdge(a, c);
+            // Rcpp::Rcout << "Meek R2 Edge: " << edge << std::endl;
         }
     }
 }
@@ -154,7 +155,7 @@ void MeekRules::meekR3(Variable* a, EdgeListGraph& graph) {
 
                         direct(d, a, graph);
                         Edge edge = graph.getEdge(d, a);
-                        Rcpp::Rcout << "Meek R3 Edge: " << edge << std::endl;
+                        // Rcpp::Rcout << "Meek R3 Edge: " << edge << std::endl;
                     }
                 }
             }

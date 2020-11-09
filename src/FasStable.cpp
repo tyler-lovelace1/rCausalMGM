@@ -180,7 +180,7 @@ bool FasStable::searchAtDepth(std::vector<Variable*>& nodes, IndependenceTest *t
 
     for (Variable* x : nodes) {
 
-        std::unordered_set<Variable*> adjx = adjacencies[x];
+        std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
 
         for (Variable* y : adjx) {
 

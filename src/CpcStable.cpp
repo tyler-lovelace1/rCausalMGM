@@ -1,5 +1,7 @@
 #include "CpcStable.hpp"
 
+#include "GraphUtils.hpp"
+
 bool CpcStable::isColliderSepset(Variable* j, std::vector<std::vector<Variable*>>& sepsets) {
     if (sepsets.size() == 0) return false;
 
@@ -130,11 +132,11 @@ EdgeListGraph CpcStable::search() {
 }
 
 EdgeListGraph CpcStable::search(const std::vector<Variable*>& nodes) {
-    FasStable fas(initialGraph, independenceTest);
+    FasStableProducerConsumer fas(initialGraph, independenceTest);
     return search(fas, nodes);
 }
 
-EdgeListGraph CpcStable::search(FasStable& fas, const std::vector<Variable*>& nodes) {
+EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
     Rcpp::Rcout << "Starting CPC algorithm" << std::endl;
 
     allTriples = {};
