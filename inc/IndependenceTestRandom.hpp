@@ -24,9 +24,9 @@ public:
     /**
      * @return true about 25% of the time
      */
-    bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z);
+    bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
 
-    bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z) { return !isIndependent(x, y, z); }
+    bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) { return !isIndependent(x, y, z, pReturn); }
 
     double getPValue() { return 0; }
 

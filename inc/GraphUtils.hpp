@@ -15,6 +15,9 @@ private:
                                 EdgeListGraph& graph, std::unordered_set<Triple>& colliders, int bound);
 
 public:
+
+    static std::vector<std::string> splitString(std::string s, const std::string& delim);
+
     /**
      * @return true just in case there is a nonempty path from one node to
      * another. Because the path needs to be non-empty, this can distinguish
@@ -57,6 +60,8 @@ public:
      * @return the The sublist selected.
      */
     static std::vector<Variable*> asList(std::vector<int>& indices, std::vector<Variable*>& nodes);
+
+    static std::unordered_set<Variable*> asSet(std::vector<int>& indices, std::vector<Variable*>& nodes);
 
     static EdgeListGraph completeGraph(EdgeListGraph& graph);
 

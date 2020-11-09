@@ -3,14 +3,9 @@
 
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"
-#include "ContinuousVariable.hpp"
-#include "DiscreteVariable.hpp"
 #include "MGMParams.hpp"
 #include "ProximalGradient.hpp"
 #include "EdgeListGraph.hpp"
-#include <math.h>
-#include <RcppArmadillo.h>
-#include <chrono>
 
 /**
  * Implementation of Lee and Hastie's (2012) pseudolikelihood method for learning
@@ -58,6 +53,8 @@ private:
     void calcWeights();     // calculate parameter weights as in Lee and Hastie 
     void makeDummy();       // convert discrete data (in yDat) to a matrix of dummy variables (stored in dDat)
     void fixData();         // checks if yDat is zero indexed and converts to 1 index. zscores x
+
+    friend class Tests;
 
 public:
 

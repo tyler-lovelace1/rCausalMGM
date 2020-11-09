@@ -28,15 +28,17 @@ public:
      * @return true if the given independence question is judged true, false if not. The independence question is of the
      * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are variables in the list returned by
      * getVariableNames().
+     * Optionally return the p-value into pReturn
      */
-    virtual bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) = 0;
+    virtual bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL) = 0;
 
     /**
      * @return true if the given independence question is judged false, true if not. The independence question is of the
      * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are variables in the list returned by
      * getVariableNames().
+     * Optionally return the p-value into pReturn
      */
-    virtual bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z) = 0;
+    virtual bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL) = 0;
 
     /**
      * @return the probability associated with the most recently executed independence test, of Double.NaN if p value is

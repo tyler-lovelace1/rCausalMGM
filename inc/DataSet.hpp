@@ -41,6 +41,7 @@ public:
     DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
     DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
     DataSet(DataSet& ds);
+    DataSet(DataSet& ds, const arma::urowvec& rows); // subset rows
     DataSet& operator=(DataSet& ds);
     DataSet(DataSet&& ds);
     DataSet& operator=(DataSet&& ds);
@@ -56,7 +57,7 @@ public:
     void addVariable(int i, Variable *v);
 
     Variable *getVariable(int i) { return variables[i]; }
-    Variable *getVariable(std::string name) { return variables[name2idx[name]]; }
+    Variable *getVariable(std::string name) const { return variables.at(name2idx.at(name)); }
     std::vector<Variable *> getVariables() { return variables; }
     std::vector<Variable *> getContinuousVariables();
     std::vector<Variable *> getDiscreteVariables();
