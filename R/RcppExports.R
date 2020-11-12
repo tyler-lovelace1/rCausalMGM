@@ -5,6 +5,14 @@ DataSetTest <- function(df, maxDiscrete = 5L) {
     invisible(.Call(`_rCausalMGM_DataSetTest`, df, maxDiscrete))
 }
 
+saveGraph <- function(list, filename) {
+    invisible(.Call(`_rCausalMGM_saveGraph`, list, filename))
+}
+
+loadGraph <- function(filename) {
+    .Call(`_rCausalMGM_loadGraph`, filename)
+}
+
 indTestMultiTest <- function(df) {
     invisible(.Call(`_rCausalMGM_indTestMultiTest`, df))
 }
@@ -15,6 +23,14 @@ LinearRegressionTest <- function(df) {
 
 LogisticRegressionTest <- function(df) {
     invisible(.Call(`_rCausalMGM_LogisticRegressionTest`, df))
+}
+
+mgm <- function(df, maxDiscrete = 5L) {
+    .Call(`_rCausalMGM_mgm`, df, maxDiscrete)
+}
+
+testGraphList <- function(graph, df) {
+    invisible(.Call(`_rCausalMGM_testGraphList`, graph, df))
 }
 
 MGMTest <- function(df, maxDiscrete = 5L) {

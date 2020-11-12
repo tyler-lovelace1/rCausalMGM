@@ -240,11 +240,3 @@ void Tests::testSTEPS(const Rcpp::DataFrame &df, const int maxDiscrete) {
 
     Rcpp::Rcout << "STEPS graph:\n" << g << std::endl;
 }
-
-void Tests::testGraphFromFile(const Rcpp::DataFrame &df, const std::string& filename, const int maxDiscrete) {
-    DataSet ds(df, maxDiscrete);
-
-    EdgeListGraph graph = EdgeListGraph::graphFromFile(filename, ds);
-
-    Rcpp::Rcout << "Graph from file:\n" << graph << std::endl;
-}

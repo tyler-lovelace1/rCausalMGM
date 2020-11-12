@@ -102,7 +102,10 @@ public:
      */
     EdgeListGraph(const std::vector<Variable*>& nodes);
 
-    static EdgeListGraph graphFromFile(const std::string& filename, const DataSet& ds);
+    /**
+     * Makes a graph from an R list
+     */ 
+    EdgeListGraph(const Rcpp::List& list, DataSet& ds);
 
     // Shallow copy isn't possible because Edges aren't stored by reference (is it neccesary?)
 
@@ -435,6 +438,8 @@ public:
 
     std::vector<std::vector<Triple>> getTriplesLists(Variable* node);
 
+    Triple tripleFromString(std::string tripleString);
+
     /**
      * Determines if the graph contains a particular edge.
      */
@@ -554,6 +559,12 @@ public:
     // bool isHighlighted(Edge& edge) { return highlightedEdges.count(edge); }
 
     void changeName(std::string name, std::string newName);
+
+    // Converts graph to a list in R
+    Rcpp::List toList();
+
+    // Returns true if an R list object is a valid graph
+    static bool validateGraphList(const Rcpp::List& l);
 
     /**
      * @return true iff the given object is a graph that is equal to this graph,

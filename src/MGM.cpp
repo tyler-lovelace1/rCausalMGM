@@ -939,6 +939,29 @@ EdgeListGraph MGM::search() {
 }
 
 // [[Rcpp::export]]
+Rcpp::List mgm(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
+    DataSet ds(df, maxDiscrete);
+    std::vector<double> lambda = {0.2, 0.2, 0.2};
+    MGM mgm(ds, lambda);
+    EdgeListGraph mgmGraph = mgm.search();
+
+    Rcpp::List result = mgmGraph.toList();
+
+    ds.deleteVariables();
+
+    return result;
+}
+
+// [[Rcpp::export]]
+void testGraphList(const Rcpp::List& graph, const Rcpp::DataFrame &df) {
+    DataSet ds(df, 5);
+    EdgeListGraph g(graph, ds);
+
+    Rcpp::Rcout << g << std::endl;
+
+}
+
+// [[Rcpp::export]]
 void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     // Tests::testMGMFunctions(df, maxDiscrete);
@@ -947,11 +970,11 @@ void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
 
     // Tests::testPcStable(df, maxDiscrete);
 
-    // Tests::testCpcStable(df, maxDiscrete);
+    Tests::testCpcStable(df, maxDiscrete);
 
     // Rcpp::Rcout << "Dudek finished everything" << std::endl;
 
-    Tests::testPcMax(df, maxDiscrete);
+    // Tests::testPcMax(df, maxDiscrete);
 
     // Tests::testMGMTiming(df, maxDiscrete);
 

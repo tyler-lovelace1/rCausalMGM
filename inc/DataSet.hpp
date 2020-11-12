@@ -65,6 +65,8 @@ public:
     std::vector<Variable *> copyContinuousVariables();
     std::vector<Variable *> copyDiscreteVariables();
 
+    void deleteVariables();
+
     int getInt(int row, int col);
 
     std::vector<std::string> getVariableNames() { return variableNames; }

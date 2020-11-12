@@ -17,6 +17,28 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// saveGraph
+void saveGraph(const Rcpp::List& list, const std::string& filename);
+RcppExport SEXP _rCausalMGM_saveGraph(SEXP listSEXP, SEXP filenameSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type list(listSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
+    saveGraph(list, filename);
+    return R_NilValue;
+END_RCPP
+}
+// loadGraph
+Rcpp::List loadGraph(const std::string& filename);
+RcppExport SEXP _rCausalMGM_loadGraph(SEXP filenameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
+    rcpp_result_gen = Rcpp::wrap(loadGraph(filename));
+    return rcpp_result_gen;
+END_RCPP
+}
 // indTestMultiTest
 void indTestMultiTest(const Rcpp::DataFrame& df);
 RcppExport SEXP _rCausalMGM_indTestMultiTest(SEXP dfSEXP) {
@@ -44,6 +66,29 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
     LogisticRegressionTest(df);
+    return R_NilValue;
+END_RCPP
+}
+// mgm
+Rcpp::List mgm(const Rcpp::DataFrame& df, const int maxDiscrete);
+RcppExport SEXP _rCausalMGM_mgm(SEXP dfSEXP, SEXP maxDiscreteSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
+    rcpp_result_gen = Rcpp::wrap(mgm(df, maxDiscrete));
+    return rcpp_result_gen;
+END_RCPP
+}
+// testGraphList
+void testGraphList(const Rcpp::List& graph, const Rcpp::DataFrame& df);
+RcppExport SEXP _rCausalMGM_testGraphList(SEXP graphSEXP, SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    testGraphList(graph, df);
     return R_NilValue;
 END_RCPP
 }
@@ -104,9 +149,13 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_DataSetTest", (DL_FUNC) &_rCausalMGM_DataSetTest, 2},
+    {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
+    {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
     {"_rCausalMGM_indTestMultiTest", (DL_FUNC) &_rCausalMGM_indTestMultiTest, 1},
     {"_rCausalMGM_LinearRegressionTest", (DL_FUNC) &_rCausalMGM_LinearRegressionTest, 1},
     {"_rCausalMGM_LogisticRegressionTest", (DL_FUNC) &_rCausalMGM_LogisticRegressionTest, 1},
+    {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 2},
+    {"_rCausalMGM_testGraphList", (DL_FUNC) &_rCausalMGM_testGraphList, 2},
     {"_rCausalMGM_MGMTest", (DL_FUNC) &_rCausalMGM_MGMTest, 2},
     {"_rCausalMGM_rcpparma_hello_world", (DL_FUNC) &_rCausalMGM_rcpparma_hello_world, 0},
     {"_rCausalMGM_rcpparma_outerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_outerproduct, 1},

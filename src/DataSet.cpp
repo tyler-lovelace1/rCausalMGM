@@ -131,11 +131,12 @@ void DataSet::addVariable(int i, Variable *v)
     m++;
 }
 
-DataSet::~DataSet()
-{
-    // TODO if commented out, this causes a memory leak but prevents double freeing
-    // for (int i = 0; i < variables.size(); i++)
-    //     delete variables[i];
+DataSet::~DataSet() {}
+
+// WARNING: only call when done with an R-exposed function
+void DataSet::deleteVariables() {
+    for (int i = 0; i < variables.size(); i++)
+        delete variables[i];
 }
 
 
