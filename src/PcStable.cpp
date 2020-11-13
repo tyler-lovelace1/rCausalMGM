@@ -52,6 +52,8 @@ EdgeListGraph PcStable::search() {
  * All of the given nodes must be in the domain of the given conditional independence test.
  */
 EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
+    Rcpp::Rcout << "Starting PC algorithm" << std::endl;
+
     if (independenceTest == NULL)
         throw std::invalid_argument("independenceTest of PcStable may not be NULL.");
 
@@ -68,11 +70,12 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
 
     FasStableProducerConsumer fas(initialGraph, independenceTest);
     fas.setDepth(depth);
+    fas.setVerbose(verbose);
 
     graph = fas.search();
     sepsets = fas.getSepsets();
 
-    SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph);
+    SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph, verbose);
 
     MeekRules rules;
     rules.setAggressivelyPreventCycles(aggressivelyPreventCycles);
@@ -80,10 +83,9 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Returning this graph: " << graph << std::endl;
-    Rcpp::Rcout << "PcStable Elapsed time =  " << elapsedTime << " ms" << std::endl;
-    Rcpp::Rcout << "Finishing PC Algorithm" << std::endl;
+    // Rcpp::Rcout << "Returning this graph: " << graph << std::endl;
+    Rcpp::Rcout.precision(2);
+    Rcpp::Rcout << "PcStable Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
 
     return graph;
 }
-

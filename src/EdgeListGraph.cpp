@@ -573,11 +573,13 @@ std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
 
     os << "\n\n";
 
-    //TODO - print triples
-    os << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
-    for (Triple t : graph.ambiguousTriples) {
-        os << t << "\n";
+    if (graph.ambiguousTriples.size() > 0) {
+        os << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
+        for (Triple t : graph.ambiguousTriples) {
+            os << t << "\n";
+        }
     }
+    
 
     return os;
 }
@@ -629,11 +631,15 @@ void saveGraph(const Rcpp::List& list, const std::string& filename) {
     outfile << "\n\n";
 
     //Triples
-    outfile << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
     std::vector<std::string> tripleStrings = list["ambiguous_triples"];
-    for (std::string tripleString : tripleStrings) {
-         outfile << tripleString << "\n";
+    if (tripleStrings.size() > 0) {
+        outfile << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
+        
+        for (std::string tripleString : tripleStrings) {
+            outfile << tripleString << "\n";
+        }
     }
+    
 
     outfile.close();
 }
@@ -746,4 +752,13 @@ Rcpp::List loadGraph(const std::string& filename) {
         Rcpp::_["edges"] = edgeStrings,
         Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings
     );
+}
+
+// [[Rcpp::export]]
+void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame &df) {
+    DataSet ds(df, 5);
+    EdgeListGraph g(graph, ds);
+
+    Rcpp::Rcout << g << std::endl;
+
 }

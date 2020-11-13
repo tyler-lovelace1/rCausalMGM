@@ -9,7 +9,7 @@ FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph
     this->test = test;
     this->nodes = test->getVariables();
 
-    Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
+    // Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
     if (parallelism == 0) {
         parallelism = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
@@ -21,7 +21,7 @@ FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : t
     this->test = test;
     this->nodes = test->getVariables();
 
-    Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
+    // Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
     if (parallelism == 0) {
         parallelism = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
@@ -46,7 +46,7 @@ void FasStableProducerConsumer::setDepth(int depth) {
  * @return a SepSet, which indicates which variables are independent conditional on which other variables
  */
 EdgeListGraph FasStableProducerConsumer::search() {
-    Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
 
     sepset = SepsetMap();
     sepset.setReturnEmptyIfNotSet(sepsetsReturnEmptyIfNotFixed);
@@ -93,15 +93,15 @@ EdgeListGraph FasStableProducerConsumer::search() {
         }
     }
 
-    Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
 
-    Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
+    if (verbose) Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
 
     return graph;
 }
 
 std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerConsumer::searchMapOnly() {
-    Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
 
     graph.removeEdges(graph.getEdgeList());
 
@@ -130,7 +130,7 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
         if (!more) break;
     }
 
-    Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
     return adjacencies;
 }
 

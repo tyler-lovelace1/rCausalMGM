@@ -75,10 +75,10 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
 
     FasStableProducerConsumer fas(initialGraph, independenceTest);
     fas.setDepth(depth);
+    fas.setVerbose(verbose);
     graph = fas.search();
 
     OrientCollidersMaxP orientCollidersMaxP(independenceTest, &graph);
-
     orientCollidersMaxP.setUseHeuristic(useHeuristic);
     orientCollidersMaxP.setMaxPathLength(maxPathLength);
     orientCollidersMaxP.orient();
@@ -90,8 +90,8 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "PCMax Elapsed time =  " << elapsedTime << " ms" << std::endl;
-    Rcpp::Rcout << "Finishing PCM Algorithm" << std::endl;
+    Rcpp::Rcout.precision(2);
+    Rcpp::Rcout << "PCMax Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
 
     return graph;
 }

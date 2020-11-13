@@ -209,6 +209,7 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
     }
 
     fas.setDepth(depth);
+    fas.setVerbose(verbose);
 
     // Note that we are ignoring the sepset map returned by this method
     // on purpose; it is not used in this search.
@@ -222,9 +223,8 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Returning this graph: " << graph << std::endl;
-    Rcpp::Rcout << "CpcStable Elapsed time =  " << elapsedTime << " ms" << std::endl;
-    Rcpp::Rcout << "Finishing CPC Algorithm" << std::endl;
+    Rcpp::Rcout.precision(2);
+    Rcpp::Rcout << "CpcStable Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
 
     return graph;
 }

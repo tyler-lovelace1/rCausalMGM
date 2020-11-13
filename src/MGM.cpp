@@ -6,10 +6,6 @@
 #include <RcppArmadillo.h>
 #include <chrono>
 
-// Tetsing
-#include "Tests.hpp"
-
-
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
     if (l.size() != y.n_cols)
@@ -936,50 +932,4 @@ EdgeListGraph MGM::search() {
     learnEdges(500);
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     return graphFromMGM();
-}
-
-// [[Rcpp::export]]
-Rcpp::List mgm(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
-    DataSet ds(df, maxDiscrete);
-    std::vector<double> lambda = {0.2, 0.2, 0.2};
-    MGM mgm(ds, lambda);
-    EdgeListGraph mgmGraph = mgm.search();
-
-    Rcpp::List result = mgmGraph.toList();
-
-    ds.deleteVariables();
-
-    return result;
-}
-
-// [[Rcpp::export]]
-void testGraphList(const Rcpp::List& graph, const Rcpp::DataFrame &df) {
-    DataSet ds(df, 5);
-    EdgeListGraph g(graph, ds);
-
-    Rcpp::Rcout << g << std::endl;
-
-}
-
-// [[Rcpp::export]]
-void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
-
-    // Tests::testMGMFunctions(df, maxDiscrete);
-
-    // Tests::testConcurrentQueue();
-
-    // Tests::testPcStable(df, maxDiscrete);
-
-    Tests::testCpcStable(df, maxDiscrete);
-
-    // Rcpp::Rcout << "Dudek finished everything" << std::endl;
-
-    // Tests::testPcMax(df, maxDiscrete);
-
-    // Tests::testMGMTiming(df, maxDiscrete);
-
-    // Tests::testSTEPS(df, maxDiscrete);
-
-    // Tests::testGraphFromFile(df, "data/graph/graph5.txt", maxDiscrete);
-
 }

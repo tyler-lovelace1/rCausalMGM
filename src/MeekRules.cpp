@@ -1,5 +1,7 @@
 #include "MeekRules.hpp"
 
+#include "GraphUtils.hpp"
+
 void MeekRules::orientImplied(EdgeListGraph& graph) {
     nodes = graph.getNodes();
     orientImplied(graph, nodes);
@@ -177,7 +179,7 @@ void MeekRules::meekR4(Variable* a, EdgeListGraph& graph) {
         return;
     }
 
-    // TODO
+    // TODO?
     Rcpp::Rcout << "Since rule4 requires knowlegde, this function should never be used" << std::endl;
 }
 

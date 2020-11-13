@@ -29,7 +29,7 @@ EdgeListGraph STEPS::runStepsPar() {
 
     // go until we break by having instability better than threshold
     while(true) {
-        // Rcpp::Rcout << "lambdaCurr = " << lambda[currIndex] << std::endl;
+        if (verbose) Rcpp::Rcout << "Testing lambda = " << lambda[currIndex] << std::endl;
 
         std::vector<double> lambdaCurr = { lambda[currIndex], lambda[currIndex], lambda[currIndex] };
 

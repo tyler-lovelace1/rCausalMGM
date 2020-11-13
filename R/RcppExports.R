@@ -13,6 +13,10 @@ loadGraph <- function(filename) {
     .Call(`_rCausalMGM_loadGraph`, filename)
 }
 
+printGraph <- function(graph, df) {
+    invisible(.Call(`_rCausalMGM_printGraph`, graph, df))
+}
+
 indTestMultiTest <- function(df) {
     invisible(.Call(`_rCausalMGM_indTestMultiTest`, df))
 }
@@ -25,16 +29,28 @@ LogisticRegressionTest <- function(df) {
     invisible(.Call(`_rCausalMGM_LogisticRegressionTest`, df))
 }
 
-mgm <- function(df, maxDiscrete = 5L) {
-    .Call(`_rCausalMGM_mgm`, df, maxDiscrete)
+mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(0))) {
+    .Call(`_rCausalMGM_mgm`, df, lambda, maxDiscrete, verbose)
 }
 
-testGraphList <- function(graph, df) {
-    invisible(.Call(`_rCausalMGM_testGraphList`, graph, df))
+steps <- function(df, maxDiscrete = 5L, lambda = as.numeric( c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)), g = 0.05, numSub = 50L, leaveOneOut = as.logical( c(0)), computeStabs = as.logical( c(0)), verbose = as.logical( c(0))) {
+    .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, verbose)
 }
 
-MGMTest <- function(df, maxDiscrete = 5L) {
-    invisible(.Call(`_rCausalMGM_MGMTest`, df, maxDiscrete))
+pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, verbose = as.logical( c(0))) {
+    .Call(`_rCausalMGM_pcStable`, df, maxDiscrete, initialGraph, lambda, alpha, verbose)
+}
+
+cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, verbose = as.logical( c(0))) {
+    .Call(`_rCausalMGM_cpcStable`, df, maxDiscrete, initialGraph, lambda, alpha, verbose)
+}
+
+pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, verbose = as.logical( c(0))) {
+    .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, lambda, alpha, verbose)
+}
+
+runTests <- function(df, maxDiscrete = 5L) {
+    invisible(.Call(`_rCausalMGM_runTests`, df, maxDiscrete))
 }
 
 rcpparma_hello_world <- function() {

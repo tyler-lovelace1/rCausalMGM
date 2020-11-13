@@ -23,6 +23,7 @@ private:
     arma::mat stabilities;
     // arma::umat subs;
     bool computeStabs = false;
+    bool verbose = false;
 
 public:
     STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, bool loo = false) :
@@ -37,6 +38,8 @@ public:
 
     void setComputeStabs(bool cs) { computeStabs = cs; }
     bool getComputeStabs() { return computeStabs; }
+
+    void setVerbose(bool v) { verbose = v; }
 
 };
 
