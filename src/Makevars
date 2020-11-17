@@ -8,7 +8,9 @@
 ##
 ## And with R 3.4.0, and RcppArmadillo 0.7.960.*, we turn C++11 on as OpenMP
 ## support within Armadillo prefers / requires it
-CXX_STD = CXX11
+CXX_STD=CXX14
+# CC=ccache gcc
+# CXX=ccache g++
 
-PKG_CXXFLAGS = -I"../inc" -I"/usr/local/boost_1_72_0" $(SHLIB_OPENMP_CXXFLAGS)
-PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+PKG_CXXFLAGS = -I"../inc" -I"/usr/local/boost_1_72_0" $(SHLIB_OPENMP_CXXFLAGS) -pthread
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 

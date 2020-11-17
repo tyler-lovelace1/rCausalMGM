@@ -1,16 +1,16 @@
 #include "IndTestMulti.hpp"
 #include <boost/math/distributions/chi_squared.hpp>
 
+#include <fstream>
+
 
 IndTestMulti::IndTestMulti(DataSet& data, double alpha){
-//   Rcpp::Rcout << "Step 0 \n";
   this->timesCalled = 0;
   this->searchVariables = data.getVariables();
   this->originalData = DataSet(data);
   this->internalData = DataSet(data);
   this->alpha = alpha;
   this->lastP = 0;
-//   Rcpp::Rcout << "Step 1 \n";
 
   std::vector<Variable*> variables = internalData.getVariables();
 
@@ -18,19 +18,15 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha){
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
       variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
   }
-//   Rcpp::Rcout << "Step 3 \n";
 
   this->logisticRegression = LogisticRegression(internalData);
   this->regression = LinearRegression(internalData);
   this->verbose = false;
   this->preferLinear = false;
-//   Rcpp::Rcout << "Step 4 \n";
 }
 
 
 IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
-//   Rcpp::Rcout << "Step 0 \n";
-
   this->timesCalled = 0;
   this->preferLinear = preferLinear;
   this->searchVariables = data.getVariables();
@@ -39,8 +35,6 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
   DataSet internalData(data);
   this->alpha = alpha;
   this->lastP = 0;
-//   Rcpp::Rcout << "Step 1 \n";
-
 
   std::vector<Variable*> variables = internalData.getVariables();
 
@@ -49,7 +43,6 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
       std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
       variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
   }
-//   Rcpp::Rcout << "Step 3 \n";
 
   this->internalData = internalData;
   LogisticRegression logReg (internalData);
@@ -57,8 +50,6 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
   LinearRegression linReg (internalData);
   this->regression = linReg;
   this->verbose = false;
-//   Rcpp::Rcout << "Step 4 \n";
-
 }
 
 int IndTestMulti::reset() {
@@ -70,8 +61,9 @@ int IndTestMulti::reset() {
  * @return true if the given independence question is judged true, false if not. The independence question is of the
  * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are searchVariables in the list returned by
  * getVariableNames().
+ * Optionally return the p-value into pReturn
  */
-bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z) {
+bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
     this->timesCalled++;
 
 	// Rcpp::Rcout << "X: " << x->getName() << std::endl;
@@ -85,19 +77,19 @@ bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*
 
     if (x->isDiscrete()) {
         // if (debug) Rcpp::Rcout << "Path 1" << std::endl;
-        return isIndependentMultinomialLogisticRegression(x, y, z);
+        return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
     } else if (y->isDiscrete()) {
         if(preferLinear) {
             // if (debug) Rcpp::Rcout << "Path 2" << std::endl;
-            return isIndependentRegression(x,y,z);
+            return isIndependentRegression(x, y, z, pReturn);
         }
         else {
             // if (debug) Rcpp::Rcout << "Path 3" << std::endl;
-            return isIndependentMultinomialLogisticRegression(y, x, z);
+            return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
         }
     } else {
         // if (debug) Rcpp::Rcout << "Path 4" << std::endl;
-        return isIndependentRegression(x, y, z);
+        return isIndependentRegression(x, y, z, pReturn);
     }
 }
 
@@ -150,7 +142,10 @@ std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* 
     return variables;
 }
 
-bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z) {
+bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
+    // std::ofstream logfile;
+    // logfile.open("../test_results/debug.log", std::ios_base::app);
+    
     if (variablesPerNode.count(x) < 1) {
       throw std::invalid_argument("Unrecogized variable: " + x->getName());
     }
@@ -227,13 +222,30 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     // }
     // Rcpp::Rcout << std::endl;
 
-    double chisq = 2*(multiLL(coeffsDep, x, yzList) - multiLL(coeffsNull, x, zList)); // Need to make multiLL
+    double ll = multiLL(coeffsDep, x, yzList);
+    double ll0 = multiLL(coeffsNull, x, zList);
+    double chisq; // = 2*(ll - ll0);
+
+    if ((std::isinf(ll) && std::isinf(ll0)) || (ll0 > ll)) {
+    	chisq = 1e-10;
+    } else if (std::isinf(ll0)) {
+	chisq = 1e20;
+    } else{
+    	chisq = 2*(ll - ll0); // Need to make multiLL
+    }
     
     int df = variablesPerNode.at(y).size()*variablesPerNode.at(x).size();
     boost::math::chi_squared dist(df);
+
+    // if (std::isnan(chisq)) {
+    // 	logfile << "IND TEST" << std::endl;
+    // 	// // logfile << "dist.df = " << dist.degrees_of_freedom() << std::endl;
+    // 	logfile << "chisq = " << chisq << std::endl << std::endl;
+    // }
     
-    // Rcpp::Rcout << "chisq = " << chisq << std::endl;
     double p = 1.0 - cdf(dist, chisq);
+
+    if (pReturn != NULL) *pReturn = p;
     
 
     // if(debug) {
@@ -252,16 +264,19 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
 
     bool indep = p > alpha;
 
-    if (indep)
-        Rcpp::Rcout << x->getName() << " _||_ " << y->getName() << " | { ";
-    else
-        Rcpp::Rcout << x->getName() << " _|/_ " << y->getName() << " | { ";
-    for (Variable* zVar : z)
-        Rcpp::Rcout << zVar->getName() << " ";
-    Rcpp::Rcout << "}";
+    // TODO - write this to a log file
+    // if (indep)
+    //     logfile << x->getName() << " _||_ " << y->getName() << " | { ";
+    // else
+    //     logfile << x->getName() << " _|/_ " << y->getName() << " | { ";
+    // for (Variable* zVar : z)
+    //     logfile << zVar->getName() << " ";
+    // logfile << "}";
 
-    Rcpp::Rcout << " with p = " << p << std::endl;
+    // logfile << " with p = " << p << std::endl;
 
+    // logfile.close();
+    
     this->lastP = p;
 
     // //t.println(x + " is independent of " + y + " given " + z + ": " + indep);
@@ -305,6 +320,9 @@ bool IndTestMulti::isMissing(Variable* x, int i) {
 double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Variable*>& indep){
 
     if(dep->getName() == "??") throw std::invalid_argument("must have a dependent node to regress on!");
+    // std::ofstream logfile;
+    // logfile.open("../test_results/debug.log", std::ios_base::app);
+    
     std::vector<Variable*> depList;
     depList.push_back(dep);
 
@@ -324,12 +342,29 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
 
     arma::mat probs = indepData * coeffs;
 
-    probs.insert_cols(0,arma::mat(indepData.n_rows, 1,arma::fill::ones));
-    probs = arma::exp(probs);
+    // double p;
+    // for (arma::uword i = 0; i < probs.n_cols; i++) {
+    // 	for (arma::uword j = 0; j < probs.n_rows; j++) {
+    // 	    p = probs(i,j);
+    // 	    probs(i,j) = std::abs(p) < 200 ? p : ((p > 0) - (p < 0)) * 200;
+    // 	}
+    // }
+
+    probs.insert_cols(0, arma::mat(indepData.n_rows, 1, arma::fill::ones));
+    // probs = arma::exp(probs);
+    
     // Rcpp::Rcout << "probs = " << probs << std::endl;
     double ll = 0;
     for(int i = 0; i < N; i++){
-        arma::rowvec curRow = probs.row(i);
+	double b = probs.row(i).max();
+	arma::rowvec curRow = probs.row(i) - b;
+	//b = curRow.max();
+	// double p;
+	// for (arma::uword j = 0; j < curRow.n_elem; j++) {
+	//     // p = curRow(j);
+	//     curRow(j) = curRow(j) > -200 ? curRow(j) : -200;
+	// }
+	curRow = arma::exp(curRow);
 	double sum = arma::sum(curRow);
 	// Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
 	// Rcpp::Rcout << "sum(curRow) " << i << " = " << sum << std::endl;
@@ -339,10 +374,32 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
         ll += std::log(curRow.at((int)depData.at(i)));
     }
     // Rcpp::Rcout << "multiLL loglikelihood = " << ll << std::endl;
+    // logfile << "ll = " << ll << std::endl;
+    // if (std::isinf(ll)) {
+    // 	ll = std::numeric_limits<double>::lowest();
+    // }
+    if (std::isnan(ll)) {
+	ll = - std::numeric_limits<double>::infinity();
+	// logfile << "Full separation found: ll = " << ll << std::endl;
+	// for (auto it = indep.begin(); it != indep.end(); it++) {
+	//     logfile << (*it)->getName() << "\t";
+	// }
+	// logfile << std::endl;
+    }
+    //   logfile << "Error in multiLL: ll = " << ll << std::endl;
+    //   for (auto it = indep.begin(); it != indep.end(); it++) {
+    // 	logfile << (*it)->getName() << "\t";
+    //   }
+    //   logfile << std::endl;
+    //   logfile << "probs\n";
+    //   logfile << probs << std::endl;
+    //   // ll = std::numeric_limits<double>::min();
+    // }
+    // logfile.close();
     return ll;
 }
 
-bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z) {    
+bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {    
     if (variablesPerNode.count(x) < 1) {
         throw std::invalid_argument("Unrecogized node: " + x->getName());
     }
@@ -356,6 +413,9 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
             throw std::invalid_argument("Unrecogized node: " + varZ->getName());
         }
     }
+
+    // std::ofstream logfile;
+    // logfile.open("../test_results/debug.log", std::ios_base::app);
 
     std::vector<Variable*> regressors;
     regressors.push_back(y);
@@ -380,18 +440,32 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
     double p = result->getP().at(1); // double check on .at(1)
     this->lastP = p;
 
+    if (pReturn != NULL) *pReturn = p;
+
     bool indep = p > alpha;
 
-    
-    if (indep)
-        Rcpp::Rcout << x->getName() << " _||_ " << y->getName() << " | { ";
-    else
-        Rcpp::Rcout << x->getName() << " _|/_ " << y->getName() << " | { ";
-    for (Variable* zVar : z)
-        Rcpp::Rcout << zVar->getName() << " ";
-    Rcpp::Rcout << "}";
+    // TODO - write this to a log file
+    // if (indep)
+    //     Rcpp::Rcout << x->getName() << " _||_ " << y->getName() << " | { ";
+    // else
+    //     Rcpp::Rcout << x->getName() << " _|/_ " << y->getName() << " | { ";
+    // for (Variable* zVar : z)
+    //     Rcpp::Rcout << zVar->getName() << " ";
+    // Rcpp::Rcout << "}";
 
-    Rcpp::Rcout << " with p = " << p << std::endl;
+    // Rcpp::Rcout << " with p = " << p << std::endl;
+
+    // if (indep)
+    //     logfile << x->getName() << " _||_ " << y->getName() << " | { ";
+    // else
+    //     logfile << x->getName() << " _|/_ " << y->getName() << " | { ";
+    // for (Variable* zVar : z)
+    //     logfile << zVar->getName() << " ";
+    // logfile << "}";
+
+    // logfile << " with p = " << p << std::endl;
+
+    // logfile.close();
 
     return indep;
 }

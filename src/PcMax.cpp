@@ -1,5 +1,7 @@
 #include "PcMax.hpp"
 
+#include "GraphUtils.hpp"
+
 /**
  * Constructs a new PC search using the given independence test as oracle.
  *
@@ -71,24 +73,26 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
 
-    FasStable fas(initialGraph, independenceTest);
+    FasStableProducerConsumer fas(initialGraph, independenceTest);
     fas.setDepth(depth);
+    fas.setVerbose(verbose);
     graph = fas.search();
 
-    OrientCollidersMaxP orientCollidersMaxP(independenceTest);
-
+    OrientCollidersMaxP orientCollidersMaxP(independenceTest, &graph);
     orientCollidersMaxP.setUseHeuristic(useHeuristic);
     orientCollidersMaxP.setMaxPathLength(maxPathLength);
-    orientCollidersMaxP.orient(graph);
+    orientCollidersMaxP.orient();
+
+    Rcpp::Rcout << "Graph before Meek Rules: " << graph << std::endl;
 
     MeekRules meekRules;
     meekRules.orientImplied(graph);
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Returning this graph: " << graph << std::endl;
-    Rcpp::Rcout << "PCMax Elapsed time =  " << elapsedTime << " ms" << std::endl;
-    Rcpp::Rcout << "Finishing PCM Algorithm" << std::endl;
+    Rcpp::Rcout.precision(2);
+    Rcpp::Rcout << "PCMax Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
 
     return graph;
 }
+

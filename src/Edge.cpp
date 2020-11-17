@@ -289,6 +289,14 @@ Variable* Edge::getDirectedEdgeTail(Edge& edge) {
     throw std::invalid_argument("Not a directed edge: " + ss.str());
 }
 
+std::string Edge::toString() {
+    std::ostringstream result;
+
+    result << *this;
+
+    return result.str();
+}
+
 std::ostream& operator<<(std::ostream& os, Edge& edge) {
     os << edge.node1->getName() << " ";
 
@@ -363,6 +371,6 @@ bool operator> (const Edge& e1, const Edge& e2) {
     return !(e1 <= e2);
 }
 
-void Edge::sortEdges(std::vector<Edge> edges) {
+void Edge::sortEdges(std::vector<Edge>& edges) {
     std::sort(edges.begin(), edges.end());
 }

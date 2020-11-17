@@ -1,79 +1,131 @@
 #include "CpcStable.hpp"
 
-bool CpcStable::isColliderSepset(Variable* j, std::vector<std::vector<Variable*>>& sepsets) {
-    if (sepsets.size() == 0) return false;
+#include "GraphUtils.hpp"
+#include "BlockingQueue.hpp"
 
-    for (std::vector<Variable*> sepset : sepsets) {
-        // if sepset.contains(j)
-        if (std::find(sepset.begin(), sepset.end(), j) != sepset.end()) return false;
-    }
+bool CpcStable::isCollider(Triple t) {
+    std::pair<int, int> count = sepsetCount[t];
 
-    return true;
+    return (count.first == 0) && (count.second > 0);
 }
 
-std::vector<std::vector<Variable*>> CpcStable::getSepsets(Variable* i, Variable* k, EdgeListGraph& g) {
-    std::vector<Variable*> adji = g.getAdjacentNodes(i);
-    std::vector<Variable*> adjk = g.getAdjacentNodes(k);
-    std::vector<std::vector<Variable*>> sepsets;
+bool CpcStable::isNonCollider(Triple t) {
+    std::pair<int, int> count = sepsetCount[t];
 
-    for (int d = 0; d <= std::max(adji.size(), adjk.size()); d++) {
-        if (adji.size() >= 2 && d <= adji.size()) {
-            ChoiceGenerator gen(adji.size(), d);
-
-            std::vector<int> *choice;
-            for (choice = gen.next(); choice != NULL; choice = gen.next()) {
-                std::vector<Variable*> v = GraphUtils::asList(*choice, adji);
-                if (independenceTest->isIndependent(i, k, v)) sepsets.push_back(v);
-            }
-        }
-
-        if (adjk.size() >= 2 && d <= adjk.size()) {
-            ChoiceGenerator gen(adjk.size(), d);
-
-            std::vector<int> *choice;
-            for (choice = gen.next(); choice != NULL; choice = gen.next()) {
-                std::vector<Variable*> v = GraphUtils::asList(*choice, adjk);
-                if (independenceTest->isIndependent(i, k, v)) sepsets.push_back(v);
-            }
-
-        }
-    }
-
-    return sepsets;
+    return (count.first > 0) && (count.second == 0);
 }
 
 void CpcStable::orientUnshieldedTriples() {
-    std::vector<Variable*> nodes = graph.getNodes();
 
-    for (Variable* y : nodes) {
-        std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(y);
+    BlockingQueue<ColliderTask> taskQueue(10000);
 
-        if (adjacentNodes.size() < 2)
-            continue;
+    auto producer = [&]() {
+        std::vector<Variable*> nodes = graph.getNodes();
 
-        ChoiceGenerator cg(adjacentNodes.size(), 2);
-        std::vector<int> *combination;
-        for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-            Variable* x = adjacentNodes[(*combination)[0]];
-            Variable* z = adjacentNodes[(*combination)[1]];
+        for (Variable* y : nodes) {
+            std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(y);
 
-            if (graph.isAdjacentTo(x, z))
+            if (adjacentNodes.size() < 2)
                 continue;
 
-            std::vector<std::vector<Variable*>> sepsetsxz = getSepsets(x, z, graph);
+            ChoiceGenerator cg(adjacentNodes.size(), 2);
+            std::vector<int> *combination;
+            for (combination = cg.next(); combination != NULL; combination = cg.next()) {
+                Variable* x = adjacentNodes[(*combination)[0]];
+                Variable* z = adjacentNodes[(*combination)[1]];
 
-            if (isColliderSepset(y, sepsetsxz)) {
-                // colliderAllowed (knowledge)
-                if (true) {
-                    graph.setEndpoint(x, y, ENDPOINT_ARROW);
-                    graph.setEndpoint(z, y, ENDPOINT_ARROW);
+                if (graph.isAdjacentTo(x, z))
+                    continue;
+
+                std::unique_lock<std::mutex> mapLock(mapMutex);
+                sepsetCount[Triple(x, y, z)] = {0, 0};
+                mapLock.unlock();
+
+                std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
+                std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
+
+                for (int d = 0; d <= std::max(adjx.size(), adjz.size()); d++) {
+                    if (adjx.size() >= 2 && d <= adjx.size()) {
+                        ChoiceGenerator gen(adjx.size(), d);
+
+                        std::vector<int> *choice;
+                        for (choice = gen.next(); choice != NULL; choice = gen.next()) {
+                            std::vector<Variable*> v = GraphUtils::asList(*choice, adjx);
+                            taskQueue.push(ColliderTask(Triple(x, y, z), v));
+                        }
+                    }
+
+                    if (adjz.size() >= 2 && d <= adjz.size()) {
+                        ChoiceGenerator gen(adjz.size(), d);
+
+                        std::vector<int> *choice;
+                        for (choice = gen.next(); choice != NULL; choice = gen.next()) {
+                            std::vector<Variable*> v = GraphUtils::asList(*choice, adjz);
+                            taskQueue.push(ColliderTask(Triple(x, y, z), v));
+                        }
+                    }
                 }
-            } else {
-                graph.addAmbiguousTriple(x, y, z);
+            }
+        }
+
+        //Poison Pill
+        for (int i = 0; i < parallelism; i++) {
+            taskQueue.push(ColliderTask(Triple(NULL, NULL, NULL), {}));
+        }
+    };
+
+    auto consumer = [&]() {
+        while(true) {
+            ColliderTask ct = taskQueue.pop();
+            Triple t = ct.t;
+            std::vector<Variable*> sepset = ct.sepset;
+
+            // Poison pill
+            if (t.x == NULL && t.y == NULL && t.z == NULL) {
+                return;
             }
 
-            allTriples.insert(Triple(x, y, z));
+            if (independenceTest->isIndependent(t.x, t.z, sepset)) {
+                // if (sepset.contains(t.y))
+                if (std::find(sepset.begin(), sepset.end(), t.y) != sepset.end()) {
+                    std::lock_guard<std::mutex> mapLock(mapMutex);
+                    std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
+                    sepsetCount[Triple(t.x, t.y, t.z)] = {current.first + 1, current.second};
+                } else {
+                    std::lock_guard<std::mutex> mapLock(mapMutex);
+                    std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
+                    sepsetCount[Triple(t.x, t.y, t.z)] = {current.first, current.second + 1};
+                }
+            }
         }
+    };
+
+    std::vector<std::thread> threads;
+
+    threads.push_back(std::thread( producer ));
+
+    for (int i = 0; i < parallelism; i++) {
+        threads.push_back(std::thread( consumer ));
+    }
+
+    for (int i = 0; i < threads.size(); i++) {
+        threads[i].join();
+    }
+
+    for (auto element : sepsetCount) {
+        Triple t = element.first;
+        
+        if (isCollider(t)) {
+            // colliderAllowed (knowledge)
+            if (true) {
+                graph.setEndpoint(t.x, t.y, ENDPOINT_ARROW);
+                graph.setEndpoint(t.z, t.y, ENDPOINT_ARROW);
+            }
+        } else if (!isNonCollider(t)) {
+            graph.addAmbiguousTriple(t.x, t.y, t.z);
+        }
+
+        allTriples.insert(t);
     }
 }
 
@@ -87,6 +139,11 @@ CpcStable::CpcStable(IndependenceTest *independenceTest) {
     } 
 
     this->independenceTest = independenceTest;
+
+    if (parallelism == 0) {
+        parallelism = 4;
+        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+    }
 }
 
 /**
@@ -130,11 +187,11 @@ EdgeListGraph CpcStable::search() {
 }
 
 EdgeListGraph CpcStable::search(const std::vector<Variable*>& nodes) {
-    FasStable fas(initialGraph, independenceTest);
+    FasStableProducerConsumer fas(initialGraph, independenceTest);
     return search(fas, nodes);
 }
 
-EdgeListGraph CpcStable::search(FasStable& fas, const std::vector<Variable*>& nodes) {
+EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
     Rcpp::Rcout << "Starting CPC algorithm" << std::endl;
 
     allTriples = {};
@@ -152,6 +209,7 @@ EdgeListGraph CpcStable::search(FasStable& fas, const std::vector<Variable*>& no
     }
 
     fas.setDepth(depth);
+    fas.setVerbose(verbose);
 
     // Note that we are ignoring the sepset map returned by this method
     // on purpose; it is not used in this search.
@@ -165,9 +223,8 @@ EdgeListGraph CpcStable::search(FasStable& fas, const std::vector<Variable*>& no
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Returning this graph: " << graph << std::endl;
-    Rcpp::Rcout << "CpcStable Elapsed time =  " << elapsedTime << " ms" << std::endl;
-    Rcpp::Rcout << "Finishing CPC Algorithm" << std::endl;
+    Rcpp::Rcout.precision(2);
+    Rcpp::Rcout << "CpcStable Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
 
     return graph;
 }

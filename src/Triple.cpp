@@ -1,15 +1,16 @@
 #include "Triple.hpp"
 
-Triple::Triple(Variable* x, Variable* y, Variable* z) {
-    if (x == NULL || y == NULL || z == NULL)
-        throw std::invalid_argument("Nodes in Triple cannot be NULL");
+#include "GraphUtils.hpp"
 
-    this->x = x;
-    this->y = y;
-    this->z = z;
+std::string Triple::toString() {
+    std::ostringstream result;
+
+    result << *this;
+
+    return result.str();
 }
 
-std::ostream& operator<<(std::ostream& os, Triple& triple) {
+std::ostream& operator<<(std::ostream& os, const Triple& triple) {
     os << "<" << triple.x->getName() << "," << triple.y->getName() << "," << triple.z->getName() << ">";
     return os;
 }

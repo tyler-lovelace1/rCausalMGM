@@ -3,6 +3,12 @@
 
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
+#include "BlockingQueue.hpp"
+#include "ChoiceGenerator.hpp"
+#include "DepthChoiceGenerator.hpp"
+#include <queue>
+#include <thread>
+#include <mutex>
 
 /**
  * This is an optimization of the CCD (Cyclic Causal Discovery) algorithm by Thomas Richardson.
@@ -18,6 +24,8 @@ private:
      */
     IndependenceTest *independenceTest;
 
+    EdgeListGraph *graph;
+
     /**
      * The maximum number of nodes conditioned on in the search. The default it 1000.
      */
@@ -25,29 +33,60 @@ private:
 
     long elapsedTime = 0;
 
-    bool useHeuristic = true;
+    bool useHeuristic = false;
 
     int maxPathLength = 3;
 
-    void doNode(EdgeListGraph& graph, std::unordered_map<Triple, double>& scores, Variable* b);
+    std::unordered_map<Triple, double> scores;
 
-    void testColliderMaxP(EdgeListGraph& graph, std::unordered_map<Triple, double>& scores, Variable* a, Variable* b, Variable* c);
+    std::unordered_map<Triple, bool> colliders; // True if Triple is a collider, false otherwise
 
-    void testColliderHeuristic(EdgeListGraph& graph, std::unordered_map<Triple, double>& colliders, Variable* a, Variable* b, Variable* c);
+    void testColliderMaxP(Variable* a, Variable* b, Variable* c);
 
-    void orientCollider(EdgeListGraph& graph, Variable* a, Variable* b, Variable* c);
+    void testColliderHeuristic(Variable* a, Variable* b, Variable* c);
 
-    bool wouldCreateBadCollider(EdgeListGraph& graph, Variable* x, Variable* y);
+    void orientCollider(Variable* a, Variable* b, Variable* c);
 
-    // Returns a sepset containing the nodes in 'containing' but not the nodes in 'notContaining', or
-    // an empty list if there is no such sepset.
-    std::vector<Variable*> sepset(EdgeListGraph& graph, Variable* a, Variable* c, std::unordered_set<Variable*>& containing, std::unordered_set<Variable*>& notContaining);
+    bool wouldCreateBadCollider(Variable* x, Variable* y);
+
+    // Finds a sepset containing the nodes in 'containing' but not the nodes in 'notContaining'
+    // Returns true of that set exists, false if not
+    // If the set exists, it will be placed into output
+    bool sepset(Variable* a, Variable* c, std::unordered_set<Variable*>& containing, std::unordered_set<Variable*>& notContaining, std::vector<Variable*>* output = NULL);
 
     // Returns true if there is an undirected path from x to either y or z within the given number of steps.
-    bool existsShortPath(Variable* x, Variable* z, int bound, EdgeListGraph& graph);
+    bool existsShortPath(Variable* x, Variable* z, int bound);
+
+    // Concurrency
+    /**
+     * Represents testing if a and c are independent
+     * b is used to determine the corresponding Triple
+     */ 
+    struct IndependenceTask {
+        Variable* a;
+        Variable* b;
+        Variable* c;
+        std::vector<Variable*> s;
+	    IndependenceTask() {}
+        IndependenceTask(Variable* _a, Variable* _b, Variable* _c, const std::vector<Variable*>& _s) : a(_a),
+										   b(_b),
+										   c(_c),
+                                           s(_s) {} 
+        IndependenceTask(const IndependenceTask& it) { a = it.a; b = it.b; c = it.c; s = it.s; }
+    };
+
+    void producer();
+    void consumer();
+
+    const int MAX_QUEUE_SIZE = 10000;
+    BlockingQueue<IndependenceTask> taskQueue;
+
+    int parallelism = std::thread::hardware_concurrency();
+    
+    std::mutex mapMutex;
 
 public:
-    OrientCollidersMaxP(IndependenceTest *test);
+    OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph);
 
     /**
      * Sets the depth of the search--that is, the maximum number of conditioning nodes for any conditional independence
@@ -72,12 +111,12 @@ public:
     void setUseHeuristic(bool useHeuristic) { this->useHeuristic = useHeuristic; }
     bool isUseHeuristic() { return useHeuristic; }
 
-    void setMaxPathLength(bool maxPathLength) { this->maxPathLength = maxPathLength; }
-    bool getMaxPathLength() { return maxPathLength; }
+    void setMaxPathLength(int maxPathLength) { this->maxPathLength = maxPathLength; }
+    int getMaxPathLength() { return maxPathLength; }
 
-    void orient(EdgeListGraph& graph) { addColliders(graph); }
+    void orient() { addColliders(); }
 
-    void addColliders(EdgeListGraph& graph);
+    void addColliders();
 
 
 };

@@ -95,6 +95,8 @@ public:
     void removeProperty(EdgeProperty property) { properties.erase(property); }
     std::unordered_set<EdgeProperty> getProperties() { return properties; }
 
+    std::string toString();
+
     friend std::ostream& operator<<(std::ostream& os, Edge& Edge);
     friend bool operator==(const Edge& e1, const Edge& e2);
     friend bool operator!=(const Edge& e1, const Edge& e2);
@@ -197,7 +199,7 @@ public:
      */
     static Variable* getDirectedEdgeTail(Edge& edge);
 
-    static void sortEdges(std::vector<Edge> edges);
+    static void sortEdges(std::vector<Edge>& edges);
 
 };
 

@@ -131,11 +131,12 @@ void DataSet::addVariable(int i, Variable *v)
     m++;
 }
 
-DataSet::~DataSet()
-{
-    // TODO if commented out, this causes a memory leak but prevents double freeing
-    // for (int i = 0; i < variables.size(); i++)
-    //     delete variables[i];
+DataSet::~DataSet() {}
+
+// WARNING: only call when done with an R-exposed function
+void DataSet::deleteVariables() {
+    for (int i = 0; i < variables.size(); i++)
+        delete variables[i];
 }
 
 
@@ -188,6 +189,17 @@ DataSet::DataSet(DataSet& ds) {
   //     this->data(i,j) = ds.data(i,j);
   //   }
   // }
+}
+
+DataSet::DataSet(DataSet& ds, const arma::urowvec& rows) {
+    this->maxDiscrete=ds.maxDiscrete;
+    this->m = ds.m;
+    this->n = rows.n_elem;
+    this->variables = ds.variables;
+    this->variableNames = ds.variableNames;
+    this->name2idx = ds.name2idx;
+    this->var2idx = ds.var2idx;
+    this->data = ds.data.rows(rows);
 }
 
 DataSet& DataSet::operator=(DataSet& ds) {

@@ -5,19 +5,24 @@
 
 class Triple {
 private:
+    
+
+public:
+
     Variable* x;
     Variable* y;
     Variable* z;
 
-public:
-
-    Triple(Variable* x, Variable* y, Variable* z);
+    Triple(Variable* x, Variable* y, Variable* z) : x(x), y(y), z(z) {}
+    Triple() {}
 
     Variable* getX() { return x; }
     Variable* getY() { return y; }
     Variable* getZ() { return z; }
 
-    friend std::ostream& operator<<(std::ostream& os, Triple& triple);
+    std::string toString();
+
+    friend std::ostream& operator<<(std::ostream& os, const Triple& triple);
     friend bool operator==(const Triple& t1, const Triple& t2);
     friend struct std::hash<Triple>;
 

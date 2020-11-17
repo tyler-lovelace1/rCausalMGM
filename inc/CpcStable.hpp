@@ -5,10 +5,11 @@
 #include "EdgeListGraph.hpp"
 #include "Variable.hpp"
 #include "SepsetMap.hpp"
-#include "FasStable.hpp"
+#include "FasStableProducerConsumer.hpp"
 #include "SearchGraphUtils.hpp"
 #include "MeekRules.hpp"
 #include <chrono>
+#include <thread>
 
 /**
  * Implements a convervative version of PC, in which the Markov condition is assumed but faithfulness is tested
@@ -74,11 +75,26 @@ private:
 
     bool verbose = false;
 
+    // First int in pair = # sepsets containing y
+    // Second int in pair = # sepsets without y
+    std::unordered_map<Triple, std::pair<int, int>> sepsetCount;
+
+    struct ColliderTask {
+        Triple t;
+        std::vector<Variable*> sepset;
+        ColliderTask(Triple _t, const std::vector<Variable*>& _sepset): t(_t), sepset(_sepset) {}
+        ColliderTask(const ColliderTask& ct): t(ct.t), sepset(ct.sepset) {}
+        ColliderTask(): t(NULL, NULL, NULL), sepset({}) {}
+    };
+
+    int parallelism = std::thread::hardware_concurrency();
+    std::mutex mapMutex;
+
     void orientUnshieldedTriples();
 
-    std::vector<std::vector<Variable*>> getSepsets(Variable* i, Variable* k, EdgeListGraph& g);
+    bool isCollider(Triple t);
 
-    bool isColliderSepset(Variable* j, std::vector<std::vector<Variable*>>& sepsets);
+    bool isNonCollider(Triple t);
 
 public:
 
@@ -152,7 +168,7 @@ public:
 
     EdgeListGraph search(const std::vector<Variable*>& nodes);
 
-    EdgeListGraph search(FasStable& fas, const std::vector<Variable*>& nodes);
+    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes);
 
 };
 

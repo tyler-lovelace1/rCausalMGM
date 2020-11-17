@@ -3,14 +3,9 @@
 
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"
-#include "ContinuousVariable.hpp"
-#include "DiscreteVariable.hpp"
 #include "MGMParams.hpp"
 #include "ProximalGradient.hpp"
 #include "EdgeListGraph.hpp"
-#include <math.h>
-#include <RcppArmadillo.h>
-#include <chrono>
 
 /**
  * Implementation of Lee and Hastie's (2012) pseudolikelihood method for learning
@@ -52,12 +47,16 @@ private:
     //parameter weights
     arma::vec weights;
 
+    bool verbose = false;
+
     double logsumexp(const arma::vec& x);
 
     void initParameters();  // init all parameters to zeros except for betad which is set to 1s
     void calcWeights();     // calculate parameter weights as in Lee and Hastie 
     void makeDummy();       // convert discrete data (in yDat) to a matrix of dummy variables (stored in dDat)
     void fixData();         // checks if yDat is zero indexed and converts to 1 index. zscores x
+
+    friend class Tests;
 
 public:
 
@@ -73,6 +72,8 @@ public:
     void setParams(MGMParams& newParams) {params = newParams;}
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
+
+    void setVerbose(bool v) { verbose = v; }
 
     /**
      * Calculate value of g(X) and gradient of g(X) at the same time for efficiency reasons.
