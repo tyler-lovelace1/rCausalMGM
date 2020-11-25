@@ -84,6 +84,10 @@ EdgeListGraph STEPS::runStepsPar() {
         cdDestable = cdDestable / numCD;
         ddDestable = ddDestable / numDD;
 
+	if (verbose) Rcpp::Rcout << "    Instabilities for lambda = " << lambda[currIndex]
+				 << ":  {" << ccDestable << ", " << cdDestable << ", "
+				 << ddDestable << "}" << std::endl;
+
         if (ccDestable <= gamma && CC == -1)
             CC = lambda[currIndex];
         if (cdDestable <= gamma && CD == -1)
@@ -103,12 +107,12 @@ EdgeListGraph STEPS::runStepsPar() {
             DDMaxI = lambda[currIndex];
         }
         if (CC != -1 && CD != -1 && DD != -1 && oneLamb != -1)
-            goto EXIT_LOOP;
+            break;
         if (currIndex == lambda.size() - 1)
-            goto EXIT_LOOP;
+            break;
         currIndex++;
     }
-    EXIT_LOOP:
+    // EXIT_LOOP:
 
     if (CC == -1)
         CC = CCMaxI;

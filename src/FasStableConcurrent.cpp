@@ -1,4 +1,5 @@
 #include "FasStableConcurrent.hpp"
+#include "GraphUtils.hpp"
 
 FasStableConcurrent::FasStableConcurrent(EdgeListGraph *initialGraph, IndependenceTest *test) {
     this->initialGraph = initialGraph;

@@ -91,6 +91,7 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
             double var = arma::var(curr);
 
             if (var <= 0.0001) {
+		Rcpp::Rcout << "   " << d.getVariable(i)->getName() << ":  " << var << std::endl;
                 return i;
             }
 
@@ -111,6 +112,11 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
 
             for (std::pair<int, int> element : cats) {
                 if (element.second < 2) {
+		    Rcpp::Rcout << "    " << d.getVariable(i)->getName() << ":  {";
+		    for (std::pair<int, int> item : cats) {
+			Rcpp::Rcout << item.first << " : " << item.second << ", ";
+		    }
+		    Rcpp::Rcout << "}\n";
                     return i;
                 }
             }
@@ -132,24 +138,27 @@ arma::vec StabilityUtils::standardizeData(const arma::vec& data) {
 }
 
 arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int N, int b) {
-    
-    arma::umat samp = subSampleNoReplacement(data.getNumRows(), b, N);
+    arma::umat samp; // = subSampleNoReplacement(data.getNumRows(), b, N);
     int attempts = 5000;
     bool done = false;
     while(!done) {
-        //TODO the ordering here is weird
+	// Rcpp::Rcout << "Attempt " << 5000 - attempts;
+	samp = subSampleNoReplacement(data.getNumRows(), b, N);
         done = true;
         for (int i = 0; i < samp.n_rows; i++) {
             DataSet subset(data, samp.row(i));
-            if (checkForVariance(subset, data) != -1) done = false;
+            if (checkForVariance(subset, data) != -1) {
+		done = false;
+		break;
+	    }
         }
-        samp = subSampleNoReplacement(data.getNumRows(), b, N);
         attempts--;
         if (attempts == 0) {
             Rcpp::Rcout << "Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
             exit(-1);
         }
     }
+    // Rcpp::Rcout << std::endl;
 
     return stabilitySearchPar(data, lambda, samp);
 }
@@ -180,7 +189,7 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
 }
 
 arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, arma::umat& subs) {
-    BlockingQueue<int> taskQueue(10000);
+    BlockingQueue<int> taskQueue(subs.n_rows);
     int parallelism = std::thread::hardware_concurrency();
     if (parallelism == 0) {
         parallelism = 4;
@@ -212,9 +221,11 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
             MGM mgm(dataSubSamp, lambda);
             EdgeListGraph g = mgm.search();
             arma::mat curAdj = skeletonToMatrix(g, dataSubSamp);
-            
-            std::lock_guard<std::mutex> matLock(matMutex);
-            thetaMat += curAdj;
+
+	    {
+		std::lock_guard<std::mutex> matLock(matMutex);
+		thetaMat += curAdj;
+	    }
         }
     };
 

@@ -1,4 +1,5 @@
 #include "Fas.hpp"
+#include "GraphUtils.hpp"
 
 Fas::Fas(EdgeListGraph *initialGraph, IndependenceTest *test) {
     this->initialGraph = initialGraph;

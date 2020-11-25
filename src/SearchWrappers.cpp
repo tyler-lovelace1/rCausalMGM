@@ -41,7 +41,7 @@ Rcpp::List steps(
     const int maxDiscrete = 5,
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85), 
     const double g = 0.05,
-    const int numSub = 50,
+    const int numSub = 20,
     Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(0), // FALSE
     Rcpp::LogicalVector computeStabs = Rcpp::LogicalVector::create(0), // FALSE
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
