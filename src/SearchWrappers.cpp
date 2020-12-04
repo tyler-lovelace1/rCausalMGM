@@ -6,6 +6,18 @@
 #include "Tests.hpp"
 #include "IndTestMulti.hpp"
 
+
+//' Calculate the MGM graph on a dataset
+//'
+//' @param df The dataframe
+//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2)
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' df <- read.table("data/data0.txt", header=T)
+//' g <- rCausalMGM::mgm(df)
 // [[Rcpp::export]]
 Rcpp::List mgm(
     const Rcpp::DataFrame &df, 
@@ -35,6 +47,22 @@ Rcpp::List mgm(
     return result;
 }
 
+//TODO - not sure what 'computeStabs' does here
+//' Calculate the optimal lambda values for the MGM algorithm and run the algorithm using those values. Optimal values are printed
+//'
+//' @param df The dataframe
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param lambda A vector of the lambda values to test. Defaults to c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)
+//' @param g The gamma parameter for STEPS. Defaults to 0.05
+//' @param numSub The number of subsets to split the data into. Defaults to 20
+//' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
+//' @param computeStabs If TRUE, stabilitie values are calculated. Defaults to FALSE.
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' df <- read.table("data/data0.txt", header=T)
+//' g <- rCausalMGM::steps(df)
 // [[Rcpp::export]]
 Rcpp::List steps(
     const Rcpp::DataFrame &df, 
@@ -66,6 +94,19 @@ Rcpp::List steps(
 
 }
 
+//' Runs the causal algorithm PC Stable on a dataset
+//'
+//' @param df The dataframe
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
+//' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' df <- read.table("data/data0.txt", header=T)
+//' g <- rCausalMGM::pcStable(df)
 // [[Rcpp::export]]
 Rcpp::List pcStable(
     const Rcpp::DataFrame &df, 
@@ -107,6 +148,19 @@ Rcpp::List pcStable(
     return result;
 }
 
+//' Runs the causal algorithm CPC Stable on a dataset
+//'
+//' @param df The dataframe
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
+//' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' df <- read.table("data/data0.txt", header=T)
+//' g <- rCausalMGM::cpcStable(df)
 // [[Rcpp::export]]
 Rcpp::List cpcStable(
     const Rcpp::DataFrame &df, 
@@ -148,6 +202,19 @@ Rcpp::List cpcStable(
     return result;
 }
 
+//' Runs the causal algorithm PC Max on a dataset
+//'
+//' @param df The dataframe
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
+//' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' df <- read.table("data/data0.txt", header=T)
+//' g <- rCausalMGM::pcMax(df)
 // [[Rcpp::export]]
 Rcpp::List pcMax(
     const Rcpp::DataFrame &df, 
@@ -187,25 +254,4 @@ Rcpp::List pcMax(
     ds.deleteVariables();
 
     return result;
-}
-
-// [[Rcpp::export]]
-void runTests(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
-
-    // Tests::testMGMFunctions(df, maxDiscrete);
-
-    // Tests::testConcurrentQueue();
-
-    // Tests::testPcStable(df, maxDiscrete);
-
-    // Tests::testCpcStable(df, maxDiscrete);
-
-    // Tests::testPcMax(df, maxDiscrete);
-
-    // Tests::testMGMTiming(df, maxDiscrete);
-
-    Tests::testSTEPS(df, maxDiscrete);
-
-    // Tests::testGraphFromFile(df, "data/graph/graph5.txt", maxDiscrete);
-
 }

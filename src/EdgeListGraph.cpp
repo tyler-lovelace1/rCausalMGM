@@ -595,6 +595,15 @@ bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
     return true;
 }
 
+//' Save a graph to a file
+//'
+//' @param list The graph object
+//' @param filename The graph file
+//' @export
+//' @examples
+//' df <- read.table("data/data0.txt", header=T)
+//' g <- rCausalMGM::mgm(df)
+//' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 // [[Rcpp::export]]
 void saveGraph(const Rcpp::List& list, const std::string& filename) {
     if (!EdgeListGraph::validateGraphList(list)) {
@@ -644,6 +653,14 @@ void saveGraph(const Rcpp::List& list, const std::string& filename) {
     outfile.close();
 }
 
+//TODO - should we include the text format of graphs? Where?
+//' Load a graph from a file
+//'
+//' @param filename The graph file
+//' @return The graph as a List object, which can be passed into search functions
+//' @export
+//' @examples
+//' g <- rCausalMGM::loadGraph("graphs/graph0.txt")
 // [[Rcpp::export]]
 Rcpp::List loadGraph(const std::string& filename) {
     // Get lines from file
@@ -754,11 +771,23 @@ Rcpp::List loadGraph(const std::string& filename) {
     );
 }
 
+// TODO - This function shouldn't need df
+//' Display a graph object as text
+//'
+//' @param graph The graph object
+//' @param df The dataframe containing the variables used by the graph
+//' @export
+//' @examples
+//' df <- read.table("data/data0.txt", header=T)
+//' g <- rCausalMGM::mgm(df)
+//' rCausalMGM::printGraph(g, df)
 // [[Rcpp::export]]
 void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame &df) {
     DataSet ds(df, 5);
     EdgeListGraph g(graph, ds);
 
     Rcpp::Rcout << g << std::endl;
+
+    ds.deleteVariables();
 
 }
