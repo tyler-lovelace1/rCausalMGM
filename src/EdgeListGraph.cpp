@@ -687,6 +687,7 @@ Rcpp::List loadGraph(const std::string& filename) {
 
     std::vector<std::string>   nodeNames = GraphUtils::splitString(lines[1], ";");
     if (nodeNames.size() <= 1) nodeNames = GraphUtils::splitString(lines[1], ","); // Check for comma delimiter
+    if (nodeNames.at(nodeNames.size()-1) == "") nodeNames.pop_back();
 
     std::vector<std::string> edgeStrings;
     std::vector<std::string> ambiguousTriplesStrings;
@@ -771,6 +772,64 @@ Rcpp::List loadGraph(const std::string& filename) {
     );
 }
 
+// [[Rcpp::export]]
+Rcpp::List adjMat2Graph(arma::mat adj,
+		  Rcpp::StringVector nodes,
+		  Rcpp::LogicalVector directed = Rcpp::LogicalVector::create(0) // FALSE
+    ) {
+    std::vector<std::string> nodeNames(nodes.begin(), nodes.end());
+    
+    if (adj.n_rows != adj.n_cols || adj.n_rows <= 0) {
+	throw std::invalid_argument("Input adjacency matrix is invalid");
+    }
+
+    if (adj.n_rows != nodeNames.size()) {
+	throw std::invalid_argument("Input node names do not match the number of variables in the adjacency matrix");
+    }
+
+    std::vector<Variable*> _nodes;
+    for (int i = 0; i < nodeNames.size(); i++) {
+	_nodes.push_back(new ContinuousVariable(nodeNames[i]));
+    }
+
+    EdgeListGraph g(_nodes);
+
+    // std::vector<std::string> edgeStrings;
+    // std::vector<std::string> ambiguousTriplesStrings;
+
+    bool dir = Rcpp::is_true(Rcpp::all(directed));
+    if (dir) {
+	for (arma::uword i = 0; i < adj.n_rows; i++) {
+	    for (arma::uword j = 0; j < adj.n_rows; j++) {
+		if (i==j) continue;
+		if (adj(i,j) != 0) {
+		    g.addDirectedEdge(_nodes[i], _nodes[j]);
+		    // edgeStrings.push_back(nodeNames[i] + " --> " + nodeNames[j]);
+		}
+	    }
+	}
+    } else {
+	for (arma::uword i = 0; i < adj.n_rows; i++) {
+	    for (arma::uword j = i+1; j < adj.n_rows; j++) {
+		if (adj(i,j) != 0) {
+		    g.addUndirectedEdge(_nodes[i], _nodes[j]);
+		    // edgeStrings.push_back(nodeNames[i] + " --- " + nodeNames[j]);
+		}
+	    }
+	}
+    }
+
+    return g.toList();
+
+    /*
+    return Rcpp::List::create(
+        Rcpp::_["nodes"] = nodeNames,
+        Rcpp::_["edges"] = edgeStrings,
+        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings
+    );
+    */
+}
+
 // TODO - This function shouldn't need df
 //' Display a graph object as text
 //'
@@ -782,7 +841,7 @@ Rcpp::List loadGraph(const std::string& filename) {
 //' g <- rCausalMGM::mgm(df)
 //' rCausalMGM::printGraph(g, df)
 // [[Rcpp::export]]
-void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame &df) {
+void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame& df) {
     DataSet ds(df, 5);
     EdgeListGraph g(graph, ds);
 

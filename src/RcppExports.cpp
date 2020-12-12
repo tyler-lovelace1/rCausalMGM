@@ -39,6 +39,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// adjMat2Graph
+Rcpp::List adjMat2Graph(arma::mat adj, Rcpp::StringVector nodes, Rcpp::LogicalVector directed);
+RcppExport SEXP _rCausalMGM_adjMat2Graph(SEXP adjSEXP, SEXP nodesSEXP, SEXP directedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type adj(adjSEXP);
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type nodes(nodesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type directed(directedSEXP);
+    rcpp_result_gen = Rcpp::wrap(adjMat2Graph(adj, nodes, directed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // printGraph
 void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame& df);
 RcppExport SEXP _rCausalMGM_printGraph(SEXP graphSEXP, SEXP dfSEXP) {
@@ -160,17 +173,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// runTests
-void runTests(const Rcpp::DataFrame& df, const int maxDiscrete);
-RcppExport SEXP _rCausalMGM_runTests(SEXP dfSEXP, SEXP maxDiscreteSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
-    runTests(df, maxDiscrete);
-    return R_NilValue;
-END_RCPP
-}
 // rcpparma_hello_world
 arma::mat rcpparma_hello_world();
 RcppExport SEXP _rCausalMGM_rcpparma_hello_world() {
@@ -219,6 +221,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_DataSetTest", (DL_FUNC) &_rCausalMGM_DataSetTest, 2},
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
+    {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
     {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 2},
     {"_rCausalMGM_indTestMultiTest", (DL_FUNC) &_rCausalMGM_indTestMultiTest, 1},
     {"_rCausalMGM_LinearRegressionTest", (DL_FUNC) &_rCausalMGM_LinearRegressionTest, 1},
@@ -228,7 +231,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 6},
     {"_rCausalMGM_cpcStable", (DL_FUNC) &_rCausalMGM_cpcStable, 6},
     {"_rCausalMGM_pcMax", (DL_FUNC) &_rCausalMGM_pcMax, 6},
-    {"_rCausalMGM_runTests", (DL_FUNC) &_rCausalMGM_runTests, 2},
     {"_rCausalMGM_rcpparma_hello_world", (DL_FUNC) &_rCausalMGM_rcpparma_hello_world, 0},
     {"_rCausalMGM_rcpparma_outerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_outerproduct, 1},
     {"_rCausalMGM_rcpparma_innerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_innerproduct, 1},
