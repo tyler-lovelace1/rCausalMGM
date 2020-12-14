@@ -39,6 +39,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// adjMat2Graph
+Rcpp::List adjMat2Graph(arma::mat adj, Rcpp::StringVector nodes, Rcpp::LogicalVector directed);
+RcppExport SEXP _rCausalMGM_adjMat2Graph(SEXP adjSEXP, SEXP nodesSEXP, SEXP directedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type adj(adjSEXP);
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type nodes(nodesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type directed(directedSEXP);
+    rcpp_result_gen = Rcpp::wrap(adjMat2Graph(adj, nodes, directed));
+    return rcpp_result_gen;
+END_RCPP
+}
 // printGraph
 void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame& df);
 RcppExport SEXP _rCausalMGM_printGraph(SEXP graphSEXP, SEXP dfSEXP) {
@@ -208,6 +221,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_DataSetTest", (DL_FUNC) &_rCausalMGM_DataSetTest, 2},
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
+    {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
     {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 2},
     {"_rCausalMGM_indTestMultiTest", (DL_FUNC) &_rCausalMGM_indTestMultiTest, 1},
     {"_rCausalMGM_LinearRegressionTest", (DL_FUNC) &_rCausalMGM_LinearRegressionTest, 1},

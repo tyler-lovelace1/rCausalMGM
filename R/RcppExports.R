@@ -29,6 +29,10 @@ loadGraph <- function(filename) {
     .Call(`_rCausalMGM_loadGraph`, filename)
 }
 
+adjMat2Graph <- function(adj, nodes, directed = as.logical( c(0))) {
+    .Call(`_rCausalMGM_adjMat2Graph`, adj, nodes, directed)
+}
+
 #' Display a graph object as text
 #'
 #' @param graph The graph object
