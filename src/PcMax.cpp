@@ -59,7 +59,7 @@ EdgeListGraph PcMax::search() {
  * Runs PC search, returning the output pattern, over the given nodes.
  */
 EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
-    Rcpp::Rcout << "Starting PCMax algorithm" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting PCMax algorithm" << std::endl;
 
     if (independenceTest == NULL)
         throw std::invalid_argument("independenceTest of PCMax may not be NULL.");
@@ -90,8 +90,10 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout.precision(2);
-    Rcpp::Rcout << "PCMax Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
+    if (verbose) {
+        Rcpp::Rcout.precision(2);
+        Rcpp::Rcout << "PCMax Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
+    }
 
     return graph;
 }

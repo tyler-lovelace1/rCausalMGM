@@ -192,7 +192,7 @@ EdgeListGraph CpcStable::search(const std::vector<Variable*>& nodes) {
 }
 
 EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
-    Rcpp::Rcout << "Starting CPC algorithm" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting CPC algorithm" << std::endl;
 
     allTriples = {};
 
@@ -223,8 +223,10 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout.precision(2);
-    Rcpp::Rcout << "CpcStable Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
+    if (verbose) {
+        Rcpp::Rcout.precision(2);
+        Rcpp::Rcout << "CpcStable Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
+    }
 
     return graph;
 }

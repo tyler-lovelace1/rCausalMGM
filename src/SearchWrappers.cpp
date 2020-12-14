@@ -27,7 +27,7 @@ Rcpp::List mgm(
 ) {
     DataSet ds(df, maxDiscrete);
 
-    bool v = verbose[0];
+    bool v = Rcpp::is_true(Rcpp::all(verbose));
 
     std::vector<double> l(lambda.begin(), lambda.end());
 

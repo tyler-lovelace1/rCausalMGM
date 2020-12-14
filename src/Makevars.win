@@ -12,5 +12,5 @@ CXX_STD = CXX11
 CC=ccache gcc
 CXX=ccache g++
 
-PKG_CXXFLAGS = -I"../inc" $(SHLIB_OPENMP_CXXFLAGS) -pthread
+PKG_CXXFLAGS = -I"../inc" -I"C:/Program Files/boost/boost_1_46_1" $(SHLIB_OPENMP_CXXFLAGS) -pthread
 PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 

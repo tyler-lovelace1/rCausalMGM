@@ -5,14 +5,39 @@ DataSetTest <- function(df, maxDiscrete = 5L) {
     invisible(.Call(`_rCausalMGM_DataSetTest`, df, maxDiscrete))
 }
 
+#' Save a graph to a file
+#'
+#' @param list The graph object
+#' @param filename The graph file
+#' @export
+#' @examples
+#' df <- read.table("data/data0.txt", header=T)
+#' g <- rCausalMGM::mgm(df)
+#' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 saveGraph <- function(list, filename) {
     invisible(.Call(`_rCausalMGM_saveGraph`, list, filename))
 }
 
+#' Load a graph from a file
+#'
+#' @param filename The graph file
+#' @return The graph as a List object, which can be passed into search functions
+#' @export
+#' @examples
+#' g <- rCausalMGM::loadGraph("graphs/graph0.txt")
 loadGraph <- function(filename) {
     .Call(`_rCausalMGM_loadGraph`, filename)
 }
 
+#' Display a graph object as text
+#'
+#' @param graph The graph object
+#' @param df The dataframe containing the variables used by the graph
+#' @export
+#' @examples
+#' df <- read.table("data/data0.txt", header=T)
+#' g <- rCausalMGM::mgm(df)
+#' rCausalMGM::printGraph(g, df)
 printGraph <- function(graph, df) {
     invisible(.Call(`_rCausalMGM_printGraph`, graph, df))
 }
@@ -29,28 +54,89 @@ LogisticRegressionTest <- function(df) {
     invisible(.Call(`_rCausalMGM_LogisticRegressionTest`, df))
 }
 
+#' Calculate the MGM graph on a dataset
+#'
+#' @param df The dataframe
+#' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2)
+#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated MGM graph
+#' @export
+#' @examples
+#' df <- read.table("data/data0.txt", header=T)
+#' g <- rCausalMGM::mgm(df)
 mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_mgm`, df, lambda, maxDiscrete, verbose)
 }
 
+#' Calculate the optimal lambda values for the MGM algorithm and run the algorithm using those values. Optimal values are printed
+#'
+#' @param df The dataframe
+#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+#' @param lambda A vector of the lambda values to test. Defaults to c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)
+#' @param g The gamma parameter for STEPS. Defaults to 0.05
+#' @param numSub The number of subsets to split the data into. Defaults to 20
+#' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
+#' @param computeStabs If TRUE, stabilitie values are calculated. Defaults to FALSE.
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated MGM graph
+#' @export
+#' @examples
+#' df <- read.table("data/data0.txt", header=T)
+#' g <- rCausalMGM::steps(df)
 steps <- function(df, maxDiscrete = 5L, lambda = as.numeric( c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)), g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(0)), computeStabs = as.logical( c(0)), verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, verbose)
 }
 
+#' Runs the causal algorithm PC Stable on a dataset
+#'
+#' @param df The dataframe
+#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+#' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
+#' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+#' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph
+#' @export
+#' @examples
+#' df <- read.table("data/data0.txt", header=T)
+#' g <- rCausalMGM::pcStable(df)
 pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_pcStable`, df, maxDiscrete, initialGraph, lambda, alpha, verbose)
 }
 
+#' Runs the causal algorithm CPC Stable on a dataset
+#'
+#' @param df The dataframe
+#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+#' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
+#' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+#' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph
+#' @export
+#' @examples
+#' df <- read.table("data/data0.txt", header=T)
+#' g <- rCausalMGM::cpcStable(df)
 cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_cpcStable`, df, maxDiscrete, initialGraph, lambda, alpha, verbose)
 }
 
+#' Runs the causal algorithm PC Max on a dataset
+#'
+#' @param df The dataframe
+#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+#' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
+#' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+#' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph
+#' @export
+#' @examples
+#' df <- read.table("data/data0.txt", header=T)
+#' g <- rCausalMGM::pcMax(df)
 pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, lambda, alpha, verbose)
-}
-
-runTests <- function(df, maxDiscrete = 5L) {
-    invisible(.Call(`_rCausalMGM_runTests`, df, maxDiscrete))
 }
 
 rcpparma_hello_world <- function() {
