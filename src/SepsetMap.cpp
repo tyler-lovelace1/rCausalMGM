@@ -5,7 +5,7 @@ SepsetMap::SepsetMap(SepsetMap& map) {
     this->sepsets = map.sepsets; 
     this->pValues = map.pValues;  
     this->parents = map.parents;
-    this->correlations = map.correlations;
+    // this->correlations = map.correlations;
     this->returnEmptyIfNotSet = map.returnEmptyIfNotSet;
 }
 
@@ -37,9 +37,9 @@ void SepsetMap::setPValue(Variable* x, Variable* y, double p) {
 std::vector<Variable*>* SepsetMap::get(Variable* a, Variable* b) {
     VariablePair pair = std::minmax(a, b);
 
-    if (correlations != boost::none && correlations.get().count(pair) == 0) {
-        return &emptyList;
-    }
+    // if (correlations != boost::none && correlations.get().count(pair) == 0) {
+    //     return &emptyList;
+    // }
 
     // If the pair is not set
     if (sepsets.count(pair) == 0) {

@@ -1,3 +1,5 @@
+// [[Rcpp::depends(BH)]]
+
 #include "LogisticRegression.hpp"
 #include "LogisticRegressionResult.hpp"
 #include "Variable.hpp"

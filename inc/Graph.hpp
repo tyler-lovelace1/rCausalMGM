@@ -1,6 +1,8 @@
 #ifndef GRAPH_HPP_
 #define GRAPH_HPP_
 
+// [[Rcpp::depends(BH)]]
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include "Variable.hpp"

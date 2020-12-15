@@ -43,6 +43,7 @@ time_bnlearn <- function(df, sampleSize=nrow(df), filename=NULL, numTrials=5) {
 
 time_rCausalMGM <- function(df, sampleSize=nrow(df), filename=NULL, numTrials=5) {
     df <- df[1:sampleSize, ]
+    #df <- factorize_discrete(df)
 
     times = c()
     for (i in 1:numTrials) {

@@ -1,7 +1,9 @@
 #ifndef SEPSETMAP_HPP_
 #define SEPSETMAP_HPP_
 
-#include <boost/optional/optional.hpp>
+// [[Rcpp::depends(BH)]]
+
+// #include <boost/optional/optional.hpp>
 #include <boost/functional/hash.hpp>
 #include "Variable.hpp"
 
@@ -28,7 +30,7 @@ private:
     std::unordered_map<VariablePair, double, boost::hash<VariablePair>> pValues;
 
     std::unordered_map<Variable*, std::unordered_set<Variable*>> parents;
-    boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>> correlations = boost::none;
+    // boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>> correlations = boost::none;
     bool returnEmptyIfNotSet = false;
     std::vector<Variable*> emptyList; // stays empty
 
@@ -37,7 +39,7 @@ public:
     SepsetMap() {}
     SepsetMap(SepsetMap& map);
 
-    void setCorrelations(boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>>& pairs) { this->correlations = pairs; }
+    // void setCorrelations(boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>>& pairs) { this->correlations = pairs; }
     bool isReturnEmptyIfNotSet() { return returnEmptyIfNotSet; }
     void setReturnEmptyIfNotSet(bool returnEmptyIfNotSet) { this->returnEmptyIfNotSet = returnEmptyIfNotSet; }
 
