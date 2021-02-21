@@ -142,20 +142,20 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
     int attempts = 5000;
     bool done = false;
     while(!done) {
-	// Rcpp::Rcout << "Attempt " << 5000 - attempts;
-	samp = subSampleNoReplacement(data.getNumRows(), b, N);
+        // Rcpp::Rcout << "Attempt " << 5000 - attempts;
+        samp = subSampleNoReplacement(data.getNumRows(), b, N);
         done = true;
         for (int i = 0; i < samp.n_rows; i++) {
             DataSet subset(data, samp.row(i));
             if (checkForVariance(subset, data) != -1) {
-		done = false;
-		break;
-	    }
+                done = false;
+                break;
+            }
         }
         attempts--;
         if (attempts == 0) {
-            Rcpp::Rcout << "Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
-            exit(-1);
+            Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+            throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least one category of every discrete variable");
         }
     }
     // Rcpp::Rcout << std::endl;

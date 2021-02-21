@@ -403,44 +403,43 @@ double LogisticRegression::norm(double z) {
     }
 }
 
-// [[Rcpp::export]]
-void LogisticRegressionTest(const Rcpp::DataFrame& df) {
-    Rcpp::Rcout << "Start** \n";
-    DataSet data = DataSet(df, 5);
-    Rcpp::Rcout << "Dataset Constructed \n";
-    LogisticRegression reg(data);
-    Rcpp::Rcout << "Finished Constructing \n";
+// void LogisticRegressionTest(const Rcpp::DataFrame& df) {
+//     Rcpp::Rcout << "Start** \n";
+//     DataSet data = DataSet(df, 5);
+//     Rcpp::Rcout << "Dataset Constructed \n";
+//     LogisticRegression reg(data);
+//     Rcpp::Rcout << "Finished Constructing \n";
 
-    for (int i = 0; i < data.getNumColumns(); i++) {
-	Rcpp::Rcout << "-----START----- \n";
-	if(data.getVariable(i)->isDiscrete())
-	    {
-		DiscreteVariable* x = (DiscreteVariable*)data.getVariable(i);
-		Rcpp::Rcout << x->getName() << std::endl;
-		std::vector<Variable*> regressors(data.getVariables());
+//     for (int i = 0; i < data.getNumColumns(); i++) {
+// 	Rcpp::Rcout << "-----START----- \n";
+// 	if(data.getVariable(i)->isDiscrete())
+// 	    {
+// 		DiscreteVariable* x = (DiscreteVariable*)data.getVariable(i);
+// 		Rcpp::Rcout << x->getName() << std::endl;
+// 		std::vector<Variable*> regressors(data.getVariables());
 
-		regressors.erase(regressors.begin() + i);
+// 		regressors.erase(regressors.begin() + i);
 
-		std::string xName = x->getName();
-		xName = xName.substr(0, xName.find('.'));
+// 		std::string xName = x->getName();
+// 		xName = xName.substr(0, xName.find('.'));
 
-		for (auto it = regressors.begin(); it != regressors.end(); it++) {
-		    std::string tempName = (*it)->getName();
-		    tempName = tempName.substr(0, tempName.find('.'));
-		    if (tempName == xName) {
-			it = regressors.erase(it);
-			it--;
-		    }
-		}
+// 		for (auto it = regressors.begin(); it != regressors.end(); it++) {
+// 		    std::string tempName = (*it)->getName();
+// 		    tempName = tempName.substr(0, tempName.find('.'));
+// 		    if (tempName == xName) {
+// 			it = regressors.erase(it);
+// 			it--;
+// 		    }
+// 		}
 
-		LogisticRegressionResult* result = reg.regress(x, regressors);
-		Rcpp::Rcout << *result;
-	    }
-	Rcpp::Rcout << "-----END----- \n";
-	Rcpp::Rcout << "\n";
-	Rcpp::Rcout << "\n";
-	Rcpp::Rcout << "\n";
-	Rcpp::Rcout << "\n";
-	Rcpp::Rcout << "\n";
-    }
-}
+// 		LogisticRegressionResult* result = reg.regress(x, regressors);
+// 		Rcpp::Rcout << *result;
+// 	    }
+// 	Rcpp::Rcout << "-----END----- \n";
+// 	Rcpp::Rcout << "\n";
+// 	Rcpp::Rcout << "\n";
+// 	Rcpp::Rcout << "\n";
+// 	Rcpp::Rcout << "\n";
+// 	Rcpp::Rcout << "\n";
+//     }
+// }

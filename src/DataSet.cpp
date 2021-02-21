@@ -374,33 +374,32 @@ std::vector<int> DataSet::getDiscLevels() {
     return result;
 }
 
-// [[Rcpp::export]]
-void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5)
-{
-    DataSet ds = DataSet(df, maxDiscrete);
-    Rcpp::Rcout << ds;
+// void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5)
+// {
+//     DataSet ds = DataSet(df, maxDiscrete);
+//     Rcpp::Rcout << ds;
 
-    ds.addVariable(new ContinuousVariable("Y1"));
+//     ds.addVariable(new ContinuousVariable("Y1"));
 
-    Rcpp::Rcout << ds;
+//     Rcpp::Rcout << ds;
 
-    int col = ds.getColumn(ds.getVariable("Y1"));
-    for (int i = 0; i < ds.getNumRows(); i++)
-        ds.set(i, col, ((double)i) / 100.0);
+//     int col = ds.getColumn(ds.getVariable("Y1"));
+//     for (int i = 0; i < ds.getNumRows(); i++)
+//         ds.set(i, col, ((double)i) / 100.0);
 
-    Rcpp::Rcout << ds;
+//     Rcpp::Rcout << ds;
 
-    col = 3;
-    ds.addVariable(col, new DiscreteVariable("Y2", 4));
+//     col = 3;
+//     ds.addVariable(col, new DiscreteVariable("Y2", 4));
 
-    Rcpp::Rcout << ds;
+//     Rcpp::Rcout << ds;
 
-    col = ds.getColumn(ds.getVariable("Y2"));
-    for (int i = 0; i < ds.getNumRows(); i++)
-        ds.set(i, col, i % 4);
+//     col = ds.getColumn(ds.getVariable("Y2"));
+//     for (int i = 0; i < ds.getNumRows(); i++)
+//         ds.set(i, col, i % 4);
 
-    Rcpp::Rcout << ds;
-}
+//     Rcpp::Rcout << ds;
+// }
 
 std::ostream &operator<<(std::ostream &os, DataSet &ds)
 {

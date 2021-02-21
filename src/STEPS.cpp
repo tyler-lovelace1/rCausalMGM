@@ -1,7 +1,9 @@
 #include "STEPS.hpp"
 
 EdgeListGraph STEPS::runStepsPar() {
-    std::sort(lambda.begin(), lambda.end());
+
+    // Sort in descending order
+    std::sort(lambda.begin(), lambda.end(), std::greater<double>());
 
     int currIndex = 0;
     double CC = -1;

@@ -16,7 +16,7 @@
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
+//' df <- read.table("data/data.n100.p25.txt", header=T)
 //' g <- rCausalMGM::mgm(df)
 // [[Rcpp::export]]
 Rcpp::List mgm(
@@ -61,7 +61,7 @@ Rcpp::List mgm(
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
+//' df <- read.table("data/data.n100.p25.txt", header=T)
 //' g <- rCausalMGM::steps(df)
 // [[Rcpp::export]]
 Rcpp::List steps(
@@ -98,21 +98,20 @@ Rcpp::List steps(
 //'
 //' @param df The dataframe
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
-//' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
-//' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
-//' g <- rCausalMGM::pcStable(df)
+//' df <- read.table("data/data.n100.p25.txt", header=T)
+//' ig <- rCausalMGM::mgm(df)
+//' g <- rCausalMGM::pcStable(df, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List pcStable(
     const Rcpp::DataFrame &df, 
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const double alpha = 0.05, 
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
 ) {
@@ -120,27 +119,17 @@ Rcpp::List pcStable(
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    EdgeListGraph ig;
-    if (initialGraph.isNull()) {
-        std::vector<double> l(lambda.begin(), lambda.end());
-        MGM mgm(ds, l);
-        mgm.setVerbose(v);
-        ig = mgm.search();
-        if (v)  {
-            Rcpp::Rcout << "MGM graph: \n" << ig << std::endl;
-            Rcpp::Rcout.precision(2);
-            Rcpp::Rcout << "MGM Elapsed time =  " << (mgm.getElapsedTime() / 1000.0) << " s" << std::endl;
-        }
-    } else {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-    }
-
     IndTestMulti itm(ds, alpha);
 
     PcStable pcs((IndependenceTest*) &itm);
     pcs.setVerbose(v);
-    pcs.setInitialGraph(&ig);
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        pcs.setInitialGraph(&ig);
+    }
+
     Rcpp::List result = pcs.search().toList();
 
     ds.deleteVariables();
@@ -152,21 +141,20 @@ Rcpp::List pcStable(
 //'
 //' @param df The dataframe
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
-//' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
-//' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
-//' g <- rCausalMGM::cpcStable(df)
+//' df <- read.table("data/data.n100.p25.txt", header=T)
+//' ig <- rCausalMGM::mgm(df)
+//' g <- rCausalMGM::cpcStable(df, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List cpcStable(
     const Rcpp::DataFrame &df, 
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const double alpha = 0.05, 
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
 ) {
@@ -174,27 +162,16 @@ Rcpp::List cpcStable(
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    EdgeListGraph ig;
-    if (initialGraph.isNull()) {
-        std::vector<double> l(lambda.begin(), lambda.end());
-        MGM mgm(ds, l);
-        mgm.setVerbose(v);
-        ig = mgm.search();
-        if (v)  {
-            Rcpp::Rcout << "MGM graph: \n" << ig << std::endl;
-            Rcpp::Rcout.precision(2);
-            Rcpp::Rcout << "MGM Elapsed time =  " << (mgm.getElapsedTime() / 1000.0) << " s" << std::endl;
-        }
-    } else {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-    }
-
     IndTestMulti itm(ds, alpha);
 
     CpcStable cpc((IndependenceTest*) &itm);
     cpc.setVerbose(v);
-    cpc.setInitialGraph(&ig);
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        cpc.setInitialGraph(&ig);
+    }
     Rcpp::List result = cpc.search().toList();
 
     ds.deleteVariables();
@@ -206,21 +183,20 @@ Rcpp::List cpcStable(
 //'
 //' @param df The dataframe
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
-//' @param initialGraph The MGM graph to use as a starting point. If NULL, the MGM graph is calculated. Defaults to NULL.
-//' @param lambda A vector of the lambda values to test if MGM is run. Defaults to c(0.2, 0.2, 0.2)
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
-//' g <- rCausalMGM::pcMax(df)
+//' df <- read.table("data/data.n100.p25.txt", header=T)
+//' ig <- rCausalMGM::mgm(df)
+//' g <- rCausalMGM::pcMax(df, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List pcMax(
     const Rcpp::DataFrame &df, 
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const double alpha = 0.05, 
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
 ) {
@@ -228,27 +204,16 @@ Rcpp::List pcMax(
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    EdgeListGraph ig;
-    if (initialGraph.isNull()) {
-        std::vector<double> l(lambda.begin(), lambda.end());
-        MGM mgm(ds, l);
-        mgm.setVerbose(v);
-        ig = mgm.search();
-        if (v)  {
-            Rcpp::Rcout << "MGM graph: \n" << ig << std::endl;
-            Rcpp::Rcout.precision(2);
-            Rcpp::Rcout << "MGM Elapsed time =  " << (mgm.getElapsedTime() / 1000.0) << " s" << std::endl;
-        }
-    } else {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-    }
-
     IndTestMulti itm(ds, alpha);
 
     PcMax pcm((IndependenceTest*) &itm);
     pcm.setVerbose(v);
-    pcm.setInitialGraph(&ig);
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        pcm.setInitialGraph(&ig);
+    }
     Rcpp::List result = pcm.search().toList();
 
     ds.deleteVariables();

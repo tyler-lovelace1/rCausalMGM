@@ -514,32 +514,31 @@ arma::mat IndTestMulti::getSubsetData(DataSet& origData, std::vector<Variable*>&
   return origMat.submat(rowIndices, colIndices);
 }
 
-// [[Rcpp::export]]
-void indTestMultiTest(const Rcpp::DataFrame& df) {
-  Rcpp::Rcout << "*******Start******* \n";
-  DataSet data(df, 5);
-  Rcpp::Rcout << "Dataset Constructed \n";
-  IndTestMulti itm(data, 0.05);
-  Rcpp::Rcout << "Independence Test Constructed \n";
-  // std::vector<std::string> varNames = itm.getVariableNames(); // unnecessary but this would be how you would normally retrieve the data
-  Variable* x = itm.getVariable("X1");
-  Variable* y = itm.getVariable("X6");
-  Rcpp::Rcout << "FIRST X: " << x->getName() << " Continuous: " << x->isContinuous() << std::endl;
-  Rcpp::Rcout << "FIRST Y: " << y->getName() << " Continuous: " << y->isContinuous() << std::endl;
-  std::vector<Variable*> z;
-  Rcpp::Rcout << "FIRST CASE: " << itm.isIndependent(x,y,z) << std::endl;
-  Rcpp::Rcout << "First P: " << itm.getPValue() << std::endl;
-  z.push_back(itm.getVariable("X9"));
-  Rcpp::Rcout << "SECOND CASE: " << itm.isIndependent(x,y,z) << std::endl;
-  Rcpp::Rcout << "Second P: " << itm.getPValue() << std::endl;
-  z.push_back(itm.getVariable("X10"));
-  z.push_back(itm.getVariable("X8"));
-  Rcpp::Rcout << "THIRD CASE: " << itm.isIndependent(x,y,z) << std::endl;
-  Rcpp::Rcout << "Third P: " << itm.getPValue() << std::endl;
-  x = itm.getVariable("X2");
-  Rcpp::Rcout << "X IS DISCRETE CASE: " << itm.isIndependent(x,y,z) << std::endl;
-  Rcpp::Rcout << "DISCRETE CASE P: " << itm.getPValue() << std::endl;
+// void indTestMultiTest(const Rcpp::DataFrame& df) {
+//   Rcpp::Rcout << "*******Start******* \n";
+//   DataSet data(df, 5);
+//   Rcpp::Rcout << "Dataset Constructed \n";
+//   IndTestMulti itm(data, 0.05);
+//   Rcpp::Rcout << "Independence Test Constructed \n";
+//   // std::vector<std::string> varNames = itm.getVariableNames(); // unnecessary but this would be how you would normally retrieve the data
+//   Variable* x = itm.getVariable("X1");
+//   Variable* y = itm.getVariable("X6");
+//   Rcpp::Rcout << "FIRST X: " << x->getName() << " Continuous: " << x->isContinuous() << std::endl;
+//   Rcpp::Rcout << "FIRST Y: " << y->getName() << " Continuous: " << y->isContinuous() << std::endl;
+//   std::vector<Variable*> z;
+//   Rcpp::Rcout << "FIRST CASE: " << itm.isIndependent(x,y,z) << std::endl;
+//   Rcpp::Rcout << "First P: " << itm.getPValue() << std::endl;
+//   z.push_back(itm.getVariable("X9"));
+//   Rcpp::Rcout << "SECOND CASE: " << itm.isIndependent(x,y,z) << std::endl;
+//   Rcpp::Rcout << "Second P: " << itm.getPValue() << std::endl;
+//   z.push_back(itm.getVariable("X10"));
+//   z.push_back(itm.getVariable("X8"));
+//   Rcpp::Rcout << "THIRD CASE: " << itm.isIndependent(x,y,z) << std::endl;
+//   Rcpp::Rcout << "Third P: " << itm.getPValue() << std::endl;
+//   x = itm.getVariable("X2");
+//   Rcpp::Rcout << "X IS DISCRETE CASE: " << itm.isIndependent(x,y,z) << std::endl;
+//   Rcpp::Rcout << "DISCRETE CASE P: " << itm.getPValue() << std::endl;
 
-  // try the case where there are values for x and y but z is empty, or when z has 1 or more variables
-  //when x and y are mixed between    at least one where x is discrete
-}
+//   // try the case where there are values for x and y but z is empty, or when z has 1 or more variables
+//   //when x and y are mixed between    at least one where x is discrete
+// }

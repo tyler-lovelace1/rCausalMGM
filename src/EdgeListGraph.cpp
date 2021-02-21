@@ -601,7 +601,7 @@ bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
 //' @param filename The graph file
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
+//' df <- read.table("data/data.n100.p25.txt", header=T)
 //' g <- rCausalMGM::mgm(df)
 //' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 // [[Rcpp::export]]
@@ -660,7 +660,7 @@ void saveGraph(const Rcpp::List& list, const std::string& filename) {
 //' @return The graph as a List object, which can be passed into search functions
 //' @export
 //' @examples
-//' g <- rCausalMGM::loadGraph("graphs/graph0.txt")
+//' g <- rCausalMGM::loadGraph("graph/graph.n100.p25.txt")
 // [[Rcpp::export]]
 Rcpp::List loadGraph(const std::string& filename) {
     // Get lines from file
@@ -670,7 +670,7 @@ Rcpp::List loadGraph(const std::string& filename) {
 
         if(!f) {
             Rcpp::Rcout << "ERROR: Cannot open " << filename << std::endl;
-            exit(1);
+            throw std::invalid_argument("Error opening file: " + filename);
         }
         std::string line;
 
@@ -681,8 +681,8 @@ Rcpp::List loadGraph(const std::string& filename) {
         }
     }
     catch(const std::exception& ex) {
-        std::cerr << "Exception: '" << ex.what() << "'!" << std::endl;
-        exit(1);
+        Rcpp::Rcout << "Exception: '" << ex.what() << "'!" << std::endl;
+        throw std::invalid_argument("Error reading file: " + filename);
     }
 
     std::vector<std::string>   nodeNames = GraphUtils::splitString(lines[1], ";");
@@ -772,6 +772,17 @@ Rcpp::List loadGraph(const std::string& filename) {
     );
 }
 
+//' Convert an adjacency matrix into a graph
+//'
+//' @param adj The adjacency matrix, NxN
+//' @param nodes The names of the nodes, length N
+//' @param directed TRUE if the graph should be directed, default FALSE
+//' @return The graph representation of the adjacency list
+//' @export
+//' @examples
+//' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
+//' nodes <- c("X1", "X2", "X3", "X4")
+//' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
 // [[Rcpp::export]]
 Rcpp::List adjMat2Graph(arma::mat adj,
 		  Rcpp::StringVector nodes,
@@ -837,7 +848,7 @@ Rcpp::List adjMat2Graph(arma::mat adj,
 //' @param df The dataframe containing the variables used by the graph
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
+//' df <- read.table("data/data.n100.p25.txt", header=T)
 //' g <- rCausalMGM::mgm(df)
 //' rCausalMGM::printGraph(g, df)
 // [[Rcpp::export]]

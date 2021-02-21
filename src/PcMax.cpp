@@ -83,8 +83,6 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     orientCollidersMaxP.setMaxPathLength(maxPathLength);
     orientCollidersMaxP.orient();
 
-    Rcpp::Rcout << "Graph before Meek Rules: " << graph << std::endl;
-
     MeekRules meekRules;
     meekRules.orientImplied(graph);
 

@@ -3,3 +3,13 @@
 *.Rout
 src/*.o
 src/*.so
+src/*.dll
+rCausalMGM.Rcheck/*
+
+.RData
+.Rhistory
+src/.RData
+src/.Rhistory
+R/.Rhistory
+test/.Rhistory
+test/out.log

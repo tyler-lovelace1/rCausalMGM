@@ -201,19 +201,18 @@ double LinearRegression::tss(arma::vec y) {
     return ssm;
 }
 
-// [[Rcpp::export]]
-void LinearRegressionTest(const Rcpp::DataFrame& df) {
-  DataSet data = DataSet(df, 5);
-  LinearRegression reg(data);
+// void LinearRegressionTest(const Rcpp::DataFrame& df) {
+//   DataSet data = DataSet(df, 5);
+//   LinearRegression reg(data);
 
-  for (int i = 0; i < data.getNumColumns(); i++) {
-    Rcpp::Rcout << "-----START----- \n";
-    Variable* target = data.getVariable(i);
-    Rcpp::Rcout << target->getName() << std::endl;
-    std::vector<Variable*> regressors(data.getVariables());
-    regressors.erase(regressors.begin() + i);
-    RegressionResult* result = reg.regress(target, regressors);
-    Rcpp::Rcout << *result;
-    Rcpp::Rcout << "-----END----- \n";
-  }
-}
+//   for (int i = 0; i < data.getNumColumns(); i++) {
+//     Rcpp::Rcout << "-----START----- \n";
+//     Variable* target = data.getVariable(i);
+//     Rcpp::Rcout << target->getName() << std::endl;
+//     std::vector<Variable*> regressors(data.getVariables());
+//     regressors.erase(regressors.begin() + i);
+//     RegressionResult* result = reg.regress(target, regressors);
+//     Rcpp::Rcout << *result;
+//     Rcpp::Rcout << "-----END----- \n";
+//   }
+// }
