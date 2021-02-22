@@ -42,13 +42,12 @@ BEGIN_RCPP
 END_RCPP
 }
 // printGraph
-void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame& df);
-RcppExport SEXP _rCausalMGM_printGraph(SEXP graphSEXP, SEXP dfSEXP) {
+void printGraph(const Rcpp::List& graph);
+RcppExport SEXP _rCausalMGM_printGraph(SEXP graphSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    printGraph(graph, df);
+    printGraph(graph);
     return R_NilValue;
 END_RCPP
 }
@@ -177,7 +176,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
     {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
-    {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 2},
+    {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 1},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 8},
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 5},

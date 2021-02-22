@@ -7,7 +7,7 @@
 #' @param filename The graph file
 #' @export
 #' @examples
-#' df <- read.table("data/data.n1000.p25.txt", header=T)
+#' df <- read.table("data/data.n100.p25.txt", header=T)
 #' g <- rCausalMGM::mgm(df)
 #' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 saveGraph <- function(list, filename) {
@@ -20,7 +20,7 @@ saveGraph <- function(list, filename) {
 #' @return The graph as a List object, which can be passed into search functions
 #' @export
 #' @examples
-#' g <- rCausalMGM::loadGraph("graph/graph.n1000.p25.txt")
+#' g <- rCausalMGM::loadGraph("graph/graph.n100.p25.txt")
 loadGraph <- function(filename) {
     .Call(`_rCausalMGM_loadGraph`, filename)
 }
@@ -43,14 +43,13 @@ adjMat2Graph <- function(adj, nodes, directed = as.logical( c(0))) {
 #' Display a graph object as text
 #'
 #' @param graph The graph object
-#' @param df The dataframe containing the variables used by the graph
 #' @export
 #' @examples
-#' df <- read.table("data/data.n1000.p25.txt", header=T)
+#' df <- read.table("data/data.n100.p25.txt", header=T)
 #' g <- rCausalMGM::mgm(df)
-#' rCausalMGM::printGraph(g, df)
-printGraph <- function(graph, df) {
-    invisible(.Call(`_rCausalMGM_printGraph`, graph, df))
+#' rCausalMGM::printGraph(g)
+printGraph <- function(graph) {
+    invisible(.Call(`_rCausalMGM_printGraph`, graph))
 }
 
 #' Calculate the MGM graph on a dataset
@@ -62,7 +61,7 @@ printGraph <- function(graph, df) {
 #' @return The calculated MGM graph
 #' @export
 #' @examples
-#' df <- read.table("data/data.n1000.p25.txt", header=T)
+#' df <- read.table("data/data.n100.p25.txt", header=T)
 #' g <- rCausalMGM::mgm(df)
 mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_mgm`, df, lambda, maxDiscrete, verbose)
@@ -81,7 +80,7 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, ve
 #' @return The calculated MGM graph
 #' @export
 #' @examples
-#' df <- read.table("data/data.n1000.p25.txt", header=T)
+#' df <- read.table("data/data.n100.p25.txt", header=T)
 #' g <- rCausalMGM::steps(df)
 steps <- function(df, maxDiscrete = 5L, lambda = as.numeric( c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)), g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(0)), computeStabs = as.logical( c(0)), verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, verbose)
@@ -97,7 +96,7 @@ steps <- function(df, maxDiscrete = 5L, lambda = as.numeric( c(0.05, 0.1, 0.15, 
 #' @return The calculated search graph
 #' @export
 #' @examples
-#' df <- read.table("data/data.n1000.p25.txt", header=T)
+#' df <- read.table("data/data.n100.p25.txt", header=T)
 #' ig <- rCausalMGM::mgm(df)
 #' g <- rCausalMGM::pcStable(df, initialGraph = ig)
 pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(0))) {
@@ -114,7 +113,7 @@ pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, ve
 #' @return The calculated search graph
 #' @export
 #' @examples
-#' df <- read.table("data/data.n1000.p25.txt", header=T)
+#' df <- read.table("data/data.n100.p25.txt", header=T)
 #' ig <- rCausalMGM::mgm(df)
 #' g <- rCausalMGM::cpcStable(df, initialGraph = ig)
 cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(0))) {
@@ -131,7 +130,7 @@ cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' @return The calculated search graph
 #' @export
 #' @examples
-#' df <- read.table("data/data.n1000.p25.txt", header=T)
+#' df <- read.table("data/data.n100.p25.txt", header=T)
 #' ig <- rCausalMGM::mgm(df)
 #' g <- rCausalMGM::pcMax(df, initialGraph = ig)
 pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(0))) {

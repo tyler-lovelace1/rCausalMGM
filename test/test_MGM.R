@@ -1,7 +1,7 @@
 library(rCausalMGM)
 
 # df <- read.table("data/data5.csv", header=T) # Tiny dataset
-df <- read.table("data/data.1.txt", header=T)
+df <- read.table("data/data.n100.p25.txt", header=T)
 # df <- df[-which(df[,"X128"]==3),]
 # df <- df[-which(df[,"X274"]==1),]
 
@@ -11,7 +11,7 @@ df <- read.table("data/data.1.txt", header=T)
 # lams <- exp(seq(log(lam.max), log(lam.min), -(log(lam.max) - log(lam.min))/14))
 # lams
 # rCausalMGM::runTests(df)
-rCausalMGM::mgm(df)
+rCausalMGM::printGraph(rCausalMGM::mgm(df))
 # g <- rCausalMGM::loadGraph("../cpc_out_censored.txt")
 # rCausalMGM::saveGraph(g, "../r_graph_out.txt")
 # rCausalMGM::pcStable(df, verbose=TRUE)

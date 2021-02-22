@@ -584,6 +584,45 @@ std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
     return os;
 }
 
+// Helper
+void streamGraph(const Rcpp::List& list, std::ostream& os) {
+    os << "Graph Nodes:\n";
+
+    // Nodes
+    std::vector<std::string> nodeNames = list["nodes"];
+    int count = 0;
+    for (std::string nodeName : nodeNames) {
+        count++;
+        os << nodeName;
+        if (count < nodeNames.size()) {
+            os << ",";
+        }
+    }
+
+    os << "\n\n";
+        
+    // Edges
+    os << "Graph Edges:\n";
+    std::vector<std::string> edgeStrings = list["edges"];
+    count = 1;
+    for (std::string edgeString : edgeStrings) {
+        os << count << ". " << edgeString << "\n";
+        count++;
+    }
+
+    os << "\n\n";
+
+    //Triples
+    std::vector<std::string> tripleStrings = list["ambiguous_triples"];
+    if (tripleStrings.size() > 0) {
+        os << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
+        
+        for (std::string tripleString : tripleStrings) {
+            os << tripleString << "\n";
+        }
+    }
+}
+
 bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
     std::vector<std::string> names = l.names();
 
@@ -613,42 +652,7 @@ void saveGraph(const Rcpp::List& list, const std::string& filename) {
     std::ofstream outfile;
     outfile.open(filename, std::ios::out);
 
-    outfile << "Graph Nodes:\n";
-
-    // Nodes
-    std::vector<std::string> nodeNames = list["nodes"];
-    int count = 0;
-    for (std::string nodeName : nodeNames) {
-        count++;
-        outfile << nodeName;
-        if (count < nodeNames.size()) {
-            outfile << ",";
-        }
-    }
-
-    outfile << "\n\n";
-        
-    // Edges
-    outfile << "Graph Edges:\n";
-    std::vector<std::string> edgeStrings = list["edges"];
-    count = 1;
-    for (std::string edgeString : edgeStrings) {
-        outfile << count << ". " << edgeString << "\n";
-        count++;
-    }
-
-    outfile << "\n\n";
-
-    //Triples
-    std::vector<std::string> tripleStrings = list["ambiguous_triples"];
-    if (tripleStrings.size() > 0) {
-        outfile << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
-        
-        for (std::string tripleString : tripleStrings) {
-            outfile << tripleString << "\n";
-        }
-    }
-    
+    streamGraph(list, outfile);
 
     outfile.close();
 }
@@ -841,23 +845,15 @@ Rcpp::List adjMat2Graph(arma::mat adj,
     */
 }
 
-// TODO - This function shouldn't need df
 //' Display a graph object as text
 //'
 //' @param graph The graph object
-//' @param df The dataframe containing the variables used by the graph
 //' @export
 //' @examples
 //' df <- read.table("data/data.n100.p25.txt", header=T)
 //' g <- rCausalMGM::mgm(df)
-//' rCausalMGM::printGraph(g, df)
+//' rCausalMGM::printGraph(g)
 // [[Rcpp::export]]
-void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame& df) {
-    DataSet ds(df, 5);
-    EdgeListGraph g(graph, ds);
-
-    Rcpp::Rcout << g << std::endl;
-
-    ds.deleteVariables();
-
+void printGraph(const Rcpp::List& graph) {
+    streamGraph(graph, Rcpp::Rcout);
 }
