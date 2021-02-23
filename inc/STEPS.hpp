@@ -39,6 +39,8 @@ public:
     void setComputeStabs(bool cs) { computeStabs = cs; }
     bool getComputeStabs() { return computeStabs; }
 
+    arma::mat getStabs() { return stabilities; }
+
     void setVerbose(bool v) { verbose = v; }
 
 };

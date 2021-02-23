@@ -134,11 +134,10 @@ EdgeListGraph STEPS::runStepsPar() {
     m.learnEdges(iterLimit);
 
     if (computeStabs) {
-        arma::mat stabs;
         if (leaveOneOut) {
-            stabs = StabilityUtils::stabilitySearchPar(d, lambda);
+            stabilities = StabilityUtils::stabilitySearchPar(d, lambda);
         } else {
-            stabs = StabilityUtils::stabilitySearchPar(d, lambda, N, b);
+            stabilities = StabilityUtils::stabilitySearchPar(d, lambda, N, b);
         }
     }
     lastLambda = lambda;

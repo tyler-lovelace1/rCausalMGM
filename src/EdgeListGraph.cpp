@@ -539,9 +539,11 @@ Rcpp::List EdgeListGraph::toList() {
     }
 
     return Rcpp::List::create(
+        Rcpp::_["class"] = "graph",
         Rcpp::_["nodes"] = nodeNames,
         Rcpp::_["edges"] = edgeStrings,
-        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings
+        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
+        Rcpp::_["stabilities"] = R_NilValue
     );
 
 }
@@ -626,10 +628,12 @@ void streamGraph(const Rcpp::List& list, std::ostream& os) {
 bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
     std::vector<std::string> names = l.names();
 
-    if (names.size() != 3) return false;
-    if (names[0] != "nodes") return false;
-    if (names[1] != "edges") return false;
-    if (names[2] != "ambiguous_triples") return false;
+    if (names.size() != 5) return false;
+    if (names[0] != "class") return false;
+    if (names[1] != "nodes") return false;
+    if (names[2] != "edges") return false;
+    if (names[3] != "ambiguous_triples") return false;
+    if (names[4] != "stabilities") return false;
 
     return true;
 }
@@ -770,9 +774,11 @@ Rcpp::List loadGraph(const std::string& filename) {
 
     END:
     return Rcpp::List::create(
+        Rcpp::_["class"] = "graph",
         Rcpp::_["nodes"] = nodeNames,
         Rcpp::_["edges"] = edgeStrings,
-        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings
+        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
+        Rcpp::_["stabilities"] = R_NilValue
     );
 }
 

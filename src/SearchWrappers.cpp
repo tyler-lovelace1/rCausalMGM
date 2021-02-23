@@ -56,7 +56,7 @@ Rcpp::List mgm(
 //' @param g The gamma parameter for STEPS. Defaults to 0.05
 //' @param numSub The number of subsets to split the data into. Defaults to 20
 //' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
-//' @param computeStabs If TRUE, stabilitie values are calculated. Defaults to FALSE.
+//' @param computeStabs If TRUE, stability values are calculated. Defaults to FALSE.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated MGM graph
 //' @export
@@ -87,6 +87,13 @@ Rcpp::List steps(
     steps.setVerbose(v);
 
     Rcpp::List result = steps.runStepsPar().toList();
+
+    if (cs) {
+        result["stabilities"] = steps.getStabs();
+        std::vector<std::string> names = ds.getVariableNames();
+        Rcpp::rownames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+        Rcpp::colnames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    } 
 
     ds.deleteVariables();
 

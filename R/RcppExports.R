@@ -75,7 +75,7 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, ve
 #' @param g The gamma parameter for STEPS. Defaults to 0.05
 #' @param numSub The number of subsets to split the data into. Defaults to 20
 #' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
-#' @param computeStabs If TRUE, stabilitie values are calculated. Defaults to FALSE.
+#' @param computeStabs If TRUE, stability values are calculated. Defaults to FALSE.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated MGM graph
 #' @export
