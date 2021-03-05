@@ -16,5 +16,5 @@ The graph as a List object, which can be passed into search functions
 Load a graph from a file
 }
 \examples{
-g <- rCausalMGM::loadGraph("graph/graph.n1000.p25.txt")
+g <- rCausalMGM::loadGraph("graph/graph.n100.p25.txt")
 }

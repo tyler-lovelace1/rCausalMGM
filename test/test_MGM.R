@@ -14,11 +14,18 @@ lams <- exp(seq(log(lam.max), log(lam.min), -(log(lam.max) - log(lam.min))/14))
 
 # g <- rCausalMGM::loadGraph("../cpc_out_censored.txt")
 # rCausalMGM::saveGraph(g, "../r_graph_out.txt")
-# rCausalMGM::pcStable(df, verbose=TRUE)
+# rCausalMGM::pcStable(df)
 
-g <- rCausalMGM::steps(df, lambda = lams, computeStabs=TRUE, verbose=TRUE)
+g <- rCausalMGM::steps(df, lambda = lams, leaveOneOut=TRUE, computeStabs=TRUE, verbose=TRUE)
 print(g)
 rCausalMGM::saveGraph(g, "../testStabGraph.txt")
+
+# rCausalMGM::pcStable(df, initialGraph=g)
+# rCausalMGM::cpcStable(df, initialGraph=g)
+# rCausalMGM::pcMax(df, initialGraph=g)
+
+rCausalMGM::loadGraph("../testStabGraph.txt")
+
 # rCausalMGM::saveGraph(g, '../mgm_local.txt')
 # g.cpc <- rCausalMGM::cpcStable(df, initialGraph = g, verbose = TRUE)
 # print(g.cpc)

@@ -29,7 +29,7 @@ steps(
 
 \item{leaveOneOut}{If TRUE, performs leave-one-out subsampling. Defaults to FALSE.}
 
-\item{computeStabs}{If TRUE, stabilitie values are calculated. Defaults to FALSE.}
+\item{computeStabs}{If TRUE, stability values are calculated. Defaults to FALSE.}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }
@@ -40,6 +40,6 @@ The calculated MGM graph
 Calculate the optimal lambda values for the MGM algorithm and run the algorithm using those values. Optimal values are printed
 }
 \examples{
-df <- read.table("data/data.n1000.p25.txt", header=T)
-g <- rCausalMGM::steps(df)
+data("data.n100.p25")
+g <- rCausalMGM::steps(data.n100.p25)
 }

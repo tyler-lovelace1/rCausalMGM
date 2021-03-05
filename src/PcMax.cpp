@@ -86,6 +86,11 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     MeekRules meekRules;
     meekRules.orientImplied(graph);
 
+    // Set algorithm
+    std::ostringstream alg;
+    alg << "PcMax: alpha = " << independenceTest->getAlpha();
+    graph.setAlgorithm(alg.str());
+
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     if (verbose) {

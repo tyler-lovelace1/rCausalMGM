@@ -16,8 +16,8 @@
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' df <- read.table("data/data.n100.p25.txt", header=T)
-//' g <- rCausalMGM::mgm(df)
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm("data.n100.p25")
 // [[Rcpp::export]]
 Rcpp::List mgm(
     const Rcpp::DataFrame &df, 
@@ -61,8 +61,8 @@ Rcpp::List mgm(
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' df <- read.table("data/data.n100.p25.txt", header=T)
-//' g <- rCausalMGM::steps(df)
+//' data("data.n100.p25")
+//' g <- rCausalMGM::steps(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List steps(
     const Rcpp::DataFrame &df, 
@@ -111,9 +111,9 @@ Rcpp::List steps(
 //' @return The calculated search graph
 //' @export
 //' @examples
-//' df <- read.table("data/data.n100.p25.txt", header=T)
-//' ig <- rCausalMGM::mgm(df)
-//' g <- rCausalMGM::pcStable(df, initialGraph = ig)
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List pcStable(
     const Rcpp::DataFrame &df, 
@@ -154,9 +154,9 @@ Rcpp::List pcStable(
 //' @return The calculated search graph
 //' @export
 //' @examples
-//' df <- read.table("data/data.n100.p25.txt", header=T)
-//' ig <- rCausalMGM::mgm(df)
-//' g <- rCausalMGM::cpcStable(df, initialGraph = ig)
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List cpcStable(
     const Rcpp::DataFrame &df, 
@@ -196,9 +196,9 @@ Rcpp::List cpcStable(
 //' @return The calculated search graph
 //' @export
 //' @examples
-//' df <- read.table("data/data.n100.p25.txt", header=T)
-//' ig <- rCausalMGM::mgm(df)
-//' g <- rCausalMGM::pcMax(df, initialGraph = ig)
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List pcMax(
     const Rcpp::DataFrame &df, 
