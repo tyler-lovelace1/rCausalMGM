@@ -27,6 +27,6 @@ The calculated MGM graph
 Calculate the MGM graph on a dataset
 }
 \examples{
-df <- read.table("data/data.n1000.p25.txt", header=T)
-g <- rCausalMGM::mgm(df)
+data("data.n100.p25")
+g <- rCausalMGM::mgm("data.n100.p25")
 }

@@ -33,6 +33,11 @@ private:
     std::unordered_set<Triple> dottedUnderLineTriples;
 
     /**
+     * Information about the algorithm used to build the graph
+     */ 
+    std::string algorithm;
+
+    /**
      * True iff nodes were removed since the last call to an accessor for ambiguous, underline, or dotted underline
      * triples. If there are triples in the lists involving removed nodes, these need to be removed from the lists
      * first, so as not to cause confusion.
@@ -565,6 +570,9 @@ public:
 
     // Returns true if an R list object is a valid graph
     static bool validateGraphList(const Rcpp::List& l);
+
+    void setAlgorithm(std::string a) { algorithm = a; }
+    std::string getAlgorithm() { return algorithm; } 
 
     /**
      * @return true iff the given object is a graph that is equal to this graph,

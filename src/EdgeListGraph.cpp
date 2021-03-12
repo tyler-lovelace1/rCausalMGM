@@ -59,7 +59,7 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     // }
 
     namesHash = graph.namesHash;
-
+    algorithm = graph.algorithm;
 }
 
 EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
@@ -91,6 +91,9 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     for (std::string tripleString : tripleStrings) {
         ambiguousTriples.insert(tripleFromString(tripleString));
     }  
+
+    std::vector<std::string> a = list["algorithm"];
+    algorithm = a[0];
 }
 
 /**
@@ -538,13 +541,17 @@ Rcpp::List EdgeListGraph::toList() {
         ambiguousTriplesStrings.push_back(t.toString());
     }
 
-    return Rcpp::List::create(
-        Rcpp::_["class"] = "graph",
+    Rcpp::List result = Rcpp::List::create(
         Rcpp::_["nodes"] = nodeNames,
         Rcpp::_["edges"] = edgeStrings,
         Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
+        Rcpp::_["algorithm"] = algorithm,
         Rcpp::_["stabilities"] = R_NilValue
     );
+
+    result.attr("class") = "graph";
+
+    return result;
 
 }
 
@@ -612,6 +619,12 @@ void streamGraph(const Rcpp::List& list, std::ostream& os) {
         count++;
     }
 
+    os << "\n";
+
+    // Algorithm
+    std::vector<std::string> algorithms = list["algorithm"];
+    os << "Algorithm: " << algorithms[0];
+
     os << "\n\n";
 
     //Triples
@@ -626,13 +639,16 @@ void streamGraph(const Rcpp::List& list, std::ostream& os) {
 }
 
 bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
+    std::vector<std::string> lclass = l.attr("class");
+    if (lclass[0] != "graph") return false;
+
     std::vector<std::string> names = l.names();
 
     if (names.size() != 5) return false;
-    if (names[0] != "class") return false;
-    if (names[1] != "nodes") return false;
-    if (names[2] != "edges") return false;
-    if (names[3] != "ambiguous_triples") return false;
+    if (names[0] != "nodes") return false;
+    if (names[1] != "edges") return false;
+    if (names[2] != "ambiguous_triples") return false;
+    if (names[3] != "algorithm") return false;
     if (names[4] != "stabilities") return false;
 
     return true;
@@ -644,8 +660,8 @@ bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
 //' @param filename The graph file
 //' @export
 //' @examples
-//' df <- read.table("data/data.n100.p25.txt", header=T)
-//' g <- rCausalMGM::mgm(df)
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm(data.n100.p25)
 //' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 // [[Rcpp::export]]
 void saveGraph(const Rcpp::List& list, const std::string& filename) {
@@ -699,6 +715,7 @@ Rcpp::List loadGraph(const std::string& filename) {
 
     std::vector<std::string> edgeStrings;
     std::vector<std::string> ambiguousTriplesStrings;
+    std::string algorithm = "";
 
     // Start the line after you read 'Graph Edges:'
     // auto edgeStart = std::find(lines.begin(), lines.end(), "Graph Edges:");
@@ -720,7 +737,12 @@ Rcpp::List loadGraph(const std::string& filename) {
         };
         
         for (; i < lines.size(); i++) {
-            std::string edgeString = lines[i];
+            std::string edgeString = lines[i];            
+
+            if (edgeString.find("Algorithm: ") != std::string::npos) {
+                algorithm = edgeString.substr(11);
+                continue;
+            }
 
             if (edgeString.find("Ambiguous triples") != std::string::npos) {
                 i++;
@@ -773,13 +795,17 @@ Rcpp::List loadGraph(const std::string& filename) {
     }
 
     END:
-    return Rcpp::List::create(
-        Rcpp::_["class"] = "graph",
+    Rcpp::List result = Rcpp::List::create(
         Rcpp::_["nodes"] = nodeNames,
         Rcpp::_["edges"] = edgeStrings,
         Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
+        Rcpp::_["algorithm"] = algorithm,
         Rcpp::_["stabilities"] = R_NilValue
     );
+
+    result.attr("class") = "graph";
+
+    return result;
 }
 
 //' Convert an adjacency matrix into a graph
@@ -856,8 +882,8 @@ Rcpp::List adjMat2Graph(arma::mat adj,
 //' @param graph The graph object
 //' @export
 //' @examples
-//' df <- read.table("data/data.n100.p25.txt", header=T)
-//' g <- rCausalMGM::mgm(df)
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm(data.n100.p25)
 //' rCausalMGM::printGraph(g)
 // [[Rcpp::export]]
 void printGraph(const Rcpp::List& graph) {

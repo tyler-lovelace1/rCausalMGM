@@ -30,7 +30,7 @@ The calculated search graph
 Runs the causal algorithm CPC Stable on a dataset
 }
 \examples{
-df <- read.table("data/data.n1000.p25.txt", header=T)
-ig <- rCausalMGM::mgm(df)
-g <- rCausalMGM::cpcStable(df, initialGraph = ig)
+data("data.n100.p25")
+ig <- rCausalMGM::mgm(data.n100.p25)
+g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
 }

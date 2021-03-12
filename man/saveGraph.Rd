@@ -15,7 +15,7 @@ saveGraph(list, filename)
 Save a graph to a file
 }
 \examples{
-df <- read.table("data/data.n1000.p25.txt", header=T)
-g <- rCausalMGM::mgm(df)
+data("data.n100.p25")
+g <- rCausalMGM::mgm(data.n100.p25)
 rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 }

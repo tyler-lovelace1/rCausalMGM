@@ -76,7 +76,8 @@ DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete)
                 }
                 else
                 {
-                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of variable " + curName);
+                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of continuous variable " + curName + 
+                        " (HINT: If this variable is intended to be discrete, consider raising the maxDiscrete parameter)");
                 }
             }
             else if (variables[i]->isDiscrete())
@@ -87,7 +88,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete)
                 }
                 else
                 {
-                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of variable " + curName);
+                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of discrete variable " + curName);
                 }
             }
             else
