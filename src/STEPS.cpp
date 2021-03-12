@@ -9,14 +9,14 @@ EdgeListGraph STEPS::runStepsPar() {
     double CC = -1;
     double CD = -1;
     double DD = -1;
-    double CCMax = 100;
+    double CCMax = 0;
     double CCMaxI = -1;
-    double CDMax = 100;
+    double CDMax = 0;
     double CDMaxI = -1;
-    double DDMax = 100;
+    double DDMax = 0;
     double DDMaxI = -1;
     double oneLamb = -1;
-    double allMax = 100;
+    double allMax = 0;
     double allMaxI = -1;
     int p = 0;
     int q = 0;
@@ -74,10 +74,10 @@ EdgeListGraph STEPS::runStepsPar() {
 
         double allDestable = ccDestable + cdDestable + ddDestable;
         allDestable = allDestable / (numCC + numCD + numDD);
-        if (allDestable <= gamma && oneLamb == -1) {
-            oneLamb = lambda[currIndex];
+        if (allDestable >= gamma && oneLamb == -1) {
+            oneLamb = lambda[currIndex-1];
         }
-        if (allDestable <= allMax) {
+        if (allDestable >= allMax) {
             allMax = allDestable;
             allMaxI = lambda[currIndex];
         }
@@ -90,21 +90,21 @@ EdgeListGraph STEPS::runStepsPar() {
 				 << ":  {" << ccDestable << ", " << cdDestable << ", "
 				 << ddDestable << "}" << std::endl;
 
-        if (ccDestable <= gamma && CC == -1)
-            CC = lambda[currIndex];
-        if (cdDestable <= gamma && CD == -1)
-            CD = lambda[currIndex];
-        if (ddDestable <= gamma && DD == -1)
-            DD = lambda[currIndex];
-        if (ccDestable <= CCMax) {
+        if (ccDestable >= gamma && CC == -1)
+            CC = lambda[currIndex-1];
+        if (cdDestable >= gamma && CD == -1)
+            CD = lambda[currIndex-1];
+        if (ddDestable >= gamma && DD == -1)
+            DD = lambda[currIndex-1];
+        if (ccDestable >= CCMax) {
             CCMax = ccDestable;
             CCMaxI = lambda[currIndex];
         }
-        if (cdDestable <= CDMax) {
+        if (cdDestable >= CDMax) {
             CDMax = cdDestable;
             CDMaxI = lambda[currIndex];
         }
-        if (ddDestable <= DDMax) {
+        if (ddDestable >= DDMax) {
             DDMax = ddDestable;
             DDMaxI = lambda[currIndex];
         }
