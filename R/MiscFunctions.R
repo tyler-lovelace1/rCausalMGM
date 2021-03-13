@@ -13,6 +13,4 @@ print.graph <- function(g) {
     if (!is.null(g[["stabilities"]])) {
         cat("Average instability: ", mean( 2 * g[["stabilities"]] * (1 - g[["stabilities"]]) ), "\n")
     }
-    print()
 }
-
