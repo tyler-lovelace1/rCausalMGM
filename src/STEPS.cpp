@@ -74,14 +74,7 @@ EdgeListGraph STEPS::runStepsPar() {
 
         double allDestable = ccDestable + cdDestable + ddDestable;
         allDestable = allDestable / (numCC + numCD + numDD);
-        if (allDestable >= gamma && oneLamb == -1) {
-            oneLamb = lambda[currIndex-1];
-        }
-        if (allDestable >= allMax) {
-            allMax = allDestable;
-            allMaxI = lambda[currIndex];
-        }
-
+	
         ccDestable = ccDestable / numCC;
         cdDestable = cdDestable / numCD;
         ddDestable = ddDestable / numDD;
@@ -90,12 +83,22 @@ EdgeListGraph STEPS::runStepsPar() {
 				 << ":  {" << ccDestable << ", " << cdDestable << ", "
 				 << ddDestable << "}" << std::endl;
 
-        if (ccDestable >= gamma && CC == -1)
+	if (allDestable >= gamma && oneLamb == -1 && currIndex > 0) {
+	    oneLamb = lambda[currIndex-1];
+        }
+	
+        if (allDestable >= allMax) {
+            allMax = allDestable;
+            allMaxI = lambda[currIndex];
+        }
+
+        if (ccDestable >= gamma && CC == -1 && currIndex > 0)
             CC = lambda[currIndex-1];
-        if (cdDestable >= gamma && CD == -1)
+        if (cdDestable >= gamma && CD == -1 && currIndex > 0)
             CD = lambda[currIndex-1];
-        if (ddDestable >= gamma && DD == -1)
+        if (ddDestable >= gamma && DD == -1 && currIndex > 0)
             DD = lambda[currIndex-1];
+	
         if (ccDestable >= CCMax) {
             CCMax = ccDestable;
             CCMaxI = lambda[currIndex];
