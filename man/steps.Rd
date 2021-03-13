@@ -7,8 +7,7 @@
 steps(
   df,
   maxDiscrete = 5L,
-  lambda = as.numeric(c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55,
-    0.6, 0.65, 0.7, 0.75, 0.8, 0.85)),
+  lambda = NULL,
   g = 0.05,
   numSub = 20L,
   leaveOneOut = as.logical(c(0)),
@@ -21,7 +20,7 @@ steps(
 
 \item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
 
-\item{lambda}{A vector of the lambda values to test. Defaults to c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)}
+\item{lambda}{A vector of the lambda values to test. Defaults to a logspaced vector with 20 values ranging from 0.9 to 0.09 if n < p, or from 0.9 to 0.009 if n > p.}
 
 \item{g}{The gamma parameter for STEPS. Defaults to 0.05}
 

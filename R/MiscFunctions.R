@@ -10,7 +10,7 @@ print.graph <- function(x) {
     cat("Num undirected edges: ", length(which(grepl("---", x[["edges"]], fixed=TRUE))), "\n")
     cat("Num directed edges: ", length(which(grepl("-->", x[["edges"]], fixed=TRUE))), "\n")
     cat("Num bidirected edges: ", length(which(grepl("<->", x[["edges"]], fixed=TRUE))), "\n")
-    if (!is.null(g[["stabilities"]])) {
+    if (!is.null(x[["stabilities"]])) {
         cat("Average instability: ", mean( 2 * x[["stabilities"]] * (1 - x[["stabilities"]]) ), "\n")
     }
     invisible(x)
