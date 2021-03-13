@@ -47,12 +47,13 @@ Rcpp::List mgm(
     return result;
 }
 
-//TODO - not sure what 'computeStabs' does here
+// Rcpp::NumericVector::create(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85),
+ 
 //' Calculate the optimal lambda values for the MGM algorithm and run the algorithm using those values. Optimal values are printed
 //'
 //' @param df The dataframe
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
-//' @param lambda A vector of the lambda values to test. Defaults to c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)
+//' @param lambda A vector of the lambda values to test. Defaults to a logspaced vector with 20 values ranging from 0.9 to 0.09 if n < p, or from 0.9 to 0.009 if n > p.
 //' @param g The gamma parameter for STEPS. Defaults to 0.05
 //' @param numSub The number of subsets to split the data into. Defaults to 20
 //' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
@@ -67,7 +68,7 @@ Rcpp::List mgm(
 Rcpp::List steps(
     const Rcpp::DataFrame &df, 
     const int maxDiscrete = 5,
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85), 
+    Rcpp::Nullable<Rcpp::NumericVector> lambda = R_NilValue, 
     const double g = 0.05,
     const int numSub = 20,
     Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(0), // FALSE
@@ -75,12 +76,25 @@ Rcpp::List steps(
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
 ) {
 
-    std::vector<double> l(lambda.begin(), lambda.end());
+    std::vector<double> l;
     bool loo = Rcpp::is_true(Rcpp::all(leaveOneOut));
     bool cs = Rcpp::is_true(Rcpp::all(computeStabs));
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
     DataSet ds(df, maxDiscrete);
+
+    if (lambda.isNotNull()) {
+	Rcpp::NumericVector _lambda(lambda); 
+	l = std::vector<double>(_lambda.begin(), _lambda.end());
+    } else {
+	if (ds.getNumRows() > ds.getNumColumns()) {
+	    arma::vec _lambda = arma::logspace(std::log10(0.9)-2, std::log10(0.9), 20); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	} else {
+	    arma::vec _lambda = arma::logspace(std::log10(0.9)-1, std::log10(0.9), 20); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	}
+    }
 
     STEPS steps(ds, l, g, numSub, loo);
     steps.setComputeStabs(cs);
