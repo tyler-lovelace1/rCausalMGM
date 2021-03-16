@@ -19,8 +19,6 @@ saveGraph <- function(list, filename) {
 #' @param filename The graph file
 #' @return The graph as a List object, which can be passed into search functions
 #' @export
-#' @examples
-#' g <- rCausalMGM::loadGraph("graph/graph.n100.p25.txt")
 loadGraph <- function(filename) {
     .Call(`_rCausalMGM_loadGraph`, filename)
 }
@@ -62,7 +60,7 @@ printGraph <- function(graph) {
 #' @export
 #' @examples
 #' data("data.n100.p25")
-#' g <- rCausalMGM::mgm("data.n100.p25")
+#' g <- rCausalMGM::mgm(data.n100.p25)
 mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_mgm`, df, lambda, maxDiscrete, verbose)
 }

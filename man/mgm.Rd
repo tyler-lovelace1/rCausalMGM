@@ -28,5 +28,5 @@ Calculate the MGM graph on a dataset
 }
 \examples{
 data("data.n100.p25")
-g <- rCausalMGM::mgm("data.n100.p25")
+g <- rCausalMGM::mgm(data.n100.p25)
 }

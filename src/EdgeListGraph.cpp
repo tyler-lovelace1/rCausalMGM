@@ -677,14 +677,12 @@ void saveGraph(const Rcpp::List& list, const std::string& filename) {
     outfile.close();
 }
 
-//TODO - should we include the text format of graphs? Where?
+//TODO - Include example graphs and example use of loadGraph()
 //' Load a graph from a file
 //'
 //' @param filename The graph file
 //' @return The graph as a List object, which can be passed into search functions
 //' @export
-//' @examples
-//' g <- rCausalMGM::loadGraph("graph/graph.n100.p25.txt")
 // [[Rcpp::export]]
 Rcpp::List loadGraph(const std::string& filename) {
     // Get lines from file

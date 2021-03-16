@@ -9,10 +9,10 @@ print.graph <- function(g) {
     # TODO - number of directed and instability
     cat("Num undirected edges: ", length(which(grepl("---", g[["edges"]], fixed=TRUE))), "\n")
     cat("Num directed edges: ", length(which(grepl("-->", g[["edges"]], fixed=TRUE))), "\n")
-    cat("Num bidirected edges: ", length(which(grepl("---", g[["edges"]], fixed=TRUE))), "\n")
+    cat("Num bidirected edges: ", length(which(grepl("<->", g[["edges"]], fixed=TRUE))), "\n")
     if (!is.null(g[["stabilities"]])) {
         cat("Average instability: ", mean( 2 * g[["stabilities"]] * (1 - g[["stabilities"]]) ), "\n")
     }
-    print()
+    print("")
 }
 
