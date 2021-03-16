@@ -1,5 +1,4 @@
 useDynLib(rCausalMGM, .registration=TRUE)
 importFrom(Rcpp, evalCpp)
 exportPattern("^[[:alpha:]]+")
-
-S3method(print, graph)
+S3method(print, graph, print.graph)

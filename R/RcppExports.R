@@ -19,6 +19,8 @@ saveGraph <- function(list, filename) {
 #' @param filename The graph file
 #' @return The graph as a List object, which can be passed into search functions
 #' @export
+#' @examples
+#' g <- rCausalMGM::loadGraph("graph/graph.n100.p25.txt")
 loadGraph <- function(filename) {
     .Call(`_rCausalMGM_loadGraph`, filename)
 }
@@ -60,7 +62,7 @@ printGraph <- function(graph) {
 #' @export
 #' @examples
 #' data("data.n100.p25")
-#' g <- rCausalMGM::mgm(data.n100.p25)
+#' g <- rCausalMGM::mgm("data.n100.p25")
 mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_mgm`, df, lambda, maxDiscrete, verbose)
 }
@@ -69,7 +71,7 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, ve
 #'
 #' @param df The dataframe
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
-#' @param lambda A vector of the lambda values to test. Defaults to c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)
+#' @param lambda A vector of the lambda values to test. Defaults to a logspaced vector with 20 values ranging from 0.9 to 0.09 if n < p, or from 0.9 to 0.009 if n > p.
 #' @param g The gamma parameter for STEPS. Defaults to 0.05
 #' @param numSub The number of subsets to split the data into. Defaults to 20
 #' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
@@ -80,7 +82,7 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, ve
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::steps(data.n100.p25)
-steps <- function(df, maxDiscrete = 5L, lambda = as.numeric( c(0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85)), g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(0)), computeStabs = as.logical( c(0)), verbose = as.logical( c(0))) {
+steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(0)), computeStabs = as.logical( c(0)), verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, verbose)
 }
 
@@ -133,21 +135,5 @@ cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
 pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(0))) {
     .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, alpha, verbose)
-}
-
-rcpparma_hello_world <- function() {
-    .Call(`_rCausalMGM_rcpparma_hello_world`)
-}
-
-rcpparma_outerproduct <- function(x) {
-    .Call(`_rCausalMGM_rcpparma_outerproduct`, x)
-}
-
-rcpparma_innerproduct <- function(x) {
-    .Call(`_rCausalMGM_rcpparma_innerproduct`, x)
-}
-
-rcpparma_bothproducts <- function(x) {
-    .Call(`_rCausalMGM_rcpparma_bothproducts`, x)
 }
 

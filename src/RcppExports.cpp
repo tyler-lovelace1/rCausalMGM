@@ -66,14 +66,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // steps
-Rcpp::List steps(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::NumericVector lambda, const double g, const int numSub, Rcpp::LogicalVector leaveOneOut, Rcpp::LogicalVector computeStabs, Rcpp::LogicalVector verbose);
+Rcpp::List steps(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::NumericVector> lambda, const double g, const int numSub, Rcpp::LogicalVector leaveOneOut, Rcpp::LogicalVector computeStabs, Rcpp::LogicalVector verbose);
 RcppExport SEXP _rCausalMGM_steps(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP lambdaSEXP, SEXP gSEXP, SEXP numSubSEXP, SEXP leaveOneOutSEXP, SEXP computeStabsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
     Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type g(gSEXP);
     Rcpp::traits::input_parameter< const int >::type numSub(numSubSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type leaveOneOut(leaveOneOutSEXP);
@@ -128,49 +128,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// rcpparma_hello_world
-arma::mat rcpparma_hello_world();
-RcppExport SEXP _rCausalMGM_rcpparma_hello_world() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpparma_hello_world());
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpparma_outerproduct
-arma::mat rcpparma_outerproduct(const arma::colvec& x);
-RcppExport SEXP _rCausalMGM_rcpparma_outerproduct(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpparma_outerproduct(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpparma_innerproduct
-double rcpparma_innerproduct(const arma::colvec& x);
-RcppExport SEXP _rCausalMGM_rcpparma_innerproduct(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpparma_innerproduct(x));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpparma_bothproducts
-Rcpp::List rcpparma_bothproducts(const arma::colvec& x);
-RcppExport SEXP _rCausalMGM_rcpparma_bothproducts(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::colvec& >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpparma_bothproducts(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
@@ -182,10 +139,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 5},
     {"_rCausalMGM_cpcStable", (DL_FUNC) &_rCausalMGM_cpcStable, 5},
     {"_rCausalMGM_pcMax", (DL_FUNC) &_rCausalMGM_pcMax, 5},
-    {"_rCausalMGM_rcpparma_hello_world", (DL_FUNC) &_rCausalMGM_rcpparma_hello_world, 0},
-    {"_rCausalMGM_rcpparma_outerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_outerproduct, 1},
-    {"_rCausalMGM_rcpparma_innerproduct", (DL_FUNC) &_rCausalMGM_rcpparma_innerproduct, 1},
-    {"_rCausalMGM_rcpparma_bothproducts", (DL_FUNC) &_rCausalMGM_rcpparma_bothproducts, 1},
     {NULL, NULL, 0}
 };
 

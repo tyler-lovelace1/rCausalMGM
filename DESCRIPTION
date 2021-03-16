@@ -13,3 +13,4 @@ Imports: Rcpp (>= 1.0.3)
 LinkingTo: Rcpp, RcppArmadillo, BH
 SystemRequirements: C++14
 RoxygenNote: 7.1.1
+Encoding: UTF-8

@@ -4,10 +4,10 @@
 \alias{print.graph}
 \title{A print override function for the graph}
 \usage{
-\method{print}{graph}(g)
+\method{print}{graph}(x)
 }
 \arguments{
-\item{g}{The graph object}
+\item{x}{The graph object}
 }
 \description{
 A print override function for the graph
