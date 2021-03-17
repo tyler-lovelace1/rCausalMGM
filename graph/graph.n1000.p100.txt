@@ -204,3 +204,4 @@ Graph Edges:
 200. X92 --> X94
 
 Algorithm: True graph
+Type: true

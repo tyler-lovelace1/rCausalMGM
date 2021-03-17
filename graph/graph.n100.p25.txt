@@ -54,3 +54,4 @@ Graph Edges:
 50. X9 --> X25
 
 Algorithm: True graph
+Type: true

@@ -86,10 +86,11 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     MeekRules meekRules;
     meekRules.orientImplied(graph);
 
-    // Set algorithm
+    // Set algorithm and type
     std::ostringstream alg;
     alg << "PcMax: alpha = " << independenceTest->getAlpha();
     graph.setAlgorithm(alg.str());
+    graph.setGraphType("markov equivalence class");
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 

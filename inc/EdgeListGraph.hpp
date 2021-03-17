@@ -38,6 +38,11 @@ private:
     std::string algorithm;
 
     /**
+     * undirected, true, or markov_equivalence_class
+     */ 
+    std::string graph_type;
+
+    /**
      * True iff nodes were removed since the last call to an accessor for ambiguous, underline, or dotted underline
      * triples. If there are triples in the lists involving removed nodes, these need to be removed from the lists
      * first, so as not to cause confusion.
@@ -573,6 +578,9 @@ public:
 
     void setAlgorithm(std::string a) { algorithm = a; }
     std::string getAlgorithm() { return algorithm; } 
+
+    void setGraphType(std::string t) { graph_type = t; }
+    std::string getGraphType() { return graph_type; } 
 
     /**
      * @return true iff the given object is a graph that is equal to this graph,
