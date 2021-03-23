@@ -23,15 +23,15 @@ Rcpp::List mgm(
     const Rcpp::DataFrame &df, 
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2), 
     const int maxDiscrete = 5,
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
+    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet *ds = new DataSet(df, maxDiscrete);
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
     std::vector<double> l(lambda.begin(), lambda.end());
 
-    MGM mgm(ds, l);
+    MGM mgm(*ds, l);
     mgm.setVerbose(v);
     EdgeListGraph mgmGraph = mgm.search();
 
@@ -42,7 +42,8 @@ Rcpp::List mgm(
 
     Rcpp::List result = mgmGraph.toList();
 
-    ds.deleteVariables();
+    ds->deleteVariables();
+    delete ds;
 
     return result;
 }
@@ -69,9 +70,9 @@ Rcpp::List steps(
     Rcpp::Nullable<Rcpp::NumericVector> lambda = R_NilValue, 
     const double g = 0.05,
     const int numSub = 20,
-    Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(0), // FALSE
-    Rcpp::LogicalVector computeStabs = Rcpp::LogicalVector::create(0), // FALSE
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
+    Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(FALSE),
+    Rcpp::LogicalVector computeStabs = Rcpp::LogicalVector::create(FALSE),
+    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
 
     std::vector<double> l;
@@ -79,13 +80,13 @@ Rcpp::List steps(
     bool cs = Rcpp::is_true(Rcpp::all(computeStabs));
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    DataSet ds(df, maxDiscrete);
+    DataSet *ds = new DataSet(df, maxDiscrete);
 
     if (lambda.isNotNull()) {
 	Rcpp::NumericVector _lambda(lambda); 
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
-	if (ds.getNumRows() > ds.getNumColumns()) {
+	if (ds->getNumRows() > ds->getNumColumns()) {
 	    arma::vec _lambda = arma::logspace(std::log10(0.9)-2, std::log10(0.9), 20); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
@@ -94,7 +95,7 @@ Rcpp::List steps(
 	}
     }
 
-    STEPS steps(ds, l, g, numSub, loo);
+    STEPS steps(*ds, l, g, numSub, loo);
     steps.setComputeStabs(cs);
     steps.setVerbose(v);
 
@@ -102,12 +103,13 @@ Rcpp::List steps(
 
     if (cs) {
         result["stabilities"] = steps.getStabs();
-        std::vector<std::string> names = ds.getVariableNames();
+        std::vector<std::string> names = ds->getVariableNames();
         Rcpp::rownames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
         Rcpp::colnames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
     } 
 
-    ds.deleteVariables();
+    ds->deleteVariables();
+    delete ds;
 
     return result;
 
@@ -132,26 +134,27 @@ Rcpp::List pcStable(
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.05, 
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
+    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet *ds = new DataSet(df, maxDiscrete);
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMulti itm(*ds, alpha);
 
     PcStable pcs((IndependenceTest*) &itm);
     pcs.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
+        ig = EdgeListGraph(_initialGraph, *ds);
         pcs.setInitialGraph(&ig);
     }
 
     Rcpp::List result = pcs.search().toList();
 
-    ds.deleteVariables();
+    ds->deleteVariables();
+    delete ds;
 
     return result;
 }
@@ -175,25 +178,26 @@ Rcpp::List cpcStable(
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.05, 
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
+    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet *ds = new DataSet(df, maxDiscrete);
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMulti itm(*ds, alpha);
 
     CpcStable cpc((IndependenceTest*) &itm);
     cpc.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
+        ig = EdgeListGraph(_initialGraph, *ds);
         cpc.setInitialGraph(&ig);
     }
     Rcpp::List result = cpc.search().toList();
 
-    ds.deleteVariables();
+    ds->deleteVariables();
+    delete ds;
 
     return result;
 }
@@ -217,25 +221,25 @@ Rcpp::List pcMax(
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.05, 
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(0) // FALSE
+    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet *ds = new DataSet(df, maxDiscrete);
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMulti itm(*ds, alpha);
 
     PcMax pcm((IndependenceTest*) &itm);
     pcm.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
+        ig = EdgeListGraph(_initialGraph, *ds);
         pcm.setInitialGraph(&ig);
     }
     Rcpp::List result = pcm.search().toList();
 
-    ds.deleteVariables();
+    ds->deleteVariables();
 
     return result;
 }

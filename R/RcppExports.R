@@ -74,7 +74,7 @@ printGraph <- function(graph) {
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::mgm(data.n100.p25)
-mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(0))) {
+mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(FALSE))) {
     .Call(`_rCausalMGM_mgm`, df, lambda, maxDiscrete, verbose)
 }
 
@@ -93,7 +93,7 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, ve
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::steps(data.n100.p25)
-steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(0)), computeStabs = as.logical( c(0)), verbose = as.logical( c(0))) {
+steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(FALSE)), computeStabs = as.logical( c(FALSE)), verbose = as.logical( c(FALSE))) {
     .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, verbose)
 }
 
@@ -110,7 +110,7 @@ steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, l
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(0))) {
+pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
     .Call(`_rCausalMGM_pcStable`, df, maxDiscrete, initialGraph, alpha, verbose)
 }
 
@@ -127,7 +127,7 @@ pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, ve
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
-cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(0))) {
+cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
     .Call(`_rCausalMGM_cpcStable`, df, maxDiscrete, initialGraph, alpha, verbose)
 }
 
@@ -144,7 +144,7 @@ cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
-pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(0))) {
+pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
     .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, alpha, verbose)
 }
 
