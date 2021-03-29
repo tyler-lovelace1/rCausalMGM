@@ -1,9 +1,14 @@
 #ifndef GRAPHUTILS_HPP_
 #define GRAPHUTILS_HPP_
+// [[Rcpp::depends(BH)]]
 
 class EdgeListGraph; // Forward declaration
 
 #include "EdgeListGraph.hpp"
+#include <boost/functional/hash.hpp>
+#include <boost/optional.hpp>
+#include <queue>
+#include <thread>
 
 class GraphUtils {
 
@@ -13,6 +18,13 @@ private:
 
     static bool sepsetPathFound(Variable* a, Variable* b, Variable* y, std::unordered_set<Variable*>& path, std::vector<Variable*>& z, 
                                 EdgeListGraph& graph, std::unordered_set<Triple>& colliders, int bound);
+    
+    static void addToList(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* b, Variable* c);
+
+    static bool existOnePathWithPossibleParents(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* w,
+                                Variable* x, Variable* b, EdgeListGraph& graph);
+
+    static bool existsSemidirectedPath(Variable* from, Variable* to, EdgeListGraph& G);
 
 public:
 
@@ -66,6 +78,8 @@ public:
     static EdgeListGraph completeGraph(EdgeListGraph& graph);
 
     static EdgeListGraph undirectedGraph(EdgeListGraph& graph);
+    
+    static std::unordered_set<Variable*> possibleDsep(Variable* x, Variable* y, EdgeListGraph& graph, int maxPathLength);
 
 };
 
