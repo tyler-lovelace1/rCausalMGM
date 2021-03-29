@@ -69,6 +69,8 @@ public:
     this->categories = var.categories;
     return *this;
   }
+  
+  ~DiscreteVariable() {}
 
   int getMissingValueMarker() { return MISSING_VALUE; }
 
