@@ -31,6 +31,8 @@ public:
     name = var.name;
     type = var.type;
   }
+  
+  ~ContinuousVariable() {}
 
   double getMissingValueMarker() { return this->MISSING_VALUE; }
 
