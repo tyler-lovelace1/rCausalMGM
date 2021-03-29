@@ -5,6 +5,7 @@
 #include "STEPS.hpp"
 #include "Tests.hpp"
 #include "IndTestMulti.hpp"
+#include "Fci.hpp"
 
 
 //' Calculate the MGM graph on a dataset
