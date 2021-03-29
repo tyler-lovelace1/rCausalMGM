@@ -134,7 +134,7 @@ class RegressionResult
     RegressionResult(bool zeroInterceptAssumed, std::vector<std::string> regressorNames,
                      int n, arma::vec b, arma::vec t, arma::vec p, arma::vec se, double r2,
                      double rss, double alpha, arma::vec yHat, arma::vec res);
-    ~RegressionResult();
+    // ~RegressionResult();
 
     bool isZeroInterceptAssumed() { return this->zeroInterceptAssumed; }
 

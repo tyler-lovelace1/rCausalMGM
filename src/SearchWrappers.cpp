@@ -31,19 +31,20 @@ Rcpp::List mgm(
 
     std::vector<double> l(lambda.begin(), lambda.end());
 
-    MGM mgm(*ds, l);
-    mgm.setVerbose(v);
-    EdgeListGraph mgmGraph = mgm.search();
+    MGM *mgm = new MGM(*ds, l);
+    mgm->setVerbose(v);
+    EdgeListGraph mgmGraph = mgm->search();
 
     if (v) {
         Rcpp::Rcout.precision(2);
-        Rcpp::Rcout << "MGM Elapsed time =  " << (mgm.getElapsedTime() / 1000.0) << " s" << std::endl;
+        Rcpp::Rcout << "MGM Elapsed time =  " << (mgm->getElapsedTime() / 1000.0) << " s" << std::endl;
     }
 
     Rcpp::List result = mgmGraph.toList();
 
     ds->deleteVariables();
     delete ds;
+    delete mgm;
 
     return result;
 }
@@ -227,19 +228,22 @@ Rcpp::List pcMax(
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti itm(*ds, alpha);
+    IndTestMulti *itm = new IndTestMulti(*ds, alpha);
 
-    PcMax pcm((IndependenceTest*) &itm);
-    pcm.setVerbose(v);
+    PcMax *pcm = new PcMax((IndependenceTest*) itm);
+    pcm->setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
         ig = EdgeListGraph(_initialGraph, *ds);
-        pcm.setInitialGraph(&ig);
+        pcm->setInitialGraph(&ig);
     }
-    Rcpp::List result = pcm.search().toList();
+    Rcpp::List result = pcm->search().toList();
 
     ds->deleteVariables();
+    delete ds;
+    delete itm;
+    delete pcm;
 
     return result;
 }

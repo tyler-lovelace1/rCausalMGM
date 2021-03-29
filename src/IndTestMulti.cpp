@@ -5,58 +5,70 @@
 
 #include <fstream>
 
+IndTestMulti::IndTestMulti(DataSet &data, double alpha)
+{
+    this->timesCalled = 0;
+    this->searchVariables = data.getVariables();
+    this->originalData = DataSet(data);
+    this->internalData = DataSet(data);
+    this->alpha = alpha;
+    this->lastP = 0;
 
-IndTestMulti::IndTestMulti(DataSet& data, double alpha){
-  this->timesCalled = 0;
-  this->searchVariables = data.getVariables();
-  this->originalData = DataSet(data);
-  this->internalData = DataSet(data);
-  this->alpha = alpha;
-  this->lastP = 0;
+    std::vector<Variable *> variables = internalData.getVariables();
 
-  std::vector<Variable*> variables = internalData.getVariables();
+    for (Variable *var : variables)
+    {
+        std::vector<Variable *> vars = expandVariable(internalData, var); // See expandVariable function below
+        variablesPerNode.insert(std::pair<Variable *, std::vector<Variable *>>(var, vars));
+    }
 
-  for (Variable* var : variables) {
-      std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
-      variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
-  }
-
-  this->logisticRegression = LogisticRegression(internalData);
-  this->regression = LinearRegression(internalData);
-  this->verbose = false;
-  this->preferLinear = false;
+    this->logisticRegression = LogisticRegression(internalData);
+    this->regression = LinearRegression(internalData);
+    this->verbose = false;
+    this->preferLinear = false;
 }
 
+IndTestMulti::IndTestMulti(DataSet &data, double alpha, bool preferLinear)
+{
+    this->timesCalled = 0;
+    this->preferLinear = preferLinear;
+    this->searchVariables = data.getVariables();
+    DataSet originalData(data);
+    this->originalData = originalData;
+    DataSet internalData(data);
+    this->alpha = alpha;
+    this->lastP = 0;
 
-IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear) {
-  this->timesCalled = 0;
-  this->preferLinear = preferLinear;
-  this->searchVariables = data.getVariables();
-  DataSet originalData(data);
-  this->originalData = originalData;
-  DataSet internalData(data);
-  this->alpha = alpha;
-  this->lastP = 0;
+    std::vector<Variable *> variables = internalData.getVariables();
 
-  std::vector<Variable*> variables = internalData.getVariables();
+    for (Variable *var : variables)
+    {
+        //   Rcpp::Rcout << var->getName() << std::endl;
+        std::vector<Variable *> vars = expandVariable(internalData, var); // See expandVariable function below
+        variablesPerNode.insert(std::pair<Variable *, std::vector<Variable *>>(var, vars));
+    }
 
-  for (Variable* var : variables) {
-    //   Rcpp::Rcout << var->getName() << std::endl;
-      std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
-      variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>> (var, vars));
-  }
-
-  this->internalData = internalData;
-  LogisticRegression logReg (internalData);
-  this->logisticRegression = logReg;
-  LinearRegression linReg (internalData);
-  this->regression = linReg;
-  this->verbose = false;
+    this->internalData = internalData;
+    LogisticRegression logReg(internalData);
+    this->logisticRegression = logReg;
+    LinearRegression linReg(internalData);
+    this->regression = linReg;
+    this->verbose = false;
 }
 
-int IndTestMulti::reset() {
-  this->timesCalled = 0;
-  return timesCalled;
+IndTestMulti::~IndTestMulti() {
+    // Delete expanded variables
+    for (Variable *v : internalData.getVariables()) {
+        if (v->getName().find("MULTINOM.") != std::string::npos) {
+            delete v;
+        }
+    }
+}
+
+int IndTestMulti::reset()
+{
+    this->timesCalled = 0;
+    return timesCalled;
 }
 
 /**
@@ -65,63 +77,75 @@ int IndTestMulti::reset() {
  * getVariableNames().
  * Optionally return the p-value into pReturn
  */
-bool IndTestMulti::isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
+bool IndTestMulti::isIndependent(Variable *x, Variable *y, std::vector<Variable *> &z, double *pReturn)
+{
     this->timesCalled++;
 
-	// Rcpp::Rcout << "X: " << x->getName() << std::endl;
-	// Rcpp::Rcout << "Y: " << y->getName() << std::endl;
-	
-	// Rcpp::Rcout << "Z: ";
-	// for (Variable* zVar : z)
-	//     Rcpp::Rcout << zVar->getName() << " ";
-	// Rcpp::Rcout << std::endl;
+    // Rcpp::Rcout << "X: " << x->getName() << std::endl;
+    // Rcpp::Rcout << "Y: " << y->getName() << std::endl;
+
+    // Rcpp::Rcout << "Z: ";
+    // for (Variable* zVar : z)
+    //     Rcpp::Rcout << zVar->getName() << " ";
+    // Rcpp::Rcout << std::endl;
     // bool debug = (x->getName() == "X5" && y->getName() == "X6");
 
-    if (x->isDiscrete()) {
+    if (x->isDiscrete())
+    {
         // if (debug) Rcpp::Rcout << "Path 1" << std::endl;
         return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
-    } else if (y->isDiscrete()) {
-        if(preferLinear) {
+    }
+    else if (y->isDiscrete())
+    {
+        if (preferLinear)
+        {
             // if (debug) Rcpp::Rcout << "Path 2" << std::endl;
             return isIndependentRegression(x, y, z, pReturn);
         }
-        else {
+        else
+        {
             // if (debug) Rcpp::Rcout << "Path 3" << std::endl;
             return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
         }
-    } else {
+    }
+    else
+    {
         // if (debug) Rcpp::Rcout << "Path 4" << std::endl;
         return isIndependentRegression(x, y, z, pReturn);
     }
 }
 
-std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* var) {
-    if (var->isContinuous()) {
-      std::vector<Variable*> contList;
-      contList.push_back(var);
-      return contList;
+std::vector<Variable *> IndTestMulti::expandVariable(DataSet &dataSet, Variable *var)
+{
+    if (var->isContinuous())
+    {
+        std::vector<Variable *> contList;
+        contList.push_back(var);
+        return contList;
     }
 
-    if (var->isDiscrete() && ((DiscreteVariable*) var)->getNumCategories() < 3) {
-      std::vector<Variable*> discList;
-      discList.push_back(var);
-      return discList;
+    if (var->isDiscrete() && ((DiscreteVariable *)var)->getNumCategories() < 3)
+    {
+        std::vector<Variable *> discList;
+        discList.push_back(var);
+        return discList;
     }
 
-    if (!(var->isDiscrete())) {
-      throw std::invalid_argument("*Invalid variable type*");
+    if (!(var->isDiscrete()))
+    {
+        throw std::invalid_argument("*Invalid variable type*");
     }
 
-    std::vector<std::string> varCats = ((DiscreteVariable*) var)->getCategories();
+    std::vector<std::string> varCats = ((DiscreteVariable *)var)->getCategories();
 
-
-    std::vector<Variable*> variables;
+    std::vector<Variable *> variables;
     /*********************************************************************/
     std::string temp = var->getName();
-    for (auto it = varCats.begin()+1; it != varCats.end(); it++) {
-        DiscreteVariable* newVar = new DiscreteVariable(temp + "MULTINOM." + *it, 2);
+    for (auto it = varCats.begin() + 1; it != varCats.end(); it++)
+    {
+        DiscreteVariable *newVar = new DiscreteVariable(temp + "MULTINOM." + *it, 2);
 
-    /*********************************************************************/
+        /*********************************************************************/
 
         variables.push_back(newVar);
 
@@ -130,35 +154,43 @@ std::vector<Variable*> IndTestMulti::expandVariable(DataSet& dataSet, Variable* 
         int newVarIndex = dataSet.getColumn(newVar);
         int numCases = dataSet.getNumRows();
 
-        for (int l = 0; l < numCases; l++) {
+        for (int l = 0; l < numCases; l++)
+        {
             int dataCellIndex = dataSet.getInt(l, dataSet.getColumn(var));
-            if (dataCellIndex == ((DiscreteVariable*) var)->getIndex(*it)) {
-	        dataSet.set(l, newVarIndex, 1);
-	    }
-            else {
-		dataSet.set(l, newVarIndex, 0);
-	    }
+            if (dataCellIndex == ((DiscreteVariable *)var)->getIndex(*it))
+            {
+                dataSet.set(l, newVarIndex, 1);
+            }
+            else
+            {
+                dataSet.set(l, newVarIndex, 0);
+            }
         }
     }
 
     return variables;
 }
 
-bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {
+bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Variable *y, std::vector<Variable *> &z, double *pReturn)
+{
     // std::ofstream logfile;
     // logfile.open("../test_results/debug.log", std::ios_base::app);
-    
-    if (variablesPerNode.count(x) < 1) {
-      throw std::invalid_argument("Unrecogized variable: " + x->getName());
+
+    if (variablesPerNode.count(x) < 1)
+    {
+        throw std::invalid_argument("Unrecogized variable: " + x->getName());
     }
 
-    if (variablesPerNode.count(y) < 1) {
-      throw std::invalid_argument("Unrecogized variable: " + y->getName());
+    if (variablesPerNode.count(y) < 1)
+    {
+        throw std::invalid_argument("Unrecogized variable: " + y->getName());
     }
 
-    for (Variable* varZ : z) {
-        if (variablesPerNode.count(varZ) < 1) {
-          throw std::invalid_argument("Unrecogized variable: " + varZ->getName());
+    for (Variable *varZ : z)
+    {
+        if (variablesPerNode.count(varZ) < 1)
+        {
+            throw std::invalid_argument("Unrecogized variable: " + varZ->getName());
         }
     }
 
@@ -169,13 +201,14 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     arma::uvec rows_ = getNonMissingRows(x, y, z);
     logisticRegression.setRows(rows_);
 
-    std::vector<Variable*> yzList;
-    std::vector<Variable*> zList;
+    std::vector<Variable *> yzList;
+    std::vector<Variable *> zList;
 
-    std::vector<Variable*> temp = variablesPerNode.at(y);
+    std::vector<Variable *> temp = variablesPerNode.at(y);
     yzList.insert(yzList.begin(), temp.begin(), temp.end());
 
-    for (Variable* varZ : z) {
+    for (Variable *varZ : z)
+    {
         temp = variablesPerNode.at(varZ);
         yzList.insert(yzList.end(), temp.begin(), temp.end());
 
@@ -185,16 +218,20 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
 
     // //double[][] coeffsDep = new double[variablesPerNode.get(x).size()][];
     arma::mat coeffsNull = arma::mat(); //zList.size()+1, variablesPerNode.at(x).size());
-    arma::mat coeffsDep = arma::mat(); //yzList.size()+1, variablesPerNode.at(x).size());
+    arma::mat coeffsDep = arma::mat();  //yzList.size()+1, variablesPerNode.at(x).size());
 
     /*********************************************************************/
-    for (int i = 0; i < variablesPerNode.at(x).size(); i++) {
-        Variable* varX = variablesPerNode.at(x).at(i);
-        LogisticRegressionResult* result0 = logisticRegression.regress((DiscreteVariable*)varX, zList);
-        LogisticRegressionResult* result1 = logisticRegression.regress((DiscreteVariable*)varX, yzList);
+    for (int i = 0; i < variablesPerNode.at(x).size(); i++)
+    {
+        Variable *varX = variablesPerNode.at(x).at(i);
+        LogisticRegressionResult *result0 = logisticRegression.regress((DiscreteVariable *)varX, zList);
+        LogisticRegressionResult *result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList);
 
         coeffsNull.insert_cols(i, result0->getCoefs());
         coeffsDep.insert_cols(i, result1->getCoefs());
+
+        delete result0;
+        delete result1;
     }
     /*********************************************************************/
 
@@ -228,15 +265,20 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     double ll0 = multiLL(coeffsNull, x, zList);
     double chisq; // = 2*(ll - ll0);
 
-    if ((std::isinf(ll) && std::isinf(ll0)) || (ll0 > ll)) {
-    	chisq = 1e-10;
-    } else if (std::isinf(ll0)) {
-	chisq = 1e20;
-    } else{
-    	chisq = 2*(ll - ll0); // Need to make multiLL
+    if ((std::isinf(ll) && std::isinf(ll0)) || (ll0 > ll))
+    {
+        chisq = 1e-10;
     }
-    
-    int df = variablesPerNode.at(y).size()*variablesPerNode.at(x).size();
+    else if (std::isinf(ll0))
+    {
+        chisq = 1e20;
+    }
+    else
+    {
+        chisq = 2 * (ll - ll0); // Need to make multiLL
+    }
+
+    int df = variablesPerNode.at(y).size() * variablesPerNode.at(x).size();
     boost::math::chi_squared dist(df);
 
     // if (std::isnan(chisq)) {
@@ -244,11 +286,11 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     // 	// // logfile << "dist.df = " << dist.degrees_of_freedom() << std::endl;
     // 	logfile << "chisq = " << chisq << std::endl << std::endl;
     // }
-    
+
     double p = 1.0 - cdf(dist, chisq);
 
-    if (pReturn != NULL) *pReturn = p;
-    
+    if (pReturn != NULL)
+        *pReturn = p;
 
     // if(debug) {
     //     Rcpp::Rcout << "DUDEK_DEBUG_MultiLogistic" << std::endl;
@@ -278,39 +320,45 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable* x, Varia
     // logfile << " with p = " << p << std::endl;
 
     // logfile.close();
-    
+
     this->lastP = p;
 
     // //t.println(x + " is independent of " + y + " given " + z + ": " + indep);
     return indep;
 }
 
-    // This takes an inordinate amount of time. -jdramsey 20150929
-arma::uvec IndTestMulti::getNonMissingRows(Variable* x, Variable* y, std::vector<Variable*>& z) {
-
+// This takes an inordinate amount of time. -jdramsey 20150929
+arma::uvec IndTestMulti::getNonMissingRows(Variable *x, Variable *y, std::vector<Variable *> &z)
+{
 
     // std::vector<int> rows = std::vec(internalData.getNumRows());
     arma::uvec rows = arma::uvec(internalData.getNumRows());
-    for (arma::uword k = 0; k < rows.size(); k++) rows[k] = k; // use uword or use double?
+    for (arma::uword k = 0; k < rows.size(); k++)
+        rows[k] = k; // use uword or use double?
 
     return rows;
 }
 
-bool IndTestMulti::isMissing(Variable* x, int i) {
+bool IndTestMulti::isMissing(Variable *x, int i)
+{
     int j = internalData.getColumn(x);
 
-    if (x->isDiscrete()) {
-        int v = (int) internalData.getInt(i, j);
+    if (x->isDiscrete())
+    {
+        int v = (int)internalData.getInt(i, j);
 
-        if (v == -99) {
+        if (v == -99)
+        {
             return true;
         }
     }
 
-    if (x->isContinuous()) {
+    if (x->isContinuous())
+    {
         double v = internalData.getInt(i, j);
 
-        if (std::isnan(v)) {
+        if (std::isnan(v))
+        {
             return true;
         }
     }
@@ -318,14 +366,15 @@ bool IndTestMulti::isMissing(Variable* x, int i) {
     return false;
 }
 
+double IndTestMulti::multiLL(arma::mat &coeffs, Variable *dep, std::vector<Variable *> &indep)
+{
 
-double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Variable*>& indep){
-
-    if(dep->getName() == "??") throw std::invalid_argument("must have a dependent node to regress on!");
+    if (dep->getName() == "??")
+        throw std::invalid_argument("must have a dependent node to regress on!");
     // std::ofstream logfile;
     // logfile.open("../test_results/debug.log", std::ios_base::app);
-    
-    std::vector<Variable*> depList;
+
+    std::vector<Variable *> depList;
     depList.push_back(dep);
 
     int i = internalData.getColumn(dep);
@@ -335,11 +384,12 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
     int N = depData.n_elem; // returns number of rows
 
     arma::mat indepData;
-    if(indep.size()==0)
-        indepData = arma::mat(N,1,arma::fill::ones); // filling it with ones
-    else {
+    if (indep.size() == 0)
+        indepData = arma::mat(N, 1, arma::fill::ones); // filling it with ones
+    else
+    {
         indepData = getSubsetData(internalData, indep);
-        indepData.insert_cols(0, arma::mat(N,1,arma::fill::ones));
+        indepData.insert_cols(0, arma::mat(N, 1, arma::fill::ones));
     }
 
     arma::mat probs = indepData * coeffs;
@@ -354,25 +404,26 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
 
     probs.insert_cols(0, arma::mat(indepData.n_rows, 1, arma::fill::ones));
     // probs = arma::exp(probs);
-    
+
     // Rcpp::Rcout << "probs = " << probs << std::endl;
     double ll = 0;
-    for(int i = 0; i < N; i++){
-	double b = probs.row(i).max();
-	arma::rowvec curRow = probs.row(i) - b;
-	//b = curRow.max();
-	// double p;
-	// for (arma::uword j = 0; j < curRow.n_elem; j++) {
-	//     // p = curRow(j);
-	//     curRow(j) = curRow(j) > -200 ? curRow(j) : -200;
-	// }
-	curRow = arma::exp(curRow);
-	double sum = arma::sum(curRow);
-	// Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
-	// Rcpp::Rcout << "sum(curRow) " << i << " = " << sum << std::endl;
+    for (int i = 0; i < N; i++)
+    {
+        double b = probs.row(i).max();
+        arma::rowvec curRow = probs.row(i) - b;
+        //b = curRow.max();
+        // double p;
+        // for (arma::uword j = 0; j < curRow.n_elem; j++) {
+        //     // p = curRow(j);
+        //     curRow(j) = curRow(j) > -200 ? curRow(j) : -200;
+        // }
+        curRow = arma::exp(curRow);
+        double sum = arma::sum(curRow);
+        // Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
+        // Rcpp::Rcout << "sum(curRow) " << i << " = " << sum << std::endl;
         curRow = curRow / sum;
-	// Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
-	// Rcpp::Rcout << "loglikelihood " << i << " = " << std::log(curRow.at((int)depData.at(i))) << std::endl;
+        // Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
+        // Rcpp::Rcout << "loglikelihood " << i << " = " << std::log(curRow.at((int)depData.at(i))) << std::endl;
         ll += std::log(curRow.at((int)depData.at(i)));
     }
     // Rcpp::Rcout << "multiLL loglikelihood = " << ll << std::endl;
@@ -380,13 +431,14 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
     // if (std::isinf(ll)) {
     // 	ll = std::numeric_limits<double>::lowest();
     // }
-    if (std::isnan(ll)) {
-	ll = - std::numeric_limits<double>::infinity();
-	// logfile << "Full separation found: ll = " << ll << std::endl;
-	// for (auto it = indep.begin(); it != indep.end(); it++) {
-	//     logfile << (*it)->getName() << "\t";
-	// }
-	// logfile << std::endl;
+    if (std::isnan(ll))
+    {
+        ll = -std::numeric_limits<double>::infinity();
+        // logfile << "Full separation found: ll = " << ll << std::endl;
+        // for (auto it = indep.begin(); it != indep.end(); it++) {
+        //     logfile << (*it)->getName() << "\t";
+        // }
+        // logfile << std::endl;
     }
     //   logfile << "Error in multiLL: ll = " << ll << std::endl;
     //   for (auto it = indep.begin(); it != indep.end(); it++) {
@@ -401,17 +453,22 @@ double IndTestMulti::multiLL(arma::mat& coeffs, Variable* dep, std::vector<Varia
     return ll;
 }
 
-bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) {    
-    if (variablesPerNode.count(x) < 1) {
+bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector<Variable *> &z, double *pReturn)
+{
+    if (variablesPerNode.count(x) < 1)
+    {
         throw std::invalid_argument("Unrecogized node: " + x->getName());
     }
 
-    if (variablesPerNode.count(y) < 1) {
+    if (variablesPerNode.count(y) < 1)
+    {
         throw std::invalid_argument("Unrecogized node: " + y->getName());
     }
 
-    for (Variable* varZ : z) {
-        if (variablesPerNode.count(varZ) < 1) {
+    for (Variable *varZ : z)
+    {
+        if (variablesPerNode.count(varZ) < 1)
+        {
             throw std::invalid_argument("Unrecogized node: " + varZ->getName());
         }
     }
@@ -419,11 +476,12 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
     // std::ofstream logfile;
     // logfile.open("../test_results/debug.log", std::ios_base::app);
 
-    std::vector<Variable*> regressors;
+    std::vector<Variable *> regressors;
     regressors.push_back(y);
 
-    for (Variable* varZ : z) {
-        std::vector<Variable*> temp = variablesPerNode.at(varZ);
+    for (Variable *varZ : z)
+    {
+        std::vector<Variable *> temp = variablesPerNode.at(varZ);
         regressors.insert(regressors.end(), temp.begin(), temp.end());
     }
 
@@ -431,18 +489,23 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
     LinearRegression regression = this->regression;
     regression.setRows(rows); // regression was never declared
 
-    RegressionResult* result;
+    double p;
 
-    try {
-        result = regression.regress(x, regressors);
-    } catch (std::exception e) {
+    try
+    {
+        RegressionResult *result = regression.regress(x, regressors);
+        p = result->getP().at(1); // double check on .at(1)
+        delete result;
+    }
+    catch (std::exception e)
+    {
         return false;
     }
-
-    double p = result->getP().at(1); // double check on .at(1)
+ 
     this->lastP = p;
 
-    if (pReturn != NULL) *pReturn = p;
+    if (pReturn != NULL)
+        *pReturn = p;
 
     bool indep = p > alpha;
 
@@ -472,46 +535,52 @@ bool IndTestMulti::isIndependentRegression(Variable* x, Variable* y, std::vector
     return indep;
 }
 
-
-
 /**
  * @return the list of variable varNames.
  */
-std::vector<std::string> IndTestMulti::getVariableNames() {
-    std::vector<Variable*> variables = getVariables();
+std::vector<std::string> IndTestMulti::getVariableNames()
+{
+    std::vector<Variable *> variables = getVariables();
     std::vector<std::string> variableNames;
 
-    for (Variable* var1 : variables) {
+    for (Variable *var1 : variables)
+    {
         variableNames.push_back(var1->getName());
     }
     return variableNames;
 }
 
-Variable* IndTestMulti::getVariable(std::string name) {
-    for (int i = 0; i < getVariables().size(); i++) {
-        Variable* var = getVariables().at(i);
-        if (var->getName() == name) {
+Variable *IndTestMulti::getVariable(std::string name)
+{
+    for (int i = 0; i < getVariables().size(); i++)
+    {
+        Variable *var = getVariables().at(i);
+        if (var->getName() == name)
+        {
             return var;
         }
     }
-    Variable* emptyVar;
+    Variable *emptyVar;
     return emptyVar;
 }
 
-arma::mat IndTestMulti::getSubsetData(DataSet& origData, std::vector<Variable*>& varSubset) {
-  arma::mat origMat = origData.getData();
-  arma::uvec colIndices (varSubset.size());
-  arma::uvec rowIndices (origMat.n_rows);
-  // for (Variable* var : varSubset){
-  for (int i = 0; i < varSubset.size(); i++){
-    Variable* var = varSubset.at(i);
-    arma::uword j = origData.getColumn(var);
-    colIndices[i] = j;
-  }
-  for (int i = 0; i < origMat.n_rows; i++){
-    rowIndices[i] = i;
-  }
-  return origMat.submat(rowIndices, colIndices);
+arma::mat IndTestMulti::getSubsetData(DataSet &origData, std::vector<Variable *> &varSubset)
+{
+    arma::mat origMat = origData.getData();
+    arma::uvec colIndices(varSubset.size());
+    arma::uvec rowIndices(origMat.n_rows);
+    // for (Variable* var : varSubset){
+    for (int i = 0; i < varSubset.size(); i++)
+    {
+        Variable *var = varSubset.at(i);
+        arma::uword j = origData.getColumn(var);
+        colIndices[i] = j;
+    }
+    for (int i = 0; i < origMat.n_rows; i++)
+    {
+        rowIndices[i] = i;
+    }
+    return origMat.submat(rowIndices, colIndices);
 }
 
 // void indTestMultiTest(const Rcpp::DataFrame& df) {

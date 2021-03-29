@@ -29,6 +29,8 @@ public:
 
     IndTestMulti(DataSet& data, double alpha, bool preferLinear);
 
+    ~IndTestMulti();
+
     int reset();
 
     bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
