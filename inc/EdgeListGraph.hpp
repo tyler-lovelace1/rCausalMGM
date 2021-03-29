@@ -384,6 +384,10 @@ public:
      * Nodes adjacent to the given node with the given distal endpoint.
      */
     std::vector<Variable*> getNodesOutTo(Variable* node, Endpoint endpoint);
+    
+    void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> ancestors);
+
+    std::unordered_set<Variable*> getAncestors(std::vector<Variable*>& nodes);
 
     /**
      * @return a matrix of endpoints for the nodes in this graph, with nodes in
