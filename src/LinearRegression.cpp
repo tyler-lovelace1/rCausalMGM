@@ -1,3 +1,5 @@
+// [[Rcpp::depends(BH)]]
+
 #include "LinearRegression.hpp"
 #include "RegressionResult.hpp"
 #include <iostream>

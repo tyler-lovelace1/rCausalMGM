@@ -159,11 +159,16 @@ bool OrientCollidersMaxP::wouldCreateBadCollider(Variable* x, Variable* y) {
     for (Variable* z : graph->getAdjacentNodes(y)) {
         if (x == z) continue;
 
-        if (!graph->isAdjacentTo(x, z) &&
-                graph->getEndpoint(z, y) == ENDPOINT_ARROW &&
-                !sepset(x, z, empty, ySet)) {
-                    return true;
-                }
+        // if (!graph->isAdjacentTo(x, z) &&
+	//     graph->getEndpoint(z, y) == ENDPOINT_ARROW &&
+	//     !sepset(x, z, empty, ySet)) {
+	//     return true;
+	// }
+	if (!graph->isAdjacentTo(x, z) &&
+	    graph->getEndpoint(z, y) == ENDPOINT_ARROW &&
+	    !colliders.at(Triple(x, y, z))) {
+	    return true;
+	}
     }
 
     return false;

@@ -1,5 +1,15 @@
 #include "Triple.hpp"
 
+#include "GraphUtils.hpp"
+
+std::string Triple::toString() {
+    std::ostringstream result;
+
+    result << *this;
+
+    return result.str();
+}
+
 std::ostream& operator<<(std::ostream& os, const Triple& triple) {
     os << "<" << triple.x->getName() << "," << triple.y->getName() << "," << triple.z->getName() << ">";
     return os;

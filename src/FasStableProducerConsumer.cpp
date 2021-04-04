@@ -3,25 +3,25 @@
 #include "ChoiceGenerator.hpp"
 #include "GraphUtils.hpp"
 
-FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test) 
+FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test)
 {
     this->initialGraph = initialGraph;
     this->test = test;
     this->nodes = test->getVariables();
 
-    Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
+    // Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
     if (parallelism == 0) {
         parallelism = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
     }
 }
 
-FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
+FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE)
 {
     this->test = test;
     this->nodes = test->getVariables();
 
-    Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
+    // Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
     if (parallelism == 0) {
         parallelism = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
@@ -46,7 +46,7 @@ void FasStableProducerConsumer::setDepth(int depth) {
  * @return a SepSet, which indicates which variables are independent conditional on which other variables
  */
 EdgeListGraph FasStableProducerConsumer::search() {
-    Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
 
     sepset = SepsetMap();
     sepset.setReturnEmptyIfNotSet(sepsetsReturnEmptyIfNotFixed);
@@ -93,15 +93,11 @@ EdgeListGraph FasStableProducerConsumer::search() {
         }
     }
 
-    Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
-
-    Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
-
-    return graph;
+    if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
 }
 
 std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerConsumer::searchMapOnly() {
-    Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
 
     graph.removeEdges(graph.getEdgeList());
 
@@ -130,7 +126,7 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
         if (!more) break;
     }
 
-    Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
     return adjacencies;
 }
 
@@ -208,7 +204,7 @@ void FasStableProducerConsumer::consumerDepth0() {
         } else if (!forbiddenEdge) {
             adjacencies[task.x].insert(task.y);
             adjacencies[task.y].insert(task.x);
-        } 
+        }
         adjacencyLock.unlock();
     }
 }
@@ -268,7 +264,7 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
 
                 for (choice = cg.next(); choice != NULL; choice = cg.next()) {
                     std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
-                    
+
                     taskQueue.push(IndependenceTask(x, y, condSet));
                 }
             }

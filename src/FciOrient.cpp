@@ -248,8 +248,6 @@ void FciOrient::ruleR4B(EdgeListGraph& graph) {
 
       //potential A and C candidate pairs are only those
       // that look like this:   A<-*Bo-*C
-/******************************************************************************************/
-      // also have to add getNodesOutTo to EdgeListGraph.cpp
       std::vector<Variable*> possA = graph.getNodesOutTo(b, ENDPOINT_ARROW);
       std::vector<Variable*> possC = graph.getNodesInTo(b, ENDPOINT_CIRCLE);
 
@@ -276,9 +274,6 @@ void FciOrient::ruleR4B(EdgeListGraph& graph) {
  * The body of a DDP consists of colliders that are parents of c.
  */
 void FciOrient::ddpOrient(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
-/******************************************************************************************/
-  // Queue<Node> Q = new ArrayDeque<Node>();
-  // double check std queue and what is ArrayDeque?
   std::queue<Variable*> Q;
 
   std::unordered_set<Variable*> V;
@@ -296,7 +291,6 @@ void FciOrient::ddpOrient(Variable* a, Variable* b, Variable* c, EdgeListGraph& 
   previous.insert(std::pair<Variable*,Variable*>(a, b));
 
   while (!Q.empty()) {
-      // std::queue pop returns null, must first retrieve value with front()
       Variable* t = Q.front();
       Q.pop();
 
@@ -336,7 +330,6 @@ void FciOrient::ddpOrient(Variable* a, Variable* b, Variable* c, EdgeListGraph& 
       }
   }
 }
-
 
 /**
  * Implements Zhang's rule R5, orient circle undirectedPaths: for any Ao-oB,
@@ -468,7 +461,6 @@ void FciOrient::rulesR8R9R10(EdgeListGraph& graph) {
   }
 }
 
-
 /**
  * @param maxPathLength the maximum length of any discriminating path, or -1
  * if unlimited.
@@ -490,7 +482,6 @@ void FciOrient::printWrongColliderMessage(Variable* a, Variable* b, Variable* c,
   }
 }
 
-// Not ssure about how to handle the knowledge statement in this method
 void FciOrient::spirtesFinalOrientation(EdgeListGraph& graph) {
   changeFlag = true;
   bool firstTime = true;
@@ -501,8 +492,7 @@ void FciOrient::spirtesFinalOrientation(EdgeListGraph& graph) {
       ruleR3(graph);
 
       // R4 requires an arrow orientation.
-      // if (changeFlag || (firstTime && !knowledge.isEmpty())) {
-      if (changeFlag || firstTime) {
+      if (changeFlag || firstTime /* && !knowledge.isEmpty() */) {
           ruleR4B(graph);
           firstTime = false;
       }
@@ -519,8 +509,7 @@ void FciOrient::zhangFinalOrientation(EdgeListGraph& graph) {
       ruleR3(graph);
 
       // R4 requires an arrow orientation.
-      // if (changeFlag || (firstTime && !knowledge.isEmpty())) {
-      if (changeFlag || firstTime) {
+      if (changeFlag || firstTime /* && !knowledge.isEmpty() */ ) {
           ruleR4B(graph);
           firstTime = false;
       }
@@ -648,9 +637,7 @@ void FciOrient::reachablePathFind(Variable* a, Variable* b, Variable* c,
 //        next.put(b, c);
 
 
-/**********************************************************************/
-//original is a set but the returned balue of the function is a std vector
-  // Set<Node> cParents = new HashSet<Node>(graph.getParents(c));
+
   std::vector<Variable*> v = graph.getParents(c);
   std::unordered_set<Variable*> cParents(v.begin(), v.end());
 
@@ -674,10 +661,7 @@ void FciOrient::reachablePathFind(Variable* a, Variable* b, Variable* c,
       if (e == x) {
           e = x;
           distance++;
-          /**********************************************************************/
-          // final keyword in c++ differs from that in java
           const int maxPathLength_ = (maxPathLength == -1) ? 1000 : maxPathLength;
-
 
           if (distance > 0 && distance > maxPathLength_) {
               continue;
@@ -781,7 +765,10 @@ bool FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable
 
   // std::vector<Variable*> path2 (path);
   // path2.remove(b);
-  std::vector<Variable*> path2;
+  std::vector<Variable*> path2(path);
+  if (std::find(path2.begin(), path2.end(), b) != path2.end()) {
+    path2.erase(std::find(path2.begin(), path2.end(), b));
+  }
   for(Variable* var: path) {
     if (var != b) {
       path2.push_back(var);
@@ -831,11 +818,9 @@ bool FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable
 void FciOrient::printDdp(Variable* d, std::vector<Variable*> path, Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
   std::vector<Variable*> nodes;
   nodes.push_back(d);
-  // nodes.addAll(path);
   for(Variable* var: path) {
     nodes.push_back(var);
   }
-  // nodes.insert(nodes.end(), path.begin(), path.end())
   nodes.push_back(a);
   nodes.push_back(b);
   nodes.push_back(c);
@@ -889,12 +874,7 @@ void FciOrient::orientTailPath(std::vector<Variable*> path, EdgeListGraph& graph
  * n2.
  */
 std::vector<std::vector<Variable*>> FciOrient::getUcPdPaths(Variable* n1, Variable* n2, EdgeListGraph& graph) {
-  // List<List<Node>> ucPdPaths = new LinkedList<List<Node>>();
   std::vector<std::vector<Variable*>> ucPdPaths;
-
-  /********************************************************************************************/
-  // std::list<Variable*> soFar;
-  //same thing with sofar either being a vector or a list?
 
   std::vector<Variable*> soFar;
 
@@ -943,18 +923,10 @@ void FciOrient::getUcPdPsHelper(Variable* curr, std::vector<Variable*> soFar, Va
 
   if (curr == end) {
       // We've reached the goal! Save soFar as a path.
-
-/********************************************************************************************/
-      // ucPdPaths.add(new LinkedList<Node>(soFar));
-      // Copying a vector?
       std::vector<Variable*> soFar_copy(soFar);
       ucPdPaths.push_back(soFar_copy);
   } else {
       // Otherwise, try each node adjacent to the getModel one.
-
-/********************************************************************************************/
-      // List<Node> adjacents = graph.getAdjacentNodes(curr);
-      //getAdjacentNodes returns vector not list... Problem?
       std::vector<Variable*> adjacents = graph.getAdjacentNodes(curr);
       for (Variable* next : adjacents) {
           getUcPdPsHelper(next, soFar, end, ucPdPaths, graph);
@@ -1169,7 +1141,6 @@ bool FciOrient::isArrowpointAllowed(Variable* x, Variable* y, EdgeListGraph& gra
   }
 
   if (graph.getEndpoint(y, x) == ENDPOINT_ARROW) {
-/********************************************************************************************/
       // switched the commented sections
       return true;
       // if (!knowledge.isForbidden(x.getName(), y.getName())) {
@@ -1178,7 +1149,6 @@ bool FciOrient::isArrowpointAllowed(Variable* x, Variable* y, EdgeListGraph& gra
   }
 
   if (graph.getEndpoint(y, x) == ENDPOINT_TAIL) {
-/********************************************************************************************/
       // added return true as did above in place of knowledge
       return true;
       // if (!knowledge.isForbidden(x.getName(), y.getName())) {

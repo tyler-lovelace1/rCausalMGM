@@ -1,3 +1,5 @@
+// [[Rcpp::depends(BH)]]
+
 #include "IndTestMulti.hpp"
 #include <boost/math/distributions/chi_squared.hpp>
 

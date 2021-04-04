@@ -1,4 +1,5 @@
 #include "FasStable.hpp"
+#include "GraphUtils.hpp"
 
 FasStable::FasStable(EdgeListGraph *initialGraph, IndependenceTest *test) {
     this->initialGraph = initialGraph;

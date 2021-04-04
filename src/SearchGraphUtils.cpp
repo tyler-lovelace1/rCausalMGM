@@ -5,9 +5,9 @@
  * Step C of PC; orients colliders using specified sepset. That is, orients x *-* y *-* z as x *-> y <-* z just in
  * case y is in Sepset({x, z}).
  */
-std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set, EdgeListGraph& graph) {
+std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set, EdgeListGraph& graph, bool verbose) {
 
-    Rcpp::Rcout << "Starting Collider Orientation:" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting Collider Orientation" << std::endl;
 
     std::vector<Triple> colliders;
 
@@ -41,7 +41,7 @@ std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set
         }
     }
 
-    Rcpp::Rcout << "Finishing Collider Orientation." << std::endl;
+    if (verbose) Rcpp::Rcout << "Finishing Collider Orientation" << std::endl;
 
     return colliders;
 }
