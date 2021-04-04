@@ -12,7 +12,7 @@ public:
      * Step C of PC; orients colliders using specified sepset. That is, orients x *-* y *-* z as x *-> y <-* z just in
      * case y is in Sepset({x, z}).
      */
-    static std::vector<Triple> orientCollidersUsingSepsets(SepsetMap& set, EdgeListGraph& graph);
+    static std::vector<Triple> orientCollidersUsingSepsets(SepsetMap& set, EdgeListGraph& graph, bool verbose = false);
 
 };
 

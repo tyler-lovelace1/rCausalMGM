@@ -20,33 +20,35 @@
 enum DataType { CONTINUOUS, DISCRETE };
 
 class Variable {
-    
+
 protected:
   std::string name = "??";
   DataType type;
 
 public:
   Variable() {}
-  
+
+  virtual ~Variable() {}
+
   void setName(const std::string& name) { this->name = name; }
-  
+
   std::string getName() { return name; }
-  
+
   DataType getType() { return type; }
 
   bool isContinuous() { return type==CONTINUOUS; }
 
   bool isDiscrete() { return type==DISCRETE; }
-  
+
   // template <typename T>
   // T getMissingValueMarker();
-  
+
   virtual bool isMissingValue(const std::string& val) = 0;
-  
+
   virtual bool checkValue(const std::string& val) = 0;
-  
+
   virtual Variable* like(const std::string& name) = 0;
-    
+
 };
 
 #endif /* VARIABLE_HPP_ */

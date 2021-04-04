@@ -47,6 +47,8 @@ private:
     //parameter weights
     arma::vec weights;
 
+    bool verbose = false;
+
     double logsumexp(const arma::vec& x);
 
     void initParameters();  // init all parameters to zeros except for betad which is set to 1s
@@ -70,6 +72,8 @@ public:
     void setParams(MGMParams& newParams) {params = newParams;}
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
+
+    void setVerbose(bool v) { verbose = v; }
 
     /**
      * Calculate value of g(X) and gradient of g(X) at the same time for efficiency reasons.

@@ -76,6 +76,8 @@ private:
      */
     EdgeListGraph *initialGraph = NULL;
 
+    bool verbose = false;
+
     bool sepsetsReturnEmptyIfNotFixed = true;
 
     bool searchAtDepth0();
@@ -137,6 +139,8 @@ public:
 
     int getDepth() { return depth; }
     void setDepth(int depth);
+
+    void setVerbose(bool v) { verbose = v; }
 
     // TODO
     // IKnowledge getKnowledge() { return knowledge; }

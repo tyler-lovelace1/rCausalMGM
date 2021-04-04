@@ -32,16 +32,18 @@ public:
     type = var.type;
   }
 
+  ~ContinuousVariable() {}
+
   double getMissingValueMarker() { return this->MISSING_VALUE; }
 
-  bool isMissingValue(const double& val) { return std::isnan(val); }
+  bool isMissingValue(const double& val) {return std::isnan(val); }
 
-  bool isMissingValue(const std::string& val) { return val==MISSING_VALUE_STRING; }
+  bool isMissingValue(const std::string& val) {return val==MISSING_VALUE_STRING; }
 
   // bool checkValue(const double& val) { return true; }
 
   bool checkValue(const std::string& val);
-  
+
   ContinuousVariable* like(const std::string& name) { return new ContinuousVariable(name); }
 
   // friend void test_continuous(const std::string& name, const std::string& val);

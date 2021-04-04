@@ -63,6 +63,8 @@ public:
     this->categories = var.categories;
   }
 
+  ~DiscreteVariable() {}
+
   DiscreteVariable& operator=(DiscreteVariable&& var) {
     this->name = var.name;
     this->type = var.type;
@@ -78,9 +80,9 @@ public:
 
   std::vector<std::string> getCategories() { return categories; }
 
-  bool isMissingValue(const int& val) { return val==MISSING_VALUE; }
+  bool isMissingValue(const int& val) {return val==MISSING_VALUE; }
 
-  bool isMissingValue(const std::string& val) { return val==MISSING_VALUE_STRING || val=="-99"; }
+  bool isMissingValue(const std::string& val) {return val==MISSING_VALUE_STRING || val=="-99"; }
 
   // bool checkValue(const int& category) { return (category >= 0) && (category < getNumCategories()); }
 

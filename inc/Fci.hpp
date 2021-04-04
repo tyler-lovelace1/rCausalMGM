@@ -22,159 +22,169 @@
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
 #include "SepsetProducer.hpp"
+#include "FasStableProducerConsumer.hpp"
+#include "PossibleDsepFciConsumerProducer.hpp"
+#include "FasStableConcurrent.hpp"
+#include "FciOrient.hpp"
+#include "SepsetsPossibleDsep.hpp"
+#include "SepsetsSet.hpp"
+#include <limits>
+
 
 class Fci {
 
 private:
-  /**
-   * The PAG being constructed.
-   */
-  EdgeListGraph graph;
 
-  /**
-   * The SepsetMap being constructed.
-   */
-  SepsetMap sepsets;
+    /**
+     * The PAG being constructed.
+     */
+    EdgeListGraph graph;
 
-  // /**
-  //  * The background knowledge.
-  //  */
-  // private IKnowledge knowledge = new Knowledge2();
+    /**
+     * The SepsetMap being constructed.
+     */
+    SepsetMap sepsets;
 
-  /**
-   * The variables to search over (optional)
-   */
-  std::vector<Variable*> variables;
+    // /**
+    //  * The background knowledge.
+    //  */
+    // private IKnowledge knowledge = new Knowledge2();
 
-  IndependenceTest* independenceTest;
+    /**
+     * The variables to search over (optional)
+     */
+    std::vector<Variable*> variables;
 
-  /**
-   * flag for complete rule set, true if should use complete rule set, false otherwise.
-   */
-  bool completeRuleSetUsed = false;
+    IndependenceTest *test;
 
-  /**
-   * True iff the possible dsep search is done.
-   */
-  bool possibleDsepSearchDone = true;
+    /**
+     * flag for complete rule set, true if should use complete rule set, false otherwise.
+     */
+    bool completeRuleSetUsed = false;
 
-  /**
-   * The maximum length for any discriminating path. -1 if unlimited; otherwise, a positive integer.
-   */
-  int maxPathLength = -1;
+    /**
+     * True iff the possible dsep search is done.
+     */
+    bool possibleDsepSearchDone = true;
 
-  /**
-   * The depth for the fast adjacency search.
-   */
-  int depth = -1;
+    /**
+     * The maximum length for any discriminating path. -1 if unlimited; otherwise, a positive integer.
+     */
+    int maxPathLength = -1;
 
-  /**
-   * Elapsed time of last search.
-   */
-  long elapsedTime;
+    /**
+     * The depth for the fast adjacency search.
+     */
+    int depth = -1;
 
-  /**************************************/
-  // public ConcurrentHashMap<String,String> whyOrient;
+    /**
+     * Elapsed time of last search.
+     */
+    long elapsedTime;
 
-  /*
-      Maps from "<Node>,<Node>" to integer, where integer describes which rule oriented node -> node as an arrowhead
-      Useful for determining the relative efficacy of each rule in finding latent confounders
-   */
+    std::unordered_map<std::string,std::string> whyOrient;
 
-  bool verbose = false;
-  EdgeListGraph truePag;
-  std::unordered_map<Variable*, int> hashIndices;   // must lock
-  // ICovarianceMatrix covarianceMatrix;
-  double penaltyDiscount = 2;
-  SepsetMap possibleDsepSepsets = new SepsetMap();
-  EdgeListGraph initialGraph;
-  int possibleDsepDepth = -1;
+    /*
+        Maps from "<Node>,<Node>" to integer, where integer describes which rule oriented node -> node as an arrowhead
+        Useful for determining the relative efficacy of each rule in finding latent confounders
+     */
 
-      //========================PRIVATE METHODS==========================//
+    bool verbose = false;
+    EdgeListGraph truePag;
+    std::unordered_map<Variable*, int> hashIndices;   // must lock
+    // ICovarianceMatrix covarianceMatrix;
+    double penaltyDiscount = 2;
+    SepsetMap possibleDsepSepsets ();
+    EdgeListGraph *initialGraph = NULL;
+    int possibleDsepDepth = -1;
 
-  void buildIndexing(std::vector<Variable*> nodes);
+        //========================PRIVATE METHODS==========================//
 
-  /**
-   * Orients according to background knowledge
-   */
-  void fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Variable*> variables);
+    void buildIndexing(std::vector<Variable*> nodes);
+
+    /**
+     * Orients according to background knowledge
+     */
+    void fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Variable*> variables);
 
 
 public:
-      //============================CONSTRUCTORS============================//
-  /**
-   * Constructs a new FCI search for the given independence test and background knowledge.
-   */
-  Fci(IndependenceTest* independenceTest);
+        //============================CONSTRUCTORS============================//
+    /**
+     * Constructs a new FCI search for the given independence test and background knowledge.
+     */
+    Fci(IndependenceTest *test);
 
-  /**
-   * Constructs a new FCI search for the given independence test and background knowledge and a list of variables to
-   * search over.
-   */
-  Fci(IndependenceTest* independenceTest, std::vector<Variable*> searchVars);
+    /**
+     * Constructs a new FCI search for the given independence test and background knowledge and a list of variables to
+     * search over.
+     */
+    Fci(IndependenceTest *test, std::vector<Variable*> searchVars);
 
-     //========================PUBLIC METHODS==========================//
+       //========================PUBLIC METHODS==========================//
 
-  int getDepth() { return depth; }
+    int getDepth() { return depth; }
 
-  void setDepth(int depth);
+    void setDepth(int depth);
 
-  long getElapsedTime() { return this->elapsedTime; }
+    long getElapsedTime() { return this->elapsedTime; }
 
-  EdgeListGraph search() { return search(FasConsumerProducer(initialGraph, getIndependenceTest())); }
+    void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
-  void setInitialGraph(EdgeListGraph initialGraph) { this->initialGraph = initialGraph; }
+    EdgeListGraph search();
 
-  EdgeListGraph search(FasStableProducerConsumer fas); // grab from max's branch as well as blockingQueue
-                                                       // merge branches completely and keep changes made to edglelistgraph
+    EdgeListGraph search(const std::vector<Variable*>& nodes);
 
-  SepsetMap getSepsets() { return this->sepsets; }
+    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes);
 
-  // IKnowledge getKnowledge() { return this->knowledge; }
+    SepsetMap getSepsets() { return this->sepsets; }
 
-  // void setKnowledge(IKnowledge knowledge);
+    // IKnowledge getKnowledge() { return this->knowledge; }
 
-  /**
-   * @return true if Zhang's complete rule set should be used, false if only R1-R4 (the rule set of the original FCI)
-   * should be used. False by default.
-   */
-  bool isCompleteRuleSetUsed() { return completeRuleSetUsed; }
+    // void setKnowledge(IKnowledge knowledge);
 
-  /**
-   * @param completeRuleSetUsed set to true if Zhang's complete rule set should be used, false if only R1-R4 (the rule
-   *                            set of the original FCI) should be used. False by default.
-   */
-  void setCompleteRuleSetUsed(bool completeRuleSetUsed) { this->completeRuleSetUsed = completeRuleSetUsed; }
+    /**
+     * @return true if Zhang's complete rule set should be used, false if only R1-R4 (the rule set of the original FCI)
+     * should be used. False by default.
+     */
+    bool isCompleteRuleSetUsed() { return completeRuleSetUsed; }
 
-  bool isPossibleDsepSearchDone() { return possibleDsepSearchDone; }
+    /**
+     * @param completeRuleSetUsed set to true if Zhang's complete rule set should be used, false if only R1-R4 (the rule
+     *                            set of the original FCI) should be used. False by default.
+     */
+    void setCompleteRuleSetUsed(bool completeRuleSetUsed) { this->completeRuleSetUsed = completeRuleSetUsed; }
 
-  void setPossibleDsepSearchDone(bool possibleDsepSearchDone) { this->possibleDsepSearchDone = possibleDsepSearchDone; }
+    bool isPossibleDsepSearchDone() { return possibleDsepSearchDone; }
 
-  /**
-   * @return the maximum length of any discriminating path, or -1 of unlimited.
-   */
-  int getMaxPathLength() { return maxPathLength == Integer.MAX_VALUE ? -1 : maxPathLength; }
+    void setPossibleDsepSearchDone(bool possibleDsepSearchDone) { this->possibleDsepSearchDone = possibleDsepSearchDone; }
 
-  /**
-   * @param maxPathLength the maximum length of any discriminating path, or -1 if unlimited.
-   */
-  void setMaxPathLength(int maxPathLength);
+    /**
+     * @return the maximum length of any discriminating path, or -1 of unlimited.
+     */
+    int getMaxPathLength() { return (maxPathLength == std::numeric_limits<int>::max()) ? -1 : maxPathLength; }
 
-  /**
-   * The independence test.
-   */
-  IndependenceTest getIndependenceTest() { return independenceTest; }
+    /**
+     * @param maxPathLength the maximum length of any discriminating path, or -1 if unlimited.
+     */
+    void setMaxPathLength(int maxPathLength);
 
-  void setTruePag(EdgeListGraphtruePag) { this->truePag = truePag; }
+    // /**
+    //  * The independence test.
+    //  */
+    // IndependenceTest getIndependenceTest() { return test; }
 
-  double getPenaltyDiscount() { return penaltyDiscount; }
+    void setTruePag(EdgeListGraph& truePag) { this->truePag = truePag; }
 
-  void setPenaltyDiscount(double penaltyDiscount) { this->penaltyDiscount = penaltyDiscount; }
+    double getPenaltyDiscount() { return penaltyDiscount; }
 
-  int getPossibleDsepDepth() { return possibleDsepDepth; }
+    void setPenaltyDiscount(double penaltyDiscount) { this->penaltyDiscount = penaltyDiscount; }
 
-  void setPossibleDsepDepth(int possibleDsepDepth) { this->possibleDsepDepth = possibleDsepDepth; }
+    int getPossibleDsepDepth() { return possibleDsepDepth; }
 
+    void setPossibleDsepDepth(int possibleDsepDepth) { this->possibleDsepDepth = possibleDsepDepth; }
+
+    void setVerbose(bool verbose) { this->verbose = verbose; }
 };
 
 #endif /* FCI_HPP_ */

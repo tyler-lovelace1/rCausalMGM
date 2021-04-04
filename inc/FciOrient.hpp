@@ -66,8 +66,6 @@ private:
      */
     std::unordered_map<std::string,std::string> whyOrient;
 
-    std::unordered_map<std::string, std::string> searchMapOnly();
-
     EdgeListGraph truePag;
     EdgeListGraph dag;
     bool skipDiscriminatingPathRule;

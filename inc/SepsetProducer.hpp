@@ -2,6 +2,9 @@
 #define SEPSETPRODUCER_HPP_
 
 
+#include "Variable.hpp"
+#include <vector>
+
 /**
  * @author Joseph Ramsey
  */
