@@ -94,6 +94,10 @@ EdgeListGraph FasStableProducerConsumer::search() {
     }
 
     if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
+
+    if (verbose) Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
+
+    return graph;
 }
 
 std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerConsumer::searchMapOnly() {
