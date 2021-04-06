@@ -1,8 +1,9 @@
+// [[Rcpp::depends(BH)]]
 #include "GraphUtils.hpp"
 
 std::vector<std::string> GraphUtils::splitString(std::string s, const std::string& delim) {
     std::vector<std::string> tokens;
-    
+
     std::size_t find;
 
     while ((find = s.find(delim)) != std::string::npos) {
@@ -70,4 +71,147 @@ EdgeListGraph GraphUtils::undirectedGraph(EdgeListGraph& graph) {
     }
 
     return graph2;
+}
+
+std::unordered_set<Variable*> GraphUtils::possibleDsep(Variable* x, Variable* y, EdgeListGraph& graph, int maxPathLength) {
+    std::unordered_set<Variable*> dsep;
+
+    std::queue<boost::optional<std::pair<Variable*,Variable*>>> Q;
+    std::unordered_set<std::pair<Variable*,Variable*>, boost::hash<std::pair<Variable*, Variable*> > > V;
+
+    std::unordered_map<Variable*, std::vector<Variable*>> previous;
+    std::vector<Variable*> null_vector = {};
+    previous.insert(std::pair(x, null_vector));
+
+    boost::optional<std::pair<Variable*,Variable*>> e = {};
+    int distance = 0;
+
+    for (Variable* b : graph.getAdjacentNodes(x)) {
+        if (b == y) {
+            continue;
+        }
+        boost::optional<std::pair<Variable*,Variable*> > edge = std::pair<Variable*,Variable*>(x, b);
+        if (!e) {
+            e = edge;
+        }
+        Q.push(edge);
+        V.insert(*edge);
+        addToList(previous, b, x);
+        dsep.insert(b);
+    }
+    while (!Q.empty()) {
+        boost::optional<std::pair<Variable*, Variable*> > t = Q.front();
+        Q.pop();
+
+        if (e == t) {
+            e = {};
+            distance++;
+            if (distance > 0 && distance > (maxPathLength == -1 ? 1000 : maxPathLength)) {
+                break;
+            }
+        }
+
+        Variable* a = t->first;
+        Variable* b = t->second;
+        if (existOnePathWithPossibleParents(previous, b, x, b, graph)) {
+            dsep.insert(b);
+        }
+
+        for (Variable* c : graph.getAdjacentNodes(b)) {
+            if (c == a) {
+                continue;
+            }
+            if (c == x) {
+                continue;
+            }
+            if (c == y) {
+                continue;
+            }
+
+            addToList(previous, b, c);
+
+            if (graph.isDefCollider(a, b, c) || graph.isAdjacentTo(a, c)) {
+                boost::optional<std::pair<Variable*, Variable*> > u = std::pair<Variable*, Variable*>(a,c);
+                if (std::count(V.begin(), V.end(), *u) != 0) {
+                    continue;
+                }
+
+                V.insert(*u);
+                Q.push(u);
+
+                if (!e) {
+                    e = u;
+                }
+            }
+        }
+    }
+    dsep.erase(x);
+    dsep.erase(y);
+    return dsep;
+}
+
+void GraphUtils::addToList(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* b, Variable* c) {
+    std::vector<Variable*> list = previous[c];
+
+    if (list.empty()) {
+        std::vector<Variable*> null_list = {};
+        list = null_list;
+    }
+
+    list.push_back(b);
+}
+
+bool GraphUtils::existOnePathWithPossibleParents(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* w, Variable* x, Variable* b, EdgeListGraph& graph) {
+    if (w == x) {
+        return true;
+    }
+    const std::vector<Variable*> p = previous[w];
+    if (p.empty()) {
+        return false;
+    }
+
+    for (Variable* r : p) {
+        if (r == b || r == x) {
+            continue;
+        }
+
+        if ((existsSemidirectedPath(r, x, graph))
+                || existsSemidirectedPath(r, b, graph)) {
+            if (existOnePathWithPossibleParents(previous, r, x, b, graph)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool GraphUtils::existsSemidirectedPath(Variable* from, Variable* to, EdgeListGraph& G) {
+    std::queue<Variable*> Q;
+
+    std::unordered_set<Variable*> V;
+    Q.push(from);
+    V.insert(from);
+
+    while (!Q.empty()) {
+        Variable* t = Q.front();
+        Q.pop();
+        if (t == to) {
+            return true;
+        }
+        for (Variable* u : G.getAdjacentNodes(t)) {
+            Edge edge = G.getEdge(t, u);
+            Variable* c = Edge::traverseSemiDirected(t, edge);
+
+            if (c == NULL) {
+                continue;
+            }
+            if (std::count(V.begin(), V.end(), c) != 0) {
+                continue;
+            }
+
+            V.insert(c);
+            Q.push(c);
+        }
+    }
+    return false;
 }
