@@ -1,20 +1,22 @@
 #include "STEPS.hpp"
 
 EdgeListGraph STEPS::runStepsPar() {
-    std::sort(lambda.begin(), lambda.end());
+
+    // Sort in descending order
+    std::sort(lambda.begin(), lambda.end(), std::greater<double>());
 
     int currIndex = 0;
     double CC = -1;
     double CD = -1;
     double DD = -1;
-    double CCMax = 100;
+    double CCMax = 0;
     double CCMaxI = -1;
-    double CDMax = 100;
+    double CDMax = 0;
     double CDMaxI = -1;
-    double DDMax = 100;
+    double DDMax = 0;
     double DDMaxI = -1;
     double oneLamb = -1;
-    double allMax = 100;
+    double allMax = 0;
     double allMaxI = -1;
     int p = 0;
     int q = 0;
@@ -72,14 +74,7 @@ EdgeListGraph STEPS::runStepsPar() {
 
         double allDestable = ccDestable + cdDestable + ddDestable;
         allDestable = allDestable / (numCC + numCD + numDD);
-        if (allDestable <= gamma && oneLamb == -1) {
-            oneLamb = lambda[currIndex];
-        }
-        if (allDestable <= allMax) {
-            allMax = allDestable;
-            allMaxI = lambda[currIndex];
-        }
-
+	
         ccDestable = ccDestable / numCC;
         cdDestable = cdDestable / numCD;
         ddDestable = ddDestable / numDD;
@@ -88,21 +83,31 @@ EdgeListGraph STEPS::runStepsPar() {
 				 << ":  {" << ccDestable << ", " << cdDestable << ", "
 				 << ddDestable << "}" << std::endl;
 
-        if (ccDestable <= gamma && CC == -1)
-            CC = lambda[currIndex];
-        if (cdDestable <= gamma && CD == -1)
-            CD = lambda[currIndex];
-        if (ddDestable <= gamma && DD == -1)
-            DD = lambda[currIndex];
-        if (ccDestable <= CCMax) {
+	if (allDestable >= gamma && oneLamb == -1 && currIndex > 0) {
+	    oneLamb = lambda[currIndex-1];
+        }
+	
+        if (allDestable >= allMax) {
+            allMax = allDestable;
+            allMaxI = lambda[currIndex];
+        }
+
+        if (ccDestable >= gamma && CC == -1 && currIndex > 0)
+            CC = lambda[currIndex-1];
+        if (cdDestable >= gamma && CD == -1 && currIndex > 0)
+            CD = lambda[currIndex-1];
+        if (ddDestable >= gamma && DD == -1 && currIndex > 0)
+            DD = lambda[currIndex-1];
+	
+        if (ccDestable >= CCMax) {
             CCMax = ccDestable;
             CCMaxI = lambda[currIndex];
         }
-        if (cdDestable <= CDMax) {
+        if (cdDestable >= CDMax) {
             CDMax = cdDestable;
             CDMaxI = lambda[currIndex];
         }
-        if (ddDestable <= DDMax) {
+        if (ddDestable >= DDMax) {
             DDMax = ddDestable;
             DDMaxI = lambda[currIndex];
         }
@@ -130,12 +135,12 @@ EdgeListGraph STEPS::runStepsPar() {
 
     MGM m(d, lambda);
     m.learnEdges(iterLimit);
+
     if (computeStabs) {
-        arma::mat stabs;
         if (leaveOneOut) {
-            stabs = StabilityUtils::stabilitySearchPar(d, lambda);
+            stabilities = StabilityUtils::stabilitySearchPar(d, lambda);
         } else {
-            stabs = StabilityUtils::stabilitySearchPar(d, lambda, N, b);
+            stabilities = StabilityUtils::stabilitySearchPar(d, lambda, N, b);
         }
     }
     lastLambda = lambda;

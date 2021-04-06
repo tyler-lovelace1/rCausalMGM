@@ -4,7 +4,6 @@
 #include "IndTestMulti.hpp"
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
-#include "IndependenceTestRandom.hpp"
 #include "PcStable.hpp"
 #include "CpcStable.hpp"
 #include "PcMax.hpp"

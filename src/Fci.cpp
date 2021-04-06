@@ -54,12 +54,12 @@ EdgeListGraph Fci::search() {
 
 EdgeListGraph Fci::search(const std::vector<Variable*>& nodes) {
     FasStableProducerConsumer fas(initialGraph, test);
-    
+
     return search(fas, nodes);
 }
 
 EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
-    if (verbose) Rcpp::Rcout << "Starting FCI algorithm" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FCI Stable algorithm" << std::endl;
 
     whyOrient = std::unordered_map<std::string, std::string>();
 
@@ -79,6 +79,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
+          if (verbose) Rcpp::Rcout << "Starting Posssible DSep search" << std::endl;
           // SepsetsSet ssset(sepsets, test);
           // FciOrient orienter(&ssset);
 
@@ -103,7 +104,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new FciOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
-
+    if (verbose) Rcpp::Rcout << "Starting Orientations" << std::endl;
     SepsetsSet sepsetsset_(sepsets, test);
     FciOrient fciorient_(&sepsetsset_, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
@@ -111,6 +112,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     // fciOrient.setKnowledge(knowledge);
     fciorient_.ruleR0(graph);
     fciorient_.doFinalOrientation(graph);
+    if (verbose) Rcpp::Rcout << "FCI Stable algorithm finished" << std::endl;
     return graph;
 }
 

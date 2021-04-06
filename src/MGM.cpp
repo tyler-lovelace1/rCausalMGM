@@ -919,6 +919,14 @@ EdgeListGraph MGM::graphFromMGM() {
         }
     }
 
+    // Set algorithm and type
+    std::ostringstream alg;
+    alg << "MGM: lambda = [" 
+        << lambda(0) << ", " << lambda(1) << ", " << lambda(2) << "]";
+
+    g.setAlgorithm(alg.str());
+    g.setGraphType("undirected");
+
     return g;
 }
 

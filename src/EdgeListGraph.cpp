@@ -8,7 +8,6 @@
 #include <iostream>
 #include <cctype>
 
-
 // Used by constructors
 void EdgeListGraph::initNamesHash() {
     for (Variable* node: nodes) {
@@ -59,9 +58,9 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     // }
 
     namesHash = graph.namesHash;
-
+    algorithm = graph.algorithm;
+    graph_type = graph.graph_type;
 }
-
 EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     if (!validateGraphList(list)) {
         throw std::invalid_argument("ERROR: list is not in the form of a graph");
@@ -91,6 +90,12 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     for (std::string tripleString : tripleStrings) {
         ambiguousTriples.insert(tripleFromString(tripleString));
     }
+
+    std::vector<std::string> a = list["algorithm"];
+    algorithm = a[0];
+
+    std::vector<std::string> t = list["type"];
+    graph_type = t[0];
 }
 
 /**
@@ -520,6 +525,182 @@ Triple EdgeListGraph::tripleFromString(std::string tripleString) {
     );
 }
 
+bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
+    std::vector<std::string> lclass = l.attr("class");
+    if (lclass[0] != "graph") return false;
+
+    std::vector<std::string> names = l.names();
+
+    if (names.size() != 7)               return false;
+    if (names[0] != "nodes")             return false;
+    if (names[1] != "edges")             return false;
+    if (names[2] != "ambiguous_triples") return false;
+    if (names[3] != "algorithm")         return false;
+    if (names[4] != "type")              return false;
+    if (names[5] != "markov.blankets")   return false;
+    if (names[6] != "stabilities")       return false;
+
+    return true;
+}
+
+/**
+ * Calculate markov blankets for undirected graph
+ * For a node x, all neighbors of x are in the Markov Blanket of x
+ */
+Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
+    std::vector<std::string> nodes = graph["nodes"];
+    std::vector<std::string> edges = graph["edges"];
+
+    std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
+
+    for (std::string n : nodes) {
+        blankets[n] = std::unordered_set<std::string>();
+    }
+
+    // Get blankets
+    for (std::string edgeString : edges) {
+        std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
+
+        std::string n1 = e[0];
+        std::string n2 = e[2];
+
+        blankets[n1].insert(n2);
+        blankets[n2].insert(n1);
+    }
+
+    // Convert to list
+    Rcpp::List result = Rcpp::List::create();
+
+    for (std::string n : nodes) {
+        result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
+    }
+
+    return result;
+}
+
+
+/**
+ * Calculate markov blankets for Markov Equivalence Class graphs
+ *
+ * Updated rules for how to handle Markov blankets in PDAGs (Partially Directed Acyclic Graphs):
+ * 1. Parents of target node
+ * 2. Children of target node
+ * 3. Spouses of target node
+ * 4. If the target variable X has an undirected edge to Y, then Y and its directed parents
+ *    are in the Markov blanket.
+ * 5. If the target variable X has an undirected edge to Y, we do not include any node Z
+ *    connected to Y by an undirected edge. This can be explained because in the Markov
+ *    equivalence class, two consecutive undirected edges X --- Y --- Z can be either
+ *    X --> Y --> Z, X <-- Y <-- Z, or X <-- Y --> Z. In none of these cases is Z a parent of Y.
+ * 6. In the case where the target variable X is a parent of node Y that contains an
+ *    undirected edge to a node Z, then Y, Z, and any directed parents W of Z are included
+ *    in the Markov blanket.
+ *
+ */
+Rcpp::List markovBlanketMAC(const Rcpp::List& graph) {
+    std::vector<std::string> nodes = graph["nodes"];
+    std::vector<std::string> edges = graph["edges"];
+
+    std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
+    std::unordered_map<std::string, std::unordered_set<std::string>> undirectedNeighbors;
+    std::unordered_map<std::string, std::unordered_set<std::string>> parents;
+    std::unordered_map<std::string, std::unordered_set<std::string>> children;
+
+    for (std::string n : nodes) {
+        blankets[n] = std::unordered_set<std::string>();
+        undirectedNeighbors[n] = std::unordered_set<std::string>();
+        parents[n] = std::unordered_set<std::string>();
+        children[n] = std::unordered_set<std::string>();
+    }
+
+    // Get neighbors of every node
+    for (std::string edgeString : edges) {
+        std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
+
+        std::string n1 = e[0];
+        std::string n2 = e[2];
+        std::string edge = e[1];
+
+        if (edge == "---") {
+            undirectedNeighbors[n1].insert(n2);
+            undirectedNeighbors[n2].insert(n1);
+        } else if (edge == "-->") {
+            children[n1].insert(n2);
+            parents[n2].insert(n1);
+        } else if (edge == "<->") {
+            children[n1].insert(n2);
+            parents[n2].insert(n1);
+
+            children[n2].insert(n1);
+            parents[n1].insert(n2);
+        }
+
+    }
+
+    // Get blankets of every node
+    for (std::string target : nodes) {
+        std::unordered_set<std::string> rule1(parents[target]);
+
+        std::unordered_set<std::string> rule2(children[target]);
+
+        std::unordered_set<std::string> rule3;
+        for (std::string child : children[target]) {
+            rule3.insert(parents[child].begin(), parents[child].end());
+        }
+
+        std::unordered_set<std::string> rule4(undirectedNeighbors[target]);
+        for (std::string Y : undirectedNeighbors[target]) {
+            rule4.insert(parents[Y].begin(), parents[Y].end());
+        }
+
+        std::unordered_set<std::string> rule6;
+        for (std::string Y : children[target]) {
+            for (std::string Z : undirectedNeighbors[Y]) {
+                rule6.insert(Z);
+                rule6.insert(parents[Z].begin(), parents[Z].end()); // W
+            }
+        }
+
+        blankets[target].insert(rule1.begin(), rule1.end());
+        blankets[target].insert(rule2.begin(), rule2.end());
+        blankets[target].insert(rule3.begin(), rule3.end());
+        blankets[target].insert(rule4.begin(), rule4.end());
+        blankets[target].insert(rule6.begin(), rule6.end());
+        blankets[target].erase(target);
+    }
+
+    // Convert to list
+    Rcpp::List result = Rcpp::List::create();
+
+    for (std::string n : nodes) {
+        result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
+    }
+
+    return result;
+}
+
+// NOTE - This function does not need to be exported (because it is called as a helper automatically every
+// time a graph is returned) but it could be later by adding "//[[Rcpp::export]]" to the bottom
+//' Caclulate the Markov Blanket for every node in the graph.
+//' This is done by default whenever a graph is returned from an algorithm,
+//' but it can also be used for graphs loaded from files or adj. mats.
+//'
+//' @param list The graph object
+//' @export
+//' @examples
+//' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
+//' nodes <- c("X1", "X2", "X3", "X4")
+//' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
+//' g[["markov.blankets"]] <- rCausalMGM::calculateMarkovBlankets(g)
+Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
+    if (!EdgeListGraph::validateGraphList(graph)) {
+        throw std::invalid_argument("ERROR: list is not in the form of a graph");
+    }
+
+    if (graph["type"] == "undirected") return markovBlanketUndirected(graph);
+    else                               return markovBlanketMAC(graph);
+}
+
 bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
     for (Edge edge : getEdges(node1)) {
         Variable* sub = Edge::traverseDirected(node1, edge);
@@ -531,7 +712,6 @@ bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
 
     return false;
 }
-
 
 /**
  * Nodes adjacent to the given node with the given proximal endpoint.
@@ -545,7 +725,7 @@ std::vector<Variable*> EdgeListGraph::getNodesInTo(Variable* node, Endpoint endp
             nodes.push_back(edge1.getDistalNode(node));
         }
     }
-    
+
     return nodes;
 }
 
@@ -584,7 +764,7 @@ std::unordered_set<Variable*> EdgeListGraph::getAncestors(std::vector<Variable*>
     return ancestors;
 }
 
-void EdgeListGraph::collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> ancestors) {
+void EdgeListGraph::collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> &ancestors) {
     if (std::find(ancestors.begin(), ancestors.end(), node) != ancestors.end()) return;
 
     ancestors.insert(node);
@@ -636,11 +816,20 @@ Rcpp::List EdgeListGraph::toList() {
         ambiguousTriplesStrings.push_back(t.toString());
     }
 
-    return Rcpp::List::create(
+    Rcpp::List result = Rcpp::List::create(
         Rcpp::_["nodes"] = nodeNames,
         Rcpp::_["edges"] = edgeStrings,
-        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings
+        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
+        Rcpp::_["algorithm"] = algorithm,
+        Rcpp::_["type"] = graph_type,
+        Rcpp::_["markov.blankets"] = R_NilValue,
+        Rcpp::_["stabilities"] = R_NilValue
     );
+
+    result.attr("class") = "graph";
+    result["markov.blankets"] = calculateMarkovBlankets(result);
+
+    return result;
 
 }
 
@@ -682,15 +871,53 @@ std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
     return os;
 }
 
-bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
-    std::vector<std::string> names = l.names();
+// Helper
+void streamGraph(const Rcpp::List& list, std::ostream& os) {
+    os << "Graph Nodes:\n";
 
-    if (names.size() != 3) return false;
-    if (names[0] != "nodes") return false;
-    if (names[1] != "edges") return false;
-    if (names[2] != "ambiguous_triples") return false;
+    // Nodes
+    std::vector<std::string> nodeNames = list["nodes"];
+    int count = 0;
+    for (std::string nodeName : nodeNames) {
+        count++;
+        os << nodeName;
+        if (count < nodeNames.size()) {
+            os << ",";
+        }
+    }
 
-    return true;
+    os << "\n\n";
+
+    // Edges
+    os << "Graph Edges:\n";
+    std::vector<std::string> edgeStrings = list["edges"];
+    count = 1;
+    for (std::string edgeString : edgeStrings) {
+        os << count << ". " << edgeString << "\n";
+        count++;
+    }
+
+    os << "\n";
+
+    // Algorithm
+    std::vector<std::string> algorithms = list["algorithm"];
+    os << "Algorithm: " << algorithms[0] << "\n";
+
+    // Type
+    std::vector<std::string> t = list["type"];
+    os << "Type: " << t[0];
+
+    os << "\n\n";
+
+    //Triples
+    std::vector<std::string> tripleStrings = list["ambiguous_triples"];
+    if (tripleStrings.size() > 0) {
+        os << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
+
+        for (std::string tripleString : tripleStrings) {
+            os << tripleString << "\n";
+        }
+    }
 }
 
 //' Save a graph to a file
@@ -699,8 +926,8 @@ bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
 //' @param filename The graph file
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
-//' g <- rCausalMGM::mgm(df)
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm(data.n100.p25)
 //' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 // [[Rcpp::export]]
 void saveGraph(const Rcpp::List& list, const std::string& filename) {
@@ -711,54 +938,17 @@ void saveGraph(const Rcpp::List& list, const std::string& filename) {
     std::ofstream outfile;
     outfile.open(filename, std::ios::out);
 
-    outfile << "Graph Nodes:\n";
-
-    // Nodes
-    std::vector<std::string> nodeNames = list["nodes"];
-    int count = 0;
-    for (std::string nodeName : nodeNames) {
-        count++;
-        outfile << nodeName;
-        if (count < nodeNames.size()) {
-            outfile << ",";
-        }
-    }
-
-    outfile << "\n\n";
-
-    // Edges
-    outfile << "Graph Edges:\n";
-    std::vector<std::string> edgeStrings = list["edges"];
-    count = 1;
-    for (std::string edgeString : edgeStrings) {
-        outfile << count << ". " << edgeString << "\n";
-        count++;
-    }
-
-    outfile << "\n\n";
-
-    //Triples
-    std::vector<std::string> tripleStrings = list["ambiguous_triples"];
-    if (tripleStrings.size() > 0) {
-        outfile << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
-
-        for (std::string tripleString : tripleStrings) {
-            outfile << tripleString << "\n";
-        }
-    }
-
+    streamGraph(list, outfile);
 
     outfile.close();
 }
 
-//TODO - should we include the text format of graphs? Where?
+//TODO - Include example graphs and example use of loadGraph()
 //' Load a graph from a file
 //'
 //' @param filename The graph file
 //' @return The graph as a List object, which can be passed into search functions
 //' @export
-//' @examples
-//' g <- rCausalMGM::loadGraph("graphs/graph0.txt")
 // [[Rcpp::export]]
 Rcpp::List loadGraph(const std::string& filename) {
     // Get lines from file
@@ -768,7 +958,7 @@ Rcpp::List loadGraph(const std::string& filename) {
 
         if(!f) {
             Rcpp::Rcout << "ERROR: Cannot open " << filename << std::endl;
-            exit(1);
+            throw std::invalid_argument("Error opening file: " + filename);
         }
         std::string line;
 
@@ -779,8 +969,8 @@ Rcpp::List loadGraph(const std::string& filename) {
         }
     }
     catch(const std::exception& ex) {
-        std::cerr << "Exception: '" << ex.what() << "'!" << std::endl;
-        exit(1);
+        Rcpp::Rcout << "Exception: '" << ex.what() << "'!" << std::endl;
+        throw std::invalid_argument("Error reading file: " + filename);
     }
 
     std::vector<std::string>   nodeNames = GraphUtils::splitString(lines[1], ";");
@@ -789,6 +979,8 @@ Rcpp::List loadGraph(const std::string& filename) {
 
     std::vector<std::string> edgeStrings;
     std::vector<std::string> ambiguousTriplesStrings;
+    std::string algorithm = "";
+    std::string graph_type = "";
 
     // Start the line after you read 'Graph Edges:'
     // auto edgeStart = std::find(lines.begin(), lines.end(), "Graph Edges:");
@@ -811,6 +1003,16 @@ Rcpp::List loadGraph(const std::string& filename) {
 
         for (; i < lines.size(); i++) {
             std::string edgeString = lines[i];
+
+            if (edgeString.find("Algorithm: ") != std::string::npos) {
+                algorithm = edgeString.substr(11);
+                continue;
+            }
+
+            if (edgeString.find("Type: ") != std::string::npos) {
+                graph_type = edgeString.substr(6);
+                continue;
+            }
 
             if (edgeString.find("Ambiguous triples") != std::string::npos) {
                 i++;
@@ -863,13 +1065,33 @@ Rcpp::List loadGraph(const std::string& filename) {
     }
 
     END:
-    return Rcpp::List::create(
+    Rcpp::List result = Rcpp::List::create(
         Rcpp::_["nodes"] = nodeNames,
         Rcpp::_["edges"] = edgeStrings,
-        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings
+        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
+        Rcpp::_["algorithm"] = algorithm,
+        Rcpp::_["type"] = graph_type,
+        Rcpp::_["markov.blankets"] = R_NilValue,
+        Rcpp::_["stabilities"] = R_NilValue
     );
+
+    result.attr("class") = "graph";
+    result["markov.blankets"] = calculateMarkovBlankets(result);
+
+    return result;
 }
 
+//' Convert an adjacency matrix into a graph
+//'
+//' @param adj The adjacency matrix, NxN
+//' @param nodes The names of the nodes, length N
+//' @param directed TRUE if the graph should be directed, default FALSE
+//' @return The graph representation of the adjacency list
+//' @export
+//' @examples
+//' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
+//' nodes <- c("X1", "X2", "X3", "X4")
+//' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
 // [[Rcpp::export]]
 Rcpp::List adjMat2Graph(arma::mat adj,
 		  Rcpp::StringVector nodes,
@@ -917,34 +1139,25 @@ Rcpp::List adjMat2Graph(arma::mat adj,
 	}
     }
 
-    return g.toList();
+    Rcpp::List result = g.toList();
 
-    /*
-    return Rcpp::List::create(
-        Rcpp::_["nodes"] = nodeNames,
-        Rcpp::_["edges"] = edgeStrings,
-        Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings
-    );
-    */
+    // Delete variables
+    for (Variable * v : g.getNodes()) {
+        delete v;
+    }
+
+    return result;
 }
 
-// TODO - This function shouldn't need df
 //' Display a graph object as text
 //'
 //' @param graph The graph object
-//' @param df The dataframe containing the variables used by the graph
 //' @export
 //' @examples
-//' df <- read.table("data/data0.txt", header=T)
-//' g <- rCausalMGM::mgm(df)
-//' rCausalMGM::printGraph(g, df)
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm(data.n100.p25)
+//' rCausalMGM::printGraph(g)
 // [[Rcpp::export]]
-void printGraph(const Rcpp::List& graph, const Rcpp::DataFrame& df) {
-    DataSet ds(df, 5);
-    EdgeListGraph g(graph, ds);
-
-    Rcpp::Rcout << g << std::endl;
-
-    ds.deleteVariables();
-
+void printGraph(const Rcpp::List& graph) {
+    streamGraph(graph, Rcpp::Rcout);
 }

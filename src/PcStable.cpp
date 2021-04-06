@@ -81,6 +81,12 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
     rules.setAggressivelyPreventCycles(aggressivelyPreventCycles);
     rules.orientImplied(graph);
 
+    // Set algorithm and type
+    std::ostringstream alg;
+    alg << "PcStable: alpha = " << independenceTest->getAlpha();
+    graph.setAlgorithm(alg.str());
+    graph.setGraphType("markov equivalence class");
+
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     // Rcpp::Rcout << "Returning this graph: " << graph << std::endl;

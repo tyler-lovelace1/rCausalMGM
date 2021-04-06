@@ -14,7 +14,6 @@ OrientCollidersMaxP::OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *
 
     this->graph = graph;
 
-    Rcpp::Rcout << "OCMP paralellism = " << parallelism << std::endl;
     if (parallelism == 0) {
         parallelism = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
@@ -305,7 +304,7 @@ void OrientCollidersMaxP::addColliders() {
             colliderList.push_back(pair.first);
 
             // Print scores
-            Rcpp::Rcout << pair.first << " score = " << pair.second << std::endl;
+            // Rcpp::Rcout << pair.first << " score = " << pair.second << std::endl;
         }
     }
 

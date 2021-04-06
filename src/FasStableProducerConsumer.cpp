@@ -3,7 +3,7 @@
 #include "ChoiceGenerator.hpp"
 #include "GraphUtils.hpp"
 
-FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test)
+FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test) 
 {
     this->initialGraph = initialGraph;
     this->test = test;
@@ -16,7 +16,7 @@ FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph
     }
 }
 
-FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE)
+FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
 {
     this->test = test;
     this->nodes = test->getVariables();
@@ -208,7 +208,7 @@ void FasStableProducerConsumer::consumerDepth0() {
         } else if (!forbiddenEdge) {
             adjacencies[task.x].insert(task.y);
             adjacencies[task.y].insert(task.x);
-        }
+        } 
         adjacencyLock.unlock();
     }
 }
@@ -268,7 +268,7 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
 
                 for (choice = cg.next(); choice != NULL; choice = cg.next()) {
                     std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
-
+                    
                     taskQueue.push(IndependenceTask(x, y, condSet));
                 }
             }

@@ -76,7 +76,8 @@ DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete)
                 }
                 else
                 {
-                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of variable " + curName);
+                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of continuous variable " + curName + 
+                        " (HINT: If this variable is intended to be discrete, consider raising the maxDiscrete parameter)");
                 }
             }
             else if (variables[i]->isDiscrete())
@@ -87,7 +88,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete)
                 }
                 else
                 {
-                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of variable " + curName);
+                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of discrete variable " + curName);
                 }
             }
             else
@@ -135,10 +136,8 @@ DataSet::~DataSet() {}
 
 // WARNING: only call when done with an R-exposed function
 void DataSet::deleteVariables() {
-    for (int i = 0; i < variables.size(); i++) {
-        Rcpp::Rcout << variables[i]->getName() << "\n";
+    for (int i = 0; i < variables.size(); i++)
         delete variables[i];
-    }
 }
 
 
@@ -165,7 +164,7 @@ DataSet::DataSet(DataSet& ds) {
   this->name2idx = ds.name2idx;
   this->var2idx = ds.var2idx;
   this->data = ds.data;
-
+  
   // this->maxDiscrete=ds.maxDiscrete;
   // this->m = ds.m;
   // this->n = ds.n;
@@ -186,7 +185,7 @@ DataSet::DataSet(DataSet& ds) {
   //   // Rcpp::Rcout << this->variables[j]->getName() << std::endl;
   //   name2idx.insert(std::pair<std::string, int>(this->variableNames[j], j));
   //   var2idx.insert(std::pair<Variable*, int>(this->variables[j], j));
-
+    
   //   for (int i = 0; i < this->n; i++) {
   //     this->data(i,j) = ds.data(i,j);
   //   }
@@ -213,7 +212,7 @@ DataSet& DataSet::operator=(DataSet& ds) {
   this->name2idx = ds.name2idx;
   this->var2idx = ds.var2idx;
   this->data = ds.data;
-
+  
   // this->maxDiscrete=ds.maxDiscrete;
   // this->m = ds.m;
   // this->n = ds.n;
@@ -233,7 +232,7 @@ DataSet& DataSet::operator=(DataSet& ds) {
 
   //   name2idx.insert(std::pair<std::string, int>(this->variableNames.at(j), j));
   //   var2idx.insert(std::pair<Variable*, int>(this->variables.at(j), j));
-
+    
   //   for (int i = 0; i < this->n; i++) {
   //     this->data.at(i,j) = ds.data.at(i,j);
   //   }
@@ -250,10 +249,10 @@ DataSet::DataSet(DataSet&& ds) {
   this->name2idx = ds.name2idx;
   this->var2idx = ds.var2idx;
   this->data = ds.data;
-
+  
   // this->variables.clear();
   // this->var2idx.clear();
-
+  
   // for (int j = 0; j < this->m; j++) {
   //   if (ds.variables.at(j)->isDiscrete())
   //     this->variables.push_back(new DiscreteVariable(*((DiscreteVariable*)ds.variables.at(j))));
@@ -262,7 +261,7 @@ DataSet::DataSet(DataSet&& ds) {
 
   //   var2idx.insert(std::pair<Variable*, int>(this->variables.at(j), j));
   // }
-
+  
 }
 
 DataSet& DataSet::operator=(DataSet&& ds) {
@@ -277,7 +276,7 @@ DataSet& DataSet::operator=(DataSet&& ds) {
 
   // this->variables.clear();
   // this->var2idx.clear();
-
+  
   // for (int j = 0; j < this->m; j++) {
   //   if (ds.variables.at(j)->isDiscrete())
   //     this->variables.push_back(new DiscreteVariable(*((DiscreteVariable*)ds.variables.at(j))));
@@ -294,7 +293,7 @@ std::vector<Variable *> DataSet::getContinuousVariables() {
     for (int i = 0; i < m; i++) {
         if (variables[i]->isContinuous())
             result.push_back(variables[i]);
-    }
+    }  
 
     return result;
 }
@@ -305,7 +304,7 @@ std::vector<Variable *> DataSet::getDiscreteVariables() {
     for (int i = 0; i < m; i++) {
         if (variables[i]->isDiscrete())
             result.push_back(variables[i]);
-    }
+    } 
 
     return result;
 }
@@ -327,7 +326,7 @@ std::vector<Variable *> DataSet::copyContinuousVariables() {
     for (int i = 0; i < m; i++) {
         if (variables[i]->isContinuous())
             result.push_back(new ContinuousVariable(*((ContinuousVariable*) variables[i])));
-    }
+    }  
 
     return result;
 }
@@ -338,7 +337,7 @@ std::vector<Variable *> DataSet::copyDiscreteVariables() {
     for (int i = 0; i < m; i++) {
         if (variables[i]->isDiscrete())
             result.push_back(new DiscreteVariable(*((DiscreteVariable*) variables[i])));
-    }
+    } 
 
     return result;
 }
@@ -376,33 +375,32 @@ std::vector<int> DataSet::getDiscLevels() {
     return result;
 }
 
-// [[Rcpp::export]]
-void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5)
-{
-    DataSet ds = DataSet(df, maxDiscrete);
-    Rcpp::Rcout << ds;
+// void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5)
+// {
+//     DataSet ds = DataSet(df, maxDiscrete);
+//     Rcpp::Rcout << ds;
 
-    ds.addVariable(new ContinuousVariable("Y1"));
+//     ds.addVariable(new ContinuousVariable("Y1"));
 
-    Rcpp::Rcout << ds;
+//     Rcpp::Rcout << ds;
 
-    int col = ds.getColumn(ds.getVariable("Y1"));
-    for (int i = 0; i < ds.getNumRows(); i++)
-        ds.set(i, col, ((double)i) / 100.0);
+//     int col = ds.getColumn(ds.getVariable("Y1"));
+//     for (int i = 0; i < ds.getNumRows(); i++)
+//         ds.set(i, col, ((double)i) / 100.0);
 
-    Rcpp::Rcout << ds;
+//     Rcpp::Rcout << ds;
 
-    col = 3;
-    ds.addVariable(col, new DiscreteVariable("Y2", 4));
+//     col = 3;
+//     ds.addVariable(col, new DiscreteVariable("Y2", 4));
 
-    Rcpp::Rcout << ds;
+//     Rcpp::Rcout << ds;
 
-    col = ds.getColumn(ds.getVariable("Y2"));
-    for (int i = 0; i < ds.getNumRows(); i++)
-        ds.set(i, col, i % 4);
+//     col = ds.getColumn(ds.getVariable("Y2"));
+//     for (int i = 0; i < ds.getNumRows(); i++)
+//         ds.set(i, col, i % 4);
 
-    Rcpp::Rcout << ds;
-}
+//     Rcpp::Rcout << ds;
+// }
 
 std::ostream &operator<<(std::ostream &os, DataSet &ds)
 {
@@ -431,3 +429,4 @@ std::ostream &operator<<(std::ostream &os, DataSet &ds)
 
     return os;
 }
+
