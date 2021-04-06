@@ -81,7 +81,7 @@ std::unordered_set<Variable*> GraphUtils::possibleDsep(Variable* x, Variable* y,
 
     std::unordered_map<Variable*, std::vector<Variable*>> previous;
     std::vector<Variable*> null_vector = {};
-    previous.insert(std::pair(x, null_vector));
+    previous.insert(std::pair<Variable*, std::vector<Variable*>>(x, null_vector));
 
     boost::optional<std::pair<Variable*,Variable*>> e = {};
     int distance = 0;
