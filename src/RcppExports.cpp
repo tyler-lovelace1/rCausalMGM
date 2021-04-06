@@ -128,6 +128,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fciStable
+Rcpp::List fciStable(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_fciStable(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(fciStable(df, maxDiscrete, initialGraph, alpha, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
@@ -139,6 +154,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 5},
     {"_rCausalMGM_cpcStable", (DL_FUNC) &_rCausalMGM_cpcStable, 5},
     {"_rCausalMGM_pcMax", (DL_FUNC) &_rCausalMGM_pcMax, 5},
+    {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 5},
     {NULL, NULL, 0}
 };
 
