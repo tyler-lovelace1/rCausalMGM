@@ -1,15 +1,15 @@
 library(rCausalMGM)
-library(foreach)
-data(data.n100.p25)
-bs.graphs <- foreach(i = 1:100) %do% {
-    idxs <- sample(1:nrow(data.n100.p25), nrow(data.n100.p25), replace=T)
-    ig <- mgm(data.n100.p25[idxs,], lambda = c(0.15, 0.15, 0.15))
-    g <- pcMax(data.n100.p25[idxs,], initialGraph = ig)
-}
+# library(foreach)
+data(data.n1000.p100)
+# bs.graphs <- foreach(i = 1:100) %do% {
+#     idxs <- sample(1:nrow(data.n100.p25), nrow(data.n100.p25), replace=T)
+#     ig <- mgm(data.n100.p25[idxs,], lambda = c(0.15, 0.15, 0.15))
+#     g <- pcMax(data.n100.p25[idxs,], initialGraph = ig)
+# }
 
-# df <- read.table("data/data.n100.p25.txt", header=T)
-# g <- rCausalMGM::mgm(df)
-# print(g)
+ig <- mgm(data.n1000.p100)
+g <- pcMax(data.n1000.p100, initialGraph=ig)
+saveGraph(g, "../testgraph.txt")
 
 # lam.max <- max(abs(cor(df) - diag(ncol(df))))
 # lam.min <- 0.2*lam.max

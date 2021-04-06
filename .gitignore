@@ -14,3 +14,4 @@ src/.Rhistory
 R/.Rhistory
 test/.Rhistory
 test/out.log
+test.sh
