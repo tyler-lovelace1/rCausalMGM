@@ -3,6 +3,6 @@
 R CMD BATCH build.R
 # R CMD build .
 # R CMD INSTALL rCausalMGM_1.0.tar.gz
-R CMD INSTALL rCausalMGM
+R CMD INSTALL .
 
-Rscript rCausalMGM/test/test_MGM.R # > ../test_results/C++debug.txt
+Rscript test/test_MGM.R # > ../test_results/C++debug.txt
