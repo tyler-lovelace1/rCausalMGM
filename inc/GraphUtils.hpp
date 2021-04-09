@@ -1,9 +1,15 @@
 #ifndef GRAPHUTILS_HPP_
 #define GRAPHUTILS_HPP_
+// [[Rcpp::depends(BH)]]
+
+#include <thread>
 
 class EdgeListGraph; // Forward declaration
 
 #include "EdgeListGraph.hpp"
+#include <boost/functional/hash.hpp>
+#include <boost/optional.hpp>
+#include <queue>
 
 class GraphUtils {
 
@@ -11,9 +17,16 @@ private:
 
     static std::vector<Variable*> getSepsetVisit(Variable* x, Variable* y, EdgeListGraph& graph, int bound);
 
-    static bool sepsetPathFound(Variable* a, Variable* b, Variable* y, std::unordered_set<Variable*>& path, std::vector<Variable*>& z, 
+    static bool sepsetPathFound(Variable* a, Variable* b, Variable* y, std::unordered_set<Variable*>& path, std::vector<Variable*>& z,
                                 EdgeListGraph& graph, std::unordered_set<Triple>& colliders, int bound);
 
+    static void addToList(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* b, Variable* c);
+
+    static bool existOnePathWithPossibleParents(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* w,
+                                Variable* x, Variable* b, EdgeListGraph& graph);
+
+    static bool existsSemidirectedPath(Variable* from, Variable* to, EdgeListGraph& G);
+    
 public:
 
     static std::vector<std::string> splitString(std::string s, const std::string& delim);
@@ -66,6 +79,8 @@ public:
     static EdgeListGraph completeGraph(EdgeListGraph& graph);
 
     static EdgeListGraph undirectedGraph(EdgeListGraph& graph);
+
+    static std::unordered_set<Variable*> possibleDsep(Variable* x, Variable* y, EdgeListGraph& graph, int maxPathLength);
 
 };
 

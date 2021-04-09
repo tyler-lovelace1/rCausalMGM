@@ -34,12 +34,12 @@ private:
 
     /**
      * Information about the algorithm used to build the graph
-     */ 
+     */
     std::string algorithm;
 
     /**
      * undirected, true, or markov_equivalence_class
-     */ 
+     */
     std::string graph_type;
 
     /**
@@ -55,7 +55,9 @@ private:
 
     // std::unordered_map<Variable*, std::unordered_set<Variable*>> ancestors;
 
-    // void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*>& ancestors);
+    // void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> ancestors);
+    void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*>& ancestors);
+
 
     void collectDescendantsVisit(Variable* node, std::unordered_set<Variable*>& descendants);
 
@@ -114,7 +116,7 @@ public:
 
     /**
      * Makes a graph from an R list
-     */ 
+     */
     EdgeListGraph(const Rcpp::List& list, DataSet& ds);
 
     // Shallow copy isn't possible because Edges aren't stored by reference (is it neccesary?)
@@ -204,7 +206,7 @@ public:
     /**
      * @return the edge connecting node1 and node2, provided a unique such edge
      * exists.
-     * 
+     *
      * Throws std::invalid_argument if not
      */
     Edge getEdge(Variable* node1, Variable* node2);
@@ -247,6 +249,8 @@ public:
     // bool possibleAncestorSet(Variable* node1, std::vector<Variable*>& nodes2);
 
     // std::vector<Variable*> getAncestors(std::vector<Variable*>& nodes);
+    std::unordered_set<Variable*> getAncestors(std::vector<Variable*>& nodes);
+
 
     /**
      * Determines whether one node is a child of another.
@@ -401,7 +405,7 @@ public:
 
     /**
      * Add edge from string
-     */ 
+     */
     bool addEdge(std::string edgeString);
 
     /**
@@ -432,8 +436,8 @@ public:
     bool isUnderlineTriple(Variable* x, Variable* y, Variable* z) { return underLineTriples.count(Triple(x, y, z)); }
     bool isDottedUnderlineTriple(Variable* x, Variable* y, Variable* z) { return dottedUnderLineTriples.count(Triple(x, y, z)); }
 
-    void addAmbiguousTriple(Variable* x, Variable* y, Variable* z) { ambiguousTriples.insert(Triple(x, y, z)); } 
-    void addUnderlineTriple(Variable* x, Variable* y, Variable* z) { underLineTriples.insert(Triple(x, y, z)); } 
+    void addAmbiguousTriple(Variable* x, Variable* y, Variable* z) { ambiguousTriples.insert(Triple(x, y, z)); }
+    void addUnderlineTriple(Variable* x, Variable* y, Variable* z) { underLineTriples.insert(Triple(x, y, z)); }
     void addDottedUnderlineTriple(Variable* x, Variable* y, Variable* z) { dottedUnderLineTriples.insert(Triple(x, y, z)); }
 
     void removeAmbiguousTriple(Variable* x, Variable* y, Variable* z);
@@ -461,9 +465,9 @@ public:
      * @return the list of edges connected to a particular node. No particular
      * ordering of the edges in the list is guaranteed.
      */
-    std::vector<Edge> getEdges(Variable* node) { 
+    std::vector<Edge> getEdges(Variable* node) {
         // Rcpp::Rcout << "Getting edges..." << std::endl;
-        return edgeLists[node]; 
+        return edgeLists[node];
     }
 
     // TODO - hash code?
@@ -577,10 +581,10 @@ public:
     static bool validateGraphList(const Rcpp::List& l);
 
     void setAlgorithm(std::string a) { algorithm = a; }
-    std::string getAlgorithm() { return algorithm; } 
+    std::string getAlgorithm() { return algorithm; }
 
     void setGraphType(std::string t) { graph_type = t; }
-    std::string getGraphType() { return graph_type; } 
+    std::string getGraphType() { return graph_type; }
 
     /**
      * @return true iff the given object is a graph that is equal to this graph,

@@ -2,12 +2,11 @@
 
 #include "GraphUtils.hpp"
 #include <RcppArmadillo.h>
-#include <string.h> 
+#include <string.h>
 #include <fstream>
 #include <stdlib.h>
 #include <iostream>
 #include <cctype>
-
 
 // Used by constructors
 void EdgeListGraph::initNamesHash() {
@@ -62,7 +61,6 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     algorithm = graph.algorithm;
     graph_type = graph.graph_type;
 }
-
 EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     if (!validateGraphList(list)) {
         throw std::invalid_argument("ERROR: list is not in the form of a graph");
@@ -91,7 +89,7 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     std::vector<std::string> tripleStrings = list["ambiguous_triples"];
     for (std::string tripleString : tripleStrings) {
         ambiguousTriples.insert(tripleFromString(tripleString));
-    }  
+    }
 
     std::vector<std::string> a = list["algorithm"];
     algorithm = a[0];
@@ -118,7 +116,7 @@ void EdgeListGraph::transferNodesAndEdges(const EdgeListGraph& graph) {
     }
 
     for (Edge edge : graph.edgesSet) {
-        if (!addEdge(edge)) 
+        if (!addEdge(edge))
             throw std::invalid_argument("Problem copying edges");
     }
 }
@@ -189,7 +187,7 @@ bool EdgeListGraph::addEdge(Edge& edge) {
     if ((std::find(edgeList1.begin(), edgeList1.end(), edge) != edgeList1.end()) ||
         (std::find(edgeList2.begin(), edgeList2.end(), edge) != edgeList2.end()))
         return true;
-    
+
     edgeList1.push_back(edge);
     edgeList2.push_back(edge);
 
@@ -210,15 +208,15 @@ bool EdgeListGraph::addEdge(std::string edgeString) {
     Variable* node1 = getNode(edgeComponents[0]);
     Variable* node2 = getNode(edgeComponents[2]);
 
-    if (node1 == NULL) 
+    if (node1 == NULL)
         throw std::invalid_argument("Edge node not found in graph: " + edgeComponents[0]);
 
-    if (node2 == NULL) 
+    if (node2 == NULL)
         throw std::invalid_argument("Edge node not found in graph: " + edgeComponents[2]);
 
     std::string edgeMid = edgeComponents[1];
 
-    if (edgeMid.length() < 3) 
+    if (edgeMid.length() < 3)
         throw std::invalid_argument("Invalid edge: " + edgeString);
 
     char endpoint1 = edgeMid[0];
@@ -353,7 +351,7 @@ bool EdgeListGraph::removeEdge(Variable* node1, Variable* node2) {
  * Determines whether some edge or other exists between two nodes.
  */
 bool EdgeListGraph::isAdjacentTo(Variable* node1, Variable* node2) {
-    if (node1 == NULL || node2 == NULL || 
+    if (node1 == NULL || node2 == NULL ||
         edgeLists.find(node1) == edgeLists.end() ||
         edgeLists.find(node2) == edgeLists.end()) {
             return false;
@@ -381,7 +379,7 @@ bool EdgeListGraph::isUndirectedFromTo(Variable* node1, Variable* node2) {
     } catch (std::invalid_argument& e) {
         return false;
     }
-    
+
     return edge.getEndpoint1() == ENDPOINT_TAIL && edge.getEndpoint2() == ENDPOINT_TAIL;
 }
 
@@ -405,7 +403,7 @@ std::vector<Variable*> EdgeListGraph::getAdjacentNodes(Variable* node) {
 /**
  * @return the edge connecting node1 and node2, provided a unique such edge
  * exists.
- * 
+ *
  * Throws std::invalid_argument if not
  */
 Edge EdgeListGraph::getEdge(Variable* node1, Variable* node2) {
@@ -545,10 +543,10 @@ bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
     return true;
 }
 
-/** 
+/**
  * Calculate markov blankets for undirected graph
  * For a node x, all neighbors of x are in the Markov Blanket of x
- */ 
+ */
 Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
     std::vector<std::string> nodes = graph["nodes"];
     std::vector<std::string> edges = graph["edges"];
@@ -581,24 +579,24 @@ Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
 }
 
 
-/** 
+/**
  * Calculate markov blankets for Markov Equivalence Class graphs
- * 
+ *
  * Updated rules for how to handle Markov blankets in PDAGs (Partially Directed Acyclic Graphs):
  * 1. Parents of target node
  * 2. Children of target node
  * 3. Spouses of target node
- * 4. If the target variable X has an undirected edge to Y, then Y and its directed parents 
+ * 4. If the target variable X has an undirected edge to Y, then Y and its directed parents
  *    are in the Markov blanket.
- * 5. If the target variable X has an undirected edge to Y, we do not include any node Z 
- *    connected to Y by an undirected edge. This can be explained because in the Markov 
- *    equivalence class, two consecutive undirected edges X --- Y --- Z can be either 
+ * 5. If the target variable X has an undirected edge to Y, we do not include any node Z
+ *    connected to Y by an undirected edge. This can be explained because in the Markov
+ *    equivalence class, two consecutive undirected edges X --- Y --- Z can be either
  *    X --> Y --> Z, X <-- Y <-- Z, or X <-- Y --> Z. In none of these cases is Z a parent of Y.
- * 6. In the case where the target variable X is a parent of node Y that contains an 
- *    undirected edge to a node Z, then Y, Z, and any directed parents W of Z are included 
+ * 6. In the case where the target variable X is a parent of node Y that contains an
+ *    undirected edge to a node Z, then Y, Z, and any directed parents W of Z are included
  *    in the Markov blanket.
- * 
- */ 
+ *
+ */
 Rcpp::List markovBlanketMAC(const Rcpp::List& graph) {
     std::vector<std::string> nodes = graph["nodes"];
     std::vector<std::string> edges = graph["edges"];
@@ -614,7 +612,7 @@ Rcpp::List markovBlanketMAC(const Rcpp::List& graph) {
         parents[n] = std::unordered_set<std::string>();
         children[n] = std::unordered_set<std::string>();
     }
-    
+
     // Get neighbors of every node
     for (std::string edgeString : edges) {
         std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
@@ -681,7 +679,7 @@ Rcpp::List markovBlanketMAC(const Rcpp::List& graph) {
     return result;
 }
 
-// NOTE - This function does not need to be exported (because it is called as a helper automatically every 
+// NOTE - This function does not need to be exported (because it is called as a helper automatically every
 // time a graph is returned) but it could be later by adding "//[[Rcpp::export]]" to the bottom
 //' Caclulate the Markov Blanket for every node in the graph.
 //' This is done by default whenever a graph is returned from an algorithm,
@@ -701,6 +699,103 @@ Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
 
     if (graph["type"] == "undirected") return markovBlanketUndirected(graph);
     else                               return markovBlanketMAC(graph);
+}
+
+bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
+    for (Edge edge : getEdges(node1)) {
+        Variable* sub = Edge::traverseDirected(node1, edge);
+
+        if (sub == node2) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Nodes adjacent to the given node with the given proximal endpoint.
+ */
+std::vector<Variable*> EdgeListGraph::getNodesInTo(Variable* node, Endpoint endpoint) {
+    std::vector<Variable*> nodes;
+    std::vector<Edge> edges = getEdges(node);
+
+    for (Edge edge1 : edges) {
+        if (edge1.getProximalEndpoint(node) == endpoint) {
+            nodes.push_back(edge1.getDistalNode(node));
+        }
+    }
+
+    return nodes;
+}
+
+/**
+ * Nodes adjacent to the given node with the given distal endpoint.
+ */
+std::vector<Variable*> EdgeListGraph::getNodesOutTo(Variable* node, Endpoint endpoint) {
+    std::vector<Variable*> nodes;
+    std::vector<Edge> edges = getEdges(node);
+
+    for (Edge edge1 : edges) {
+        if (edge1.getDistalEndpoint(node) == endpoint) {
+            nodes.push_back(edge1.getDistalNode(node));
+        }
+    }
+
+    return nodes;
+}
+
+/**
+ * Determines whether one node is an ancestor of another.
+ */
+bool EdgeListGraph::isAncestorOf(Variable* node1, Variable* node2) {
+    std::vector<Variable*> tempList;
+    tempList.push_back(node2);
+    std::unordered_set<Variable*> ancestors = getAncestors(tempList);
+    return (std::find(ancestors.begin(), ancestors.end(), node1) != ancestors.end());
+}
+
+std::unordered_set<Variable*> EdgeListGraph::getAncestors(std::vector<Variable*>& nodes) {
+    std::unordered_set<Variable*> ancestors;
+
+    for (Variable* node1 : nodes) {
+        collectAncestorsVisit(node1, ancestors);
+    }
+    return ancestors;
+}
+
+void EdgeListGraph::collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> &ancestors) {
+    if (std::find(ancestors.begin(), ancestors.end(), node) != ancestors.end()) return;
+
+    ancestors.insert(node);
+    std::vector<Variable*> parents = getParents(node);
+
+    if (!parents.empty()) {
+        for (Variable* parent : parents) {
+            collectAncestorsVisit(parent, ancestors);
+        }
+    }
+}
+
+bool EdgeListGraph::isDefCollider(Variable* node1, Variable* node2, Variable* node3) {
+    if (!(isAdjacentTo(node1,node2) && isAdjacentTo(node2,node3))) {
+        return false;
+    }
+    Edge edge1 = getEdge(node1, node2);
+    Edge edge2 = getEdge(node2, node3);
+
+    return edge1.getProximalEndpoint(node2) == ENDPOINT_ARROW && edge2.getProximalEndpoint(node2) == ENDPOINT_ARROW;
+
+}
+
+void EdgeListGraph::reorientAllWith(Endpoint endpoint) {
+  for (Edge edge : getEdges()) {
+      Variable* a = edge.getNode1();
+      Variable* b = edge.getNode2();
+
+      setEndpoint(a, b, endpoint);
+      setEndpoint(b, a, endpoint);
+  }
 }
 
 Rcpp::List EdgeListGraph::toList() {
@@ -739,7 +834,7 @@ Rcpp::List EdgeListGraph::toList() {
 }
 
 std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
-    
+
     os << "Graph Nodes:\n";
     std::vector<Variable*> nodes = graph.getNodes();
     int size = nodes.size();
@@ -757,7 +852,7 @@ std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
     std::vector<Edge> edges = graph.getEdgeList();
     Edge::sortEdges(edges);
     count = 1;
-    
+
     for (Edge edge : edges) {
         os << count << ". " << edge << "\n";
         count++;
@@ -771,7 +866,7 @@ std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
             os << t << "\n";
         }
     }
-    
+
 
     return os;
 }
@@ -792,7 +887,7 @@ void streamGraph(const Rcpp::List& list, std::ostream& os) {
     }
 
     os << "\n\n";
-        
+
     // Edges
     os << "Graph Edges:\n";
     std::vector<std::string> edgeStrings = list["edges"];
@@ -818,7 +913,7 @@ void streamGraph(const Rcpp::List& list, std::ostream& os) {
     std::vector<std::string> tripleStrings = list["ambiguous_triples"];
     if (tripleStrings.size() > 0) {
         os << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
-        
+
         for (std::string tripleString : tripleStrings) {
             os << tripleString << "\n";
         }
@@ -870,7 +965,7 @@ Rcpp::List loadGraph(const std::string& filename) {
         while (std::getline(f,line)) {
             if (line.size() > 1 && line.at(line.size()-1) == '\r')
                 line = line.substr(0, line.size()-1);
-            lines.push_back(line);     
+            lines.push_back(line);
         }
     }
     catch(const std::exception& ex) {
@@ -895,7 +990,7 @@ Rcpp::List loadGraph(const std::string& filename) {
     // Rcpp::Rcout << "edgeStartIndex = " << edgeStartIndex << std::endl;
 
     // If there are edges
-    if (lines.size() > 4) { 
+    if (lines.size() > 4) {
 
         int i = 4; // TODO: Hardcoded for now
 
@@ -905,9 +1000,9 @@ Rcpp::List loadGraph(const std::string& filename) {
             s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
             return s == "";
         };
-        
+
         for (; i < lines.size(); i++) {
-            std::string edgeString = lines[i];            
+            std::string edgeString = lines[i];
 
             if (edgeString.find("Algorithm: ") != std::string::npos) {
                 algorithm = edgeString.substr(11);
@@ -925,7 +1020,7 @@ Rcpp::List loadGraph(const std::string& filename) {
             }
 
             if (isWhiteSpace(edgeString)) continue; // Skip empty lines
-            
+
             if (edgeString.find(". ") == std::string::npos)
                 throw std::invalid_argument("Error reading graph " + filename + ": edge is not formatted correctly: " + edgeString);
 
@@ -941,7 +1036,7 @@ Rcpp::List loadGraph(const std::string& filename) {
                 return true;
             };
 
-            if (!validateEdgeString(edgeString)) 
+            if (!validateEdgeString(edgeString))
                 throw std::invalid_argument("Error reading graph " + filename + ": edge is not formatted correctly: " + edgeString);
 
             edgeStrings.push_back(edgeString);
@@ -962,7 +1057,7 @@ Rcpp::List loadGraph(const std::string& filename) {
                 return true;
             };
 
-            if (!validateTripleString(tripleString)) 
+            if (!validateTripleString(tripleString))
                 throw std::invalid_argument("Error reading graph " + filename + ": triple is not formatted correctly: " + tripleString);
 
             ambiguousTriplesStrings.push_back(tripleString);
@@ -1003,7 +1098,7 @@ Rcpp::List adjMat2Graph(arma::mat adj,
 		  Rcpp::LogicalVector directed = Rcpp::LogicalVector::create(0) // FALSE
     ) {
     std::vector<std::string> nodeNames(nodes.begin(), nodes.end());
-    
+
     if (adj.n_rows != adj.n_cols || adj.n_rows <= 0) {
 	throw std::invalid_argument("Input adjacency matrix is invalid");
     }
