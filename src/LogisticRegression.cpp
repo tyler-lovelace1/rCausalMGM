@@ -60,7 +60,7 @@ LogisticRegression &LogisticRegression::operator=(LogisticRegression &&lr)
     return *this;
 }
 
-LogisticRegressionResult *LogisticRegression::regress(DiscreteVariable *x, std::vector<Variable *> regressors)
+LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::vector<Variable *> regressors)
 {
     // if (!binary(x)) {
     //     throw new IllegalArgumentException("Target must be binary.");
@@ -103,7 +103,7 @@ LogisticRegressionResult *LogisticRegression::regress(DiscreteVariable *x, std::
     return regress(target, x->getName(), regressors_, regressorNames);
 }
 
-LogisticRegressionResult *LogisticRegression::regress(arma::uvec target,
+LogisticRegressionResult LogisticRegression::regress(arma::uvec target,
                                                       std::string targetName, arma::mat regressors,
                                                       std::vector<std::string> regressorNames)
 {
@@ -425,9 +425,9 @@ LogisticRegressionResult *LogisticRegression::regress(arma::uvec target,
     double intercept = par[0];
     coefficients = par;
 
-    return new LogisticRegressionResult(targetName,
-                                        regressorNames, xMeans, xStdDevs, numRegressors, ny0, ny1, coefficients,
-                                        parStdErr, pValues, intercept, ll, sigMarker, chiSq, alpha);
+    return LogisticRegressionResult(targetName,
+                                    regressorNames, xMeans, xStdDevs, numRegressors, ny0, ny1, coefficients,
+                                    parStdErr, pValues, intercept, ll, sigMarker, chiSq, alpha);
 }
 
 double LogisticRegression::norm(double z)

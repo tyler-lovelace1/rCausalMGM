@@ -30,7 +30,7 @@ void FasStable::setDepth(int depth) {
  * @return a SepSet, which indicates which variables are independent conditional on which other variables
  */
 EdgeListGraph FasStable::search() {
-    Rcpp::Rcout << "Starting FasStable Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FasStable Adjacency Search." << std::endl;
 
     sepset = SepsetMap();
     sepset.setReturnEmptyIfNotSet(sepsetsReturnEmptyIfNotFixed);
@@ -70,15 +70,17 @@ EdgeListGraph FasStable::search() {
         }
     }
 
-    Rcpp::Rcout << "Finishing FasStable Adjacency Search." << std::endl;
+    if (verbose) {
+        Rcpp::Rcout << "Finishing FasStable Adjacency Search." << std::endl;
 
-    Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
+        Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
+    } 
 
     return graph;
 }
 
 std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStable::searchMapOnly() {
-    Rcpp::Rcout << "Starting FasStable Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FasStable Adjacency Search." << std::endl;
 
     graph.removeEdges(graph.getEdgeList());
 
@@ -107,7 +109,7 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStable::searchMa
         if (!more) break;
     }
 
-    Rcpp::Rcout << "Finishing FasStable Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << "Finishing FasStable Adjacency Search." << std::endl;
     return adjacencies;
 }
 

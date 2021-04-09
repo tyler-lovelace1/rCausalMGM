@@ -4,6 +4,7 @@
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
 #include "Variable.hpp"
+#include "FasStable.hpp"
 #include "FasStableProducerConsumer.hpp"
 #include "OrientCollidersMaxP.hpp"
 #include "MeekRules.hpp"

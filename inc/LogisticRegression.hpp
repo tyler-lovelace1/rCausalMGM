@@ -24,9 +24,9 @@ class LogisticRegression
     LogisticRegression& operator=(LogisticRegression& lr);
     LogisticRegression& operator=(LogisticRegression&& lr);
 
-    LogisticRegressionResult* regress(DiscreteVariable* x, std::vector<Variable*> regressors); // double regressors[][]
+    LogisticRegressionResult regress(DiscreteVariable* x, std::vector<Variable*> regressors); // double regressors[][]
 
-    LogisticRegressionResult* regress(arma::uvec target, std::string targetName, arma::mat regressors, std::vector<std::string> regressorNames); //double regressors[][]
+    LogisticRegressionResult regress(arma::uvec target, std::string targetName, arma::mat regressors, std::vector<std::string> regressorNames); //double regressors[][]
 
     double getAlpha() { return this->alpha; }
 

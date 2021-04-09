@@ -61,7 +61,7 @@ class LinearRegression
      * coefficeint, se, t, and p values, and specifying the same for the
      * constant.
      */
-     RegressionResult* regress(Variable* target, std::vector<Variable*>& regressors);
+     RegressionResult regress(Variable* target, std::vector<Variable*>& regressors);
 
      // static RegressionResult regress(double[] target, double[][] regressors) = 0;
 

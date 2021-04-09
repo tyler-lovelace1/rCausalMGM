@@ -56,7 +56,7 @@ LinearRegression &LinearRegression::operator=(LinearRegression &&lr)
     return *this;
 }
 
-RegressionResult *LinearRegression::regress(Variable *target, std::vector<Variable *> &regressors)
+RegressionResult LinearRegression::regress(Variable *target, std::vector<Variable *> &regressors)
 {
     std::ofstream logfile;
     logfile.open("../test_results/debug.log", std::ios_base::app);
@@ -185,7 +185,7 @@ RegressionResult *LinearRegression::regress(Variable *target, std::vector<Variab
     // arma::vec bArray = b.columns() == 0 ? new double[0] : b.getColumn(0).toArray(); // double check,
     //dealing with case where we dont give it anything to regess on
 
-    return new RegressionResult(regressors.size() == 0, vNames, n, b, t, p, sqErr, r2, rss_, alpha, yHat_, res_); // MUST CONVERT B INTO A VECTOR
+    return RegressionResult(regressors.size() == 0, vNames, n, b, t, p, sqErr, r2, rss_, alpha, yHat_, res_); // MUST CONVERT B INTO A VECTOR
 }
 
 double LinearRegression::rss(arma::mat x, arma::vec y, arma::vec b)
