@@ -1,0 +1,9 @@
+#include "SepsetProducerMaxP.hpp"
+
+
+
+std::vector<Variable*>  getSepset(Variable* a, Variable* b);
+
+bool isCollider(Variable* i, Variable* j, Variable* k);
+
+bool isNoncollider(Variable* a, Variable* b, Variable* c);

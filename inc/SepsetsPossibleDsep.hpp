@@ -36,7 +36,7 @@ private:
     }
 
 public:
-    SepsetsPossibleDsep(EdgeListGraph graph, IndependenceTest *test, /*IKnowledge knowledge,*/
+    SepsetsPossibleDsep(EdgeListGraph& graph, IndependenceTest *test, /*IKnowledge knowledge,*/
                                  int depth, int maxPathLength);
 
     /**

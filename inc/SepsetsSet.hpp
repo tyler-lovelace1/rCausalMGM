@@ -16,6 +16,8 @@ private:
 public:
     SepsetsSet(SepsetMap sepsets, IndependenceTest *test);
 
+    void fillMap() {}
+
     std::vector<Variable*> getSepset(Variable* a, Variable* b) { return *sepsets.get(a, b); }
 
     bool isCollider(Variable* i, Variable* j, Variable* k);
@@ -33,6 +35,8 @@ public:
     bool isVerbose() { return verbose; }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
+
+    void setDepth(int depth) { this->depth = depth; }
 
 };
 

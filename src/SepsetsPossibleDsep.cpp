@@ -1,9 +1,9 @@
 #include "SepsetsPossibleDsep.hpp"
 
-SepsetsPossibleDsep::SepsetsPossibleDsep(EdgeListGraph graph, IndependenceTest *test, /*IKnowledge knowledge,*/
-                             int depth, int maxPathLength) {
-    this->graph = graph;
-    this->test = test;
+SepsetsPossibleDsep::SepsetsPossibleDsep(EdgeListGraph& graph, IndependenceTest *test, /*IKnowledge knowledge,*/
+					 int depth, int maxPathLength) : SepsetProducer(graph, test) {
+    // this->graph = graph;
+    // this->test = test;
     this->maxPathLength = maxPathLength;
     // this.knowledge = knowledge;
     this->depth = depth;

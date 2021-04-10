@@ -1,7 +1,7 @@
 /*
- * Base class for variable specifications for DataSet.  These objects govern the
+ * Base class for variable specifications for DataSet. These objects govern the
  * types of values which may be recorded in a Column of data and provide
- * information about the interpretation of these values.  Variables of every
+ * information about the interpretation of these values. Variables of every
  * type must provide a marker which is recorded in a column of data for that
  * variable when the value is missing; this missing data marker should not be
  * used for other purposes.
