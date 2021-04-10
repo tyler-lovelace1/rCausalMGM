@@ -43,7 +43,7 @@ private:
      */
     int numIndependenceTests;
 
-    //TODO - Logger?
+    bool verbose = false;
 
     /**
      * The true graph, for purposes of comparison. Temporary.
@@ -137,6 +137,9 @@ public:
     bool isSepsetsReturnEmptyIfNotFixed() { return sepsetsReturnEmptyIfNotFixed; }
 
     void setSepsetsReturnEmptyIfNotFixed(bool sepsetsReturnEmptyIfNotFixed) { this->sepsetsReturnEmptyIfNotFixed = sepsetsReturnEmptyIfNotFixed; }
+
+    bool getVerbose() { return verbose; }
+    void setVerbose(bool v) { verbose = v; }
 
 };
 

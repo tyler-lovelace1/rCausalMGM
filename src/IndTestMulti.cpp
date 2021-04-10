@@ -224,14 +224,14 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     for (int i = 0; i < variablesPerNode.at(x).size(); i++)
     {
         Variable *varX = variablesPerNode.at(x).at(i);
-        LogisticRegressionResult *result0 = logisticRegression.regress((DiscreteVariable *)varX, zList);
-        LogisticRegressionResult *result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList);
+        LogisticRegressionResult result0 = logisticRegression.regress((DiscreteVariable *)varX, zList);
+        LogisticRegressionResult result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList);
 
-        coeffsNull.insert_cols(i, result0->getCoefs());
-        coeffsDep.insert_cols(i, result1->getCoefs());
+        coeffsNull.insert_cols(i, result0.getCoefs());
+        coeffsDep.insert_cols(i, result1.getCoefs());
 
-        delete result0;
-        delete result1;
+        // delete result0;
+        // delete result1;
     }
     /*********************************************************************/
 
@@ -493,9 +493,9 @@ bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector
 
     try
     {
-        RegressionResult *result = regression.regress(x, regressors);
-        p = result->getP().at(1); // double check on .at(1)
-        delete result;
+        RegressionResult result = regression.regress(x, regressors);
+        p = result.getP().at(1); // double check on .at(1)
+        // delete result;
     }
     catch (std::exception e)
     {
