@@ -12,8 +12,9 @@
 LinearRegression::LinearRegression(DataSet &data)
 {
     this->data = data;
-    this->variables = data.getVariables();
-    this->rows = arma::uvec(data.getNumRows());
+    dataMat = arma::mat(data.getData());
+    variables = data.getVariables();
+    rows = arma::uvec(data.getNumRows());
     for (arma::uword i = 0; i < data.getNumRows(); i++)
         rows[i] = i;
 }
@@ -21,6 +22,7 @@ LinearRegression::LinearRegression(DataSet &data)
 LinearRegression::LinearRegression(LinearRegression &lr)
 {
     this->data = lr.data;
+    dataMat = arma::mat(lr.dataMat);
     this->variables = this->data.getVariables();
     this->rows = arma::uvec(this->data.getNumRows());
     for (arma::uword i = 0; i < data.getNumRows(); i++)
@@ -30,6 +32,7 @@ LinearRegression::LinearRegression(LinearRegression &lr)
 LinearRegression::LinearRegression(LinearRegression &&lr)
 {
     this->data = lr.data;
+    dataMat = lr.dataMat;
     this->variables = this->data.getVariables();
     this->rows = arma::uvec(this->data.getNumRows());
     for (arma::uword i = 0; i < data.getNumRows(); i++)
@@ -39,6 +42,7 @@ LinearRegression::LinearRegression(LinearRegression &&lr)
 LinearRegression &LinearRegression::operator=(LinearRegression &lr)
 {
     this->data = lr.data;
+    dataMat = arma::mat(lr.dataMat);
     this->variables = this->data.getVariables();
     this->rows = arma::uvec(this->data.getNumRows());
     for (arma::uword i = 0; i < data.getNumRows(); i++)
@@ -49,6 +53,7 @@ LinearRegression &LinearRegression::operator=(LinearRegression &lr)
 LinearRegression &LinearRegression::operator=(LinearRegression &&lr)
 {
     this->data = lr.data;
+    dataMat = lr.dataMat;
     this->variables = this->data.getVariables();
     this->rows = arma::uvec(this->data.getNumRows());
     for (arma::uword i = 0; i < data.getNumRows(); i++)
@@ -80,9 +85,9 @@ RegressionResult LinearRegression::regress(Variable *target, std::vector<Variabl
 
     arma::uvec target_Vec(1);
     target_Vec.fill(target_);
-    arma::mat y = data.getData().submat(rows, target_Vec);
+    arma::mat y = dataMat.submat(rows, target_Vec);
 
-    arma::mat xSub = data.getData().submat(rows, regressors_);
+    arma::mat xSub = dataMat.submat(rows, regressors_);
 
     arma::mat x;
 
@@ -201,8 +206,8 @@ RegressionResult LinearRegression::regress(Variable *target, std::vector<Variabl
 }
 
 RegressionResult LinearRegression::regress(Variable *target,
-					   std::vector<Variable *>& regressors,
-					   arma::uvec _rows)
+					   std::vector<Variable*>& regressors,
+					   arma::uvec& _rows)
 {
     // std::ofstream logfile;
     // logfile.open("lin_reg_debug.log", std::ios_base::app);
@@ -229,9 +234,9 @@ RegressionResult LinearRegression::regress(Variable *target,
 
     arma::uvec target_Vec(1);
     target_Vec.fill(target_);
-    arma::mat y = data.getData().submat(_rows, target_Vec);
+    arma::mat y(dataMat.submat(_rows, target_Vec));
 
-    arma::mat xSub = data.getData().submat(_rows, regressors_);
+    arma::mat xSub(dataMat.submat(_rows, regressors_));
 
     // arma::mat x;
 

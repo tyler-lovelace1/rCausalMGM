@@ -56,8 +56,8 @@ public:
     void addVariable(Variable *v);
     void addVariable(int i, Variable *v);
 
-    Variable *getVariable(int i) { return variables[i]; }
-    Variable *getVariable(std::string name) const { return variables.at(name2idx.at(name)); }
+    Variable* getVariable(int i) { return variables[i]; }
+    Variable* getVariable(std::string name) const { return variables.at(name2idx.at(name)); }
     std::vector<Variable *> getVariables() { return variables; }
     std::vector<Variable *> getContinuousVariables();
     std::vector<Variable *> getDiscreteVariables();

@@ -15,6 +15,11 @@ private:
      * The data set.
      */
     DataSet data;
+    
+    /**
+     * The data matrix.
+     */
+    arma::mat dataMat;
 
     /**
      * The variables.
@@ -32,7 +37,7 @@ private:
      */
 
     arma::uvec rows;
-    arma::vec res2;
+    // arma::vec res2;
 
     // std::mutex linregMutex;
 
@@ -76,7 +81,7 @@ public:
      * coefficeint, se, t, and p values, and specifying the same for the
      * constant.
      */
-    RegressionResult regress(Variable *target, std::vector<Variable *>& regressors, arma::uvec _rows);
+    RegressionResult regress(Variable *target, std::vector<Variable *>& regressors, arma::uvec& _rows);
 
     // static RegressionResult regress(double[] target, double[][] regressors) = 0;
 
@@ -88,7 +93,7 @@ public:
 
     void setRows(arma::uvec rows) {this->rows = rows;}
 
-    arma::vec getResidualsWithoutFirstRegressor() {return res2;}
+    // arma::vec getResidualsWithoutFirstRegressor() {return res2;}
 
     friend void LinearRegressionTest(const Rcpp::DataFrame& df);
 

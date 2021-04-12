@@ -236,8 +236,15 @@ void FasStableProducerConsumer::consumerDepth0() {
 
 	{
 	    std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-	    adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
-	    adjacencyModifying = true;
+	    adjacencyCondition.wait(adjacencyLock,
+				    [this] {
+					if (!adjacencyModifying) {
+					    adjacencyModifying = true;
+					    return true;
+					}
+					return false;
+				    });
+	    // adjacencyModifying = true;
 	    // logfile.open("debug3.log", std::ios_base::app);
 	    // logfile << adjacencyLock.owns_lock() << "\t" << task.x->getName() << " ? "
 	    // 	    << task.y->getName() << " | []\t" << independent << "\n";
@@ -278,8 +285,16 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	bool edgeExists;
 	{
 	    std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-	    adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
-	    adjacencyModifying = true;
+	    adjacencyCondition.wait(adjacencyLock,
+				    [this] {
+					if (!adjacencyModifying) {
+					    adjacencyModifying = true;
+					    return true;
+					}
+					return false;
+				    });
+	    // adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
+	    // adjacencyModifying = true;
 	    edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
 	    adjacencyModifying = false;
 	}
@@ -303,8 +318,16 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 
 	{
 	     std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-	     adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
-	     adjacencyModifying = true;
+	     adjacencyCondition.wait(adjacencyLock,
+				    [this] {
+					if (!adjacencyModifying) {
+					    adjacencyModifying = true;
+					    return true;
+					}
+					return false;
+				    });
+	     // adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
+	     // adjacencyModifying = true;
 	     // if (!adjacencyLock.owns_lock()) {
 	     // 	 Rcpp::Rcout << "lock not owned\n";
 	     // 	 adjacencyLock.lock();

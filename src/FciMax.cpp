@@ -76,6 +76,8 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
     sepsets = fas.getSepsets();
     graph.reorientAllWith(ENDPOINT_CIRCLE);
 
+    // return graph;
+
     // SepsetsPossibleDsep sp(graph, test,/* knowledge,*/ depth, maxPathLength);
 
     // The original FCI, with or without JiJi Zhang's orientation rules

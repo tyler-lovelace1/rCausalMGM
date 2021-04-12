@@ -495,9 +495,9 @@ bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector
     // {
     RegressionResult result = regression.regress(x, regressors, rows);
 
-    logfile.open("lin_reg_debug.log", std::ios_base::app);
-    logfile << result << std::endl;
-    logfile.close();
+    // logfile.open("lin_reg_debug.log", std::ios_base::app);
+    // logfile << result << std::endl;
+    // logfile.close();
     
     p = result.getP().at(1); // double check on .at(1)
         // delete result;
