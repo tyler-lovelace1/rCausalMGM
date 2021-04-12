@@ -124,7 +124,7 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
 
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "FCI-Max: alpha = " << independenceTest->getAlpha();
+    alg << "FCI-Max: alpha = " << test->getAlpha();
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
     
