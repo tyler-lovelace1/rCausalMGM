@@ -108,7 +108,7 @@ private:
     const int MAX_QUEUE_SIZE = 10000;
     BlockingQueue<IndependenceTask> taskQueue;
     
-    int parallelism = std::thread::hardware_concurrency();
+    int parallelism = 1; // std::thread::hardware_concurrency();
     
     std::mutex adjacencyMutex;
     // std::unique_lock<std::mutex> adjacencyLock = std::unique_lock<std::mutex>(adjacencyMutex, std::defer_lock);

@@ -57,7 +57,7 @@ void FciOrient::ruleR0(EdgeListGraph& graph) {
   graph.reorientAllWith(ENDPOINT_CIRCLE);
   // fciOrientbk(knowledge, graph, graph.getNodes());
 
-  Rcpp::Rcout << "Executing rule 0:\n" << graph << std::endl;
+  // Rcpp::Rcout << "Executing rule 0:\n" << graph << std::endl;
 
   std::vector<Variable*> nodes = graph.getNodes();
 

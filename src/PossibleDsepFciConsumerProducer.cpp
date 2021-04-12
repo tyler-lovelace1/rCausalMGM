@@ -196,12 +196,26 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::unordered_set<Ed
 
 void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::unordered_map<Edge, std::vector<Variable*>>& edgeCondsetMap) {
     PossibleDsepTask task = taskQueue.pop();
-    while (task.edge.getNode1()->getName() != "EJWMX3RCpPi0qbp" && task.edge.getNode2()->getName() != "nLtWU7DmeZyYPZs") {
+    while (task.edge.getNode1()->getName() != "EJWMX3RCpPi0qbp"
+	   && task.edge.getNode2()->getName() != "nLtWU7DmeZyYPZs") {
+	
         if (edgeCondsetMap.find(task.edge) == edgeCondsetMap.end()) {
             if (test->isIndependent(task.edge.getNode1(), task.edge.getNode2(), task.condSet)) {
-                std::unique_lock<std::mutex> condSetLock(edgeCondSetMutex);
+		
+                std::unique_lock<std::mutex> edgeLock(edgeMutex);
+		edgeCondition.wait(edgeLock,
+				   [this] {
+				       if (!edgeModifying) {
+					   edgeModifying = true;
+					   return true;
+				       }
+				       return false;
+				   });
                 edgeCondsetMap.insert(std::pair<Edge, std::vector<Variable*>>(task.edge, task.condSet));
-                condSetLock.unlock();
+		edgeModifying = false;
+		edgeLock.unlock();
+		edgeCondition.notify_one();
+		
             }
         }
         task = taskQueue.pop();

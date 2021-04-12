@@ -46,10 +46,17 @@ void FasStableProducerConsumer::setDepth(int depth) {
  * @return a SepSet, which indicates which variables are independent conditional on which other variables
  */
 EdgeListGraph FasStableProducerConsumer::search() {
-    if (verbose) Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
+    auto startTime = std::chrono::high_resolution_clock::now();
+    
+    if (verbose) Rcpp::Rcout << "Starting FAS Stable..." << std::endl;
 
     sepset = SepsetMap();
     sepset.setReturnEmptyIfNotSet(sepsetsReturnEmptyIfNotFixed);
+
+    std::ofstream logfile;
+    // logfile.open("debug3.log", std::ios_base::app);
+    // logfile << "Beginning FAS" << std::endl;
+    // logfile.close();
 
     int _depth = depth;
 
@@ -64,7 +71,7 @@ EdgeListGraph FasStableProducerConsumer::search() {
     for (int d = 0; d <= _depth; d++) {
         bool more;
 
-	if (verbose) Rcpp::Rcout << "Searching at depth " << d << "..." << std::endl;
+	if (verbose) Rcpp::Rcout << "  Searching at depth " << d << "..." << std::endl;
 
         if (d == 0) {
             more = searchAtDepth0();
@@ -78,7 +85,7 @@ EdgeListGraph FasStableProducerConsumer::search() {
 	    edgeCount += adjacencies[node].size();
 	}
 
-	if (verbose) Rcpp::Rcout << "\t" << edgeCount/2 << " edges remaining..." << std::endl;
+	// if (verbose) Rcpp::Rcout << "\t" << edgeCount/2 << " edges remaining..." << std::endl;
 
         if (!more) break;
     }
@@ -103,7 +110,12 @@ EdgeListGraph FasStableProducerConsumer::search() {
         }
     }
 
-    if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
+    
+    if (verbose) {
+	Rcpp::Rcout << "FAS Stable finished:  " << std::round(elapsedTime)
+		    << " s" << std::endl;
+    }
 
     // if (verbose) Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
 
@@ -226,13 +238,13 @@ void FasStableProducerConsumer::consumerDepth0() {
 	    std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
 	    adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
 	    adjacencyModifying = true;
-	    logfile.open("debug2.log", std::ios_base::app);
-	    logfile << adjacencyLock.owns_lock() << "\t" << task.x->getName() << " ? "
-		    << task.y->getName() << " | []\t" << independent << "\n";
-	    if (!adjacencyLock.owns_lock()) {
-		Rcpp::Rcout << "lock not owned\n";
-		adjacencyLock.lock();
-	    }
+	    // logfile.open("debug3.log", std::ios_base::app);
+	    // logfile << adjacencyLock.owns_lock() << "\t" << task.x->getName() << " ? "
+	    // 	    << task.y->getName() << " | []\t" << independent << "\n";
+	    // if (!adjacencyLock.owns_lock()) {
+	    // 	Rcpp::Rcout << "lock not owned\n";
+	    // 	adjacencyLock.lock();
+	    // }
 //	    if (adjacencyModifying) Rcpp::Rcout << "adjacency being modified elsewhere\n";
 	    // adjacencyModifying = true;
 	    if (independent && noEdgeRequired) {
@@ -243,7 +255,7 @@ void FasStableProducerConsumer::consumerDepth0() {
 		adjacencies[task.x].insert(task.y);
 		adjacencies[task.y].insert(task.x);
 	    }
-	    logfile.close();
+	    // logfile.close();
 	    adjacencyModifying = false;
 	    // adjacencyCondition.notify_one();
 	    // adjacencyLock.unlock();
@@ -263,15 +275,15 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         //If poison, return
         if (task.x == NULL && task.y == NULL) return;
 
-	// bool edgeExists;
-	// {
-	//     std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-	//     adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
-	//     adjacencyModifying = true;
-	//     edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
-	//     adjacencyModifying = false;
-	// }
-	// adjacencyCondition.notify_one();
+	bool edgeExists;
+	{
+	    std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
+	    adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
+	    adjacencyModifying = true;
+	    edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
+	    adjacencyModifying = false;
+	}
+	adjacencyCondition.notify_one();
         // adjacencyLock.unlock();
 
         // if (!edgeExists) continue; // Skip if the edge no longer exists
@@ -293,16 +305,16 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	     std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
 	     adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
 	     adjacencyModifying = true;
-	     if (!adjacencyLock.owns_lock()) {
-		 Rcpp::Rcout << "lock not owned\n";
-		 adjacencyLock.lock();
-	     }
+	     // if (!adjacencyLock.owns_lock()) {
+	     // 	 Rcpp::Rcout << "lock not owned\n";
+	     // 	 adjacencyLock.lock();
+	     // }
 	     // if (adjacencyModifying) Rcpp::Rcout << "adjacency being modified elsewhere\n";
 	     // adjacencyModifying = true;
-	     logfile.open("debug2.log", std::ios_base::app);
-	     logfile << adjacencyLock.owns_lock() << "\t" << task.x->getName() << " ? " << task.y->getName() << " | [";
-	     for (Variable* n : task.z) logfile << n->getName() << ",";
-	     logfile << "]\t" << independent << "\n";
+	     // logfile.open("debug3.log", std::ios_base::app);
+	     // logfile << adjacencyLock.owns_lock() << "\t" << task.x->getName() << " ? " << task.y->getName() << " | [";
+	     // for (Variable* n : task.z) logfile << n->getName() << ",";
+	     // logfile << "]\t" << independent << "\n";
 	     // adjacencyLock.lock();
 	     if (independent && noEdgeRequired) {
 		 // if (!adjacencyLock.owns_lock()) adjacencyLock.lock();
@@ -315,7 +327,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 		 // adjacencyLock.unlock();
 		 
 	     }
-	     logfile.close();
+	     // logfile.close();
 	     adjacencyModifying = false;
 	}
 	adjacencyCondition.notify_one();
@@ -344,7 +356,12 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
                 for (choice = cg.next(); choice != NULL; choice = cg.next()) {
                     std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
 
-		    std::sort(condSet.begin(), condSet.end());
+		    std::sort(condSet.begin(), condSet.end(),
+			      []( Variable* lhs, Variable* rhs )
+			      {
+				  return lhs->getName() < rhs->getName();
+			      }
+			);
                     
                     taskQueue.push(IndependenceTask(x, y, condSet));
                 }

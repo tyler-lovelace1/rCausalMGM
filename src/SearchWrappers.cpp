@@ -140,7 +140,7 @@ Rcpp::List pcStable(
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMulti itm(ds, alpha, false);
 
     PcStable pcs((IndependenceTest*) &itm);
     pcs.setVerbose(v);
@@ -323,6 +323,8 @@ Rcpp::List fciMax(
     }
     
     Rcpp::List result = fcimax.search().toList();
+
+    Rcpp::Rcout << "FCI-Max returned successfully" << std::endl;
     
     ds.deleteVariables();
     

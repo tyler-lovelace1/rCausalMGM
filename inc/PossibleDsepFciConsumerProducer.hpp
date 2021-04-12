@@ -45,7 +45,7 @@ private:
     /**
     * Concurrency variables
     */
-    int parallelism = std::thread::hardware_concurrency();
+  int parallelism = 1; // std::thread::hardware_concurrency();
 
     bool verbose = false;
 
@@ -67,7 +67,9 @@ private:
 
     const int MAX_QUEUE_SIZE = 10000;
     BlockingQueue<PossibleDsepTask> taskQueue;
-    std::mutex edgeCondSetMutex;
+    std::mutex edgeMutex;
+    std::condition_variable edgeCondition;
+    bool edgeModifying = false;
 
 
     void PossibleDsepProducer(std::unordered_set<Edge> edges);

@@ -59,31 +59,29 @@ EdgeListGraph FciMax::search(const std::vector<Variable*>& nodes) {
 }
 
 EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
-    if (verbose) Rcpp::Rcout << "Starting FCI Stable algorithm" << std::endl;
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+    
+    if (verbose) Rcpp::Rcout << "Starting FCI-Max algorithm..." << std::endl;
 
     whyOrient = std::unordered_map<std::string, std::string>();
 
     if (test == NULL)
-        throw std::invalid_argument("independenceTest of FCI Stable may not be NULL.");
+        throw std::invalid_argument("independenceTest of FCI-Max may not be NULL.");
 
     // fas->setKnowledge(getKnowledge());
     fas.setDepth(depth);
     fas.setVerbose(verbose);
-    this->graph = fas.search();
-    this->sepsets = fas.getSepsets();
+    graph = fas.search();
+    sepsets = fas.getSepsets();
     graph.reorientAllWith(ENDPOINT_CIRCLE);
 
     // SepsetsPossibleDsep sp(graph, test,/* knowledge,*/ depth, maxPathLength);
 
-    sepsetsMaxP = (SepsetProducer*) new SepsetProducerMaxP(graph, test);
-    sepsetsMaxP->setDepth(depth);
-    sepsetsMaxP->setVerbose(verbose);
-    sepsetsMaxP->fillMap();
-
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
-          if (verbose) Rcpp::Rcout << "Starting Posssible DSep search" << std::endl;
+          if (verbose) Rcpp::Rcout << "Starting Posssible DSep search..." << std::endl;
           // SepsetsSet ssset(sepsets, test);
           // FciMaxOrient orienter(&ssset);
 
@@ -104,21 +102,30 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
           graph.reorientAllWith(ENDPOINT_CIRCLE);
       }
 
+    sepsetsMaxP = (SepsetProducer*) new SepsetProducerMaxP(graph, test, sepsets);
+    sepsetsMaxP->setDepth(depth);
+    sepsetsMaxP->setVerbose(verbose);
+    // sepsetsMaxP->fillMap();
+
     // Step CI C (Zhang's step F3.)
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new FciMaxOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
-    if (verbose) Rcpp::Rcout << "Starting Orientations" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
     //SepsetsSet sepsetsset_(sepsets, test);
     FciOrient fciorient_(sepsetsMaxP, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
     fciorient_.setMaxPathLength(maxPathLength);
     // fciOrient.setKnowledge(knowledge);
-    if (verbose) Rcpp::Rcout << "FCIOrient Set Up" << std::endl;
+    // if (verbose) Rcpp::Rcout << "FCIOrient Set Up" << std::endl;
     fciorient_.ruleR0(graph);
-    if (verbose) Rcpp::Rcout << "Rule 0 finished" << std::endl;
+    // if (verbose) Rcpp::Rcout << "Rule 0 finished" << std::endl;
     fciorient_.doFinalOrientation(graph);
-    if (verbose) Rcpp::Rcout << "FCI-Max algorithm finished" << std::endl;
+    
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
+    
+    if (verbose) Rcpp::Rcout << "FCI-Max finished:  " << std::round(elapsedTime) << " s" << std::endl;
+    
     return graph;
 }
 

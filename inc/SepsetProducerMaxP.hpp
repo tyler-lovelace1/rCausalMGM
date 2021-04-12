@@ -2,6 +2,7 @@
 #define SEPSETPRODUCERMAXP_HPP_
 
 #include "SepsetProducer.hpp"
+#include "SepsetMap.hpp"
 #include "IndependenceTest.hpp"
 #include "BlockingQueue.hpp"
 #include "ChoiceGenerator.hpp"
@@ -19,6 +20,8 @@ class SepsetProducerMaxP : public SepsetProducer {
     std::unordered_map<Triple, double> scores;
 
     std::unordered_map<Triple, bool> colliders; // True if Triple is a collider, false otherwise
+
+    SepsetMap extraSepsets;
 
     // Concurrency
     /**
@@ -48,13 +51,16 @@ class SepsetProducerMaxP : public SepsetProducer {
     int parallelism = 4;
     
     std::mutex mapMutex;
+    std::condition_variable mapCondition;
+    bool mapModifying = false;
 
 public:
 
-    SepsetProducerMaxP(EdgeListGraph& _graph, IndependenceTest* _test) :
+    SepsetProducerMaxP(EdgeListGraph& _graph, IndependenceTest* _test, SepsetMap& _extraSepsets) :
 	SepsetProducer(_graph, _test),
+	extraSepsets(_extraSepsets),
 	taskQueue(MAX_QUEUE_SIZE),
-	parallelism(std::thread::hardware_concurrency()) {}
+	parallelism(1)	{} // std::thread::hardware_concurrency()
 
     std::vector<Variable*>  getSepset(Variable* a, Variable* b);
 
