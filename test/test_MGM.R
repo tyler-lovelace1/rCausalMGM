@@ -8,8 +8,11 @@ data(data.n1000.p100)
 # }
 
 ig <- mgm(data.n1000.p100)
-g <- pcMax(data.n1000.p100, initialGraph=ig)
-saveGraph(g, "../testgraph.txt")
+g <- fciStable(data.n1000.p100, initialGraph=ig)
+saveGraph(g, "../fci.txt")
+
+fg <- loadGraph("../fci.txt")
+print(fg)
 
 # lam.max <- max(abs(cor(df) - diag(ncol(df))))
 # lam.min <- 0.2*lam.max

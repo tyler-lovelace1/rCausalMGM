@@ -61,6 +61,7 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     algorithm = graph.algorithm;
     graph_type = graph.graph_type;
 }
+
 EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     if (!validateGraphList(list)) {
         throw std::invalid_argument("ERROR: list is not in the form of a graph");
@@ -155,6 +156,28 @@ bool EdgeListGraph::addBidirectedEdge(Variable* node1, Variable* node2) {
 }
 
 /**
+ * Adds a partially oriented edge to the graph from node A to node B.
+ *
+ * @param node1 the "from" node.
+ * @param node2 the "to" node.
+ */
+bool EdgeListGraph::addPartiallyOrientedEdge(Variable* node1, Variable* node2) {
+    Edge newEdge = Edge::partiallyOrientedEdge(node1, node2);
+    return addEdge(newEdge);
+}
+
+/**
+ * Adds a nondirected edge to the graph from node A to node B.
+ *
+ * @param node1 the "from" node.
+ * @param node2 the "to" node.
+ */
+bool EdgeListGraph::addNondirectedEdge(Variable* node1, Variable* node2) {
+    Edge newEdge = Edge::nondirectedEdge(node1, node2);
+    return addEdge(newEdge);
+}
+
+/**
  * Adds an edge to the graph.
  *
  * @param edge the edge to be added
@@ -223,17 +246,16 @@ bool EdgeListGraph::addEdge(std::string edgeString) {
     char endpoint2 = edgeMid[edgeMid.length()-1];
 
     if (endpoint1 == '-') {
-        if (endpoint2 == '>') {
-            return addDirectedEdge(node1, node2);
-        } else if (endpoint2 == '-') {
-            return addUndirectedEdge(node1, node2);
-        }
+        if      (endpoint2 == '>') return addDirectedEdge(node1, node2);
+        else if (endpoint2 == '-') return addUndirectedEdge(node1, node2);
+
     } else if (endpoint1 == '<') {
-        if (endpoint2 == '>') {
-            return addBidirectedEdge(node1, node2);
-        } else if (endpoint2 == '-') {
-            return addDirectedEdge(node2, node1);
-        }
+        if      (endpoint2 == '>') return addBidirectedEdge(node1, node2);
+        else if (endpoint2 == '-') return addDirectedEdge(node2, node1);
+
+    } else if (endpoint1 == 'o') {
+        if      (endpoint2 == 'o') return addNondirectedEdge(node1, node2);
+        else if (endpoint2 == '>') return addPartiallyOrientedEdge(node1, node2);
     }
 
     throw std::invalid_argument("Endpoints not recognized: " + edgeString);
@@ -1030,9 +1052,9 @@ Rcpp::List loadGraph(const std::string& filename) {
             auto validateEdgeString = [](const std::string& edgeString) {
                 std::vector<std::string> elements = GraphUtils::splitString(edgeString, " ");
                 if (elements.size() != 3) return false;
-                if (elements[1].at(0) != '<' && elements[1].at(0) != '-') return false;
-                if (elements[1].at(1) != '-'                            ) return false;
-                if (elements[1].at(2) != '>' && elements[1].at(2) != '-') return false;
+                if (elements[1].at(0) != '<' && elements[1].at(0) != '-' && elements[1].at(0) != 'o') return false;
+                if (elements[1].at(1) != '-')                                                         return false;
+                if (elements[1].at(2) != '>' && elements[1].at(2) != '-' && elements[1].at(2) != 'o') return false;
                 return true;
             };
 

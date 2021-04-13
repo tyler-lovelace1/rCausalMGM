@@ -141,6 +141,14 @@ public:
     bool addUndirectedEdge(Variable* node1, Variable* node2);
 
     /**
+     * Adds a bidirected edge to the graph from node A to node B.
+     *
+     * @param node1 the "from" node.
+     * @param node2 the "to" node.
+     */
+    bool addBidirectedEdge(Variable* node1, Variable* node2);
+
+    /**
      * Adds a partially oriented edge to the graph from node A to node B.
      *
      * @param node1 the "from" node.
@@ -149,12 +157,12 @@ public:
     bool addPartiallyOrientedEdge(Variable* node1, Variable* node2);
 
     /**
-     * Adds a bidirected edge to the graph from node A to node B.
+     * Adds a nondirected edge to the graph from node A to node B.
      *
      * @param node1 the "from" node.
      * @param node2 the "to" node.
      */
-    bool addBidirectedEdge(Variable* node1, Variable* node2);
+    bool addNondirectedEdge(Variable* node1, Variable* node2);
 
     bool existsDirectedCycle();
 
