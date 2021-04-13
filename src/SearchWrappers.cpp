@@ -298,7 +298,7 @@ Rcpp::List fciStable(
 //' @examples
 //' data("data.n100.p25")
 //' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+//' g <- rCausalMGM::fciMax(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List fciMax(
         const Rcpp::DataFrame &df,
@@ -323,8 +323,6 @@ Rcpp::List fciMax(
     }
     
     Rcpp::List result = fcimax.search().toList();
-
-    Rcpp::Rcout << "FCI-Max returned successfully" << std::endl;
     
     ds.deleteVariables();
     

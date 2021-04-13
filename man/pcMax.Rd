@@ -9,7 +9,7 @@ pcMax(
   maxDiscrete = 5L,
   initialGraph = NULL,
   alpha = 0.05,
-  verbose = as.logical(c(0))
+  verbose = as.logical(c(FALSE))
 )
 }
 \arguments{

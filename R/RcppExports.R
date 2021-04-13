@@ -177,7 +177,7 @@ fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' @examples
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
-#' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+#' g <- rCausalMGM::fciMax(data.n100.p25, initialGraph = ig)
 fciMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
     .Call(`_rCausalMGM_fciMax`, df, maxDiscrete, initialGraph, alpha, verbose)
 }
