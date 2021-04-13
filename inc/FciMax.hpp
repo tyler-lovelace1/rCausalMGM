@@ -1,5 +1,5 @@
-#ifndef FCI_HPP_
-#define FCI_HPP_
+#ifndef FCIMAX_HPP_
+#define FCIMAX_HPP_
 
 /**
  * Extends Erin Korber's implementation of the Fast Causal Inference algorithm (found in FCI.java) with Jiji Zhang's
@@ -21,17 +21,16 @@
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
-// #include "SepsetProducer.hpp"
+#include "SepsetProducerMaxP.hpp"
 #include "FasStableProducerConsumer.hpp"
 #include "PossibleDsepFciConsumerProducer.hpp"
-// #include "FasStableConcurrent.hpp"
 #include "FciOrient.hpp"
 #include "SepsetsPossibleDsep.hpp"
 #include "SepsetsSet.hpp"
 #include <limits>
 
 
-class Fci {
+class FciMax {
 
 private:
 
@@ -44,6 +43,11 @@ private:
      * The SepsetMap being constructed.
      */
     SepsetMap sepsets;
+
+    /**
+     * The SepsetProducer being constructed.
+     */
+    SepsetProducer* sepsetsMaxP;
 
     // /**
     //  * The background knowledge.
@@ -113,13 +117,13 @@ public:
     /**
      * Constructs a new FCI search for the given independence test and background knowledge.
      */
-    Fci(IndependenceTest *test);
+    FciMax(IndependenceTest *test);
 
     /**
      * Constructs a new FCI search for the given independence test and background knowledge and a list of variables to
      * search over.
      */
-    Fci(IndependenceTest *test, std::vector<Variable*> searchVars);
+    FciMax(IndependenceTest *test, std::vector<Variable*> searchVars);
 
        //========================PUBLIC METHODS==========================//
 

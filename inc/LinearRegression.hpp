@@ -6,14 +6,20 @@
 #include "Variable.hpp"
 #include "RegressionResult.hpp"
 #include <list>
+// #include <mutex>
 
 class LinearRegression
 {
-  private:
+private:
     /**
      * The data set.
      */
     DataSet data;
+    
+    /**
+     * The data matrix.
+     */
+    arma::mat dataMat;
 
     /**
      * The variables.
@@ -31,9 +37,11 @@ class LinearRegression
      */
 
     arma::uvec rows;
-    arma::vec res2;
+    // arma::vec res2;
 
-  public:
+    // std::mutex linregMutex;
+
+public:
     //============================CONSTRUCTORS==========================//
     LinearRegression() {}
     LinearRegression(DataSet& data);
@@ -61,21 +69,33 @@ class LinearRegression
      * coefficeint, se, t, and p values, and specifying the same for the
      * constant.
      */
-     RegressionResult regress(Variable* target, std::vector<Variable*>& regressors);
+    RegressionResult regress(Variable* target, std::vector<Variable*>& regressors);
 
-     // static RegressionResult regress(double[] target, double[][] regressors) = 0;
+    /**
+     * Regresses the target on the given regressors.
+     *
+     * @param target     The target variable.
+     * @param regressors The regressor variables.
+     * @param _rows The samples to be used in regression.
+     * @return The regression plane, specifying for each regressors its
+     * coefficeint, se, t, and p values, and specifying the same for the
+     * constant.
+     */
+    RegressionResult regress(Variable *target, std::vector<Variable *>& regressors, arma::uvec& _rows);
 
-     double rss(arma::mat x, arma::vec y, arma::vec b); // check if only if 1 dimension   is a vector
+    // static RegressionResult regress(double[] target, double[][] regressors) = 0;
 
-     double tss(arma::vec y);
+    double rss(const arma::mat& x, const arma::vec& y, const arma::vec& b); // check if only if 1 dimension   is a vector
 
-     arma::uvec getRows() {return rows;}
+    double tss(const arma::vec& y);
 
-     void setRows(arma::uvec rows) {this->rows = rows;}
+    arma::uvec getRows() {return rows;}
 
-     arma::vec getResidualsWithoutFirstRegressor() {return res2;}
+    void setRows(arma::uvec rows) {this->rows = rows;}
 
-     friend void LinearRegressionTest(const Rcpp::DataFrame& df);
+    // arma::vec getResidualsWithoutFirstRegressor() {return res2;}
+
+    friend void LinearRegressionTest(const Rcpp::DataFrame& df);
 
 };
 #endif /* LINEARREGRESSION_HPP_ */

@@ -1,11 +1,11 @@
-#include "Fci.hpp"
+#include "FciMax.hpp"
 
 //============================CONSTRUCTORS============================//
 
 /**
  * Constructs a new FCI search for the given independence test and background knowledge.
  */
-Fci::Fci(IndependenceTest* test) {
+FciMax::FciMax(IndependenceTest* test) {
     if (test == NULL /*|| knowledge == null*/) {
         throw std::invalid_argument("independenceTest cannot be null");
     }
@@ -20,7 +20,7 @@ Fci::Fci(IndependenceTest* test) {
  * Constructs a new FCI search for the given independence test and background knowledge and a list of variables to
  * search over.
  */
-Fci::Fci(IndependenceTest* test, std::vector<Variable*> searchVars) {
+FciMax::FciMax(IndependenceTest* test, std::vector<Variable*> searchVars) {
     if (test == NULL /*|| knowledge == null*/) {
         throw std::invalid_argument("independenceTest cannot be null");
     }
@@ -48,40 +48,42 @@ Fci::Fci(IndependenceTest* test, std::vector<Variable*> searchVars) {
 
 //========================PUBLIC METHODS==========================//
 
-EdgeListGraph Fci::search() {
+EdgeListGraph FciMax::search() {
     return search(test->getVariables());
 }
 
-EdgeListGraph Fci::search(const std::vector<Variable*>& nodes) {
+EdgeListGraph FciMax::search(const std::vector<Variable*>& nodes) {
     FasStableProducerConsumer fas(initialGraph, test);
 
     return search(fas, nodes);
 }
 
-EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
-    if (verbose) Rcpp::Rcout << "Starting FCI Stable algorithm" << std::endl;
+EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+    
+    if (verbose) Rcpp::Rcout << "Starting FCI-Max algorithm..." << std::endl;
 
     whyOrient = std::unordered_map<std::string, std::string>();
 
     if (test == NULL)
-        throw std::invalid_argument("independenceTest of FCI Stable may not be NULL.");
+        throw std::invalid_argument("independenceTest of FCI-Max may not be NULL.");
 
     // fas->setKnowledge(getKnowledge());
     fas.setDepth(depth);
     fas.setVerbose(verbose);
-    this->graph = fas.search();
-    this->sepsets = fas.getSepsets();
+    graph = fas.search();
+    sepsets = fas.getSepsets();
     graph.reorientAllWith(ENDPOINT_CIRCLE);
 
     // SepsetsPossibleDsep sp(graph, test,/* knowledge,*/ depth, maxPathLength);
 
-
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
-          if (verbose) Rcpp::Rcout << "Starting Posssible DSep search" << std::endl;
+          if (verbose) Rcpp::Rcout << "Starting Posssible DSep search..." << std::endl;
           // SepsetsSet ssset(sepsets, test);
-          // FciOrient orienter(&ssset);
+          // FciMaxOrient orienter(&ssset);
 
           PossibleDsepFciConsumerProducer possibleDSep(graph, test);
           // possibleDSep.setKnowledge(getKnowledge());
@@ -100,33 +102,43 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
           graph.reorientAllWith(ENDPOINT_CIRCLE);
       }
 
+    sepsetsMaxP = (SepsetProducer*) new SepsetProducerMaxP(graph, test, sepsets);
+    sepsetsMaxP->setDepth(depth);
+    sepsetsMaxP->setVerbose(verbose);
+    sepsetsMaxP->fillMap();
+
     // Step CI C (Zhang's step F3.)
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
-    //        new FciOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
-    if (verbose) Rcpp::Rcout << "Starting Orientations" << std::endl;
-    SepsetsSet sepsetsset_(sepsets, test);
-    FciOrient fciorient_(&sepsetsset_, whyOrient);
+    //        new FciMaxOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
+    if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
+    //SepsetsSet sepsetsset_(sepsets, test);
+    FciOrient fciorient_(sepsetsMaxP, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
     fciorient_.setMaxPathLength(maxPathLength);
     // fciOrient.setKnowledge(knowledge);
+    // if (verbose) Rcpp::Rcout << "FCIOrient Set Up" << std::endl;
     fciorient_.ruleR0(graph);
+    // if (verbose) Rcpp::Rcout << "Rule 0 finished" << std::endl;
     fciorient_.doFinalOrientation(graph);
 
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "FCI Stable: alpha = " << test->getAlpha();
+    alg << "FCI-Max: alpha = " << test->getAlpha();
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
     
-    if (verbose) Rcpp::Rcout << "FCI Stable algorithm finished" << std::endl;
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
+    
+    if (verbose) Rcpp::Rcout << "FCI-Max finished:  " << std::round(elapsedTime) << " s" << std::endl;
+    
     return graph;
 }
 
 /**
  * @param maxPathLength the maximum length of any discriminating path, or -1 if unlimited.
  */
-void Fci::setMaxPathLength(int maxPathLength) {
+void FciMax::setMaxPathLength(int maxPathLength) {
     if (maxPathLength < -1) {
         throw std::invalid_argument("Max path length must be -1 (unlimited) or >= 0: ");
     }
@@ -135,7 +147,7 @@ void Fci::setMaxPathLength(int maxPathLength) {
 
 //========================PRIVATE METHODS==========================//
 
-void Fci::buildIndexing(std::vector<Variable*> nodes) {
+void FciMax::buildIndexing(std::vector<Variable*> nodes) {
     this->hashIndices =  std::unordered_map<Variable*, int>();
     for (Variable* node : nodes) {
         auto itr = find(variables.begin(), variables.end(), node);
@@ -147,7 +159,7 @@ void Fci::buildIndexing(std::vector<Variable*> nodes) {
 /**
  * Orients according to background knowledge
  */
-void Fci::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Variable*> variables) {
+void FciMax::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Variable*> variables) {
 
     // for (Iterator<KnowledgeEdge> it =
     //      bk.forbiddenEdgesIterator(); it.hasNext(); ) {

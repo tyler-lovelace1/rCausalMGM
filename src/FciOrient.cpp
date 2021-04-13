@@ -57,6 +57,8 @@ void FciOrient::ruleR0(EdgeListGraph& graph) {
   graph.reorientAllWith(ENDPOINT_CIRCLE);
   // fciOrientbk(knowledge, graph, graph.getNodes());
 
+  // Rcpp::Rcout << "Executing rule 0:\n" << graph << std::endl;
+
   std::vector<Variable*> nodes = graph.getNodes();
 
   for (Variable* b : nodes) {
@@ -95,24 +97,23 @@ void FciOrient::ruleR0(EdgeListGraph& graph) {
               graph.setEndpoint(c, b, ENDPOINT_ARROW);
 
               /**FOR ANALYZING CONSISTENCY**/
-              std::vector<Variable*> temp = sepsets->getSepset(a,c);
-              if(temp.empty()) {
-                  whyOrient.insert(std::pair<std::string, std::string>(a->getName() + "," + b->getName(), "0,null"));
-                  whyOrient.insert(std::pair<std::string, std::string>(c->getName() + "," + b->getName(), "0,null"));
-              }
-              else
-              {
-                  std::string x = "0";
-                  for(Variable* p:temp)
-                  {
-                      x+=(","+p->getName());
-                  }
-                  whyOrient.insert(std::pair<std::string, std::string>(a->getName()+","+b->getName(),x));
-                  whyOrient.insert(std::pair<std::string, std::string>(c->getName()+","+b->getName(),x));
-              }
-
+              // std::vector<Variable*> temp = sepsets->getSepset(a,c);
+	      whyOrient.insert(std::pair<std::string, std::string>(a->getName() + "," + b->getName(), "0"));
+	      whyOrient.insert(std::pair<std::string, std::string>(c->getName() + "," + b->getName(), "0"));
+              // if(temp.empty()) {
+              //     whyOrient.insert(std::pair<std::string, std::string>(a->getName() + "," + b->getName(), "0,null"));
+              //     whyOrient.insert(std::pair<std::string, std::string>(c->getName() + "," + b->getName(), "0,null"));
+              // }
+              // else {
+              //     std::string x = "0";
+              //     for(Variable* p:temp) {
+              //         x+=(","+p->getName());
+              //     }
+              //     whyOrient.insert(std::pair<std::string, std::string>(a->getName()+","+b->getName(),x));
+              //     whyOrient.insert(std::pair<std::string, std::string>(c->getName()+","+b->getName(),x));
+              // }
+	  }
       }
-    }
   }
 }
 

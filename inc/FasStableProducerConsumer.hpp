@@ -111,6 +111,9 @@ private:
     int parallelism = std::thread::hardware_concurrency();
     
     std::mutex adjacencyMutex;
+    // std::unique_lock<std::mutex> adjacencyLock = std::unique_lock<std::mutex>(adjacencyMutex, std::defer_lock);
+    std::condition_variable adjacencyCondition;
+    bool adjacencyModifying = false;
 
     void consumerDepth0();
     void producerDepth0();

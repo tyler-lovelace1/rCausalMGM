@@ -199,7 +199,7 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     arma::vec pValues;
 
     arma::uvec rows_ = getNonMissingRows(x, y, z);
-    logisticRegression.setRows(rows_);
+    // logisticRegression.setRows(rows_);
 
     std::vector<Variable *> yzList;
     std::vector<Variable *> zList;
@@ -224,8 +224,8 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     for (int i = 0; i < variablesPerNode.at(x).size(); i++)
     {
         Variable *varX = variablesPerNode.at(x).at(i);
-        LogisticRegressionResult result0 = logisticRegression.regress((DiscreteVariable *)varX, zList);
-        LogisticRegressionResult result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList);
+        LogisticRegressionResult result0 = logisticRegression.regress((DiscreteVariable *)varX, zList, rows_);
+        LogisticRegressionResult result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList, rows_);
 
         coeffsNull.insert_cols(i, result0.getCoefs());
         coeffsDep.insert_cols(i, result1.getCoefs());
@@ -486,29 +486,34 @@ bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector
     }
 
     arma::uvec rows = getNonMissingRows(x, y, z);
-    LinearRegression regression = this->regression;
-    regression.setRows(rows); // regression was never declared
+    // LinearRegression regression = this->regression;
+    // regression.setRows(rows); // regression was never declared
 
     double p;
 
-    try
-    {
-        RegressionResult result = regression.regress(x, regressors);
-        p = result.getP().at(1); // double check on .at(1)
+    // try
+    // {
+    RegressionResult result = regression.regress(x, regressors, rows);
+
+    // logfile.open("lin_reg_debug.log", std::ios_base::app);
+    // logfile << result << std::endl;
+    // logfile.close();
+    
+    p = result.getP().at(1); // double check on .at(1)
         // delete result;
-    }
-    catch (std::exception e)
-    {
-        return false;
-    }
- 
-    this->lastP = p;
+    // }
+    // catch (std::exception e)
+    // {
+    // 	// Rcpp::Rcout << e.what() << std::endl;
+    //     return false;
+    // }
 
     if (pReturn != NULL)
-        *pReturn = p;
-
+	*pReturn = p;
+    
     bool indep = p > alpha;
 
+    this->lastP = p;
     // TODO - write this to a log file
     // if (indep)
     //     Rcpp::Rcout << x->getName() << " _||_ " << y->getName() << " | { ";
