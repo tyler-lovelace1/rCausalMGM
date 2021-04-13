@@ -473,7 +473,7 @@ bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector
         }
     }
 
-    std::ofstream logfile;
+    // std::ofstream logfile;
     // logfile.open("../test_results/debug.log", std::ios_base::app);
 
     std::vector<Variable *> regressors;

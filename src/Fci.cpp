@@ -112,6 +112,13 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     // fciOrient.setKnowledge(knowledge);
     fciorient_.ruleR0(graph);
     fciorient_.doFinalOrientation(graph);
+
+    // Set algorithm and type
+    std::ostringstream alg;
+    alg << "FCI Stable: alpha = " << test->getAlpha();
+    graph.setAlgorithm(alg.str());
+    graph.setGraphType("partial ancestral graph");
+    
     if (verbose) Rcpp::Rcout << "FCI Stable algorithm finished" << std::endl;
     return graph;
 }

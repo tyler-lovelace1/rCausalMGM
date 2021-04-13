@@ -60,7 +60,7 @@ public:
 	SepsetProducer(_graph, _test),
 	extraSepsets(_extraSepsets),
 	taskQueue(MAX_QUEUE_SIZE),
-	parallelism(1)	{} // std::thread::hardware_concurrency()
+	parallelism(std::thread::hardware_concurrency()) {}
 
     std::vector<Variable*>  getSepset(Variable* a, Variable* b);
 

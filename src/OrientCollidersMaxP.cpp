@@ -71,7 +71,7 @@ void OrientCollidersMaxP::producer() {
 
 void OrientCollidersMaxP::consumer() {
     std::ofstream logfile;
-    logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
+    // logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
 
     while(true) {
         IndependenceTask it = taskQueue.pop();
@@ -80,21 +80,38 @@ void OrientCollidersMaxP::consumer() {
         if (it.a == NULL && it.b == NULL && it.c == NULL) break;
 
         double score;
-        independenceTest->isIndependent(it.a, it.c, it.s, &score);
+        bool indep = independenceTest->isIndependent(it.a, it.c, it.s, &score);
 
-        logfile << "Testing " << it.a->getName() << " || " << it.c->getName() << " _||_ {";
-        for (Variable* n : it.s) logfile << " " << n->getName() << " ";
-        logfile << "} with p = " << score << std::endl;
+        // logfile << "Testing " << it.a->getName() << " || " << it.c->getName() << " _||_ {";
+        // for (Variable* n : it.s) logfile << " " << n->getName() << " ";
+        // logfile << "} with p = " << score << std::endl;
 
-        std::unique_lock<std::mutex> mapLock(mapMutex);
-        if (score > scores[Triple(it.a, it.b, it.c)]) {
-            scores[Triple(it.a, it.b, it.c)] = score;
-            colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
-        }
+	{
+	  std::unique_lock<std::mutex> mapLock(mapMutex);
+	  if (scores.count(Triple(it.a, it.b, it.c))) {
+		if (indep && (score > scores[Triple(it.a, it.b, it.c)])) {
+		    scores.at(Triple(it.a, it.b, it.c)) = score;
+		    colliders.at(Triple(it.a, it.b, it.c)) = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
+		}
+	    } else {
+		if (indep) {
+		    scores[Triple(it.a, it.b, it.c)] = score;
+		    colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
+		}
+		else {
+		    scores[Triple(it.a, it.b, it.c)] = 0;
+		    colliders[Triple(it.a, it.b, it.c)] = 0;
+		}
+	    }
+	}
+        // if (score > scores[Triple(it.a, it.b, it.c)]) {
+        //     scores[Triple(it.a, it.b, it.c)] = score;
+        //     colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
+        // }
         
     }
 
-    logfile.close();
+    // logfile.close();
 }
 
 void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c) {
@@ -102,9 +119,9 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
     std::vector<Variable*> adja = graph->getAdjacentNodes(a);
     std::vector<Variable*> adjc = graph->getAdjacentNodes(c);
 
-    std::unique_lock<std::mutex> mapLock(mapMutex);
-    scores[Triple(a, b, c)] = 0;
-    mapMutex.unlock();
+    // std::unique_lock<std::mutex> mapLock(mapMutex);
+    // scores[Triple(a, b, c)] = 0;
+    // mapMutex.unlock();
 
     DepthChoiceGenerator cg1(adja.size(), -1);
     std::vector<int> *comb2;
@@ -131,9 +148,9 @@ void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variab
         return;
     }
 
-    std::unique_lock<std::mutex> mapLock(mapMutex);
-    scores[Triple(a, b, c)] = 0;
-    mapMutex.unlock();
+    // std::unique_lock<std::mutex> mapLock(mapMutex);
+    // scores[Triple(a, b, c)] = 0;
+    // mapMutex.unlock();
 
     taskQueue.push(IndependenceTask(a, b, c, {}));
     taskQueue.push(IndependenceTask(a, b, c, {b}));

@@ -212,7 +212,7 @@ RegressionResult LinearRegression::regress(Variable *target,
     // std::ofstream logfile;
     // logfile.open("lin_reg_debug.log", std::ios_base::app);
 
-    int n = _rows.size();
+    int n = _rows.n_elem;
     int k = regressors.size() + 1;
 
     if (n < k)
@@ -222,8 +222,11 @@ RegressionResult LinearRegression::regress(Variable *target,
 
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
+    std::string names = "\t";
+
     for (int i = 0; i < regressors.size(); i++)
     {
+	names += regressors[i]->getName() + '\t';
         regressors_[i] = data.getColumn(regressors[i]);
     }
 
@@ -234,9 +237,11 @@ RegressionResult LinearRegression::regress(Variable *target,
 
     arma::uvec target_Vec(1);
     target_Vec.fill(target_);
-    arma::mat y(dataMat.submat(_rows, target_Vec));
+    const arma::mat y = std::move(dataMat.submat(_rows, target_Vec));
 
-    arma::mat xSub(dataMat.submat(_rows, regressors_));
+    const arma::mat xSub = std::move(dataMat.submat(_rows, regressors_));
+
+    // logfile << names << std::endl << xSub.rows(0,5) << std::endl << std::endl << xSub.rows(n-6,n-1) << std::endl;
 
     // arma::mat x;
 
@@ -268,18 +273,21 @@ RegressionResult LinearRegression::regress(Variable *target,
     //     }
     // }
 
-    arma::mat xT = x.t();
-    arma::mat xTx = xT * x;
-    arma::mat xTxInv = xTx.i();
-    arma::mat xTy = xT * y;
-    arma::mat b = xTxInv * xTy;
+    // const arma::mat xT = std::move(x.t());
+    // const arma::mat xTx = std::move(xT * x);
+    const arma::vec b = std::move(arma::solve(x, y));
+    const arma::mat xTxInv = std::move(arma::inv_sympd(x.t() * x)); // std::move(xTx.i());
+    // const arma::mat xTy = std::move(xT * y);
+    // const arma::mat b = std::move(xTxInv * xTy);
 
-    arma::mat yHat = x * b;
-    arma::mat res = y - yHat;
+    const arma::mat yHat = std::move(x * b);
+    const arma::mat res = std::move(y - yHat);
 
-    arma::vec yHat_ = yHat.col(0);
-    arma::vec res_ = res.col(0);
-    arma::vec b_ = b.col(0);
+    const arma::vec yHat_ = yHat.col(0);
+    const arma::vec res_ = res.col(0);
+    // const arma::vec b_ = b.col(0);
+
+    // logfile << '\t' << names << std::endl << b.t() << std::endl << std::endl;
 
     /* NOT CURRENTLY IN USE, ONLY NEEDED FOR LRT
     
@@ -291,7 +299,7 @@ RegressionResult LinearRegression::regress(Variable *target,
 
     */
 
-    double rss_ = LinearRegression::rss(x, y, b_);
+    double rss_ = LinearRegression::rss(x, y, b);
     double se = std::sqrt(rss_ / (n - k));
     double tss_ = LinearRegression::tss(y);
     double r2 = 1.0 - (rss_ / tss_);
@@ -312,7 +320,7 @@ RegressionResult LinearRegression::regress(Variable *target,
 	for (arma::uword i = 0; i < x.n_cols; i++) {
 	    double s_ = se * se * xTxInv(i, i);
 	    double se_ = std::sqrt(s_);
-	    double t_ = b_(i) / se_;
+	    double t_ = b(i) / se_;
 	    double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
 
 	    // if (i == 0) logfile << "    var_ = intercept" << std::endl;
@@ -339,6 +347,10 @@ RegressionResult LinearRegression::regress(Variable *target,
 	// logfile.close();
     }
 
+    // logfile << '\t' << names << std::endl << x.rows(0,5) << std::endl << std::endl << xSub.rows(n-6,n-1) << std::endl << std::endl;
+
+    // logfile.close();
+
     std::vector<std::string> vNames(regressors.size());
 
     for (int i = 0; i < regressors.size(); i++)
@@ -351,7 +363,7 @@ RegressionResult LinearRegression::regress(Variable *target,
     //dealing with case where we dont give it anything to regess on
     // logfile.close();
 
-    return RegressionResult(regressors.size() == 0, vNames, n, b_, t, p, sqErr, r2, rss_, alpha, yHat_, res_); // MUST CONVERT B INTO A VECTOR
+    return RegressionResult(regressors.size() == 0, vNames, n, b, t, p, sqErr, r2, rss_, alpha, yHat_, res_); // MUST CONVERT B INTO A VECTOR
 }
 
 double LinearRegression::rss(const arma::mat& x, const arma::vec& y, const arma::vec& b)

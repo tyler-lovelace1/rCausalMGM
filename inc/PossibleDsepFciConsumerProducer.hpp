@@ -42,14 +42,12 @@ private:
 
     int maxReachablePathLength = -1;
 
+    bool verbose = false;
+
     /**
     * Concurrency variables
     */
-  int parallelism = 1; // std::thread::hardware_concurrency();
-
-    bool verbose = false;
-
-    // ExecutorService executorService;
+    int parallelism = std::thread::hardware_concurrency();
 
     struct PossibleDsepTask {
         Edge edge;

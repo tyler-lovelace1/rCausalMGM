@@ -88,15 +88,15 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
 
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "PcMax: alpha = " << independenceTest->getAlpha();
+    alg << "PC-Max: alpha = " << independenceTest->getAlpha();
     graph.setAlgorithm(alg.str());
     graph.setGraphType("markov equivalence class");
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
 
     if (verbose) {
-        Rcpp::Rcout.precision(2);
-        Rcpp::Rcout << "PCMax Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
+	// Rcpp::Rcout.precision(2);
+        Rcpp::Rcout << "PC-Max Elapsed time =  " << std::round(elapsedTime) << " s" << std::endl;
     }
 
     return graph;
