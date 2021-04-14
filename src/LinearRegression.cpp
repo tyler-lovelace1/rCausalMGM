@@ -151,44 +151,44 @@ RegressionResult LinearRegression::regress(Variable *target, std::vector<Variabl
     arma::vec p = arma::vec(x.n_cols);
 
     boost::math::students_t dist(n - k);
-    {
-	// std::unique_lock<std::mutex> linregLock(linregMutex);
-	// logfile.open("lin_reg_debug.log", std::ios_base::app);
-	// logfile << "LINEAR REGRESSION:\t" << target->getName() << " ? "
-	// 	<< regressors[0]->getName() <<  " | [";
-	// for (arma::uword i = 1; i < regressors.size(); i++) logfile << regressors[i]->getName() << ",";
-	// logfile << "]\n  dist.df = " << dist.degrees_of_freedom() << std::endl;
     
-	for (arma::uword i = 0; i < x.n_cols; i++) {
-	    double s_ = se * se * xTxInv(i, i);
-	    double se_ = std::sqrt(s_);
-	    double t_ = b(i, 0) / se_;
-	    double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+    // std::unique_lock<std::mutex> linregLock(linregMutex);
+    // logfile.open("lin_reg_debug.log", std::ios_base::app);
+    // logfile.open("../debug.log", std::ios_base::app);
+    // logfile << "LINEAR REGRESSION:\t" << target->getName() << " ? "
+    // 	    << regressors[0]->getName() <<  " | [";
+    // for (arma::uword i = 1; i < regressors.size(); i++) logfile << regressors[i]->getName() << ",";
+    // logfile << "]\n  dist.df = " << dist.degrees_of_freedom() << std::endl;
+    
+    for (arma::uword i = 0; i < x.n_cols; i++) {
+	double s_ = se * se * xTxInv(i, i);
+	double se_ = std::sqrt(s_);
+	double t_ = b(i, 0) / se_;
 
-	    // if (i == 0) logfile << "    var_ = intercept" << std::endl;
-	    // else logfile << "    var_ = " << regressors[i-1]->getName() << std::endl;
+	// if (i == 0) logfile << "    var_ = intercept" << std::endl;
+	// else logfile << "    var_ = " << regressors[i-1]->getName() << std::endl;
 	
-	    // logfile << "    b_ = " << b(i, 0) << std::endl;
-	    // logfile << "    se_ = " << se_ << std::endl;
-	    // // logfile << "    s_ = " << s_ << std::endl;
-	    // logfile << "    t_ = " << t_ << std::endl;
+	// logfile << "    b_ = " << b(i, 0) << std::endl;
+	// logfile << "    se_ = " << se_ << std::endl;
+	// // logfile << "    s_ = " << s_ << std::endl;
+	// logfile << "    t_ = " << t_ << std::endl;
+	double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+	// logfile << "    p_ = " << p_ << std::endl;
 
-	    // logfile << "    p_ = " << p_ << std::endl;
+	// if (i == 1)
+	//     {
+	// 	// Rcpp::Rcout << "beta = " << b(i,0) << std::endl;
+	// 	// Rcpp::Rcout << "SE = " << se_ << std::endl;
+	// 	// Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
+	// 	// Rcpp::Rcout << "p-value = " << p_ << std::endl;
+	//     }
 
-	    // if (i == 1)
-	    //     {
-	    // 	// Rcpp::Rcout << "beta = " << b(i,0) << std::endl;
-	    // 	// Rcpp::Rcout << "SE = " << se_ << std::endl;
-	    // 	// Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
-	    // 	// Rcpp::Rcout << "p-value = " << p_ << std::endl;
-	    //     }
-
-	    sqErr[i] = se_;
-	    t[i] = t_;
-	    p[i] = p_;
-	}
-	// logfile.close();
+	sqErr[i] = se_;
+	t[i] = t_;
+	p[i] = p_;
     }
+
+    // logfile.close();
 
     std::vector<std::string> vNames(regressors.size());
 
@@ -209,7 +209,7 @@ RegressionResult LinearRegression::regress(Variable *target,
 					   std::vector<Variable*>& regressors,
 					   arma::uvec& _rows)
 {
-    // std::ofstream logfile;
+    std::ofstream logfile;
     // logfile.open("lin_reg_debug.log", std::ios_base::app);
 
     int n = _rows.n_elem;
@@ -222,11 +222,11 @@ RegressionResult LinearRegression::regress(Variable *target,
 
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
-    std::string names = "\t";
+    // std::string names = "\t";
 
     for (int i = 0; i < regressors.size(); i++)
     {
-	names += regressors[i]->getName() + '\t';
+	// names += regressors[i]->getName() + '\t';
         regressors_[i] = data.getColumn(regressors[i]);
     }
 
@@ -309,43 +309,44 @@ RegressionResult LinearRegression::regress(Variable *target,
     arma::vec p = arma::vec(x.n_cols);
 
     boost::math::students_t dist(n - k);
-    {
-	// std::unique_lock<std::mutex> linregLock(linregMutex);
-	// logfile.open("lin_reg_debug.log", std::ios_base::app);
-	// logfile << "LINEAR REGRESSION:\t" << target->getName() << " ? "
-	// 	<< regressors[0]->getName() <<  " | [";
-	// for (arma::uword i = 1; i < regressors.size(); i++) logfile << regressors[i]->getName() << ",";
-	// logfile << "]\n  dist.df = " << dist.degrees_of_freedom() << std::endl;
     
-	for (arma::uword i = 0; i < x.n_cols; i++) {
-	    double s_ = se * se * xTxInv(i, i);
-	    double se_ = std::sqrt(s_);
-	    double t_ = b(i) / se_;
-	    double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+    // std::unique_lock<std::mutex> linregLock(linregMutex);
+    // logfile.open("debug.log", std::ios_base::app);
+    // logfile << "LINEAR REGRESSION:\t" << target->getName() << " ? "
+    // 	<< regressors[0]->getName() <<  " | [";
+    // for (arma::uword i = 1; i < regressors.size(); i++) logfile << regressors[i]->getName() << ",";
+    // logfile << "]\n  dist.df = " << dist.degrees_of_freedom() << std::endl;
+    
+    for (arma::uword i = 0; i < x.n_cols; i++) {
+	double s_ = se * se * xTxInv(i, i);
+	double se_ = std::sqrt(s_);
+	if (se_== 0.0) se_ = 1e-10;
+	double t_ = b(i) / se_;
+	double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
 
-	    // if (i == 0) logfile << "    var_ = intercept" << std::endl;
-	    // else logfile << "    var_ = " << regressors[i-1]->getName() << std::endl;
+	// if (i == 0) logfile << "    var_ = intercept" << std::endl;
+	// else logfile << "    var_ = " << regressors[i-1]->getName() << std::endl;
 	
-	    // logfile << "    b_ = " << b(i, 0) << std::endl;
-	    // logfile << "    se_ = " << se_ << std::endl;
-	    // // logfile << "    s_ = " << s_ << std::endl;
-	    // logfile << "    t_ = " << t_ << std::endl;
-	    // logfile << "    p_ = " << p_ << std::endl;
+	// logfile << "    b_ = " << b(i, 0) << std::endl;
+	// logfile << "    se_ = " << se_ << std::endl;
+	// // logfile << "    s_ = " << s_ << std::endl;
+	// logfile << "    t_ = " << t_ << std::endl;	
+	// logfile << "    p_ = " << p_ << std::endl;
 
-	    // if (i == 1)
-	    //     {
-	    // 	// Rcpp::Rcout << "beta = " << b(i,0) << std::endl;
-	    // 	// Rcpp::Rcout << "SE = " << se_ << std::endl;
-	    // 	// Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
-	    // 	// Rcpp::Rcout << "p-value = " << p_ << std::endl;
-	    //     }
+	// if (i == 1)
+	//     {
+	// 	// Rcpp::Rcout << "beta = " << b(i,0) << std::endl;
+	// 	// Rcpp::Rcout << "SE = " << se_ << std::endl;
+	// 	// Rcpp::Rcout << "t-statistic = " << t_ << std::endl;
+	// 	// Rcpp::Rcout << "p-value = " << p_ << std::endl;
+	//     }
 
-	    sqErr[i] = se_;
-	    t[i] = t_;
-	    p[i] = p_;
-	}
-	// logfile.close();
+	sqErr[i] = se_;
+	t[i] = t_;
+	p[i] = p_;
     }
+    // logfile.close();
+    
 
     // logfile << '\t' << names << std::endl << x.rows(0,5) << std::endl << std::endl << xSub.rows(n-6,n-1) << std::endl << std::endl;
 

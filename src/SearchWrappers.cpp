@@ -140,7 +140,7 @@ Rcpp::List pcStable(
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti itm(ds, alpha, false);
+    IndTestMulti itm(ds, alpha);
 
     PcStable pcs((IndependenceTest*) &itm);
     pcs.setVerbose(v);
@@ -225,9 +225,9 @@ Rcpp::List pcMax(
 
     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti *itm = new IndTestMulti(ds, alpha);
+    IndTestMulti itm(ds, alpha);
 
-    PcMax pcm((IndependenceTest*) itm);
+    PcMax pcm((IndependenceTest*) &itm);
     pcm.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -267,9 +267,9 @@ Rcpp::List fciStable(
     
     bool v = Rcpp::is_true(Rcpp::all(verbose));
     
-    IndTestMulti *itm = new IndTestMulti(ds, alpha);
+    IndTestMulti itm(ds, alpha);
     
-    Fci fci((IndependenceTest*) itm);
+    Fci fci((IndependenceTest*) &itm);
     fci.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -311,9 +311,9 @@ Rcpp::List fciMax(
     
     bool v = Rcpp::is_true(Rcpp::all(verbose));
     
-    IndTestMulti *itm = new IndTestMulti(ds, alpha);
+    IndTestMulti itm(ds, alpha);
     
-    FciMax fcimax((IndependenceTest*) itm);
+    FciMax fcimax((IndependenceTest*) &itm);
     fcimax.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -321,8 +321,13 @@ Rcpp::List fciMax(
         ig = EdgeListGraph(_initialGraph, ds);
         fcimax.setInitialGraph(&ig);
     }
-    
-    Rcpp::List result = fcimax.search().toList();
+
+    Rcpp::List result;
+    try {
+	result = fcimax.search().toList();
+    } catch(std::exception& e) {
+	Rcpp::Rcout << e.what() << std::endl;
+    }
     
     ds.deleteVariables();
     

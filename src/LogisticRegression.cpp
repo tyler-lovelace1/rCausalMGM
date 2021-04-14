@@ -227,15 +227,17 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     arma::vec coefficients;
     std::vector<std::string> sigMarker;
     sigMarker.reserve(numRegressors);
-    arma::vec pValues = arma::vec(numRegressors + 1, arma::fill::ones);
+    arma::vec pValues = arma::vec(numRegressors + 1, arma::fill::zeros);
     arma::vec zScores = arma::vec(numRegressors + 1, arma::fill::zeros);
     double lnV;
     double ln1mV;
     double llP = 2e+10;
     double ll = 1e+10;
     double llN = 0.0;
-    double lam = 0.01;
+    double lam = 0.0;
     double chiSq;
+
+    auto start = std::chrono::high_resolution_clock::now();
 
     while (true)
     {
@@ -252,7 +254,8 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
         int iter = 0;
 
-        auto start = std::chrono::high_resolution_clock::now();
+	// auto start = std::chrono::high_resolution_clock::now();
+
         while (std::abs(llP - ll) > 1e-7)
         {
             double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
@@ -263,7 +266,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
                 //     par[j] += std::numeric_limits<double>::quiet_NaN();
                 // }
                 // break;
-                throw new std::runtime_error("Log Reg taking forever");
+                throw std::runtime_error("Logistic Regression not converging");
             }
 
             llP = ll;
@@ -417,6 +420,8 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
         double zScore;
 
+	// logfile.open("../debug.log", std::ios_base::app);
+
         for (arma::uword j = 1; j <= numRegressors; j++)
         {
             par[j] = par[j] / xStdDevs[j];
@@ -429,45 +434,51 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
             //  	 regressorNames[1] == "X311MULTINOM.2" &&regressorNames[2] == "X311MULTINOM.3") {
             if (std::isnan(zScore))
             {
-                logfile << "Regressors:" << std::endl;
-                for (int i = 0; i < numRegressors; i++) {
-                    logfile << regressorNames[i] << "\t";
-                }
-                logfile << std::endl;
-                for (int i = 0; i < numRegressors; i++) {
-                    logfile << par[i] << "\t";
-                }
-                logfile << std::endl;
-                logfile << "xStdDevs[" << j << "] = " << xStdDevs[j] << std::endl;
-                logfile << "xMeans[" << j << "] = " << xMeans[j] << std::endl;
-                logfile << "arr(" << j << "," << j << ") = " << arr(j,j) << std::endl;
-                logfile << "par[" << j << "] = " << par[j] << std::endl;
-                logfile << "parStdErr[" << j << "] = " << parStdErr[j] << std::endl;
-                logfile << "zScore = " << zScore << std::endl << std::endl;
+                // logfile << "Regressors:" << std::endl;
+                // for (int i = 0; i < numRegressors; i++) {
+                //     logfile << regressorNames[i] << "\t";
+                // }
+                // logfile << std::endl;
+                // for (int i = 0; i < numRegressors; i++) {
+                //     logfile << par[i] << "\t";
+                // }
+                // logfile << std::endl;
+		// logfile << "ll = " << ll << std::endl;
+                // logfile << "xStdDevs[" << j << "] = " << xStdDevs[j] << std::endl;
+                // logfile << "xMeans[" << j << "] = " << xMeans[j] << std::endl;
+                // logfile << "arr(" << j << "," << j << ") = " << arr(j,j) << std::endl;
+                // logfile << "par[" << j << "] = " << par[j] << std::endl;
+                // logfile << "parStdErr[" << j << "] = " << parStdErr[j] << std::endl;
+                // logfile << "zScore = " << zScore << std::endl << std::endl;
                 break;
             }
 
-            double prob = norm(std::abs(zScore));
-            pValues[j] = prob;
+            // double prob = norm(std::abs(zScore));
+            pValues[j] = norm(std::abs(zScore));
             zScores[j] = zScore;
         }
 
-        // if (std::isnan(zScore))
-        // {
-        //     lam = std::max(0.01, lam * 10);
-        //     logfile << "Re-run, lam = " << lam <<  "\n\n";
-        //     continue;
-        // }
+        if (std::isnan(zScore))
+        {
+	    // arr.fill(0);
+	    lam = std::max(0.01, lam * 5);
+	    // Rcpp::Rcout << "Re-run, lam = " << lam <<  "\n\n";
+            // logfile << "coefficient, lam = " << lam <<  "\n\n";
+            continue;
+        }
 
         parStdErr[0] = std::sqrt(arr(0, 0));
         zScore = par[0] / parStdErr[0];
 
-        // if (std::isnan(zScore))
-        // {
-        //     lam = std::max(0.01, lam * 10);
-        //     logfile << "Re-run, lam = " << lam <<  "\n\n";
-        //     continue;
-        // }
+        if (std::isnan(zScore))
+        {
+	    // arr.fill(0);
+            lam = std::max(0.01, lam * 5);
+            // logfile << "intercept, lam = " << lam <<  "\n\n";
+            continue;
+        }
+
+	logfile.close();
 
         pValues[0] = norm(zScore);
         zScores[0] = zScore;
@@ -481,7 +492,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     // logfile << "par[" << 0 << "] = " << par[0] << std::endl << std::endl;
     // logfile.close();
 
-    // logfile.close();
+    logfile.close();
 
     double intercept = par[0];
     coefficients = par;
@@ -494,13 +505,17 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 double LogisticRegression::norm(double z)
 {
     // std::ofstream logfile;
-    // logfile.open("../test_results/debug.log", std::ios_base::app);
+    // logfile.open("../debug.log", std::ios_base::app);
 
     double q = z * z;
     const double pi = boost::math::constants::pi<double>();
     double piOver2 = pi / 2.0;
 
     // Rcpp::Rcout << "chisq = " << q << std::endl;
+    
+    // logfile << "LOGISTIC REGRESSION" << std::endl;
+    // logfile << "q = " << q << std::endl << std::endl;
+    // logfile.close();
 
     if (std::abs(q) > 7.0)
     {
@@ -511,10 +526,6 @@ double LogisticRegression::norm(double z)
     {
         boost::math::chi_squared dist(1);
 
-        // logfile << "LOGISTIC REGRESSION" << std::endl;
-        // logfile << "dist.df = " << dist.degrees_of_freedom() << std::endl;
-        // logfile << "q = " << q << std::endl << std::endl;
-        // logfile.close();
         double p = cdf(dist, q);
         return (p);
     }

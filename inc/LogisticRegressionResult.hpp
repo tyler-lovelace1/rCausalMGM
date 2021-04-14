@@ -16,7 +16,7 @@
 
 class LogisticRegressionResult
 {
-  private:
+private:
     std::vector<std::string> sigMarker;
     double chiSq;
     double alpha;
@@ -34,23 +34,25 @@ class LogisticRegressionResult
     double logLikelihood;
 
 
-  /**
-   * Constructs a new LogRegrResult.
-   *
-   * @param ny0           the number of cases with target = 0.
-   * @param ny1           the number of cases with target = 1.
-   * @param numRegressors the number of regressors
-   * @param coefs         the array of regression coefficients.
-   * @param stdErrs       the array of std errors of the coefficients.
-   * @param probs         the array of P-values for the regression
-   *                      coefficients.
-   */
-  public:
-     LogisticRegressionResult(std::string target, std::vector<std::string> regressorNames,
-                arma::vec xMeans, arma::vec xStdDevs, int numRegressors, int ny0,
-                int ny1, arma::vec coefs, arma::vec stdErrs, arma::vec probs,
-                double intercept, double logLikelihood, std::vector<std::string> sigmMarker,
-                double chiSq, double alpha);
+    /**
+     * Constructs a new LogRegrResult.
+     *
+     * @param ny0           the number of cases with target = 0.
+     * @param ny1           the number of cases with target = 1.
+     * @param numRegressors the number of regressors
+     * @param coefs         the array of regression coefficients.
+     * @param stdErrs       the array of std errors of the coefficients.
+     * @param probs         the array of P-values for the regression
+     *                      coefficients.
+     */
+public:
+    LogisticRegressionResult() {}
+    
+    LogisticRegressionResult(std::string target, std::vector<std::string> regressorNames,
+			     arma::vec xMeans, arma::vec xStdDevs, int numRegressors, int ny0,
+			     int ny1, arma::vec coefs, arma::vec stdErrs, arma::vec probs,
+			     double intercept, double logLikelihood,
+			     std::vector<std::string> sigmMarker, double chiSq, double alpha);
 
     /**
      * The variables.
