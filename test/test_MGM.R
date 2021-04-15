@@ -14,6 +14,8 @@ saveGraph(g, "../fci.txt")
 fg <- loadGraph("../fci.txt")
 print(fg)
 
+fg[["markov.blankets"]]
+
 # lam.max <- max(abs(cor(df) - diag(ncol(df))))
 # lam.min <- 0.2*lam.max
 
