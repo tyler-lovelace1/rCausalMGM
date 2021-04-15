@@ -259,7 +259,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
         while (std::abs(llP - ll) > 1e-7)
         {
             double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
-            if (curr > 5)
+            if (lam > 1 || curr > 5)
             {
                 // logfile << "timed out" << std::endl;
                 // for (arma::uword j = 0; j <= numRegressors; j++) {
@@ -461,7 +461,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
         if (std::isnan(zScore))
         {
 	    // arr.fill(0);
-	    lam = std::max(0.01, lam * 5);
+	    lam = std::max(0.01, lam * 10);
 	    // Rcpp::Rcout << "Re-run, lam = " << lam <<  "\n\n";
             // logfile << "coefficient, lam = " << lam <<  "\n\n";
             continue;
@@ -473,7 +473,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
         if (std::isnan(zScore))
         {
 	    // arr.fill(0);
-            lam = std::max(0.01, lam * 5);
+            lam = std::max(0.01, lam * 10);
             // logfile << "intercept, lam = " << lam <<  "\n\n";
             continue;
         }
