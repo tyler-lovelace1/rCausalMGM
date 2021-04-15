@@ -450,7 +450,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
                 // logfile << "par[" << j << "] = " << par[j] << std::endl;
                 // logfile << "parStdErr[" << j << "] = " << parStdErr[j] << std::endl;
                 // logfile << "zScore = " << zScore << std::endl << std::endl;
-                break;
+		throw std::runtime_error("Logistic Regression not converging");
             }
 
             // double prob = norm(std::abs(zScore));
@@ -464,7 +464,8 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	    lam = std::max(0.01, lam * 10);
 	    // Rcpp::Rcout << "Re-run, lam = " << lam <<  "\n\n";
             // logfile << "coefficient, lam = " << lam <<  "\n\n";
-            continue;
+	    throw std::runtime_error("Logistic Regression not converging");
+            // continue;
         }
 
         parStdErr[0] = std::sqrt(arr(0, 0));
@@ -475,7 +476,8 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	    // arr.fill(0);
             lam = std::max(0.01, lam * 10);
             // logfile << "intercept, lam = " << lam <<  "\n\n";
-            continue;
+	    throw std::runtime_error("Logistic Regression not converging");
+            // continue;
         }
 
 	logfile.close();

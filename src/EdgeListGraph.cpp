@@ -619,7 +619,7 @@ Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
  *    in the Markov blanket.
  *
  */
-Rcpp::List markovBlanketMAC(const Rcpp::List& graph) {
+Rcpp::List markovBlanketMEC(const Rcpp::List& graph) {
     std::vector<std::string> nodes = graph["nodes"];
     std::vector<std::string> edges = graph["edges"];
 
@@ -720,7 +720,7 @@ Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
     }
 
     if (graph["type"] == "undirected") return markovBlanketUndirected(graph);
-    else                               return markovBlanketMAC(graph);
+    else                               return markovBlanketMEC(graph);
 }
 
 bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
