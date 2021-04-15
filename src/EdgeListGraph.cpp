@@ -600,6 +600,98 @@ Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
     return result;
 }
 
+/**
+ * Calculate markov blankets for Partial Ancestral graphs
+ *
+ * Rules:
+ * 1. Parents, children, and spouses (linked by fully directed edges) are treated the 
+ *    same as in DAGs, and are all included in the Markov blanket.
+ * 2. Unoriented, partially oriented, and bidirected edges all have to be treated like 
+ *    there is latent confounding, because it hasn't been ruled out. Thus, any node 
+ *    connected to the target or its children by unoriented, partially oriented, or 
+ *    bidirected edges are included in the Markov blanket.
+ * 3. For the nodes added to the Markov blanket in rule two, add any parents of those
+ *    nodes to the Markov blanket.
+ * 4. Additionally, add any nodes connected to those added in rule two by unoriented, 
+ *    partially oriented, or bidirected edges. We're going to cut off the Markov blanket 
+ *    here arbitrarily, but in theory rules 3 and 4 should be applied recursively on 
+ *    each new set of nodes connected by unoriented, partially oriented, or bidirected 
+ *    edges. However, this could lead to ridiculously large Markov blankets, and it would 
+ *    be unlikely the additional nodes would actually improve predictive performance.
+ */
+Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
+    std::vector<std::string> nodes = graph["nodes"];
+    std::vector<std::string> edges = graph["edges"];
+
+    std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
+    std::unordered_map<std::string, std::unordered_set<std::string>> confoundingNeighbors; // Nodes connected by o-o, o->, or <->
+    std::unordered_map<std::string, std::unordered_set<std::string>> parents;
+    std::unordered_map<std::string, std::unordered_set<std::string>> children;
+
+    for (std::string n : nodes) {
+        blankets[n] = std::unordered_set<std::string>();
+        confoundingNeighbors[n] = std::unordered_set<std::string>();
+        parents[n] = std::unordered_set<std::string>();
+        children[n] = std::unordered_set<std::string>();
+    }
+
+    // Get neighbors of every node
+    for (std::string edgeString : edges) {
+        std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
+
+        std::string n1 = e[0];
+        std::string n2 = e[2];
+        std::string edge = e[1];
+
+        if (edge == "o-o" || edge == "o->" || edge == "<->") {
+            confoundingNeighbors[n1].insert(n2);
+            confoundingNeighbors[n2].insert(n1);
+        } else if (edge == "-->") {
+            children[n1].insert(n2);
+            parents[n2].insert(n1);
+        } 
+
+    }
+
+    // Get blankets of every node
+    for (std::string target : nodes) {
+
+        std::unordered_set<std::string> spouses;
+        for (std::string child : children[target]) {
+            spouses.insert(parents[child].begin(), parents[child].end());
+        }
+
+        std::unordered_set<std::string> rule2(confoundingNeighbors[target]);
+        for (std::string child : children[target]) {
+            rule2.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
+        }
+
+        std::unordered_set<std::string> rule3;
+        std::unordered_set<std::string> rule4;
+        for (std::string Y : rule2) {
+            rule3.insert(parents[Y].begin(), parents[Y].end());
+            rule4.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+        }
+
+        blankets[target].insert(parents[target].begin(),  parents[target].end());
+        blankets[target].insert(children[target].begin(), children[target].end());
+        blankets[target].insert(spouses.begin(),          spouses.end());
+        blankets[target].insert(rule2.begin(), rule2.end());
+        blankets[target].insert(rule3.begin(), rule3.end());
+        blankets[target].insert(rule4.begin(), rule4.end());
+        blankets[target].erase(target);
+    }
+
+    // Convert to list
+    Rcpp::List result = Rcpp::List::create();
+
+    for (std::string n : nodes) {
+        result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
+    }
+
+    return result;
+}
+
 
 /**
  * Calculate markov blankets for Markov Equivalence Class graphs
@@ -719,8 +811,9 @@ Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
         throw std::invalid_argument("ERROR: list is not in the form of a graph");
     }
 
-    if (graph["type"] == "undirected") return markovBlanketUndirected(graph);
-    else                               return markovBlanketMEC(graph);
+    if (graph["type"] == "undirected")              return markovBlanketUndirected(graph);
+    if (graph["type"] == "partial ancestral graph") return markovBlanketPAG(graph);
+    else                                            return markovBlanketMEC(graph);
 }
 
 bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
