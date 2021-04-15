@@ -8,7 +8,7 @@ mgm(
   df,
   lambda = as.numeric(c(0.2, 0.2, 0.2)),
   maxDiscrete = 5L,
-  verbose = as.logical(c(0))
+  verbose = as.logical(c(FALSE))
 )
 }
 \arguments{

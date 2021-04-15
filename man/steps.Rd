@@ -10,9 +10,9 @@ steps(
   lambda = NULL,
   g = 0.05,
   numSub = 20L,
-  leaveOneOut = as.logical(c(0)),
-  computeStabs = as.logical(c(0)),
-  verbose = as.logical(c(0))
+  leaveOneOut = as.logical(c(FALSE)),
+  computeStabs = as.logical(c(FALSE)),
+  verbose = as.logical(c(FALSE))
 )
 }
 \arguments{

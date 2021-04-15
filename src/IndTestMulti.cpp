@@ -224,8 +224,14 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     for (int i = 0; i < variablesPerNode.at(x).size(); i++)
     {
         Variable *varX = variablesPerNode.at(x).at(i);
-        LogisticRegressionResult result0 = logisticRegression.regress((DiscreteVariable *)varX, zList, rows_);
-        LogisticRegressionResult result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList, rows_);
+	LogisticRegressionResult result0;
+	LogisticRegressionResult result1;
+	try {
+	    result0 = logisticRegression.regress((DiscreteVariable *)varX, zList, rows_);
+	    result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList, rows_);
+	} catch (std::runtime_error& e) {
+	    return false;
+	}
 
         coeffsNull.insert_cols(i, result0.getCoefs());
         coeffsDep.insert_cols(i, result1.getCoefs());
@@ -473,7 +479,7 @@ bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector
         }
     }
 
-    // std::ofstream logfile;
+    std::ofstream logfile;
     // logfile.open("../test_results/debug.log", std::ios_base::app);
 
     std::vector<Variable *> regressors;
@@ -493,9 +499,15 @@ bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector
 
     // try
     // {
-    RegressionResult result = regression.regress(x, regressors, rows);
+    RegressionResult result;
 
-    // logfile.open("lin_reg_debug.log", std::ios_base::app);
+    try {
+	result = regression.regress(x, regressors, rows);
+    } catch (std::runtime_error& e) {
+	return false;
+    }
+
+    // logfile.open("debug.log", std::ios_base::app);
     // logfile << result << std::endl;
     // logfile.close();
     
