@@ -811,9 +811,12 @@ Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
         throw std::invalid_argument("ERROR: list is not in the form of a graph");
     }
 
-    if (graph["type"] == "markov equivalence class")   return markovBlanketMEC(graph);
-    if (graph["type"] == "partial ancestral graph")    return markovBlanketPAG(graph);
-    else                                               return markovBlanketUndirected(graph);
+    if (Rcpp::as<std::string>(graph["type"]) == "markov equivalence class")
+      return markovBlanketMEC(graph);
+    if (Rcpp::as<std::string>(graph["type"]) == "partial ancestral graph")
+      return markovBlanketPAG(graph);
+    else
+      return markovBlanketUndirected(graph);
 }
 
 bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
