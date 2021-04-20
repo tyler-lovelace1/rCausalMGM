@@ -98,7 +98,7 @@ bool IndTestMulti::isIndependent(Variable *x, Variable *y, std::vector<Variable 
 	}  catch (std::runtime_error& e) {
 	    if (y->isDiscrete()) {
 		try {
-		    Rcpp::Rcout << "Trying reverse MultinomialLogisticRegression test" << std::endl;
+		    // Rcpp::Rcout << "Trying reverse MultinomialLogisticRegression test" << std::endl;
 		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
 		} catch (std::runtime_error& e) {
 		    return false;
@@ -129,7 +129,7 @@ bool IndTestMulti::isIndependent(Variable *x, Variable *y, std::vector<Variable 
 	    return isIndependentRegression(x, y, z, pReturn);
 	}  catch (std::runtime_error& e) {
 	    try {
-		Rcpp::Rcout << "Trying reverse LinearRegression test" << std::endl;
+		// Rcpp::Rcout << "Trying reverse LinearRegression test" << std::endl;
 		return isIndependentRegression(y, x, z, pReturn);
 	    } catch (std::runtime_error& e) {
 		return false;
