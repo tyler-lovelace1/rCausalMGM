@@ -37,9 +37,9 @@ void CpcStable::orientUnshieldedTriples() {
                 if (graph.isAdjacentTo(x, z))
                     continue;
 
-                std::unique_lock<std::mutex> mapLock(mapMutex);
-                sepsetCount[Triple(x, y, z)] = {0, 0};
-                mapLock.unlock();
+                // std::unique_lock<std::mutex> mapLock(mapMutex);
+                // sepsetCount[Triple(x, y, z)] = {0, 0};
+                // mapLock.unlock();
 
                 std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
                 std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
@@ -85,18 +85,25 @@ void CpcStable::orientUnshieldedTriples() {
                 return;
             }
 
-            if (independenceTest->isIndependent(t.x, t.z, sepset)) {
-                // if (sepset.contains(t.y))
-                if (std::find(sepset.begin(), sepset.end(), t.y) != sepset.end()) {
-                    std::lock_guard<std::mutex> mapLock(mapMutex);
-                    std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
-                    sepsetCount[Triple(t.x, t.y, t.z)] = {current.first + 1, current.second};
-                } else {
-                    std::lock_guard<std::mutex> mapLock(mapMutex);
-                    std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
-                    sepsetCount[Triple(t.x, t.y, t.z)] = {current.first, current.second + 1};
-                }
-            }
+	    bool indep = independenceTest->isIndependent(t.x, t.z, sepset);
+
+	    {
+		std::lock_guard<std::mutex> mapLock(mapMutex);
+		if (sepsetCount.count(Triple(t.x, t.y, t.z)) == 0) {
+		    sepsetCount[Triple(t.x, t.y, t.z)] = {0, 0};
+		}
+		if (indep) {
+		    // if (sepset.contains(t.y))
+		    if (std::find(sepset.begin(), sepset.end(), t.y) != sepset.end()) {
+			std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
+			sepsetCount[Triple(t.x, t.y, t.z)] = {current.first + 1, current.second};
+		    } else {
+			// std::lock_guard<std::mutex> mapLock(mapMutex);
+			std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
+			sepsetCount[Triple(t.x, t.y, t.z)] = {current.first, current.second + 1};
+		    }
+		}
+	    }
         }
     };
 
