@@ -131,6 +131,8 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
     
     if (verbose) Rcpp::Rcout << "FCI-Max finished:  " << std::round(elapsedTime) << " s" << std::endl;
+
+    delete sepsetsMaxP;
     
     return graph;
 }

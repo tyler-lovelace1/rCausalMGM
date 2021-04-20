@@ -275,16 +275,16 @@ RegressionResult LinearRegression::regress(Variable *target,
 
     // const arma::mat xT = std::move(x.t());
     // const arma::mat xTx = std::move(xT * x);
-    const arma::vec b = std::move(arma::solve(x, y));
-    const arma::mat xTxInv = std::move(arma::inv_sympd(x.t() * x)); // std::move(xTx.i());
+    arma::vec b = arma::solve(x, y);
+    arma::mat xTxInv = arma::inv_sympd(x.t() * x); // std::move(xTx.i());
     // const arma::mat xTy = std::move(xT * y);
     // const arma::mat b = std::move(xTxInv * xTy);
 
-    const arma::mat yHat = std::move(x * b);
-    const arma::mat res = std::move(y - yHat);
+    arma::mat yHat = x * b;
+    arma::mat res = y - yHat;
 
-    const arma::vec yHat_ = yHat.col(0);
-    const arma::vec res_ = res.col(0);
+    arma::vec yHat_ = yHat.col(0);
+    arma::vec res_ = res.col(0);
     // const arma::vec b_ = b.col(0);
 
     // logfile << '\t' << names << std::endl << b.t() << std::endl << std::endl;

@@ -93,25 +93,49 @@ bool IndTestMulti::isIndependent(Variable *x, Variable *y, std::vector<Variable 
     if (x->isDiscrete())
     {
         // if (debug) Rcpp::Rcout << "Path 1" << std::endl;
-        return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
+	try {
+	    return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
+	}  catch (std::runtime_error& e) {
+	    if (y->isDiscrete()) {
+		try {
+		    Rcpp::Rcout << "Trying reverse MultinomialLogisticRegression test" << std::endl;
+		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
+		} catch (std::runtime_error& e) {
+		    return false;
+		}
+	    }
+	    return false;
+	}
     }
     else if (y->isDiscrete())
     {
-        if (preferLinear)
-        {
-            // if (debug) Rcpp::Rcout << "Path 2" << std::endl;
-            return isIndependentRegression(x, y, z, pReturn);
-        }
-        else
-        {
-            // if (debug) Rcpp::Rcout << "Path 3" << std::endl;
-            return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
-        }
+	try {
+	    if (preferLinear) {
+		// if (debug) Rcpp::Rcout << "Path 2" << std::endl;
+		return isIndependentRegression(x, y, z, pReturn);
+	    }
+	    else {
+		// if (debug) Rcpp::Rcout << "Path 3" << std::endl;
+		return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
+	    }
+	} catch (std::runtime_error& e) {
+	    return false;
+	}
     }
     else
     {
         // if (debug) Rcpp::Rcout << "Path 4" << std::endl;
-        return isIndependentRegression(x, y, z, pReturn);
+	try {
+	    return isIndependentRegression(x, y, z, pReturn);
+	}  catch (std::runtime_error& e) {
+	    try {
+		Rcpp::Rcout << "Trying reverse LinearRegression test" << std::endl;
+		return isIndependentRegression(y, x, z, pReturn);
+	    } catch (std::runtime_error& e) {
+		return false;
+	    }
+	    return false;
+	}
     }
 }
 
@@ -224,14 +248,16 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     for (int i = 0; i < variablesPerNode.at(x).size(); i++)
     {
         Variable *varX = variablesPerNode.at(x).at(i);
-	LogisticRegressionResult result0;
-	LogisticRegressionResult result1;
-	try {
-	    result0 = logisticRegression.regress((DiscreteVariable *)varX, zList, rows_);
-	    result1 = logisticRegression.regress((DiscreteVariable *)varX, yzList, rows_);
-	} catch (std::runtime_error& e) {
-	    return false;
-	}
+	// LogisticRegressionResult result0;
+	// LogisticRegressionResult result1;
+	// try {
+	LogisticRegressionResult result0 = logisticRegression.regress((DiscreteVariable *)varX,
+								      zList, rows_);
+	LogisticRegressionResult result1 = logisticRegression.regress((DiscreteVariable *)varX,
+								      yzList, rows_);
+	// } catch (std::runtime_error& e) {
+	//     return false;
+	// }
 
         coeffsNull.insert_cols(i, result0.getCoefs());
         coeffsDep.insert_cols(i, result1.getCoefs());
@@ -269,20 +295,20 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
 
     double ll = multiLL(coeffsDep, x, yzList);
     double ll0 = multiLL(coeffsNull, x, zList);
-    double chisq; // = 2*(ll - ll0);
+    double chisq = std::max(2*(ll - ll0), 0.0);
 
-    if ((std::isinf(ll) && std::isinf(ll0)) || (ll0 > ll))
-    {
-        chisq = 1e-10;
-    }
-    else if (std::isinf(ll0))
-    {
-        chisq = 1e20;
-    }
-    else
-    {
-        chisq = 2 * (ll - ll0); // Need to make multiLL
-    }
+    // if ((std::isinf(ll) && std::isinf(ll0)) || (ll0 > ll))
+    // {
+    //     chisq = 1e-10;
+    // }
+    // else if (std::isinf(ll0))
+    // {
+    //     chisq = 1e20;
+    // }
+    // else
+    // {
+    //     chisq = 2 * (ll - ll0); // Need to make multiLL
+    // }
 
     int df = variablesPerNode.at(y).size() * variablesPerNode.at(x).size();
     boost::math::chi_squared dist(df);

@@ -18,7 +18,6 @@ PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(EdgeListGraph& 
         throw std::invalid_argument("null IndependenceChecker passed in PossibleDSepSearch constructor!");
     }
     this->graph = graph;
-
 }
 
 PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE)
@@ -32,6 +31,9 @@ PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTes
     }
 
     setMaxPathLength(maxReachablePathLength);
+    this->poisonEdge = Edge(new ContinuousVariable("EJWMX3RCpPi0qbp"),
+			    new ContinuousVariable("nLtWU7DmeZyYPZs"),
+			    ENDPOINT_NULL, ENDPOINT_NULL);
 }
 
 //========================PRIVATE METHODS==========================//
@@ -137,7 +139,7 @@ void PossibleDsepFciConsumerProducer::setMaxPathLength(int maxReachablePathLengt
 }
 
 void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::unordered_set<Edge> edges) {
-    PossibleDsepTask poisonPill;
+    PossibleDsepTask poisonPill(poisonEdge, std::vector<Variable*>());
 
     for (Edge edge : edges) {
         Variable* x = edge.getNode1();

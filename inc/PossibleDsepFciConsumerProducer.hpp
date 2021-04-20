@@ -49,11 +49,13 @@ private:
     */
     int parallelism = std::thread::hardware_concurrency();
 
+    Edge poisonEdge;
+
     struct PossibleDsepTask {
         Edge edge;
         std::vector<Variable*> condSet;
 
-        PossibleDsepTask() : edge(Edge(new ContinuousVariable("EJWMX3RCpPi0qbp"), new ContinuousVariable("nLtWU7DmeZyYPZs"), ENDPOINT_NULL, ENDPOINT_NULL)),
+        PossibleDsepTask() : edge(),
              condSet(std::vector<Variable*>()) {}
 
         PossibleDsepTask(Edge edge_, std::vector<Variable*> condSet_) : edge(edge_),
@@ -108,6 +110,8 @@ public:
     PossibleDsepFciConsumerProducer(EdgeListGraph& graph, IndependenceTest *test);
 
     PossibleDsepFciConsumerProducer(IndependenceTest *test);
+
+    ~PossibleDsepFciConsumerProducer() { delete poisonEdge.getNode1(); delete poisonEdge.getNode2(); }
 
      //========================PUBLIC METHODS==========================//
 

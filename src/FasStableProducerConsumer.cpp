@@ -301,7 +301,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	adjacencyCondition.notify_one();
         // adjacencyLock.unlock();
 
-        // if (!edgeExists) continue; // Skip if the edge no longer exists
+        if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
         bool independent;
