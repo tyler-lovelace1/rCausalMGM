@@ -7,7 +7,7 @@ print.graph <- function(x) {
     cat("Nodes: ", length(x[["nodes"]]), "\n")
     cat("Edges: ", length(x[["edges"]]), "\n")
     if (x[["type"]] == "partial ancestral graph") {
-        cat("  Nondirected: ", length(which(grepl("o-o", x[["edges"]], fixed=TRUE))), "\n")
+        cat("  Unoriented: ", length(which(grepl("o-o", x[["edges"]], fixed=TRUE))), "\n")
         cat("  Partially Oriented: ", length(which(grepl("o->", x[["edges"]], fixed=TRUE))), "\n")
     } else {
         cat("  Undirected: ", length(which(grepl("---", x[["edges"]], fixed=TRUE))), "\n")

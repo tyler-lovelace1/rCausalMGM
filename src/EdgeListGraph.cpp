@@ -608,11 +608,13 @@ Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
  *    same as in DAGs, and are all included in the Markov blanket.
  * 2. Unoriented, partially oriented, and bidirected edges all have to be treated like 
  *    there is latent confounding, because it hasn't been ruled out. Thus, any node 
- *    connected to the target or its children by unoriented, partially oriented, or 
+ *    connected to the target by unoriented, partially oriented, or 
  *    bidirected edges are included in the Markov blanket.
- * 3. For the nodes added to the Markov blanket in rule two, add any parents of those
+ * 3. Unoriented, partially oriented, or bidirected edges connected to the children are 
+ *    included in the Markov blanket.
+ * 4. For the nodes added to the Markov blanket in rule two, add any parents of those
  *    nodes to the Markov blanket.
- * 4. Additionally, add any nodes connected to those added in rule two by unoriented, 
+ * 5. Additionally, add any nodes connected to those added in rule two by unoriented, 
  *    partially oriented, or bidirected edges. We're going to cut off the Markov blanket 
  *    here arbitrarily, but in theory rules 3 and 4 should be applied recursively on 
  *    each new set of nodes connected by unoriented, partially oriented, or bidirected 
@@ -662,23 +664,25 @@ Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
         }
 
         std::unordered_set<std::string> rule2(confoundingNeighbors[target]);
+	std::unordered_set<std::string> rule3;
         for (std::string child : children[target]) {
-            rule2.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
+            rule3.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
         }
 
-        std::unordered_set<std::string> rule3;
         std::unordered_set<std::string> rule4;
+        std::unordered_set<std::string> rule5;
         for (std::string Y : rule2) {
-            rule3.insert(parents[Y].begin(), parents[Y].end());
-            rule4.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+            rule4.insert(parents[Y].begin(), parents[Y].end());
+            rule5.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
         }
 
-        blankets[target].insert(parents[target].begin(),  parents[target].end());
+        blankets[target].insert(parents[target].begin(), parents[target].end());
         blankets[target].insert(children[target].begin(), children[target].end());
-        blankets[target].insert(spouses.begin(),          spouses.end());
+        blankets[target].insert(spouses.begin(), spouses.end());
         blankets[target].insert(rule2.begin(), rule2.end());
         blankets[target].insert(rule3.begin(), rule3.end());
         blankets[target].insert(rule4.begin(), rule4.end());
+	blankets[target].insert(rule5.begin(), rule5.end());
         blankets[target].erase(target);
     }
 
@@ -709,6 +713,7 @@ Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
  * 6. In the case where the target variable X is a parent of node Y that contains an
  *    undirected edge to a node Z, then Y, Z, and any directed parents W of Z are included
  *    in the Markov blanket.
+ *    #### Rule 6 commented out, TODO: test whether inclusion improves MB inference
  *
  */
 Rcpp::List markovBlanketMEC(const Rcpp::List& graph) {
@@ -767,19 +772,19 @@ Rcpp::List markovBlanketMEC(const Rcpp::List& graph) {
             rule4.insert(parents[Y].begin(), parents[Y].end());
         }
 
-        std::unordered_set<std::string> rule6;
-        for (std::string Y : children[target]) {
-            for (std::string Z : undirectedNeighbors[Y]) {
-                rule6.insert(Z);
-                rule6.insert(parents[Z].begin(), parents[Z].end()); // W
-            }
-        }
+        // std::unordered_set<std::string> rule6;
+        // for (std::string Y : children[target]) {
+        //     for (std::string Z : undirectedNeighbors[Y]) {
+        //         rule6.insert(Z);
+        //         rule6.insert(parents[Z].begin(), parents[Z].end()); // W
+        //     }
+        // }
 
         blankets[target].insert(rule1.begin(), rule1.end());
         blankets[target].insert(rule2.begin(), rule2.end());
         blankets[target].insert(rule3.begin(), rule3.end());
         blankets[target].insert(rule4.begin(), rule4.end());
-        blankets[target].insert(rule6.begin(), rule6.end());
+        // blankets[target].insert(rule6.begin(), rule6.end());
         blankets[target].erase(target);
     }
 
