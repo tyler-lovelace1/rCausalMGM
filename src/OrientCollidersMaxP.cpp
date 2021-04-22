@@ -39,12 +39,25 @@ void OrientCollidersMaxP::producer() {
             continue;
         }
 
+	std::sort(adjacentNodes.begin(),
+		  adjacentNodes.end(),
+		  [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
+	    );
+
         ChoiceGenerator cg(adjacentNodes.size(), 2);
         std::vector<int> *choice;
 
         for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-            Variable* a = adjacentNodes[(*choice)[0]];
+	    Variable* a = adjacentNodes[(*choice)[0]];
             Variable* c = adjacentNodes[(*choice)[1]];
+	    // if (adjacentNodes[(*choice)[0]]->getName()
+	    // 	< adjacentNodes[(*choice)[1]]->getName()) {
+	    // 	a = adjacentNodes[(*choice)[0]];
+	    // 	c = adjacentNodes[(*choice)[1]];
+	    // } else {
+	    // 	a = adjacentNodes[(*choice)[1]];
+	    // 	c = adjacentNodes[(*choice)[0]];
+	    // }
 
             // Skip triples that are shielded.
             if (graph->isAdjacentTo(a, c)) {
@@ -88,6 +101,13 @@ void OrientCollidersMaxP::consumer() {
 
 	{
 	  std::unique_lock<std::mutex> mapLock(mapMutex);
+	  mapCondition.wait(mapLock,
+			      [this] {
+				  if (!mapModifying) {
+				      return mapModifying = true;
+				  }
+				  return false;
+			      });
 	  if (scores.count(Triple(it.a, it.b, it.c))) {
 		if (indep && (score > scores[Triple(it.a, it.b, it.c)])) {
 		    scores.at(Triple(it.a, it.b, it.c)) = score;
@@ -103,7 +123,9 @@ void OrientCollidersMaxP::consumer() {
 		    colliders[Triple(it.a, it.b, it.c)] = 0;
 		}
 	    }
+	  mapModifying = false;
 	}
+	mapCondition.notify_one();
         // if (score > scores[Triple(it.a, it.b, it.c)]) {
         //     scores[Triple(it.a, it.b, it.c)] = score;
         //     colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
@@ -137,6 +159,7 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
     for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
         std::vector<Variable*> s = GraphUtils::asList(*comb3, adjc);
         // If !s.contains(b) TODO - should this condition be here?
+	if (s.empty()) continue;
         taskQueue.push(IndependenceTask(c, b, a, s));
     }
 

@@ -239,8 +239,7 @@ void FasStableProducerConsumer::consumerDepth0() {
 	    adjacencyCondition.wait(adjacencyLock,
 				    [this] {
 					if (!adjacencyModifying) {
-					    adjacencyModifying = true;
-					    return true;
+					    return adjacencyModifying = true;
 					}
 					return false;
 				    });
@@ -288,8 +287,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	    adjacencyCondition.wait(adjacencyLock,
 				    [this] {
 					if (!adjacencyModifying) {
-					    adjacencyModifying = true;
-					    return true;
+					    return adjacencyModifying = true;
 					}
 					return false;
 				    });
@@ -321,8 +319,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	     adjacencyCondition.wait(adjacencyLock,
 				    [this] {
 					if (!adjacencyModifying) {
-					    adjacencyModifying = true;
-					    return true;
+					    return adjacencyModifying = true;
 					}
 					return false;
 				    });
@@ -372,6 +369,11 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
             // Knowledge: possible parents
             std::vector<Variable*> ppx = _adjx;
 
+	    std::sort(ppx.begin(),
+		      ppx.end(),
+		      [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
+		);
+
             if (ppx.size() >= depth) {
                 ChoiceGenerator cg(ppx.size(), depth);
                 std::vector<int> *choice;
@@ -379,12 +381,12 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
                 for (choice = cg.next(); choice != NULL; choice = cg.next()) {
                     std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
 
-		    std::sort(condSet.begin(), condSet.end(),
-			      []( Variable* lhs, Variable* rhs )
-			      {
-				  return lhs->getName() < rhs->getName();
-			      }
-			);
+		    // std::sort(condSet.begin(), condSet.end(),
+		    // 	      []( Variable* lhs, Variable* rhs )
+		    // 	      {
+		    // 		  return lhs->getName() < rhs->getName();
+		    // 	      }
+		    // 	);
                     
                     taskQueue.push(IndependenceTask(x, y, condSet));
                 }

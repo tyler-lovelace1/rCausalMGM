@@ -20,12 +20,25 @@ void SepsetProducerMaxP::producer() {
             continue;
         }
 
+	std::sort(adjacentNodes.begin(),
+		  adjacentNodes.end(),
+		  [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
+	    );
+
         ChoiceGenerator cg(adjacentNodes.size(), 2);
         std::vector<int> *choice;
 
         for (choice = cg.next(); choice != NULL; choice = cg.next()) {
             Variable* a = adjacentNodes[(*choice)[0]];
             Variable* c = adjacentNodes[(*choice)[1]];
+	    // if (adjacentNodes[(*choice)[0]]->getName()
+	    // 	< adjacentNodes[(*choice)[1]]->getName()) {
+	    // 	a = adjacentNodes[(*choice)[0]];
+	    // 	c = adjacentNodes[(*choice)[1]];
+	    // } else {
+	    // 	a = adjacentNodes[(*choice)[1]];
+	    // 	c = adjacentNodes[(*choice)[0]];
+	    // }
 
             // Skip triples that are shielded.
             if (graph.isAdjacentTo(a, c)) {
@@ -61,6 +74,7 @@ void SepsetProducerMaxP::producer() {
 	    std::vector<int> *comb3;
 	    for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
 		std::vector<Variable*> s = GraphUtils::asList(*comb3, adjc);
+		if (s.empty()) continue;
 		taskQueue.push(IndependenceTask(a, b, c, s));
 	    }
         }
@@ -87,8 +101,7 @@ void SepsetProducerMaxP::consumer() {
 	    mapCondition.wait(mapLock,
 			      [this] {
 				  if (!mapModifying) {
-				      mapModifying = true;
-				      return true;
+				      return mapModifying = true;
 				  }
 				  return false;
 			      });

@@ -28,11 +28,24 @@ void CpcStable::orientUnshieldedTriples() {
             if (adjacentNodes.size() < 2)
                 continue;
 
+	    std::sort(adjacentNodes.begin(),
+		      adjacentNodes.end(),
+		      [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
+		);
+	    
             ChoiceGenerator cg(adjacentNodes.size(), 2);
             std::vector<int> *combination;
             for (combination = cg.next(); combination != NULL; combination = cg.next()) {
                 Variable* x = adjacentNodes[(*combination)[0]];
                 Variable* z = adjacentNodes[(*combination)[1]];
+		// if (adjacentNodes[(*combination)[0]]->getName()
+		//     < adjacentNodes[(*combination)[1]]->getName()) {
+		//     x = adjacentNodes[(*combination)[0]];
+		//     z = adjacentNodes[(*combination)[1]];
+		// } else {
+		//     x = adjacentNodes[(*combination)[1]];
+		//     z = adjacentNodes[(*combination)[0]];
+		// }
 
                 if (graph.isAdjacentTo(x, z))
                     continue;
@@ -44,7 +57,10 @@ void CpcStable::orientUnshieldedTriples() {
                 std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
                 std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
 
-                for (int d = 0; d <= std::max(adjx.size(), adjz.size()); d++) {
+		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
+		// taskQueue.push(ColliderTask(Triple(z, y, x), {}));
+
+                for (int d = 1; d <= std::max(adjx.size(), adjz.size()); d++) {
                     if (adjx.size() >= 2 && d <= adjx.size()) {
                         ChoiceGenerator gen(adjx.size(), d);
 
@@ -52,6 +68,7 @@ void CpcStable::orientUnshieldedTriples() {
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
                             std::vector<Variable*> v = GraphUtils::asList(*choice, adjx);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
+			    // taskQueue.push(ColliderTask(Triple(z, y, x), v));
                         }
                     }
 
@@ -62,6 +79,7 @@ void CpcStable::orientUnshieldedTriples() {
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
                             std::vector<Variable*> v = GraphUtils::asList(*choice, adjz);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
+			    // taskQueue.push(ColliderTask(Triple(z, y, x), v));
                         }
                     }
                 }
@@ -75,6 +93,7 @@ void CpcStable::orientUnshieldedTriples() {
     };
 
     auto consumer = [&]() {
+	// std::ofstream logfile;
         while(true) {
             ColliderTask ct = taskQueue.pop();
             Triple t = ct.t;
@@ -88,10 +107,26 @@ void CpcStable::orientUnshieldedTriples() {
 	    bool indep = independenceTest->isIndependent(t.x, t.z, sepset);
 
 	    {
-		std::lock_guard<std::mutex> mapLock(mapMutex);
+		std::unique_lock<std::mutex> mapLock(mapMutex);
+		mapCondition.wait(mapLock,
+			      [this] {
+				  if (!mapModifying) {
+				      return mapModifying = true;
+				  }
+				  return false;
+			      });
 		if (sepsetCount.count(Triple(t.x, t.y, t.z)) == 0) {
 		    sepsetCount[Triple(t.x, t.y, t.z)] = {0, 0};
 		}
+		// std::sort(sepset.begin(),
+		// 	  sepset.end(),
+		// 	  [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
+		//     );
+		// logfile.open("../cpc_debug.log", std::ios_base::app);
+		// logfile << mapLock.owns_lock() << "\t" << t.x->getName() << " ? " << t.z->getName() << " | [";
+		// for (Variable* n : sepset) logfile << n->getName() << ",";
+		// logfile << "]\t" << indep << "\n";
+		// logfile.close();
 		if (indep) {
 		    // if (sepset.contains(t.y))
 		    if (std::find(sepset.begin(), sepset.end(), t.y) != sepset.end()) {
@@ -103,7 +138,9 @@ void CpcStable::orientUnshieldedTriples() {
 			sepsetCount[Triple(t.x, t.y, t.z)] = {current.first, current.second + 1};
 		    }
 		}
+		mapModifying = false;
 	    }
+	    mapCondition.notify_one();
         }
     };
 
@@ -119,8 +156,12 @@ void CpcStable::orientUnshieldedTriples() {
         threads[i].join();
     }
 
+    // std::ofstream logfile;
+    // logfile.open("../cpc_debug.log", std::ios_base::app);
     for (auto element : sepsetCount) {
         Triple t = element.first;
+
+	// logfile << t << ":   {" << element.second.first << "," << element.second.second << "}\n";
         
         if (isCollider(t)) {
             // colliderAllowed (knowledge)
@@ -134,6 +175,7 @@ void CpcStable::orientUnshieldedTriples() {
 
         allTriples.insert(t);
     }
+    // logfile.close();
 }
 
 /**

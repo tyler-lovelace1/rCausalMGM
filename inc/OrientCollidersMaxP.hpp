@@ -84,6 +84,8 @@ private:
     int parallelism = std::thread::hardware_concurrency();
     
     std::mutex mapMutex;
+    std::condition_variable mapCondition;
+    bool mapModifying = false;
 
 public:
     OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph);
