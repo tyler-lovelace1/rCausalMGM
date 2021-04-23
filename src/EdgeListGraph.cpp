@@ -938,6 +938,8 @@ Rcpp::List EdgeListGraph::toList() {
     for (Triple t : ambiguousTriples) {
         ambiguousTriplesStrings.push_back(t.toString());
     }
+    std::sort(ambiguousTriplesStrings.begin(),
+	      ambiguousTriplesStrings.end());
 
     Rcpp::List result = Rcpp::List::create(
         Rcpp::_["nodes"] = nodeNames,

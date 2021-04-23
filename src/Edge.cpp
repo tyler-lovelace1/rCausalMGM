@@ -121,8 +121,10 @@ bool Edge::pointingLeft(Endpoint endpoint1, Endpoint endpoint2) {
  * Constructs a new bidirected edge from nodeA to nodeB (<->).
  */
 Edge Edge::bidirectedEdge(Variable* nodeA, Variable* nodeB) {
-    Edge newEdge(nodeA, nodeB, ENDPOINT_ARROW, ENDPOINT_ARROW);
-    return newEdge;
+    if (nodeA->getName() < nodeB->getName()) {
+	return Edge(nodeA, nodeB, ENDPOINT_ARROW, ENDPOINT_ARROW);
+    } 
+    return Edge(nodeB, nodeA, ENDPOINT_ARROW, ENDPOINT_ARROW);
 }
 
 /**
@@ -145,16 +147,20 @@ Edge Edge::partiallyOrientedEdge(Variable* nodeA, Variable* nodeB) {
  * Constructs a new nondirected edge from nodeA to nodeB (o-o).
  */
 Edge Edge::nondirectedEdge(Variable* nodeA, Variable* nodeB) {
-    Edge newEdge(nodeA, nodeB, ENDPOINT_CIRCLE, ENDPOINT_CIRCLE);
-    return newEdge;
+    if (nodeA->getName() < nodeB->getName()) {
+	return Edge(nodeA, nodeB, ENDPOINT_CIRCLE, ENDPOINT_CIRCLE);
+    } 
+    return Edge(nodeB, nodeA, ENDPOINT_CIRCLE, ENDPOINT_CIRCLE);
 }
 
 /**
  * Constructs a new undirected edge from nodeA to nodeB (--).
  */
 Edge Edge::undirectedEdge(Variable* nodeA, Variable* nodeB) {
-    Edge newEdge(nodeA, nodeB, ENDPOINT_TAIL, ENDPOINT_TAIL);
-    return newEdge;
+    if (nodeA->getName() < nodeB->getName()) {
+	return Edge(nodeA, nodeB, ENDPOINT_TAIL, ENDPOINT_TAIL);
+    } 
+    return Edge(nodeB, nodeA, ENDPOINT_TAIL, ENDPOINT_TAIL);
 }
 
 /**
@@ -355,7 +361,6 @@ bool operator< (const Edge& e1, const Edge& e2) {
     if (e1.node1 != e2.node1) {
         return e1.node1->getName() < e2.node1->getName();
     }
-
     return e1.node2->getName() < e2.node2->getName();
 }
 
@@ -372,5 +377,14 @@ bool operator> (const Edge& e1, const Edge& e2) {
 }
 
 void Edge::sortEdges(std::vector<Edge>& edges) {
+    for (auto it = edges.begin(); it != edges.end(); it++) {
+	if (isUndirectedEdge(*it)) {
+	    (*it) = undirectedEdge(it->node1, it->node2);
+	} else if (isNondirectedEdge(*it)) {
+	    (*it) = nondirectedEdge(it->node1, it->node2);
+	} else if (isBidirectionalEdge(*it)) {
+	    (*it) = bidirectedEdge(it->node1, it->node2);
+	}
+    }
     std::sort(edges.begin(), edges.end());
 }

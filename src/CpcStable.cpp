@@ -38,27 +38,14 @@ void CpcStable::orientUnshieldedTriples() {
             for (combination = cg.next(); combination != NULL; combination = cg.next()) {
                 Variable* x = adjacentNodes[(*combination)[0]];
                 Variable* z = adjacentNodes[(*combination)[1]];
-		// if (adjacentNodes[(*combination)[0]]->getName()
-		//     < adjacentNodes[(*combination)[1]]->getName()) {
-		//     x = adjacentNodes[(*combination)[0]];
-		//     z = adjacentNodes[(*combination)[1]];
-		// } else {
-		//     x = adjacentNodes[(*combination)[1]];
-		//     z = adjacentNodes[(*combination)[0]];
-		// }
 
                 if (graph.isAdjacentTo(x, z))
                     continue;
-
-                // std::unique_lock<std::mutex> mapLock(mapMutex);
-                // sepsetCount[Triple(x, y, z)] = {0, 0};
-                // mapLock.unlock();
 
                 std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
                 std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
 
 		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
-		// taskQueue.push(ColliderTask(Triple(z, y, x), {}));
 
                 for (int d = 1; d <= std::max(adjx.size(), adjz.size()); d++) {
                     if (adjx.size() >= 2 && d <= adjx.size()) {
@@ -68,7 +55,6 @@ void CpcStable::orientUnshieldedTriples() {
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
                             std::vector<Variable*> v = GraphUtils::asList(*choice, adjx);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
-			    // taskQueue.push(ColliderTask(Triple(z, y, x), v));
                         }
                     }
 
@@ -79,7 +65,6 @@ void CpcStable::orientUnshieldedTriples() {
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
                             std::vector<Variable*> v = GraphUtils::asList(*choice, adjz);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
-			    // taskQueue.push(ColliderTask(Triple(z, y, x), v));
                         }
                     }
                 }
@@ -128,12 +113,10 @@ void CpcStable::orientUnshieldedTriples() {
 		// logfile << "]\t" << indep << "\n";
 		// logfile.close();
 		if (indep) {
-		    // if (sepset.contains(t.y))
 		    if (std::find(sepset.begin(), sepset.end(), t.y) != sepset.end()) {
 			std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
 			sepsetCount[Triple(t.x, t.y, t.z)] = {current.first + 1, current.second};
 		    } else {
-			// std::lock_guard<std::mutex> mapLock(mapMutex);
 			std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
 			sepsetCount[Triple(t.x, t.y, t.z)] = {current.first, current.second + 1};
 		    }

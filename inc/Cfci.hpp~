@@ -14,7 +14,7 @@
  * @author Alex Smith, December 2008
  * @author Joseph Ramsey
  * @author Choh-Man Teng
- * @author Tyler Lovelace, April 2021
+ * @author Jack Fiore, November 2020
  */
 
 #include "EdgeListGraph.hpp"
@@ -191,4 +191,4 @@ public:
     void setVerbose(bool verbose) { this->verbose = verbose; }
 };
 
-#endif /* FCIMAX_HPP_ */
+#endif /* FCI_HPP_ */
