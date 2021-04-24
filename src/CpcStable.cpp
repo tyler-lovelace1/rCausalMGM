@@ -17,7 +17,7 @@ bool CpcStable::isNonCollider(Triple t) {
 
 void CpcStable::orientUnshieldedTriples() {
 
-    BlockingQueue<ColliderTask> taskQueue(10000);
+    BlockingQueue<ColliderTask> taskQueue(100);
 
     auto producer = [&]() {
         std::vector<Variable*> nodes = graph.getNodes();

@@ -45,7 +45,7 @@ class SepsetProducerConservative : public SepsetProducer {
     void producer();
     void consumer();
 
-    const int MAX_QUEUE_SIZE = 10000;
+    const int MAX_QUEUE_SIZE = 100;
     BlockingQueue<IndependenceTask> taskQueue;
 
     int parallelism = 4;

@@ -96,7 +96,7 @@ private:
         Variable* x;
         Variable* y;
         std::vector<Variable*> z;
-	    IndependenceTask() : x(new ContinuousVariable("EJWMX3RCpPi0qbp")),
+	IndependenceTask() : x(new ContinuousVariable("EJWMX3RCpPi0qbp")),
 			     y(new ContinuousVariable("nLtWU7DmeZyYPZs")),
 			     z(std::vector<Variable*>()) {}
         IndependenceTask(Variable* _x, Variable* _y, std::vector<Variable*>& _z) : x(_x),
@@ -105,7 +105,7 @@ private:
         IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
     };
 
-    const int MAX_QUEUE_SIZE = 10000;
+    const int MAX_QUEUE_SIZE = 100;
     BlockingQueue<IndependenceTask> taskQueue;
     
     int parallelism = std::thread::hardware_concurrency();

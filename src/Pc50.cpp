@@ -47,7 +47,7 @@ bool Pc50::wouldCreateBadCollider(Variable* x, Variable* y) {
 
 void Pc50::orientUnshieldedTriples() {
 
-    BlockingQueue<ColliderTask> taskQueue(10000);
+    BlockingQueue<ColliderTask> taskQueue(100);
 
     sepsetCount.clear();
     score.clear();
