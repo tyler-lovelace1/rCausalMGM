@@ -110,11 +110,15 @@ EdgeListGraph FasStableProducerConsumer::search() {
         }
     }
 
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
-    
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+
     if (verbose) {
-	Rcpp::Rcout << "FAS Stable finished:  " << std::round(elapsedTime)
-		    << " s" << std::endl;
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0);
+	}
+        Rcpp::Rcout << "FAS Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     // if (verbose) Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;

@@ -213,7 +213,7 @@ void Pc50::orientUnshieldedTriples() {
 
         if (!(graph.getEndpoint(b, a) == ENDPOINT_ARROW
 	      || graph.getEndpoint(b, c) == ENDPOINT_ARROW)) {
-            Rcpp::Rcout << "orienting collider " << triple << "  :  " << score[triple] << std::endl;
+            // Rcpp::Rcout << "orienting collider " << triple << "  :  " << score[triple] << std::endl;
             orientCollider(a, b, c);
         }
     }
@@ -317,15 +317,15 @@ EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Var
     graph.setAlgorithm(alg.str());
     graph.setGraphType("markov equivalence class");
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
+    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     if (verbose) {
-	if (elapsedTime < 100) {
+	if (elapsedTime < 100*1000) {
 	    Rcpp::Rcout.precision(2);
 	} else {
-	    elapsedTime = std::round(elapsedTime);
+	    elapsedTime = std::round(elapsedTime / 1000.0);
 	}
-        Rcpp::Rcout << "Pc50 Elapsed time =  " << elapsedTime << " s" << std::endl;
+        Rcpp::Rcout << "Pc50 Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     return graph;
