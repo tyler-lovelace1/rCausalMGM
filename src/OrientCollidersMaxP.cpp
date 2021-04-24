@@ -83,7 +83,7 @@ void OrientCollidersMaxP::producer() {
 }
 
 void OrientCollidersMaxP::consumer() {
-    std::ofstream logfile;
+    // std::ofstream logfile;
     // logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
 
     while(true) {
@@ -257,9 +257,9 @@ bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Va
 //TODO - what should this be testing?
 // Returns true if there is an undirected path from x to either y or z within the given number of steps.
 bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
-    std::ofstream logfile;
-    logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
-    logfile << "Testing if a path exists between " << x->getName() << " and " << z->getName() << std::endl;
+    // std::ofstream logfile;
+    // logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
+    // logfile << "Testing if a path exists between " << x->getName() << " and " << z->getName() << std::endl;
     
     std::queue<Variable*> q;
     std::unordered_set<Variable*> v;
@@ -281,8 +281,8 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
             distance++;
             // logfile << "distance = " << distance << " bound = " << bound << std::endl;
             if (distance > (bound == -1 ? 1000 : bound)) {
-                logfile << "No" << std::endl;
-                logfile.close();
+                // logfile << "No" << std::endl;
+                // logfile.close();
                 return false;
             }
         }
@@ -290,8 +290,8 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
         for (Variable* u : graph->getAdjacentNodes(t)) {
             // logfile << "u = " << u->getName() << std::endl;
             if (u == z && distance > 2) {
-                logfile << "Yes" << std::endl;
-                logfile.close();
+                // logfile << "Yes" << std::endl;
+                // logfile.close();
                 return true;
             } 
 
@@ -306,20 +306,20 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
         }
     }
 
-    logfile << "No" << std::endl;
-    logfile.close();
+    // logfile << "No" << std::endl;
+    // logfile.close();
 
     return false;
 }
 
 void OrientCollidersMaxP::addColliders() {
-    std::ofstream logfile;
+    // std::ofstream logfile;
 
-    logfile.open("../test_results/orientCollidersMaxP.log");
+    // logfile.open("../test_results/orientCollidersMaxP.log");
 
-    logfile << "Starting colliders" << std::endl;
+    // logfile << "Starting colliders" << std::endl;
 
-    logfile.close();
+    // logfile.close();
 
     scores.clear();
 

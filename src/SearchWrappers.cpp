@@ -2,6 +2,7 @@
 #include "PcStable.hpp"
 #include "CpcStable.hpp"
 #include "PcMax.hpp"
+#include "Pc50.hpp"
 #include "Fci.hpp"
 #include "Cfci.hpp"
 #include "FciMax.hpp"
@@ -242,6 +243,51 @@ Rcpp::List pcMax(
 
     return result;
 }
+
+
+//' Runs the causal algorithm PC50 on a dataset
+//'
+//' @param df The dataframe
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::pc50(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List pc50(
+    const Rcpp::DataFrame &df, 
+    const int maxDiscrete = 5,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
+    const double alpha = 0.05, 
+    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+) {
+    DataSet ds(df, maxDiscrete);
+
+    bool v = Rcpp::is_true(Rcpp::all(verbose));
+
+    IndTestMulti itm(ds, alpha);
+
+    Pc50 pc50((IndependenceTest*) &itm);
+    pc50.setVerbose(v);
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        pc50.setInitialGraph(&ig);
+    }
+    Rcpp::List result = pc50.search().toList();
+
+    ds.deleteVariables();
+
+    return result;
+}
+
+
 
 //' Runs the causal algorithm FCI Stable on a dataset
 //'
