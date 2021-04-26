@@ -46,7 +46,7 @@ Rcpp::List mgm(
 
     Rcpp::List result = mgmGraph.toList();
 
-    ds.deleteVariables();
+    // ds.deleteVariables();
 
     return result;
 }
@@ -111,7 +111,7 @@ Rcpp::List steps(
         Rcpp::colnames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
     } 
 
-    ds.deleteVariables();
+    // ds.deleteVariables();
 
     return result;
 
@@ -155,7 +155,7 @@ Rcpp::List pcStable(
 
     Rcpp::List result = pcs.search().toList();
 
-    ds.deleteVariables();
+    // ds.deleteVariables();
 
     return result;
 }
@@ -197,7 +197,7 @@ Rcpp::List cpcStable(
     }
     Rcpp::List result = cpc.search().toList();
 
-    ds.deleteVariables();
+    // ds.deleteVariables();
 
     return result;
 }
@@ -239,7 +239,7 @@ Rcpp::List pcMax(
     }
     Rcpp::List result = pcm.search().toList();
 
-    ds.deleteVariables();
+    // ds.deleteVariables();
 
     return result;
 }
@@ -282,7 +282,7 @@ Rcpp::List pc50(
     }
     Rcpp::List result = pc50.search().toList();
 
-    ds.deleteVariables();
+    // ds.deleteVariables();
 
     return result;
 }
@@ -327,7 +327,7 @@ Rcpp::List fciStable(
     
     Rcpp::List result = fci.search().toList();
     
-    ds.deleteVariables();
+    // ds.deleteVariables();
     
     return result;
 }
@@ -371,7 +371,7 @@ Rcpp::List cfci(
     
     Rcpp::List result = cfci.search().toList();
     
-    ds.deleteVariables();
+    // ds.deleteVariables();
     
     return result;
 }
@@ -420,7 +420,7 @@ Rcpp::List fciMax(
 	Rcpp::Rcout << e.what() << std::endl;
     }
     
-    ds.deleteVariables();
+    // ds.deleteVariables();
     
     return result;
 }

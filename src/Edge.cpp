@@ -377,14 +377,14 @@ bool operator> (const Edge& e1, const Edge& e2) {
 }
 
 void Edge::sortEdges(std::vector<Edge>& edges) {
-    for (auto it = edges.begin(); it != edges.end(); it++) {
-	if (isUndirectedEdge(*it)) {
-	    (*it) = undirectedEdge(it->node1, it->node2);
-	} else if (isNondirectedEdge(*it)) {
-	    (*it) = nondirectedEdge(it->node1, it->node2);
-	} else if (isBidirectionalEdge(*it)) {
-	    (*it) = bidirectedEdge(it->node1, it->node2);
-	}
-    }
+    // for (auto it = edges.begin(); it != edges.end(); it++) {
+    // 	if (isUndirectedEdge(*it)) {
+    // 	    (*it) = undirectedEdge(it->node1, it->node2);
+    // 	} else if (isNondirectedEdge(*it)) {
+    // 	    (*it) = nondirectedEdge(it->node1, it->node2);
+    // 	} else if (isBidirectionalEdge(*it)) {
+    // 	    (*it) = bidirectedEdge(it->node1, it->node2);
+    // 	}
+    // }
     std::sort(edges.begin(), edges.end());
 }

@@ -26,10 +26,10 @@ class DataSet;
 class DataSet
 {
 private:
-    std::vector<Variable *> variables;
+    std::vector<Variable*> variables;
     std::vector<std::string> variableNames;
     std::unordered_map<std::string, int> name2idx;
-    std::unordered_map<Variable *, int> var2idx;
+    std::unordered_map<Variable*, int> var2idx;
     arma::mat data;
     int maxDiscrete;
     int m, n;
@@ -78,7 +78,7 @@ public:
 
     std::vector<int> getDiscLevels();
 
-    int getColumn(Variable *v) { return var2idx[v]; }
+    int getColumn(Variable *v) { return name2idx.at(v->getName()); }
 
     friend void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete);
     friend std::ostream &operator<<(std::ostream &os, DataSet &ds);

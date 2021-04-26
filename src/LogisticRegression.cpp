@@ -60,7 +60,7 @@ LogisticRegression &LogisticRegression::operator=(LogisticRegression &&lr)
     return *this;
 }
 
-LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::vector<Variable*>& regressors)
+LogisticRegressionResult LogisticRegression::regress(DiscreteVariable* x, std::vector<Variable*>& regressors)
 {
     // if (!binary(x)) {
     //     throw new IllegalArgumentException("Target must be binary.");
@@ -72,11 +72,16 @@ LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::v
     //     }
     // }
 
+    std::ofstream logfile;
+    logfile.open("log_reg_debug.log", std::ios_base::app);
+
     arma::mat regressors_ = arma::mat(regressors.size(), rows.size());
 
     for (arma::uword j = 0; j < regressors.size(); j++)
     {
+	logfile << regressors[j]->getName() + '\t';
         int col = data.getColumn(regressors[j]);
+	logfile << col + '\t';
 
         for (arma::uword i = 0; i < getRows().size(); i++)
         {
@@ -84,8 +89,12 @@ LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::v
         }
     }
 
+    logfile << "\n";
+
     arma::uvec target = arma::uvec(rows.size());
+    logfile << x->getName() << std::endl;
     int col = data.getColumn(data.getVariable(x->getName()));
+    logfile << col + '\n';
 
     for (arma::uword k = 0; k < rows.size(); k++)
     {
@@ -99,6 +108,8 @@ LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::v
         Variable *var = regressors[l];
         regressorNames[l] = var->getName();
     }
+
+    logfile.close();
 
     return regress(target, x->getName(), regressors_, regressorNames);
 }

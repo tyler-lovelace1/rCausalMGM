@@ -5,30 +5,41 @@
 
 #include <fstream>
 
-IndTestMulti::IndTestMulti(DataSet &data, double alpha)
+IndTestMulti::IndTestMulti(DataSet& data, double alpha)
 {
     this->timesCalled = 0;
     this->searchVariables = data.getVariables();
     this->originalData = DataSet(data);
     this->internalData = DataSet(data);
+    // DataSet originData(data);
+    // this->originalData = originData;
+    // DataSet internData(data);
+    // this->internalData = internData;
     this->alpha = alpha;
     this->lastP = 0;
 
-    std::vector<Variable *> variables = internalData.getVariables();
+    // Rcpp::Rcout << "dataset copied\n";
 
-    for (Variable *var : variables)
+    std::vector<Variable*> variables = internalData.getVariables();
+
+    for (Variable* var : variables)
     {
-        std::vector<Variable *> vars = expandVariable(internalData, var); // See expandVariable function below
-        variablesPerNode.insert(std::pair<Variable *, std::vector<Variable *>>(var, vars));
+	// Rcpp::Rcout << var->getName() << "\n";
+        std::vector<Variable*> vars = expandVariable(internalData, var); // See expandVariable function below
+        variablesPerNode.insert(std::pair<Variable*, std::vector<Variable*>>(var, vars));
     }
 
+    // Rcpp::Rcout << "dataset expanded\n";
+    
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
     this->preferLinear = false;
+
+    // Rcpp::Rcout << "regressions created\n";
 }
 
-IndTestMulti::IndTestMulti(DataSet &data, double alpha, bool preferLinear)
+IndTestMulti::IndTestMulti(DataSet& data, double alpha, bool preferLinear)
 {
     this->timesCalled = 0;
     this->preferLinear = preferLinear;
@@ -58,11 +69,11 @@ IndTestMulti::IndTestMulti(DataSet &data, double alpha, bool preferLinear)
 
 IndTestMulti::~IndTestMulti() {
     // Delete expanded variables
-    for (Variable *v : internalData.getVariables()) {
-        if (v->getName().find("MULTINOM.") != std::string::npos) {
-            delete v;
-        }
-    }
+    // for (Variable *v : internalData.getVariables()) {
+    //     if (v->getName().find("MULTINOM.") != std::string::npos) {
+    //         delete v;
+    //     }
+    // }
 }
 
 int IndTestMulti::reset()
@@ -143,14 +154,14 @@ std::vector<Variable *> IndTestMulti::expandVariable(DataSet &dataSet, Variable 
 {
     if (var->isContinuous())
     {
-        std::vector<Variable *> contList;
+        std::vector<Variable*> contList;
         contList.push_back(var);
         return contList;
     }
 
     if (var->isDiscrete() && ((DiscreteVariable *)var)->getNumCategories() < 3)
     {
-        std::vector<Variable *> discList;
+        std::vector<Variable*> discList;
         discList.push_back(var);
         return discList;
     }
@@ -162,12 +173,12 @@ std::vector<Variable *> IndTestMulti::expandVariable(DataSet &dataSet, Variable 
 
     std::vector<std::string> varCats = ((DiscreteVariable *)var)->getCategories();
 
-    std::vector<Variable *> variables;
+    std::vector<Variable*> variables;
     /*********************************************************************/
     std::string temp = var->getName();
     for (auto it = varCats.begin() + 1; it != varCats.end(); it++)
     {
-        DiscreteVariable *newVar = new DiscreteVariable(temp + "MULTINOM." + *it, 2);
+        DiscreteVariable* newVar = new DiscreteVariable(temp + "MULTINOM." + *it, 2);
 
         /*********************************************************************/
 
@@ -200,19 +211,19 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     // std::ofstream logfile;
     // logfile.open("../test_results/debug.log", std::ios_base::app);
 
-    if (variablesPerNode.count(x) < 1)
+    if (variablesPerNode.count(internalData.getVariable(x->getName())) < 1)
     {
         throw std::invalid_argument("Unrecogized variable: " + x->getName());
     }
 
-    if (variablesPerNode.count(y) < 1)
+    if (variablesPerNode.count(internalData.getVariable(y->getName())) < 1)
     {
         throw std::invalid_argument("Unrecogized variable: " + y->getName());
     }
 
     for (Variable *varZ : z)
     {
-        if (variablesPerNode.count(varZ) < 1)
+        if (variablesPerNode.count(internalData.getVariable(varZ->getName())) < 1)
         {
             throw std::invalid_argument("Unrecogized variable: " + varZ->getName());
         }
@@ -228,15 +239,15 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     std::vector<Variable *> yzList;
     std::vector<Variable *> zList;
 
-    std::vector<Variable *> temp = variablesPerNode.at(y);
+    std::vector<Variable *> temp = variablesPerNode.at(internalData.getVariable(y->getName()));
     yzList.insert(yzList.begin(), temp.begin(), temp.end());
 
     for (Variable *varZ : z)
     {
-        temp = variablesPerNode.at(varZ);
+        temp = variablesPerNode.at(internalData.getVariable(varZ->getName()));
         yzList.insert(yzList.end(), temp.begin(), temp.end());
 
-        temp = variablesPerNode.at(varZ);
+        // temp = variablesPerNode.at(varZ);
         zList.insert(zList.end(), temp.begin(), temp.end());
     }
 
@@ -245,9 +256,9 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     arma::mat coeffsDep = arma::mat();  //yzList.size()+1, variablesPerNode.at(x).size());
 
     /*********************************************************************/
-    for (int i = 0; i < variablesPerNode.at(x).size(); i++)
+    for (int i = 0; i < variablesPerNode.at(internalData.getVariable(x->getName())).size(); i++)
     {
-        Variable *varX = variablesPerNode.at(x).at(i);
+        Variable *varX = variablesPerNode.at(internalData.getVariable(x->getName())).at(i);
 	// LogisticRegressionResult result0;
 	// LogisticRegressionResult result1;
 	// try {
@@ -310,7 +321,8 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
     //     chisq = 2 * (ll - ll0); // Need to make multiLL
     // }
 
-    int df = variablesPerNode.at(y).size() * variablesPerNode.at(x).size();
+    int df = variablesPerNode.at(internalData.getVariable(y->getName())).size()
+	* variablesPerNode.at(internalData.getVariable(x->getName())).size();
     boost::math::chi_squared dist(df);
 
     // if (std::isnan(chisq)) {
@@ -487,35 +499,40 @@ double IndTestMulti::multiLL(arma::mat &coeffs, Variable *dep, std::vector<Varia
 
 bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector<Variable *> &z, double *pReturn)
 {
-    if (variablesPerNode.count(x) < 1)
+    if (variablesPerNode.count(internalData.getVariable(x->getName())) < 1)
     {
         throw std::invalid_argument("Unrecogized node: " + x->getName());
     }
 
-    if (variablesPerNode.count(y) < 1)
+    if (variablesPerNode.count(internalData.getVariable(y->getName())) < 1)
     {
         throw std::invalid_argument("Unrecogized node: " + y->getName());
     }
 
     for (Variable *varZ : z)
     {
-        if (variablesPerNode.count(varZ) < 1)
+        if (variablesPerNode.count(internalData.getVariable(varZ->getName())) < 1)
         {
             throw std::invalid_argument("Unrecogized node: " + varZ->getName());
         }
     }
 
-    std::ofstream logfile;
-    // logfile.open("../test_results/debug.log", std::ios_base::app);
+    // std::ofstream logfile;
+    // logfile.open("itm_debug.log", std::ios_base::app);
 
-    std::vector<Variable *> regressors;
-    regressors.push_back(y);
+    std::vector<Variable*> regressors;
+    regressors.push_back(internalData.getVariable(y->getName()));
+
+    // logfile << regressors[0]->getName() << std::endl;
 
     for (Variable *varZ : z)
     {
-        std::vector<Variable *> temp = variablesPerNode.at(varZ);
+	// logfile << varZ->getName() << std::endl;
+        std::vector<Variable*> temp = variablesPerNode.at(internalData.getVariable(varZ->getName()));
         regressors.insert(regressors.end(), temp.begin(), temp.end());
     }
+
+    // logfile.close();
 
     arma::uvec rows = getNonMissingRows(x, y, z);
     // LinearRegression regression = this->regression;

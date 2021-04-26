@@ -63,7 +63,7 @@ LinearRegression &LinearRegression::operator=(LinearRegression &&lr)
 
 RegressionResult LinearRegression::regress(Variable *target, std::vector<Variable *>& regressors)
 {
-    std::ofstream logfile;
+    // std::ofstream logfile;
     // logfile.open("lin_reg_debug.log", std::ios_base::app);
 
     int n = rows.size();
@@ -209,7 +209,7 @@ RegressionResult LinearRegression::regress(Variable *target,
 					   std::vector<Variable*>& regressors,
 					   arma::uvec& _rows)
 {
-    std::ofstream logfile;
+    // std::ofstream logfile;
     // logfile.open("lin_reg_debug.log", std::ios_base::app);
 
     int n = _rows.n_elem;
@@ -218,7 +218,13 @@ RegressionResult LinearRegression::regress(Variable *target,
     if (n < k)
 	throw std::runtime_error("Linear regression ill-conditioned, samples less than regressors");
 
+    // logfile << target->getName() << std::endl;
+
     int target_ = data.getColumn(target);
+
+    // logfile << target_ << std::endl;
+
+    // logfile << "regressors.size() = " << regressors.size() << std::endl;
 
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
@@ -227,8 +233,14 @@ RegressionResult LinearRegression::regress(Variable *target,
     for (int i = 0; i < regressors.size(); i++)
     {
 	// names += regressors[i]->getName() + '\t';
+	// logfile << i << " in loop" << std::endl;
+	// logfile << regressors[i] << '\t';
+	// logfile << regressors[i]->getName() + '\t';
         regressors_[i] = data.getColumn(regressors[i]);
+	// logfile << regressors_[i] + '\t';
     }
+
+    // logfile << "\n";
 
     // if (target_ == -1)
     // {
@@ -237,9 +249,9 @@ RegressionResult LinearRegression::regress(Variable *target,
 
     arma::uvec target_Vec(1);
     target_Vec.fill(target_);
-    const arma::mat y = std::move(dataMat.submat(_rows, target_Vec));
+    arma::mat y = dataMat.submat(_rows, target_Vec);
 
-    const arma::mat xSub = std::move(dataMat.submat(_rows, regressors_));
+    arma::mat xSub = dataMat.submat(_rows, regressors_);
 
     // logfile << names << std::endl << xSub.rows(0,5) << std::endl << std::endl << xSub.rows(n-6,n-1) << std::endl;
 

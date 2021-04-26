@@ -520,6 +520,13 @@ bool EdgeListGraph::setEndpoint(Variable* from, Variable* to, Endpoint endPoint)
 
     Edge edge = edges[0];
     Edge newEdge(from, to, edge.getProximalEndpoint(from), endPoint);
+    if (Edge::isUndirectedEdge(newEdge)) {
+	newEdge = Edge::undirectedEdge(from, to);
+    } else if (Edge::isNondirectedEdge(newEdge)) {
+	newEdge = Edge::nondirectedEdge(from, to);
+    } else if (Edge::isBidirectionalEdge(newEdge)) {
+	newEdge = Edge::bidirectedEdge(from, to);
+    }
 
     try {
         removeEdges(edge.getNode1(), edge.getNode2());
