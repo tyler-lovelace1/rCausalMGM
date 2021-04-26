@@ -14,6 +14,10 @@ public:
      */
     static std::vector<Triple> orientCollidersUsingSepsets(SepsetMap& set, EdgeListGraph& graph, bool verbose = false);
 
+    static bool orientCollider(SepsetMap& set, EdgeListGraph& graph, Variable* a, Variable* b, Variable* c);
+
+    static bool wouldCreateBadCollider(SepsetMap& set, EdgeListGraph& graph, Variable* x, Variable* y);
+
 };
 
 #endif /* SEARCHGRAPHUTILS_HPP_ */

@@ -17,6 +17,24 @@ void SepsetMap::set(Variable* x, Variable* y, std::vector<Variable*>& z) {
     sepsets[pair] = z;
 }
 
+/**
+ * Sets the sepset for {x, y} to be z. If {x, y} is already in the SepsetMap, 
+ * then z is only updated if p is greater than the previously recorded sepset.
+ * Note that {x, y} is unordered.
+ */
+void SepsetMap::set(Variable* x, Variable* y, std::vector<Variable*>& z, double p) {
+    VariablePair pair = std::minmax(x, y);
+    if (sepsets.count(pair) > 0) {
+	if (p > pValues[pair]) {
+	    sepsets[pair] = z;
+	    pValues[pair] = p;
+	}
+    } else {
+	sepsets[pair] = z;
+	pValues[pair] = p;
+    }
+}
+
 /** 
  * Removes the list associated with the pair
  */

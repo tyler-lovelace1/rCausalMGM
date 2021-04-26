@@ -226,7 +226,8 @@ void FasStableProducerConsumer::consumerDepth0() {
         if (task.x == NULL && task.y == NULL) return;
 
         numIndependenceTests++;
-        bool independent = test->isIndependent(task.x, task.y, task.z);
+	double pval = 0.;
+        bool independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
         if (independent) {
             numIndependenceJudgements++;
@@ -259,7 +260,7 @@ void FasStableProducerConsumer::consumerDepth0() {
 	    // adjacencyModifying = true;
 	    if (independent && noEdgeRequired) {
 		if (!sepset.isReturnEmptyIfNotSet()) {
-		    sepset.set(task.x, task.y, task.z);
+		  sepset.set(task.x, task.y, task.z, pval);
 		}
 	    } else if (!forbiddenEdge) {
 		adjacencies[task.x].insert(task.y);
@@ -285,29 +286,30 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         //If poison, return
         if (task.x == NULL && task.y == NULL) return;
 
-	bool edgeExists;
-	{
-	    std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-	    adjacencyCondition.wait(adjacencyLock,
-				    [this] {
-					if (!adjacencyModifying) {
-					    return adjacencyModifying = true;
-					}
-					return false;
-				    });
-	    // adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
-	    // adjacencyModifying = true;
-	    edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
-	    adjacencyModifying = false;
-	}
-	adjacencyCondition.notify_one();
-        // adjacencyLock.unlock();
+	// bool edgeExists;
+	// {
+	//     std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
+	//     adjacencyCondition.wait(adjacencyLock,
+	// 			    [this] {
+	// 				if (!adjacencyModifying) {
+	// 				    return adjacencyModifying = true;
+	// 				}
+	// 				return false;
+	// 			    });
+	//     // adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
+	//     // adjacencyModifying = true;
+	//     edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
+	//     adjacencyModifying = false;
+	// }
+	// adjacencyCondition.notify_one();
+        // // adjacencyLock.unlock();
 
-        if (!edgeExists) continue; // Skip if the edge no longer exists
+        // if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
+	double pval = 0.;
         bool independent;
-        independent = test->isIndependent(task.x, task.y, task.z);
+        independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
         if (independent) {
             numIndependenceJudgements++;
@@ -346,7 +348,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 
 		 adjacencies[task.x].erase(task.y);
 		 adjacencies[task.y].erase(task.x);
-		 sepset.set(task.x, task.y, task.z);
+		 sepset.set(task.x, task.y, task.z, pval);
 
 		 // adjacencyLock.unlock();
 		 

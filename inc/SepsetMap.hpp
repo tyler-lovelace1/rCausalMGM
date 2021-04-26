@@ -48,6 +48,13 @@ public:
      */
     void set(Variable* x, Variable* y, std::vector<Variable*>& z);
 
+    /**
+     * Sets the sepset for {x, y} to be z. If {x, y} is already in the SepsetMap, 
+     * then z is only updated if p is greater than the previously recorded sepset.
+     * Note that {x, y} is unordered.
+     */
+    void set(Variable* x, Variable* y, std::vector<Variable*>& z, double p);
+
     /** 
      * Removes the list associated with the pair
      */
