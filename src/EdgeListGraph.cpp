@@ -1178,7 +1178,7 @@ Rcpp::List loadGraph(const std::string& filename) {
             auto validateTripleString = [](const std::string& tripleString) {
                 if (tripleString.size() < 3) return false;
                 std::string s = tripleString.substr(1, tripleString.size()-2);
-                if (GraphUtils::splitString(s, ", ").size() != 3) return false;
+                if (GraphUtils::splitString(s, ",").size() != 3) return false;
                 return true;
             };
 
