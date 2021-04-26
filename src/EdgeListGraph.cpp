@@ -542,10 +542,10 @@ bool EdgeListGraph::setEndpoint(Variable* from, Variable* to, Endpoint endPoint)
 Triple EdgeListGraph::tripleFromString(std::string tripleString) {
     tripleString = tripleString.substr(1, tripleString.size()-2); // Strip < and >
 
-    std::vector<std::string> nodeNames = GraphUtils::splitString(tripleString, ", ");
+    std::vector<std::string> nodeNames = GraphUtils::splitString(tripleString, ",");
 
     if (nodeNames.size() != 3)
-        throw std::invalid_argument("Triple must take form <X, Y, Z>: <" + tripleString + ">");
+        throw std::invalid_argument("Triple must take form <X,Y,Z>: <" + tripleString + ">");
 
     return Triple(
         getNode(nodeNames[0]),
@@ -936,7 +936,7 @@ Rcpp::List EdgeListGraph::toList() {
 
     std::vector<std::string> edgeStrings;
     std::vector<Edge> edges = getEdgeList();
-    Edge::sortEdges(edges);
+    Edge::sortEdges(edges); //TODO - commented out for testing
     for (Edge edge: edges) {
         edgeStrings.push_back(edge.toString());
     }
@@ -1185,7 +1185,7 @@ Rcpp::List loadGraph(const std::string& filename) {
             auto validateTripleString = [](const std::string& tripleString) {
                 if (tripleString.size() < 3) return false;
                 std::string s = tripleString.substr(1, tripleString.size()-2);
-                if (GraphUtils::splitString(s, ", ").size() != 3) return false;
+                if (GraphUtils::splitString(s, ",").size() != 3) return false;
                 return true;
             };
 
