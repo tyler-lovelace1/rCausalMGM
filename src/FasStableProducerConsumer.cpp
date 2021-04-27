@@ -116,7 +116,7 @@ EdgeListGraph FasStableProducerConsumer::search() {
 	if (elapsedTime < 100*1000) {
 	    Rcpp::Rcout.precision(2);
 	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0);
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
 	}
         Rcpp::Rcout << "FAS Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
@@ -286,25 +286,25 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         //If poison, return
         if (task.x == NULL && task.y == NULL) return;
 
-	// bool edgeExists;
-	// {
-	//     std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
-	//     adjacencyCondition.wait(adjacencyLock,
-	// 			    [this] {
-	// 				if (!adjacencyModifying) {
-	// 				    return adjacencyModifying = true;
-	// 				}
-	// 				return false;
-	// 			    });
-	//     // adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
-	//     // adjacencyModifying = true;
-	//     edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
-	//     adjacencyModifying = false;
-	// }
-	// adjacencyCondition.notify_one();
-        // // adjacencyLock.unlock();
+	bool edgeExists;
+	{
+	    std::unique_lock<std::mutex> adjacencyLock(adjacencyMutex);
+	    adjacencyCondition.wait(adjacencyLock,
+				    [this] {
+					if (!adjacencyModifying) {
+					    return adjacencyModifying = true;
+					}
+					return false;
+				    });
+	    // adjacencyCondition.wait(adjacencyLock, [this] { return !adjacencyModifying; });
+	    // adjacencyModifying = true;
+	    edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
+	    adjacencyModifying = false;
+	}
+	adjacencyCondition.notify_one();
+        // adjacencyLock.unlock();
 
-        // if (!edgeExists) continue; // Skip if the edge no longer exists
+        if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
 	double pval = 0.;
