@@ -59,7 +59,7 @@ EdgeListGraph PcMax::search() {
  * Runs PC search, returning the output pattern, over the given nodes.
  */
 EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
-    if (verbose) Rcpp::Rcout << "Starting PCMax algorithm" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting PC-Max algorithm..." << std::endl;
 
     if (independenceTest == NULL)
         throw std::invalid_argument("independenceTest of PCMax may not be NULL.");
@@ -78,6 +78,8 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     fas.setVerbose(verbose);
     graph = fas.search();
 
+    if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
+
     OrientCollidersMaxP orientCollidersMaxP(independenceTest, &graph);
     orientCollidersMaxP.setUseHeuristic(useHeuristic);
     orientCollidersMaxP.setMaxPathLength(maxPathLength);
@@ -92,11 +94,15 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     graph.setAlgorithm(alg.str());
     graph.setGraphType("markov equivalence class");
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
+    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     if (verbose) {
-	// Rcpp::Rcout.precision(2);
-        Rcpp::Rcout << "PC-Max Elapsed time =  " << std::round(elapsedTime) << " s" << std::endl;
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "PC-Max Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     return graph;

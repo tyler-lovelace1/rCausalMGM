@@ -50,14 +50,6 @@ void OrientCollidersMaxP::producer() {
         for (choice = cg.next(); choice != NULL; choice = cg.next()) {
 	    Variable* a = adjacentNodes[(*choice)[0]];
             Variable* c = adjacentNodes[(*choice)[1]];
-	    // if (adjacentNodes[(*choice)[0]]->getName()
-	    // 	< adjacentNodes[(*choice)[1]]->getName()) {
-	    // 	a = adjacentNodes[(*choice)[0]];
-	    // 	c = adjacentNodes[(*choice)[1]];
-	    // } else {
-	    // 	a = adjacentNodes[(*choice)[1]];
-	    // 	c = adjacentNodes[(*choice)[0]];
-	    // }
 
             // Skip triples that are shielded.
             if (graph->isAdjacentTo(a, c)) {
@@ -83,9 +75,6 @@ void OrientCollidersMaxP::producer() {
 }
 
 void OrientCollidersMaxP::consumer() {
-    // std::ofstream logfile;
-    // logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
-
     while(true) {
         IndependenceTask it = taskQueue.pop();
 
@@ -95,55 +84,37 @@ void OrientCollidersMaxP::consumer() {
         double score;
         bool indep = independenceTest->isIndependent(it.a, it.c, it.s, &score);
 
-        // logfile << "Testing " << it.a->getName() << " || " << it.c->getName() << " _||_ {";
-        // for (Variable* n : it.s) logfile << " " << n->getName() << " ";
-        // logfile << "} with p = " << score << std::endl;
 
 	{
-	  std::unique_lock<std::mutex> mapLock(mapMutex);
-	  mapCondition.wait(mapLock,
-			      [this] {
-				  if (!mapModifying) {
-				      return mapModifying = true;
-				  }
-				  return false;
-			      });
+	  std::lock_guard<std::mutex> mapLock(mapMutex);
+
 	  if (scores.count(Triple(it.a, it.b, it.c))) {
 		if (indep && (score > scores[Triple(it.a, it.b, it.c)])) {
 		    scores.at(Triple(it.a, it.b, it.c)) = score;
-		    colliders.at(Triple(it.a, it.b, it.c)) = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
+		    colliders.at(Triple(it.a, it.b, it.c)) = (std::find(it.s.begin(),
+									it.s.end(),
+									it.b) == it.s.end());
 		}
 	    } else {
 		if (indep) {
 		    scores[Triple(it.a, it.b, it.c)] = score;
-		    colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
+		    colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(),
+								     it.s.end(),
+								     it.b) == it.s.end());
 		}
 		else {
 		    scores[Triple(it.a, it.b, it.c)] = 0;
 		    colliders[Triple(it.a, it.b, it.c)] = 0;
 		}
 	    }
-	  mapModifying = false;
-	}
-	mapCondition.notify_one();
-        // if (score > scores[Triple(it.a, it.b, it.c)]) {
-        //     scores[Triple(it.a, it.b, it.c)] = score;
-        //     colliders[Triple(it.a, it.b, it.c)] = (std::find(it.s.begin(), it.s.end(), it.b) == it.s.end());
-        // }
-        
+	}        
     }
-
-    // logfile.close();
 }
 
 void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c) {
     
     std::vector<Variable*> adja = graph->getAdjacentNodes(a);
     std::vector<Variable*> adjc = graph->getAdjacentNodes(c);
-
-    // std::unique_lock<std::mutex> mapLock(mapMutex);
-    // scores[Triple(a, b, c)] = 0;
-    // mapMutex.unlock();
 
     DepthChoiceGenerator cg1(adja.size(), -1);
     std::vector<int> *comb2;
@@ -170,10 +141,6 @@ void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variab
     if (graph->getEdges(a, b).size() > 1 || graph->getEdges(b, c).size() > 1) {
         return;
     }
-
-    // std::unique_lock<std::mutex> mapLock(mapMutex);
-    // scores[Triple(a, b, c)] = 0;
-    // mapMutex.unlock();
 
     taskQueue.push(IndependenceTask(a, b, c, {}));
     taskQueue.push(IndependenceTask(a, b, c, {b}));
@@ -257,9 +224,6 @@ bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Va
 //TODO - what should this be testing?
 // Returns true if there is an undirected path from x to either y or z within the given number of steps.
 bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
-    // std::ofstream logfile;
-    // logfile.open("../test_results/orientCollidersMaxP.log", std::ios_base::app);
-    // logfile << "Testing if a path exists between " << x->getName() << " and " << z->getName() << std::endl;
     
     std::queue<Variable*> q;
     std::unordered_set<Variable*> v;
@@ -271,27 +235,17 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
     while(!q.empty()) {
         Variable* t = q.front();
         q.pop();
-        // logfile << "t = " << t->getName() << std::endl;
-
-        // if (e == NULL) logfile << "e = NULL" << std::endl;
-        // else logfile << "e = " << e->getName() << std::endl;
-
+        
         if (e == t) {
             e = NULL;
             distance++;
-            // logfile << "distance = " << distance << " bound = " << bound << std::endl;
             if (distance > (bound == -1 ? 1000 : bound)) {
-                // logfile << "No" << std::endl;
-                // logfile.close();
                 return false;
             }
         }
 
         for (Variable* u : graph->getAdjacentNodes(t)) {
-            // logfile << "u = " << u->getName() << std::endl;
             if (u == z && distance > 2) {
-                // logfile << "Yes" << std::endl;
-                // logfile.close();
                 return true;
             } 
 
@@ -306,20 +260,10 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
         }
     }
 
-    // logfile << "No" << std::endl;
-    // logfile.close();
-
     return false;
 }
 
 void OrientCollidersMaxP::addColliders() {
-    // std::ofstream logfile;
-
-    // logfile.open("../test_results/orientCollidersMaxP.log");
-
-    // logfile << "Starting colliders" << std::endl;
-
-    // logfile.close();
 
     scores.clear();
 
@@ -342,9 +286,6 @@ void OrientCollidersMaxP::addColliders() {
         // We only care about triples that are colliders
         if (colliders[pair.first]) {
             colliderList.push_back(pair.first);
-
-            // Print scores
-            // Rcpp::Rcout << pair.first << " score = " << pair.second << std::endl;
         }
     }
 
@@ -360,7 +301,6 @@ void OrientCollidersMaxP::addColliders() {
         Variable* c = triple.getZ();
 
         if (!(graph->getEndpoint(b, a) == ENDPOINT_ARROW || graph->getEndpoint(b, c) == ENDPOINT_ARROW)) {
-            // Rcpp::Rcout << "orienting collider " << Triple(a, b, c) << std::endl;
             orientCollider(a, b, c);
         }
     }

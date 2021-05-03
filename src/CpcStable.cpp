@@ -78,7 +78,6 @@ void CpcStable::orientUnshieldedTriples() {
     };
 
     auto consumer = [&]() {
-	// std::ofstream logfile;
         while(true) {
             ColliderTask ct = taskQueue.pop();
             Triple t = ct.t;
@@ -92,26 +91,12 @@ void CpcStable::orientUnshieldedTriples() {
 	    bool indep = independenceTest->isIndependent(t.x, t.z, sepset);
 
 	    {
-		std::unique_lock<std::mutex> mapLock(mapMutex);
-		mapCondition.wait(mapLock,
-			      [this] {
-				  if (!mapModifying) {
-				      return mapModifying = true;
-				  }
-				  return false;
-			      });
+		std::lock_guard<std::mutex> mapLock(mapMutex);
+
 		if (sepsetCount.count(Triple(t.x, t.y, t.z)) == 0) {
 		    sepsetCount[Triple(t.x, t.y, t.z)] = {0, 0};
 		}
-		// std::sort(sepset.begin(),
-		// 	  sepset.end(),
-		// 	  [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
-		//     );
-		// logfile.open("../cpc_debug.log", std::ios_base::app);
-		// logfile << mapLock.owns_lock() << "\t" << t.x->getName() << " ? " << t.z->getName() << " | [";
-		// for (Variable* n : sepset) logfile << n->getName() << ",";
-		// logfile << "]\t" << indep << "\n";
-		// logfile.close();
+	
 		if (indep) {
 		    if (std::find(sepset.begin(), sepset.end(), t.y) != sepset.end()) {
 			std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
@@ -121,9 +106,7 @@ void CpcStable::orientUnshieldedTriples() {
 			sepsetCount[Triple(t.x, t.y, t.z)] = {current.first, current.second + 1};
 		    }
 		}
-		mapModifying = false;
 	    }
-	    mapCondition.notify_one();
         }
     };
 
@@ -138,13 +121,10 @@ void CpcStable::orientUnshieldedTriples() {
     for (int i = 0; i < threads.size(); i++) {
         threads[i].join();
     }
-
-    // std::ofstream logfile;
-    // logfile.open("../cpc_debug.log", std::ios_base::app);
+;
     for (auto element : sepsetCount) {
         Triple t = element.first;
 
-	// logfile << t << ":   {" << element.second.first << "," << element.second.second << "}\n";
         
         if (isCollider(t)) {
             // colliderAllowed (knowledge)
@@ -158,7 +138,6 @@ void CpcStable::orientUnshieldedTriples() {
 
         allTriples.insert(t);
     }
-    // logfile.close();
 }
 
 /**
@@ -224,7 +203,7 @@ EdgeListGraph CpcStable::search(const std::vector<Variable*>& nodes) {
 }
 
 EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
-    if (verbose) Rcpp::Rcout << "Starting CPC algorithm" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting CPC-Stable algorithm..." << std::endl;
 
     allTriples = {};
 
@@ -248,6 +227,8 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
     graph = fas.search();
     sepsets = fas.getSepsets();
 
+    if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
+
     orientUnshieldedTriples();
 
     MeekRules meekRules;
@@ -262,8 +243,12 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     if (verbose) {
-        Rcpp::Rcout.precision(2);
-        Rcpp::Rcout << "CpcStable Elapsed time =  " << (elapsedTime / 1000.0) << " s" << std::endl;
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "CPC-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     return graph;

@@ -42,7 +42,7 @@ Fci::Fci(IndependenceTest* test, std::vector<Variable*> searchVars) {
         }
     }
     for (Variable* var: remVars) {
-      std::remove(this->variables.begin(), this->variables.end(), var);
+	std::remove(this->variables.begin(), this->variables.end(), var);
     }
 }
 
@@ -59,12 +59,14 @@ EdgeListGraph Fci::search(const std::vector<Variable*>& nodes) {
 }
 
 EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
-    if (verbose) Rcpp::Rcout << "Starting FCI Stable algorithm" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting FCI-Stable algorithm..." << std::endl;
 
     whyOrient = std::unordered_map<std::string, std::string>();
 
     if (test == NULL)
         throw std::invalid_argument("independenceTest of FCI Stable may not be NULL.");
+
+    auto startTime = std::chrono::high_resolution_clock::now();
 
     // fas->setKnowledge(getKnowledge());
     fas.setDepth(depth);
@@ -79,32 +81,32 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
-          if (verbose) Rcpp::Rcout << "Starting Posssible DSep search" << std::endl;
-          // SepsetsSet ssset(sepsets, test);
-          // FciOrient orienter(&ssset);
+	if (verbose) Rcpp::Rcout << "Starting Posssible DSep search" << std::endl;
+	// SepsetsSet ssset(sepsets, test);
+	// FciOrient orienter(&ssset);
 
-          PossibleDsepFciConsumerProducer possibleDSep(graph, test);
-          // possibleDSep.setKnowledge(getKnowledge());
-          possibleDSep.setDepth(getDepth());
-          possibleDSep.setMaxPathLength(maxPathLength);
-          possibleDSep.setVerbose(verbose);
+	PossibleDsepFciConsumerProducer possibleDSep(graph, test);
+	// possibleDSep.setKnowledge(getKnowledge());
+	possibleDSep.setDepth(getDepth());
+	possibleDSep.setMaxPathLength(maxPathLength);
+	possibleDSep.setVerbose(verbose);
 
-          SepsetMap searchResult = possibleDSep.search();
-          sepsets.addAll(searchResult);
+	SepsetMap searchResult = possibleDSep.search();
+	sepsets.addAll(searchResult);
 
-          graph = possibleDSep.getGraph();
+	graph = possibleDSep.getGraph();
 
-          // Step FCI D.
+	// Step FCI D.
 
-          // Reorient all edges as o-o.
-          graph.reorientAllWith(ENDPOINT_CIRCLE);
-      }
+	// Reorient all edges as o-o.
+	graph.reorientAllWith(ENDPOINT_CIRCLE);
+    }
 
     // Step CI C (Zhang's step F3.)
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new FciOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
-    if (verbose) Rcpp::Rcout << "Starting Orientations" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
     SepsetsSet sepsetsset_(sepsets, test);
     FciOrient fciorient_(&sepsetsset_, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
@@ -118,8 +120,17 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     alg << "FCI Stable: alpha = " << test->getAlpha();
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
+
+    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
     
-    if (verbose) Rcpp::Rcout << "FCI Stable algorithm finished" << std::endl;
+    if (verbose) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "FCI-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
     return graph;
 }
 

@@ -42,7 +42,7 @@ FciMax::FciMax(IndependenceTest* test, std::vector<Variable*> searchVars) {
         }
     }
     for (Variable* var: remVars) {
-      std::remove(this->variables.begin(), this->variables.end(), var);
+	std::remove(this->variables.begin(), this->variables.end(), var);
     }
 }
 
@@ -81,26 +81,28 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
-          if (verbose) Rcpp::Rcout << "Starting Posssible DSep search..." << std::endl;
-          // SepsetsSet ssset(sepsets, test);
-          // FciMaxOrient orienter(&ssset);
+	if (verbose) Rcpp::Rcout << "Starting Posssible DSep search..." << std::endl;
+	// SepsetsSet ssset(sepsets, test);
+	// FciMaxOrient orienter(&ssset);
 
-          PossibleDsepFciConsumerProducer possibleDSep(graph, test);
-          // possibleDSep.setKnowledge(getKnowledge());
-          possibleDSep.setDepth(getDepth());
-          possibleDSep.setMaxPathLength(maxPathLength);
-          possibleDSep.setVerbose(verbose);
+	PossibleDsepFciConsumerProducer possibleDSep(graph, test);
+	// possibleDSep.setKnowledge(getKnowledge());
+	possibleDSep.setDepth(getDepth());
+	possibleDSep.setMaxPathLength(maxPathLength);
+	possibleDSep.setVerbose(verbose);
 
-          SepsetMap searchResult = possibleDSep.search();
-          sepsets.addAll(searchResult);
+	SepsetMap searchResult = possibleDSep.search();
+	sepsets.addAll(searchResult);
 
-          graph = possibleDSep.getGraph();
+	graph = possibleDSep.getGraph();
 
-          // Step FCI D.
+	// Step FCI D.
 
-          // Reorient all edges as o-o.
-          graph.reorientAllWith(ENDPOINT_CIRCLE);
-      }
+	// Reorient all edges as o-o.
+	graph.reorientAllWith(ENDPOINT_CIRCLE);
+    }
+
+    if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
 
     sepsetsMaxP = (SepsetProducer*) new SepsetProducerMaxP(graph, test, sepsets);
     sepsetsMaxP->setDepth(depth);
@@ -111,7 +113,6 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new FciMaxOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
-    if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
     //SepsetsSet sepsetsset_(sepsets, test);
     FciOrient fciorient_(sepsetsMaxP, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
@@ -128,9 +129,16 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
     
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count() / 1000.0;
-    
-    if (verbose) Rcpp::Rcout << "FCI-Max finished:  " << std::round(elapsedTime) << " s" << std::endl;
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+
+    if (verbose) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "FCI-Max Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
 
     delete sepsetsMaxP;
     

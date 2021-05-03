@@ -67,11 +67,12 @@ private:
         Variable* b;
         Variable* c;
         std::vector<Variable*> s;
-	    IndependenceTask() {}
-        IndependenceTask(Variable* _a, Variable* _b, Variable* _c, const std::vector<Variable*>& _s) : a(_a),
-										   b(_b),
-										   c(_c),
-                                           s(_s) {} 
+	IndependenceTask() {}
+        IndependenceTask(Variable* _a, Variable* _b, Variable* _c,
+			 const std::vector<Variable*>& _s) : a(_a),
+							     b(_b),
+							     c(_c),
+							     s(_s) {} 
         IndependenceTask(const IndependenceTask& it) { a = it.a; b = it.b; c = it.c; s = it.s; }
     };
 
@@ -84,8 +85,6 @@ private:
     int parallelism = std::thread::hardware_concurrency();
     
     std::mutex mapMutex;
-    std::condition_variable mapCondition;
-    bool mapModifying = false;
 
 public:
     OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph);

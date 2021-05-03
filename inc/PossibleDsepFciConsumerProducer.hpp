@@ -68,9 +68,6 @@ private:
     const int MAX_QUEUE_SIZE = 100;
     BlockingQueue<PossibleDsepTask> taskQueue;
     std::mutex edgeMutex;
-    std::condition_variable edgeCondition;
-    bool edgeModifying = false;
-
 
     void PossibleDsepProducer(std::unordered_set<Edge> edges);
 

@@ -51,8 +51,6 @@ class SepsetProducerMaxP : public SepsetProducer {
     int parallelism = 4;
     
     std::mutex mapMutex;
-    std::condition_variable mapCondition;
-    bool mapModifying = false;
 
 public:
 

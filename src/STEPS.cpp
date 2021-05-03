@@ -79,7 +79,14 @@ EdgeListGraph STEPS::runStepsPar() {
         cdDestable = cdDestable / numCD;
         ddDestable = ddDestable / numDD;
 
-	if (verbose) Rcpp::Rcout << "    Instabilities for lambda = " << lambda[currIndex]
+	if (numCC == 0)
+	    ccDestable = 0.5;
+	if (numCD == 0)
+	    cdDestable = 0.5;
+	if (numDD == 0)
+	    ddDestable = 0.5;
+
+	if (verbose) Rcpp::Rcout << "  Instabilities for lambda = " << lambda[currIndex]
 				 << ":  {" << ccDestable << ", " << cdDestable << ", "
 				 << ddDestable << "}" << std::endl;
 

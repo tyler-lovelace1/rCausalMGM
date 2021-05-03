@@ -78,14 +78,7 @@ void SepsetProducerConservative::consumer() {
         bool indep = test->isIndependent(it.a, it.c, it.s);
 
 	{
-	    std::unique_lock<std::mutex> mapLock(mapMutex);
-	    mapCondition.wait(mapLock,
-			      [this] {
-				  if (!mapModifying) {
-				      return mapModifying = true;
-				  }
-				  return false;
-			      });
+	    std::lock_guard<std::mutex> mapLock(mapMutex);
 
 	    if (sepsetCount.count(Triple(it.a, it.b, it.c)) == 0) {
 		sepsetCount[Triple(it.a, it.b, it.c)] = {0, 0};
@@ -100,20 +93,14 @@ void SepsetProducerConservative::consumer() {
 		    sepsetCount[Triple(it.a, it.b, it.c)] = {current.first, current.second + 1};
 		}
 	    }
-	    mapModifying = false;
 	}
-	mapCondition.notify_one();
     }
 
 }
 
 void SepsetProducerConservative::fillMap() {
 
-    if (verbose) Rcpp::Rcout << "Filling Triple map...\n";
-
     sepsetCount.clear();
-
-    mapModifying = false;
 
     std::vector<std::thread> threads;
 

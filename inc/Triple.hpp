@@ -23,6 +23,7 @@ public:
     std::string toString();
 
     friend std::ostream& operator<<(std::ostream& os, const Triple& triple);
+    friend bool operator<(const Triple& t1, const Triple& t2);
     friend bool operator==(const Triple& t1, const Triple& t2);
     friend struct std::hash<Triple>;
 

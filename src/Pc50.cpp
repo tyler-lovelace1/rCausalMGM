@@ -112,7 +112,6 @@ void Pc50::orientUnshieldedTriples() {
     };
 
     auto consumer = [&]() {
-	// std::ofstream logfile;
         while(true) {
             ColliderTask ct = taskQueue.pop();
             Triple t = ct.t;
@@ -126,26 +125,12 @@ void Pc50::orientUnshieldedTriples() {
 	    bool indep = independenceTest->isIndependent(t.x, t.z, sepset);
 
 	    {
-		std::unique_lock<std::mutex> mapLock(mapMutex);
-		mapCondition.wait(mapLock,
-			      [this] {
-				  if (!mapModifying) {
-				      return mapModifying = true;
-				  }
-				  return false;
-			      });
+		std::lock_guard<std::mutex> mapLock(mapMutex);
+		
 		if (sepsetCount.count(Triple(t.x, t.y, t.z)) == 0) {
 		    sepsetCount[Triple(t.x, t.y, t.z)] = {0, 0};
 		}
-		// std::sort(sepset.begin(),
-		// 	  sepset.end(),
-		// 	  [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
-		//     );
-		// logfile.open("../cpc_debug.log", std::ios_base::app);
-		// logfile << mapLock.owns_lock() << "\t" << t.x->getName() << " ? " << t.z->getName() << " | [";
-		// for (Variable* n : sepset) logfile << n->getName() << ",";
-		// logfile << "]\t" << indep << "\n";
-		// logfile.close();
+		
 		if (indep) {
 		    if (std::find(sepset.begin(), sepset.end(), t.y) != sepset.end()) {
 			std::pair<int, int> current = sepsetCount[Triple(t.x, t.y, t.z)];
@@ -155,9 +140,7 @@ void Pc50::orientUnshieldedTriples() {
 			sepsetCount[Triple(t.x, t.y, t.z)] = {current.first, current.second + 1};
 		    }
 		}
-		mapModifying = false;
 	    }
-	    mapCondition.notify_one();
         }
     };
 
@@ -177,7 +160,7 @@ void Pc50::orientUnshieldedTriples() {
     colliderList.reserve(sepsetCount.size());
     
     // std::ofstream logfile;
-    // logfile.open("../pc50_debug.log");
+    // logfile.open("pc50_debug.log", std::ios_base::app);
     for (auto element : sepsetCount) {
         Triple t = element.first;
 	std::pair<int, int> count = element.second;
@@ -203,6 +186,8 @@ void Pc50::orientUnshieldedTriples() {
     // Most independent ones first.
     std::sort(colliderList.begin(), colliderList.end(),
 	      [&](const Triple& t1, const Triple& t2) {
+		  if (score[t1] == score[t2])
+		      return t1 < t2;
 		  return score[t1] > score[t2];
 	      });
 
@@ -282,7 +267,7 @@ EdgeListGraph Pc50::search(const std::vector<Variable*>& nodes) {
 }
 
 EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
-    if (verbose) Rcpp::Rcout << "Starting PC50 algorithm" << std::endl;
+    if (verbose) Rcpp::Rcout << "Starting PC50 algorithm..." << std::endl;
 
     // allTriples = {};
 
@@ -306,6 +291,8 @@ EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Var
     graph = fas.search();
     sepsets = fas.getSepsets();
 
+    if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
+
     orientUnshieldedTriples();
 
     MeekRules meekRules;
@@ -325,7 +312,7 @@ EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Var
 	} else {
 	    elapsedTime = std::round(elapsedTime / 1000.0);
 	}
-        Rcpp::Rcout << "Pc50 Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+        Rcpp::Rcout << "PC50 Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     return graph;
