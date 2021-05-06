@@ -306,7 +306,7 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
 
     double ll = multiLL(coeffsDep, x, yzList);
     double ll0 = multiLL(coeffsNull, x, zList);
-    double chisq = std::max(2*(ll - ll0), 0.0);
+    double chisq = std::max(2*(ll - ll0), 1e-15);
 
     // if ((std::isinf(ll) && std::isinf(ll0)) || (ll0 > ll))
     // {
