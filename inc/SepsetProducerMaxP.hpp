@@ -48,17 +48,25 @@ class SepsetProducerMaxP : public SepsetProducer {
     const int MAX_QUEUE_SIZE = 100;
     BlockingQueue<IndependenceTask> taskQueue;
 
-    int parallelism = 4;
+    int parallelism;
     
     std::mutex mapMutex;
 
 public:
 
-    SepsetProducerMaxP(EdgeListGraph& _graph, IndependenceTest* _test, SepsetMap& _extraSepsets) :
+    SepsetProducerMaxP(EdgeListGraph& _graph, IndependenceTest* _test, SepsetMap& _extraSepsets, int threads = -1) :
 	SepsetProducer(_graph, _test),
 	extraSepsets(_extraSepsets),
-	taskQueue(MAX_QUEUE_SIZE),
-	parallelism(std::thread::hardware_concurrency()) {}
+	taskQueue(MAX_QUEUE_SIZE) {
+        if (threads > 0) parallelism = threads;
+        else {
+            parallelism = std::thread::hardware_concurrency();
+            if (parallelism == 0) {
+                parallelism = 4;
+                Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+            }
+        }
+    }
 
     std::vector<Variable*>  getSepset(Variable* a, Variable* b);
 

@@ -47,7 +47,7 @@ private:
     /**
     * Concurrency variables
     */
-    int parallelism = std::thread::hardware_concurrency();
+    int parallelism;
 
     Edge poisonEdge;
 
@@ -104,9 +104,9 @@ public:
      * @param graph The GaSearchGraph on which to work
      * @param test  The IndependenceChecker to use as an oracle
      */
-    PossibleDsepFciConsumerProducer(EdgeListGraph& graph, IndependenceTest *test);
+    PossibleDsepFciConsumerProducer(EdgeListGraph& graph, IndependenceTest *test, int threads = -1);
 
-    PossibleDsepFciConsumerProducer(IndependenceTest *test);
+    PossibleDsepFciConsumerProducer(IndependenceTest *test, int threads = -1);
 
     ~PossibleDsepFciConsumerProducer() { delete poisonEdge.getNode1(); delete poisonEdge.getNode2(); }
 

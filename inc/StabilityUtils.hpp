@@ -10,11 +10,11 @@ class StabilityUtils {
 
 public:
 
-    static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int N, int b);
+    static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, int N, int b);
 
-    static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda); // LOO
+    static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads); // LOO
 
-    static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, arma::umat& subs);
+    static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, arma::umat& subs);
 
     static arma::umat subSampleNoReplacement(int sampSize, int subSize, int numSub);
 

@@ -87,7 +87,10 @@ private:
         ColliderTask(): t(NULL, NULL, NULL), sepset({}) {}
     };
 
-    int parallelism = std::thread::hardware_concurrency();
+    /**
+     * The number of consumer threads to create for multi-threaded steps. -1 to set automatically
+     */ 
+    int parallelism = -1;
     std::mutex mapMutex;
 
     void orientUnshieldedTriples();
@@ -159,6 +162,8 @@ public:
     void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
+
+    void setThreads(int threads) { this->parallelism = threads; }
 
     /**
      * Runs PC starting with a fully connected graph over all of the variables in the domain of the independence test.

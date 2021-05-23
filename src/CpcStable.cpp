@@ -110,6 +110,14 @@ void CpcStable::orientUnshieldedTriples() {
         }
     };
 
+    if (parallelism <= 0) {
+        parallelism = std::thread::hardware_concurrency();
+        if (parallelism == 0) {
+            parallelism = 4;
+            Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+        }
+    }
+
     std::vector<std::thread> threads;
 
     threads.push_back(std::thread( producer ));
@@ -150,11 +158,6 @@ CpcStable::CpcStable(IndependenceTest *independenceTest) {
     } 
 
     this->independenceTest = independenceTest;
-
-    if (parallelism == 0) {
-        parallelism = 4;
-        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
-    }
 }
 
 /**
@@ -198,7 +201,7 @@ EdgeListGraph CpcStable::search() {
 }
 
 EdgeListGraph CpcStable::search(const std::vector<Variable*>& nodes) {
-    FasStableProducerConsumer fas(initialGraph, independenceTest);
+    FasStableProducerConsumer fas(initialGraph, independenceTest, parallelism);
     return search(fas, nodes);
 }
 

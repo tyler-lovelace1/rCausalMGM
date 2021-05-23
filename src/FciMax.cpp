@@ -53,7 +53,7 @@ EdgeListGraph FciMax::search() {
 }
 
 EdgeListGraph FciMax::search(const std::vector<Variable*>& nodes) {
-    FasStableProducerConsumer fas(initialGraph, test);
+    FasStableProducerConsumer fas(initialGraph, test, threads);
 
     return search(fas, nodes);
 }
@@ -85,7 +85,7 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
 	// SepsetsSet ssset(sepsets, test);
 	// FciMaxOrient orienter(&ssset);
 
-	PossibleDsepFciConsumerProducer possibleDSep(graph, test);
+	PossibleDsepFciConsumerProducer possibleDSep(graph, test, threads);
 	// possibleDSep.setKnowledge(getKnowledge());
 	possibleDSep.setDepth(getDepth());
 	possibleDSep.setMaxPathLength(maxPathLength);
@@ -104,7 +104,7 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
 
     if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
 
-    sepsetsMaxP = (SepsetProducer*) new SepsetProducerMaxP(graph, test, sepsets);
+    sepsetsMaxP = (SepsetProducer*) new SepsetProducerMaxP(graph, test, sepsets, threads);
     sepsetsMaxP->setDepth(depth);
     sepsetsMaxP->setVerbose(verbose);
     sepsetsMaxP->fillMap();

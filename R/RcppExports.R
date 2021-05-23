@@ -87,14 +87,15 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, ve
 #' @param numSub The number of subsets to split the data into. Defaults to 20
 #' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
 #' @param computeStabs If TRUE, stability values are calculated. Defaults to FALSE.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated MGM graph
 #' @export
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::steps(data.n100.p25)
-steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(FALSE)), computeStabs = as.logical( c(FALSE)), verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, verbose)
+steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(FALSE)), computeStabs = as.logical( c(FALSE)), threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, threads, verbose)
 }
 
 #' Runs the causal algorithm PC Stable on a dataset
@@ -103,6 +104,7 @@ steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, l
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -110,8 +112,8 @@ steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, l
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_pcStable`, df, maxDiscrete, initialGraph, alpha, verbose)
+pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_pcStable`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
 }
 
 #' Runs the causal algorithm CPC Stable on a dataset
@@ -120,6 +122,7 @@ pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, ve
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -127,8 +130,8 @@ pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, ve
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
-cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_cpcStable`, df, maxDiscrete, initialGraph, alpha, verbose)
+cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_cpcStable`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
 }
 
 #' Runs the causal algorithm PC Max on a dataset
@@ -137,6 +140,7 @@ cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -144,8 +148,8 @@ cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
-pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, alpha, verbose)
+pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
 }
 
 #' Runs the causal algorithm PC50 on a dataset
@@ -154,6 +158,7 @@ pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbo
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -161,8 +166,8 @@ pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbo
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pc50(data.n100.p25, initialGraph = ig)
-pc50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_pc50`, df, maxDiscrete, initialGraph, alpha, verbose)
+pc50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_pc50`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
 }
 
 #' Runs the causal algorithm FCI Stable on a dataset
@@ -171,6 +176,7 @@ pc50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbos
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -178,8 +184,8 @@ pc50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbos
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
-fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_fciStable`, df, maxDiscrete, initialGraph, alpha, verbose)
+fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_fciStable`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
 }
 
 #' Runs the causal algorithm CFCI Stable on a dataset
@@ -188,6 +194,7 @@ fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -195,8 +202,8 @@ fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, v
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::cfci(data.n100.p25, initialGraph = ig)
-cfci <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_cfci`, df, maxDiscrete, initialGraph, alpha, verbose)
+cfci <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_cfci`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
 }
 
 #' Runs the causal algorithm FCI-Max on a dataset
@@ -205,6 +212,7 @@ cfci <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbos
 #' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -212,7 +220,7 @@ cfci <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbos
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::fciMax(data.n100.p25, initialGraph = ig)
-fciMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_fciMax`, df, maxDiscrete, initialGraph, alpha, verbose)
+fciMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_fciMax`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
 }
 

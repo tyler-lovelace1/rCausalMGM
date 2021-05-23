@@ -69,6 +69,11 @@ private:
 
     bool verbose = false;
 
+    /**
+     * The number of consumer threads to create for multi-threaded steps. -1 to set automatically
+     */ 
+    int parallelism = -1;
+
     // First int in pair = # sepsets containing y
     // Second int in pair = # sepsets without y
     std::unordered_map<Triple, std::pair<int, int>> sepsetCount;
@@ -87,7 +92,6 @@ private:
         ColliderTask(): t(NULL, NULL, NULL), sepset({}) {}
     };
 
-    int parallelism = std::thread::hardware_concurrency();
     std::mutex mapMutex;
     
     void orientUnshieldedTriples();
@@ -163,6 +167,8 @@ public:
     void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
+
+    void setThreads(int threads) { this->parallelism = threads; }
 
     /**
      * Runs PC starting with a fully connected graph over all of the variables in the domain of the independence test.

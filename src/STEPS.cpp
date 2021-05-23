@@ -38,9 +38,9 @@ EdgeListGraph STEPS::runStepsPar() {
         arma::mat adjMat;
 
         if (leaveOneOut) {
-            adjMat = StabilityUtils::stabilitySearchPar(d, lambdaCurr);
+            adjMat = StabilityUtils::stabilitySearchPar(d, lambdaCurr, threads);
         } else {
-            adjMat = StabilityUtils::stabilitySearchPar(d, lambdaCurr, N, b);
+            adjMat = StabilityUtils::stabilitySearchPar(d, lambdaCurr, threads, N, b);
         }
 
         // Rcpp::Rcout << "adjMat = " << adjMat << std::endl;
@@ -145,9 +145,9 @@ EdgeListGraph STEPS::runStepsPar() {
 
     if (computeStabs) {
         if (leaveOneOut) {
-            stabilities = StabilityUtils::stabilitySearchPar(d, lambda);
+            stabilities = StabilityUtils::stabilitySearchPar(d, lambda, threads);
         } else {
-            stabilities = StabilityUtils::stabilitySearchPar(d, lambda, N, b);
+            stabilities = StabilityUtils::stabilitySearchPar(d, lambda, threads, N, b);
         }
     }
     lastLambda = lambda;

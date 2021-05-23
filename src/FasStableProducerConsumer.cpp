@@ -3,28 +3,23 @@
 #include "ChoiceGenerator.hpp"
 #include "GraphUtils.hpp"
 
-FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test) : FasStableProducerConsumer(test) 
+FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test, int threads) : FasStableProducerConsumer(test, threads) 
 {
     this->initialGraph = initialGraph;
-    this->test = test;
-    this->nodes = test->getVariables();
-
-    // Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
-    if (parallelism == 0) {
-        parallelism = 4;
-        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
-    }
 }
 
-FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE) 
+FasStableProducerConsumer::FasStableProducerConsumer(IndependenceTest *test, int threads) : taskQueue(MAX_QUEUE_SIZE) 
 {
     this->test = test;
     this->nodes = test->getVariables();
 
-    // Rcpp::Rcout << "FAS paralellism = " << parallelism << std::endl;
-    if (parallelism == 0) {
-        parallelism = 4;
-        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+    if (threads > 0) parallelism = threads;
+    else {
+        parallelism = std::thread::hardware_concurrency();
+        if (parallelism == 0) {
+            parallelism = 4;
+            Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+        }
     }
 }
 

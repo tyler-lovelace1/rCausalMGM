@@ -78,6 +78,11 @@ private:
     int depth = -1;
 
     /**
+     * The number of consumer threads to create for multi-threaded steps. -1 to set automatically
+     */ 
+    int threads = -1;
+
+    /**
      * Elapsed time of last search.
      */
     long elapsedTime;
@@ -185,6 +190,8 @@ public:
     void setPossibleDsepDepth(int possibleDsepDepth) { this->possibleDsepDepth = possibleDsepDepth; }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
+
+    void setThreads(int threads) { this->threads = threads; }
 };
 
 #endif /* FCI_HPP_ */

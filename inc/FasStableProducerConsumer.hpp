@@ -109,7 +109,7 @@ private:
     const int MAX_QUEUE_SIZE = 100;
     BlockingQueue<IndependenceTask> taskQueue;
     
-    int parallelism = std::thread::hardware_concurrency();
+    int parallelism;
     
     std::mutex adjacencyMutex;
 
@@ -121,8 +121,8 @@ private:
 
 public:
 
-    FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test);
-    FasStableProducerConsumer(IndependenceTest *test);
+    FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test, int threads = -1);
+    FasStableProducerConsumer(IndependenceTest *test, int threads = -1);
 
     /**
      * Discovers all adjacencies in data.  The procedure is to remove edges in the graph which connect pairs of

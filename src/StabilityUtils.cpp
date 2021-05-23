@@ -137,7 +137,7 @@ arma::vec StabilityUtils::standardizeData(const arma::vec& data) {
     return data2;
 }
 
-arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int N, int b) {
+arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, int N, int b) {
     arma::umat samp; // = subSampleNoReplacement(data.getNumRows(), b, N);
     int attempts = 5000;
     bool done = false;
@@ -160,11 +160,11 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
     }
     // Rcpp::Rcout << std::endl;
 
-    return stabilitySearchPar(data, lambda, samp);
+    return stabilitySearchPar(data, lambda, num_threads, samp);
 }
 
 // LOO
-arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda) {
+arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads) {
     arma::umat samps(data.getNumRows(), data.getNumRows()-1);
 
     for(int i = 0; i < samps.n_rows; i++) {
@@ -185,14 +185,14 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
         }
     }
     
-    return stabilitySearchPar(data, lambda, samps);
+    return stabilitySearchPar(data, lambda, num_threads, samps);
 }
 
-arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, arma::umat& subs) {
+arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, arma::umat& subs) {
     BlockingQueue<int> taskQueue(subs.n_rows);
-    int parallelism = std::thread::hardware_concurrency();
-    if (parallelism == 0) {
-        parallelism = 4;
+    if (num_threads <= 0) num_threads = std::thread::hardware_concurrency();
+    if (num_threads == 0) {
+        num_threads = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
     }
 
@@ -206,7 +206,7 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
         }
 
         // Poison pills
-        for (int i = 0; i < parallelism; i++) {
+        for (int i = 0; i < num_threads; i++) {
             taskQueue.push(-1);
         }
     };
@@ -223,8 +223,8 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
             arma::mat curAdj = skeletonToMatrix(g, dataSubSamp);
 
 	    {
-		std::lock_guard<std::mutex> matLock(matMutex);
-		thetaMat += curAdj;
+            std::lock_guard<std::mutex> matLock(matMutex);
+            thetaMat += curAdj;
 	    }
         }
     };
@@ -233,7 +233,7 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
 
     threads.push_back(std::thread( producer ));
 
-    for (int i = 0; i < parallelism; i++) {
+    for (int i = 0; i < num_threads; i++) {
         threads.push_back(std::thread( consumer ));
     }
 

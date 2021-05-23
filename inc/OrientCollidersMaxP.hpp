@@ -82,12 +82,12 @@ private:
     const int MAX_QUEUE_SIZE = 100;
     BlockingQueue<IndependenceTask> taskQueue;
 
-    int parallelism = std::thread::hardware_concurrency();
+    int parallelism;
     
     std::mutex mapMutex;
 
 public:
-    OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph);
+    OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph, int threads = -1);
 
     /**
      * Sets the depth of the search--that is, the maximum number of conditioning nodes for any conditional independence

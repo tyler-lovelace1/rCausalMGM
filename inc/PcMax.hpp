@@ -59,6 +59,11 @@ private:
 
     bool verbose = false;
 
+    /**
+     * The number of consumer threads to create for multi-threaded steps. -1 to set automatically
+     */ 
+    int threads = -1;
+
 public:
 
     /**
@@ -105,6 +110,8 @@ public:
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
     bool isVerbose() { return verbose; }
+
+    void setThreads(int threads) { this->threads = threads; }
 
     void setUseHeuristic(bool useHeuristic) { this->useHeuristic = useHeuristic; }
     bool isUseHeuristic() { return useHeuristic; }

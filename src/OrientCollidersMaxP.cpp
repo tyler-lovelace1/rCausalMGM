@@ -3,7 +3,7 @@
 #include <fstream>
 #include "GraphUtils.hpp"
 
-OrientCollidersMaxP::OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph) : taskQueue(MAX_QUEUE_SIZE) {
+OrientCollidersMaxP::OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *graph, int threads) : taskQueue(MAX_QUEUE_SIZE) {
     if (test == NULL) 
         throw std::invalid_argument("independenceTest may not be NULL.");
 
@@ -14,9 +14,13 @@ OrientCollidersMaxP::OrientCollidersMaxP(IndependenceTest *test, EdgeListGraph *
 
     this->graph = graph;
 
-    if (parallelism == 0) {
-        parallelism = 4;
-        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+    if (threads > 0) parallelism = threads;
+    else {
+        parallelism = std::thread::hardware_concurrency();
+        if (parallelism == 0) {
+            parallelism = 4;
+            Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+        }
     }
 }
 

@@ -53,7 +53,7 @@ EdgeListGraph Cfci::search() {
 }
 
 EdgeListGraph Cfci::search(const std::vector<Variable*>& nodes) {
-    FasStableProducerConsumer fas(initialGraph, test);
+    FasStableProducerConsumer fas(initialGraph, test, threads);
 
     return search(fas, nodes);
 }
@@ -81,30 +81,30 @@ EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Var
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
-	if (verbose) Rcpp::Rcout << "Starting Posssible DSep search..." << std::endl;
-	// SepsetsSet ssset(sepsets, test);
-	// CfciOrient orienter(&ssset);
+        if (verbose) Rcpp::Rcout << "Starting Posssible DSep search..." << std::endl;
+        // SepsetsSet ssset(sepsets, test);
+        // CfciOrient orienter(&ssset);
 
-	PossibleDsepFciConsumerProducer possibleDSep(graph, test);
-	// possibleDSep.setKnowledge(getKnowledge());
-	possibleDSep.setDepth(getDepth());
-	possibleDSep.setMaxPathLength(maxPathLength);
-	possibleDSep.setVerbose(verbose);
+        PossibleDsepFciConsumerProducer possibleDSep(graph, test, threads);
+        // possibleDSep.setKnowledge(getKnowledge());
+        possibleDSep.setDepth(getDepth());
+        possibleDSep.setMaxPathLength(maxPathLength);
+        possibleDSep.setVerbose(verbose);
 
-	SepsetMap searchResult = possibleDSep.search();
-	sepsets.addAll(searchResult);
+        SepsetMap searchResult = possibleDSep.search();
+        sepsets.addAll(searchResult);
 
-	graph = possibleDSep.getGraph();
+        graph = possibleDSep.getGraph();
 
-	// Step FCI D.
+        // Step FCI D.
 
-	// Reorient all edges as o-o.
-	graph.reorientAllWith(ENDPOINT_CIRCLE);
+        // Reorient all edges as o-o.
+        graph.reorientAllWith(ENDPOINT_CIRCLE);
     }
 
     if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
 
-    sepsetsConservative = (SepsetProducer*) new SepsetProducerConservative(graph, test, sepsets);
+    sepsetsConservative = (SepsetProducer*) new SepsetProducerConservative(graph, test, sepsets, threads);
     sepsetsConservative->setDepth(depth);
     sepsetsConservative->setVerbose(verbose);
     sepsetsConservative->fillMap();

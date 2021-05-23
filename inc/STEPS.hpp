@@ -24,6 +24,7 @@ private:
     // arma::umat subs;
     bool computeStabs = false;
     bool verbose = false;
+    int threads = -1;
 
 public:
     STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, bool loo = false) :
@@ -42,6 +43,7 @@ public:
     arma::mat getStabs() { return stabilities; }
 
     void setVerbose(bool v) { verbose = v; }
+    void setThreads(int threads) { this->threads = threads; }
 
 };
 

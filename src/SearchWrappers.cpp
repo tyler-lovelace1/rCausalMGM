@@ -60,6 +60,7 @@ Rcpp::List mgm(
 //' @param numSub The number of subsets to split the data into. Defaults to 20
 //' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
 //' @param computeStabs If TRUE, stability values are calculated. Defaults to FALSE.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated MGM graph
 //' @export
@@ -75,6 +76,7 @@ Rcpp::List steps(
     const int numSub = 20,
     Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(FALSE),
     Rcpp::LogicalVector computeStabs = Rcpp::LogicalVector::create(FALSE),
+    const int threads = -1,
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
 
@@ -99,6 +101,7 @@ Rcpp::List steps(
     }
 
     STEPS steps(ds, l, g, numSub, loo);
+    if (threads > 0) steps.setThreads(threads);
     steps.setComputeStabs(cs);
     steps.setVerbose(v);
 
@@ -123,6 +126,7 @@ Rcpp::List steps(
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -136,6 +140,7 @@ Rcpp::List pcStable(
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.05, 
+    const int threads = -1,
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
     DataSet ds(df, maxDiscrete);
@@ -145,6 +150,7 @@ Rcpp::List pcStable(
     IndTestMulti itm(ds, alpha);
 
     PcStable pcs((IndependenceTest*) &itm);
+    if (threads > 0) pcs.setThreads(threads);
     pcs.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -166,6 +172,7 @@ Rcpp::List pcStable(
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -179,6 +186,7 @@ Rcpp::List cpcStable(
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.05, 
+    const int threads = -1,
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
     DataSet ds(df, maxDiscrete);
@@ -188,6 +196,7 @@ Rcpp::List cpcStable(
     IndTestMulti itm(ds, alpha);
 
     CpcStable cpc((IndependenceTest*) &itm);
+    if (threads > 0) cpc.setThreads(threads);
     cpc.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -208,6 +217,7 @@ Rcpp::List cpcStable(
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -221,6 +231,7 @@ Rcpp::List pcMax(
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.05, 
+    const int threads = -1,
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
     DataSet ds(df, maxDiscrete);
@@ -230,6 +241,7 @@ Rcpp::List pcMax(
     IndTestMulti itm(ds, alpha);
 
     PcMax pcm((IndependenceTest*) &itm);
+    if (threads > 0) pcm.setThreads(threads);
     pcm.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -251,6 +263,7 @@ Rcpp::List pcMax(
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -264,6 +277,7 @@ Rcpp::List pc50(
     const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.05, 
+    const int threads = -1,
     Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
     DataSet ds(df, maxDiscrete);
@@ -273,6 +287,7 @@ Rcpp::List pc50(
     IndTestMulti itm(ds, alpha);
 
     Pc50 pc50((IndependenceTest*) &itm);
+    if (threads > 0) pc50.setThreads(threads);
     pc50.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -295,6 +310,7 @@ Rcpp::List pc50(
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -308,6 +324,7 @@ Rcpp::List fciStable(
         const int maxDiscrete = 5,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.05,
+        const int threads = -1,
         Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
     DataSet ds(df, maxDiscrete);
@@ -317,6 +334,7 @@ Rcpp::List fciStable(
     IndTestMulti itm(ds, alpha);
     
     Fci fci((IndependenceTest*) &itm);
+    if (threads > 0) fci.setThreads(threads);
     fci.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -339,6 +357,7 @@ Rcpp::List fciStable(
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -352,6 +371,7 @@ Rcpp::List cfci(
         const int maxDiscrete = 5,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.05,
+        const int threads = -1,
         Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
     DataSet ds(df, maxDiscrete);
@@ -361,6 +381,7 @@ Rcpp::List cfci(
     IndTestMulti itm(ds, alpha);
     
     Cfci cfci((IndependenceTest*) &itm);
+    if (threads > 0) cfci.setThreads(threads);
     cfci.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -383,6 +404,7 @@ Rcpp::List cfci(
 //' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -396,6 +418,7 @@ Rcpp::List fciMax(
         const int maxDiscrete = 5,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.05,
+        const int threads = -1,
         Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
 ) {
     DataSet ds(df, maxDiscrete);
@@ -405,6 +428,7 @@ Rcpp::List fciMax(
     IndTestMulti itm(ds, alpha);
     
     FciMax fcimax((IndependenceTest*) &itm);
+    if (threads > 0) fcimax.setThreads(threads);
     fcimax.setVerbose(v);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {

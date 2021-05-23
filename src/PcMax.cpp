@@ -73,14 +73,14 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
 
-    FasStableProducerConsumer fas(initialGraph, independenceTest);
+    FasStableProducerConsumer fas(initialGraph, independenceTest, threads);
     fas.setDepth(depth);
     fas.setVerbose(verbose);
     graph = fas.search();
 
     if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
 
-    OrientCollidersMaxP orientCollidersMaxP(independenceTest, &graph);
+    OrientCollidersMaxP orientCollidersMaxP(independenceTest, &graph, threads);
     orientCollidersMaxP.setUseHeuristic(useHeuristic);
     orientCollidersMaxP.setMaxPathLength(maxPathLength);
     orientCollidersMaxP.orient();

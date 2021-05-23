@@ -8,7 +8,7 @@
 * @param graph The GaSearchGraph on which to work
 * @param test  The IndependenceChecker to use as an oracle
 */
-PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(EdgeListGraph& graph, IndependenceTest *test) : PossibleDsepFciConsumerProducer(test)
+PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(EdgeListGraph& graph, IndependenceTest *test, int threads) : PossibleDsepFciConsumerProducer(test, threads)
 {
     // Unable to compare EdgeListGraph to NULL
     // if (graph == NULL) {
@@ -20,14 +20,18 @@ PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(EdgeListGraph& 
     this->graph = graph;
 }
 
-PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE)
+PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTest *test, int threads) : taskQueue(MAX_QUEUE_SIZE)
 {
     this->test = test;
     this->sepset =  SepsetMap();
 
-    if (parallelism == 0) {
-        parallelism = 4;
-        Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+    if (threads > 0) parallelism = threads;
+    else {
+        parallelism = std::thread::hardware_concurrency();
+        if (parallelism == 0) {
+            parallelism = 4;
+            Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+        }
     }
 
     setMaxPathLength(maxReachablePathLength);

@@ -56,6 +56,11 @@ private:
      */
     bool aggressivelyPreventCycles = false;
 
+    /**
+     * The number of consumer threads to create for multi-threaded steps. -1 to set automatically
+     */ 
+    int threads = -1;
+
     // TODO?
     /**
      * The logger for this class. The config needs to be set.
@@ -119,6 +124,8 @@ public:
     void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
+
+    void setThreads(int threads) { this->threads = threads; }
 
     /**
      * Runs PC starting with a complete graph over all nodes of the given conditional independence test, using the given

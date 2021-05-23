@@ -8,13 +8,17 @@ data(data.n1000.p100)
 # }
 
 ig <- mgm(data.n1000.p100)
-g <- fciStable(data.n1000.p100, initialGraph=ig)
-saveGraph(g, "../fci.txt")
+g <- pcMax(data.n1000.p100, initialGraph=ig, verbose = TRUE)
 
-fg <- loadGraph("../fci.txt")
-print(fg)
+g <- pcMax(data.n1000.p100, initialGraph=ig, threads = 2, verbose = TRUE)
 
-fg[["markov.blankets"]]
+
+# saveGraph(g, "../fci.txt")
+
+# fg <- loadGraph("../fci.txt")
+# print(fg)
+
+# fg[["markov.blankets"]]
 
 # lam.max <- max(abs(cor(df) - diag(ncol(df))))
 # lam.min <- 0.2*lam.max

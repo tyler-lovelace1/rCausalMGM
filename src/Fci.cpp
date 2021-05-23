@@ -53,7 +53,7 @@ EdgeListGraph Fci::search() {
 }
 
 EdgeListGraph Fci::search(const std::vector<Variable*>& nodes) {
-    FasStableProducerConsumer fas(initialGraph, test);
+    FasStableProducerConsumer fas(initialGraph, test, threads);
 
     return search(fas, nodes);
 }
@@ -85,7 +85,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
 	// SepsetsSet ssset(sepsets, test);
 	// FciOrient orienter(&ssset);
 
-	PossibleDsepFciConsumerProducer possibleDSep(graph, test);
+	PossibleDsepFciConsumerProducer possibleDSep(graph, test, threads);
 	// possibleDSep.setKnowledge(getKnowledge());
 	possibleDSep.setDepth(getDepth());
 	possibleDSep.setMaxPathLength(maxPathLength);
