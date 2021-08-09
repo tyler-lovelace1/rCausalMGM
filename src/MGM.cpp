@@ -758,7 +758,7 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
             const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-            double thetaScale = std::max(0.0, 1 - tlam(0)*weightMat(i,p+j)/arma::norm(tempVec, 2));
+            double thetaScale = std::max(0.0, 1 - tlam(1)*weightMat(i,p+j)/arma::norm(tempVec, 2));
             par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * thetaScale;
         }
     }
