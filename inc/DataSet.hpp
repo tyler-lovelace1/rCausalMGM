@@ -15,6 +15,7 @@ class DataSet;
 #include "armaLapack.hpp"
 #include "ContinuousVariable.hpp"
 #include "DiscreteVariable.hpp"
+#include "CensoredVariable.hpp"
 #include <exception>
 #include <iostream>
 #include <set>
@@ -23,8 +24,7 @@ class DataSet;
 #include <typeinfo>
 #include <iostream>
 
-class DataSet
-{
+class DataSet {
 private:
     std::vector<Variable*> variables;
     std::vector<std::string> variableNames;
@@ -34,7 +34,10 @@ private:
     int maxDiscrete;
     int m, n;
 
-    std::set<std::string> getUnique(const Rcpp::CharacterVector &col);
+    std::set<std::string> getUnique(const Rcpp::CharacterVector& col);
+    bool checkCensoring(const Rcpp::CharacterVector& col,
+			arma::vec& values,
+			arma::uvec& censor);
 
 public:
     DataSet() {}
@@ -61,9 +64,17 @@ public:
     std::vector<Variable *> getVariables() { return variables; }
     std::vector<Variable *> getContinuousVariables();
     std::vector<Variable *> getDiscreteVariables();
+    std::vector<Variable *> getCensoredVariables();
     std::vector<Variable *> copyVariables();
     std::vector<Variable *> copyContinuousVariables();
     std::vector<Variable *> copyDiscreteVariables();
+
+    bool isMixed();
+    // bool isContinuous();
+    // bool isDiscrete();
+    bool isCensored();
+    
+    std::vector<Variable *> copyCensoredVariables();
 
     void deleteVariables();
 
@@ -75,8 +86,9 @@ public:
     
     arma::mat getContinuousData();
     arma::mat getDiscreteData();
+    arma::mat getCensoredData();
 
-    std::vector<int> getDiscLevels();
+    std::vector<int> getDiscLevels(bool reference=false);
 
     int getColumn(Variable *v) { return name2idx.at(v->getName()); }
 

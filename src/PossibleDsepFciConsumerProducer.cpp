@@ -53,6 +53,10 @@ std::vector<Variable*> PossibleDsepFciConsumerProducer::possibleParents(Variable
     std::string x_ = x->getName();
 
     for (Variable* z : nodes) {
+
+	if (z->isCensored() && !graph.getCensoredCauses())
+	    continue;
+      
         std::string z_ = z->getName();
 
         if (possibleParentOf(z_, x_ /* , knowledge*/)) {

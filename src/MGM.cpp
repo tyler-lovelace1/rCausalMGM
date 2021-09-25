@@ -1,9 +1,9 @@
 #include "MGM.hpp"
 
-#include "ContinuousVariable.hpp"
-#include "DiscreteVariable.hpp"
+// #include "ContinuousVariable.hpp"
+// #include "DiscreteVariable.hpp"
 #include <math.h>
-#include <RcppArmadillo.h>
+// #include <RcppArmadillo.h>
 #include <chrono>
 
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
@@ -47,13 +47,23 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     //the variables are now ordered continuous first then discrete
     std::vector<Variable*> cVar = ds.getContinuousVariables();
     std::vector<Variable*> dVar = ds.getDiscreteVariables();
+    std::vector<Variable*> sVar = ds.getCensoredVariables();
+
+    this->r = sVar.size();
+    
     this->variables = std::vector<Variable*>();
-    this->variables.reserve(p+q);
+    this->variables.reserve(p+q+r);
     this->variables.insert(this->variables.end(), cVar.begin(), cVar.end());
     this->variables.insert(this->variables.end(), dVar.begin(), dVar.end());
+    this->variables.insert(this->variables.end(), sVar.begin(), sVar.end());
     
     this->initVariables = ds.getVariables();
     this->lambda = arma::vec(lambda);
+
+    if (this->r > 0) {
+	std::vector<double> subLambda(lambda.begin()+3,lambda.end());
+	lassoCox = LassoCox(ds, subLambda);
+    }
 
     //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
     fixData();
@@ -106,7 +116,7 @@ double MGM::logsumexp(const arma::vec& x) {
 
 //calculate parameter weights as in Lee and Hastie
 void MGM::calcWeights() {
-    weights = arma::vec(p+q);
+    weights = arma::vec(p+q, arma::fill::ones);
 
     //Continuous variable weights are standard deviations
     for (arma::uword i = 0; i < p; i++) {
@@ -758,7 +768,7 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
             const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-            double thetaScale = std::max(0.0, 1 - tlam(0)*weightMat(i,p+j)/arma::norm(tempVec, 2));
+            double thetaScale = std::max(0.0, 1 - tlam(1)*weightMat(i,p+j)/arma::norm(tempVec, 2));
             par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * thetaScale;
         }
     }
@@ -799,6 +809,12 @@ void MGM::learn(double epsilon, int iterLimit) {
     arma::vec curParams = params.toMatrix1D();
     arma::vec newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, epsilon, iterLimit);
     params = MGMParams(newParams, p, lsum);
+
+    // Rcpp::Rcout << "Iter count: " << pg.iterComplete << std::endl;
+    // Rcpp::Rcout << "Time per iter: " << pg.timePerIter << " ms\n\n";
+
+    if (r > 0)
+	lassoCox.learn(epsilon, iterLimit);
 }
 
 /**
@@ -808,18 +824,24 @@ void MGM::learn(double epsilon, int iterLimit) {
  * @param iterLimit
  */
 void MGM::learnEdges(int iterLimit) {
-    ProximalGradient pg(0.5, 0.9, true);
+    ProximalGradient pg(0.5, 0.8, true);
     arma::vec curParams = params.toMatrix1D();
     arma::vec newParams;
     if (timeout != -1)
-        newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 0.0, iterLimit, timeout);
+        newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 1e-10, iterLimit, timeout);
     else
-        newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 0.0, iterLimit);
+        newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 1e-10, iterLimit);
 
     params = MGMParams(newParams, p, lsum);
 
     timePerIter = pg.timePerIter;
     iterCount = pg.iterComplete;
+
+    // Rcpp::Rcout << "Iter count: " << pg.iterComplete << std::endl;
+    // Rcpp::Rcout << "Time per iter: " << pg.timePerIter << " ms\n\n";
+
+    if (r > 0)
+	lassoCox.learnEdges(iterLimit);
 }   
 
 /**
@@ -830,11 +852,17 @@ void MGM::learnEdges(int iterLimit) {
  * @param edgeChangeTol
  */
 void MGM::learnEdges(int iterLimit, int edgeChangeTol){
-    ProximalGradient pg(0.5, 0.9, true);
+    ProximalGradient pg(0.5, 0.8, true);
     arma::vec curParams = params.toMatrix1D();
     pg.setEdgeChangeTol(edgeChangeTol);
-    arma::vec newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 0.0, iterLimit);
+    arma::vec newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, 1e-10, iterLimit);
     params = MGMParams(newParams, p, lsum);
+
+    // Rcpp::Rcout << "Iter count: " << pg.iterComplete << std::endl;
+    // Rcpp::Rcout << "Time per iter: " << pg.timePerIter << " ms\n\n";
+
+    if (r > 0)
+	lassoCox.learnEdges(iterLimit, edgeChangeTol);
 }
 
 /**
@@ -844,7 +872,13 @@ void MGM::learnEdges(int iterLimit, int edgeChangeTol){
  * @return
  */
 arma::mat MGM::adjMatFromMGM() {
-    arma::mat outMat(p+q, p+q, arma::fill::zeros);
+    arma::mat outMat(p+q+r, p+q+r, arma::fill::zeros);
+    // LassoCoxParams lcParams = lassoCox.getParams();
+    arma::mat gamma, eta;
+    if (r != 0) {
+	gamma = lassoCox.getParams().getGamma();
+	eta = lassoCox.getParams().getEta();
+    }
 
     outMat(0, 0, arma::size(p, p)) = params.beta + params.beta.t();
 
@@ -864,8 +898,24 @@ arma::mat MGM::adjMatFromMGM() {
         }
     }
 
+    for (arma::uword i = 0; i < p; i++) {
+        for (arma::uword ii = 0; ii < r; ii++) {
+            double val = gamma(i,ii);
+            outMat(i, p+q+ii) = val;
+            outMat(p+q+ii, i) = val;
+        }
+    }
+
+    for (arma::uword j = 0; j < q; j++) {
+        for (arma::uword ii = 0; ii < r; ii++) {
+            double val = arma::norm(eta.col(ii).subvec(lcumsum[j], lcumsum[j+1]-1), 2);
+            outMat(p+j, p+q+ii) = val;
+            outMat(p+q+ii, p+j) = val;
+        }
+    }
+
     //order the adjmat to be the same as the original DataSet variable ordering
-    arma::uvec varMap(p+q);
+    arma::uvec varMap(p+q+r);
     for(arma::uword i = 0; i < p+q; i++){
         varMap(i) = std::distance(variables.begin(), std::find(variables.begin(), variables.end(), initVariables[i]));
     }
@@ -919,10 +969,19 @@ EdgeListGraph MGM::graphFromMGM() {
         }
     }
 
+    if (r > 0)
+	lassoCox.addEdgesFromLassoCox(g);
+
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "MGM: lambda = [" 
-        << lambda(0) << ", " << lambda(1) << ", " << lambda(2) << "]";
+    if (r == 0) {
+	alg << "MGM: lambda = [" 
+	    << lambda(0) << ", " << lambda(1) << ", " << lambda(2) << "]";
+    } else {
+	alg << "MGM: lambda = [" 
+	    << lambda(0) << ", " << lambda(1) << ", " << lambda(2) << ", "
+	    << lambda(3) << ", " << lambda(4) << "]";
+    }
 
     g.setAlgorithm(alg.str());
     g.setGraphType("undirected");
@@ -937,7 +996,10 @@ EdgeListGraph MGM::graphFromMGM() {
  */
 EdgeListGraph MGM::search() {
     auto start = std::chrono::high_resolution_clock::now();
-    learnEdges(500);
+    learnEdges(500,5);
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-    return graphFromMGM();
+    EdgeListGraph g = graphFromMGM();
+    // if (r > 0)
+    // 	lassoCox.addEdgesFromLassoCox(g);
+    return g;
 }

@@ -40,7 +40,7 @@ class LogisticRegression
 
     double norm(double z);
 
-    friend void LinearRegressionTest(const Rcpp::DataFrame& df);
+    // friend void LinearRegressionTest(const Rcpp::DataFrame& df);
 };
 
 #endif /* LOGISTICREGRESSION_HPP_ */

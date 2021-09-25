@@ -39,7 +39,7 @@ public:
      */
     ProximalGradient() {
         beta = .5;
-        alpha = .9;
+        alpha = .8;
         edgeConverge = false;
     }
 

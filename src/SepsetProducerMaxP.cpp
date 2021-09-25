@@ -41,8 +41,11 @@ void SepsetProducerMaxP::producer() {
 		taskQueue.push(IndependenceTask(a, b, c, possibleDsep));
 	    }
 
-	    std::vector<Variable*> adja = graph.getAdjacentNodes(a);
-	    std::vector<Variable*> adjc = graph.getAdjacentNodes(c);
+	    // std::vector<Variable*> adja = graph.getAdjacentNodes(a);
+	    // std::vector<Variable*> adjc = graph.getAdjacentNodes(c);
+
+	    std::vector<Variable*> adja = graph.getPossibleParents(a);
+	    std::vector<Variable*> adjc = graph.getPossibleParents(c);
 
 	    DepthChoiceGenerator cg1(adja.size(), depth);
 	    std::vector<int> *comb2;

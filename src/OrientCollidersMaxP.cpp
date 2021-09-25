@@ -117,8 +117,11 @@ void OrientCollidersMaxP::consumer() {
 
 void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c) {
     
-    std::vector<Variable*> adja = graph->getAdjacentNodes(a);
-    std::vector<Variable*> adjc = graph->getAdjacentNodes(c);
+    // std::vector<Variable*> adja = graph->getAdjacentNodes(a);
+    // std::vector<Variable*> adjc = graph->getAdjacentNodes(c);
+
+    std::vector<Variable*> adja = graph->getPossibleParents(a);
+    std::vector<Variable*> adjc = graph->getPossibleParents(c);
 
     DepthChoiceGenerator cg1(adja.size(), -1);
     std::vector<int> *comb2;

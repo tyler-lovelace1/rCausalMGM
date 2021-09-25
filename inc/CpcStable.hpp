@@ -50,7 +50,7 @@ private:
     /**
      * The initial graph for the Fast Adjacency Search, or null if there is none.
      */
-    EdgeListGraph *initialGraph = NULL;
+    EdgeListGraph* initialGraph = NULL;
 
     /**
      * Elapsed time of the most recent search.

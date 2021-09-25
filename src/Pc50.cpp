@@ -76,8 +76,11 @@ void Pc50::orientUnshieldedTriples() {
                 if (graph.isAdjacentTo(x, z))
                     continue;
 
-                std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
-                std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
+                // std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
+                // std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
+
+		std::vector<Variable*> adjx = graph.getPossibleParents(x);
+                std::vector<Variable*> adjz = graph.getPossibleParents(z);
 
 		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
 

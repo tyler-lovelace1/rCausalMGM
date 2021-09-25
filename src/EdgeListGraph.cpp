@@ -60,6 +60,7 @@ EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
     namesHash = graph.namesHash;
     algorithm = graph.algorithm;
     graph_type = graph.graph_type;
+    censoredCauses = graph.censoredCauses;
 }
 
 EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
@@ -493,6 +494,25 @@ std::vector<Variable*> EdgeListGraph::getParents(Variable* node) {
     }
 
     return parents;
+}
+
+/**
+ * @return the list of parents for a node.
+ */
+std::vector<Variable*> EdgeListGraph::getPossibleParents(Variable* node) {
+    std::vector<Variable*> possibleParents;
+    std::vector<Edge> edges = edgeLists[node];
+
+    for (Edge edge : edges) {
+        Endpoint distalEndpoint = edge.getDistalEndpoint(node);
+	Variable *distalNode = edge.getDistalNode(node);
+
+	if (distalEndpoint != ENDPOINT_ARROW && (!distalNode->isCensored() || censoredCauses)) {
+            possibleParents.push_back(distalNode);
+        }
+    }
+
+    return possibleParents;
 }
 
 /**

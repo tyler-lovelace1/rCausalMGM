@@ -1,22 +1,23 @@
-#ifndef MGM_HPP_
-#define MGM_HPP_
+#ifndef LassoCox_HPP_
+#define LassoCox_HPP_
 
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"
-#include "MGMParams.hpp"
+#include "LassoCoxParams.hpp"
 #include "ProximalGradient.hpp"
 #include "EdgeListGraph.hpp"
-#include "LassoCox.hpp"
 
 /**
- * Implementation of Lee and Hastie's (2012) pseudolikelihood method for learning
+ * Implementation of Lasso Cox Regression for use with 
  * Mixed Gaussian-Categorical Graphical Models
- * Created by ajsedgewick on 7/15/15.
- * Converted to C++ by Max Dudek on 5/5/20.
+ * Created by Tyler Lovelace 08/05/21
  */
-class MGM : public ConvexProximal {
+class LassoCox : public ConvexProximal {
 
 private:
+
+    // dependent Censored variables
+    std::vector<CensoredVariable*> censVars;
 
     //Continuous Data
     arma::mat xDat;
@@ -44,15 +45,17 @@ private:
     int n;
     long timeout = -1;
 
-    MGMParams params;
+    // Censored variable information
+    arma::umat order;
+    arma::umat H;
+    arma::umat censor;
+
+    LassoCoxParams params;
 
     //parameter weights
-    arma::vec weights;
+    arma::mat weights;
 
     bool verbose = false;
-
-    //Lasso Cox Regression solver to be used if data contains censored variables
-    LassoCox lassoCox;
 
     double logsumexp(const arma::vec& x);
 
@@ -68,13 +71,14 @@ public:
     double timePerIter = 0;
     int iterCount = 0;
 
-    MGM() {}
-    MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda);
-    MGM(DataSet& ds, std::vector<double>& lambda);
-    ~MGM();
+    LassoCox() {}
+    LassoCox(arma::mat& x, arma::mat& y, std::vector<Variable*> variables,
+	     std::vector<int>& l, std::vector<double>& lambda);
+    LassoCox(DataSet& ds, std::vector<double>& lambda);
+    ~LassoCox();
 
-    MGMParams getParams() {return params;}
-    void setParams(MGMParams& newParams) {params = newParams;}
+    LassoCoxParams getParams() {return params;}
+    void setParams(LassoCoxParams& newParams) {params = newParams;}
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
 
@@ -134,8 +138,8 @@ public:
     arma::vec proximalOperator(double t, arma::vec& X);
 
     /**
-     *  Learn MGM traditional way with objective function tolerance. Recommended for inference applications that need
-     *  accurate pseudolikelihood
+     *  Learn LassoCox traditional way with objective function tolerance. 
+     *  Recommended for inference applications that need accurate pseudolikelihood
      *
      * @param epsilon tolerance in change of objective function
      * @param iterLimit iteration limit
@@ -143,16 +147,16 @@ public:
     void learn(double epsilon, int iterLimit);
 
     /**
-     *  Learn MGM using edge convergence using default 3 iterations of no edge changes. Recommended when we only care about
-     *  edge existence.
+     *  Learn LassoCox using edge convergence using default 3 iterations of no edge changes. 
+     *  Recommended when we only care about edge existence.
      *
      * @param iterLimit
      */
     void learnEdges(int iterlimit);
 
     /**
-     *  Learn MGM using edge convergence using edgeChangeTol (see ProximalGradient for documentation). Recommended when we only care about
-     *  edge existence.
+     *  Learn LassoCox using edge convergence using edgeChangeTol (see ProximalGradient 
+     *  for documentation). Recommended when we only care about edge existence.
      *
      * @param iterLimit
      * @param edgeChangeTol
@@ -160,29 +164,32 @@ public:
     void learnEdges(int iterlimit, int edgeChangeTol);
 
     /**
-     * Converts MGM object to EdgeListGraph object with edges if edge parameters are non-zero. Loses all edge param information
+     * Adds edges from LassoCox object to EdgeListGraph object with edges if edge parameters 
+     * are non-zero. Loses all edge param information
      *
      * @return
      */
-    EdgeListGraph graphFromMGM();
+    void addEdgesFromLassoCox(EdgeListGraph& graph);
+
+    // /**
+    //  * Converts LassoCox to matrix of doubles. uses 2-norm to combine c-d edge parameters 
+    //  * into single value and f-norm for d-d edge parameters.
+    //  *
+    //  * @return
+    //  */
+    // arma::mat adjMatFromLassoCox();
 
     /**
-     * Converts MGM to matrix of doubles. uses 2-norm to combine c-d edge parameters into single value and f-norm for
-     * d-d edge parameters.
-     *
-     * @return
-     */
-    arma::mat adjMatFromMGM();
-
-    /**
-     * Simple search command for GraphSearch implementation. Uses default edge convergence, 1000 iter limit.
+     * Simple search command for GraphSearch implementation. Uses default edge convergence, 
+     * 1000 iter limit.
      *
      * @return
      */
     EdgeListGraph search();
 
-    friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+    friend void LassoCoxTest(const Rcpp::DataFrame &df, const int maxDiscrete,
+			     std::vector<double> lambda);
 
 };
 
-#endif /* MGM_HPP_ */
+#endif /* LASSOCOX_HPP_ */

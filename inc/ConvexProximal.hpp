@@ -71,7 +71,7 @@ public:
      * @param Xout vector solution to prox_t(X)
      * @return value of h(X)
      */
-    virtual double nonSmooth(double t, arma::vec& X, arma::vec& Xout){
+    virtual double nonSmooth(double t, arma::vec& X, arma::vec& Xout) {
         Xout = proximalOperator(t,X);
         return nonSmoothValue(X);
     }

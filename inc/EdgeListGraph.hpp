@@ -42,6 +42,8 @@ private:
      */
     std::string graph_type;
 
+    bool censoredCauses = false;
+
     /**
      * True iff nodes were removed since the last call to an accessor for ambiguous, underline, or dotted underline
      * triples. If there are triples in the lists involving removed nodes, these need to be removed from the lists
@@ -225,6 +227,11 @@ public:
      * @return the list of parents for a node.
      */
     std::vector<Variable*> getParents(Variable* node);
+
+    /**
+     * @return the list of parents for a node.
+     */
+    std::vector<Variable*> getPossibleParents(Variable* node);
 
     /**
      * @return the number of edges into the given node.
@@ -593,6 +600,9 @@ public:
 
     void setGraphType(std::string t) { graph_type = t; }
     std::string getGraphType() { return graph_type; }
+
+    void setCensoredCauses(bool cc) { censoredCauses = cc; }
+    bool getCensoredCauses() { return censoredCauses; }
 
     /**
      * @return true iff the given object is a graph that is equal to this graph,

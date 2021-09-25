@@ -79,6 +79,8 @@ private:
 
     bool verbose = false;
 
+    bool censoredCauses = false;
+
     bool sepsetsReturnEmptyIfNotFixed = true;
 
     bool searchAtDepth0();
@@ -117,7 +119,8 @@ private:
     void producerDepth0();
 
     void consumerDepth(int depth);
-    void producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy);
+    // void producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy);
+    void producerDepth(int depth, EdgeListGraph& graphCopy);
 
 public:
 
@@ -136,12 +139,14 @@ public:
      */
     EdgeListGraph search();
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> searchMapOnly();
+    // std::unordered_map<Variable*, std::unordered_set<Variable*>> searchMapOnly();
 
     int getDepth() { return depth; }
     void setDepth(int depth);
 
     void setVerbose(bool v) { verbose = v; }
+
+    void setCensoredCauses(bool cc) { censoredCauses = cc; }
 
     // TODO
     // IKnowledge getKnowledge() { return knowledge; }

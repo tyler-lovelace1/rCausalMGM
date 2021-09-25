@@ -65,6 +65,17 @@ EdgeListGraph FasStableProducerConsumer::search() {
 
         if (d == 0) {
             more = searchAtDepth0();
+
+	    graph = EdgeListGraph(nodes);
+	    // graph.setCensoredCauses(censoredCauses);
+
+	    // Should be more efficient than the above code
+	    for (Variable* x : nodes) {
+	      for (Variable* y : adjacencies[x]) {
+		graph.addUndirectedEdge(x, y);
+	      }
+	    }
+	    
         } else {
             more = searchAtDepth(d);
         }
@@ -72,14 +83,14 @@ EdgeListGraph FasStableProducerConsumer::search() {
         if (!more) break;
     }
 
-    graph = EdgeListGraph(nodes);
+    // graph = EdgeListGraph(nodes);
 
-    // Should be more efficient than the above code
-    for (Variable* x : nodes) {
-        for (Variable* y : adjacencies[x]) {
-            graph.addUndirectedEdge(x, y);
-        }
-    }
+    // // Should be more efficient than the above code
+    // for (Variable* x : nodes) {
+    //     for (Variable* y : adjacencies[x]) {
+    //         graph.addUndirectedEdge(x, y);
+    //     }
+    // }
 
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
@@ -96,7 +107,7 @@ EdgeListGraph FasStableProducerConsumer::search() {
 
     return graph;
 }
-
+/*
 std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerConsumer::searchMapOnly() {
     if (verbose) Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
 
@@ -140,6 +151,7 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
     if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
     return adjacencies;
 }
+*/
 
 bool FasStableProducerConsumer::searchAtDepth0() {
 
@@ -238,7 +250,8 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	{
 	    std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
 	    
-	    edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
+	    // edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
+	    edgeExists = graph.isAdjacentTo(task.x, task.y);
 	}
 	
         if (!edgeExists) continue; // Skip if the edge no longer exists
@@ -260,26 +273,33 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	if (independent && noEdgeRequired) {
 	    std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
 	    
-	    adjacencies[task.x].erase(task.y);
-	    adjacencies[task.y].erase(task.x);
+	    // adjacencies[task.x].erase(task.y);
+	    // adjacencies[task.y].erase(task.x);
+	    graph.removeEdge(task.x, task.y);
 	    sepset.set(task.x, task.y, task.z, pval);
 
 	}
     }
 }
 
-void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy) {
+// void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy) {
+void FasStableProducerConsumer::producerDepth(int depth, EdgeListGraph& graphCopy) {
     for (Variable* x : nodes) {
 
-        std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
+	//std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
+	std::vector<Variable*> adjx = graphCopy.getAdjacentNodes(x);
 
         for (Variable* y : adjx) {
 
-            std::vector<Variable*> _adjx(adjx.begin(), adjx.end());
-            _adjx.erase(std::remove(_adjx.begin(), _adjx.end(), y), _adjx.end());
+            // std::vector<Variable*> _adjx(adjx.begin(), adjx.end());
+            // _adjx.erase(std::remove(_adjx.begin(), _adjx.end(), y), _adjx.end());
 
-            // Knowledge: possible parents
-            std::vector<Variable*> ppx = _adjx;
+            // // Knowledge: possible parents
+            // std::vector<Variable*> ppx = _adjx;
+
+	    std::vector<Variable*> ppx = graphCopy.getPossibleParents(x);
+	    ppx.erase(std::remove(ppx.begin(), ppx.end(), y), ppx.end());
+	    
 
 	    std::sort(ppx.begin(),
 		      ppx.end(),
@@ -336,11 +356,12 @@ int FasStableProducerConsumer::freeDegree() {
 
 bool FasStableProducerConsumer::searchAtDepth(int depth) {
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> adjacenciesCopy = adjacencies;
+    // std::unordered_map<Variable*, std::unordered_set<Variable*>> adjacenciesCopy = adjacencies;
+    EdgeListGraph graphCopy(graph);
 
     std::vector<std::thread> threads;
 
-    threads.push_back(std::thread( [&] { producerDepth(depth, adjacenciesCopy); } ));
+    threads.push_back(std::thread( [&] { producerDepth(depth, graphCopy); } ));
 
     for (int i = 0; i < parallelism; i++) {
         threads.push_back(std::thread( [&] { consumerDepth(depth); } ));
