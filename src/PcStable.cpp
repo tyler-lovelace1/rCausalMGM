@@ -71,6 +71,7 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
     FasStableProducerConsumer fas(initialGraph, independenceTest, threads);
     fas.setDepth(depth);
     fas.setVerbose(verbose);
+    fas.setFDR(fdr);
 
     graph = fas.search();
     sepsets = fas.getSepsets();

@@ -368,6 +368,25 @@ std::vector<Variable *> DataSet::getDiscreteVariables() {
 }
 
 
+bool DataSet::isMixed() {
+    bool hasCont = false;
+    bool hasDisc = false;
+
+    for (Variable* var : variables) {
+	if (!hasCont)
+	    hasCont = var->isContinuous();
+	
+	if (!hasDisc)
+	    hasDisc = var->isDiscrete();
+	
+	if (hasCont && hasDisc)
+	    break;
+    }
+    
+    return hasCont && hasDisc;
+}
+
+
 int DataSet::getInt(int row, int col) {
 
   Variable* var = getVariable(col);

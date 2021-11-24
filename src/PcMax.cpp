@@ -76,6 +76,7 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     FasStableProducerConsumer fas(initialGraph, independenceTest, threads);
     fas.setDepth(depth);
     fas.setVerbose(verbose);
+    fas.setFDR(fdr);
     graph = fas.search();
 
     if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;

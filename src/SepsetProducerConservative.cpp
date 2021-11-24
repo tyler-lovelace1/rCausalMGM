@@ -60,6 +60,10 @@ void SepsetProducerConservative::producer() {
 		taskQueue.push(IndependenceTask(a, b, c, s));
 	    }
         }
+
+	if (RcppThread::isInterrupted()) {
+	  break;
+	}
     }
 
     // Poison pill
@@ -102,12 +106,12 @@ void SepsetProducerConservative::fillMap() {
 
     sepsetCount.clear();
 
-    std::vector<std::thread> threads;
+    std::vector<RcppThread::Thread> threads;
 
-    threads.push_back(std::thread( [this] { producer(); } ));
+    threads.push_back(RcppThread::Thread( [this] { producer(); } ));
 
     for (int i = 0; i < parallelism; i++) {
-        threads.push_back(std::thread( [this] { consumer(); } ));
+        threads.push_back(RcppThread::Thread( [this] { consumer(); } ));
     }
 
     for (int i = 0; i < threads.size(); i++) {

@@ -1,9 +1,10 @@
-// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(BH, RcppThread)]]
 
 #include "LogisticRegression.hpp"
 #include "LogisticRegressionResult.hpp"
 #include "Variable.hpp"
 #include "DiscreteVariable.hpp"
+#include "RcppThread.h"
 #include <iostream>
 #include <algorithm>
 #include <math.h>
@@ -180,7 +181,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     arma::vec y0 = arma::vec(numCases, arma::fill::zeros);
     arma::vec y1 = arma::vec(numCases, arma::fill::zeros);
 
-    std::ofstream logfile;
+    // std::ofstream logfile;
 
     // logfile.open("../debug.log", std::ios_base::app);
 
@@ -245,267 +246,160 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     double llP = 2e+10;
     double ll = 1e+10;
     double llN = 0.0;
-    double lam = 0.0;
+    // double lam = 1;
     double chiSq;
+
+    // auto start = std::chrono::high_resolution_clock::now();
+    
+    par[0] = std::log((double)ny1 / (double)ny0);
+    for (arma::uword j = 1; j <= numRegressors; j++) {
+	par[j] = 0.0;
+    }
+
+    llP = 2e+10;
+    ll = 1e+10;
+    llN = 0.0;
+
+    int iter = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    while (true)
-    {
+    while (std::abs(llP - ll) > 1e-7) {
+	double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
+	if (curr > 5) {
+	    RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+			      << "Loglikelihood: " << ll << std::endl;
+	    throw std::runtime_error("Logistic Regression not converging");
+	}
 
-        par[0] = std::log((double)ny1 / (double)ny0);
-        for (arma::uword j = 1; j <= numRegressors; j++)
-        {
-            par[j] = 0.0;
-        }
+	llP = ll;
+	ll = 0.0;
 
-        llP = 2e+10;
-        ll = 1e+10;
-        llN = 0.0;
+	for (arma::uword j = 0; j <= numRegressors; j++) {
+	    for (arma::uword k = j; k <= numRegressors + 1; k++) {
+		arr(j, k) = 0.0;
+	    }
+	}
 
-        int iter = 0;
-
-	// auto start = std::chrono::high_resolution_clock::now();
-
-        while (std::abs(llP - ll) > 1e-7)
-        {
-            double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
-            if (lam > 1 || curr > 5)
-            {
-                // logfile << "timed out" << std::endl;
-                // for (arma::uword j = 0; j <= numRegressors; j++) {
-                //     par[j] += std::numeric_limits<double>::quiet_NaN();
-                // }
-                // break;
-                throw std::runtime_error("Logistic Regression not converging");
-            }
-
-            llP = ll;
-            ll = 0.0;
-
-            for (arma::uword j = 0; j <= numRegressors; j++)
-            {
-                for (arma::uword k = j; k <= numRegressors + 1; k++)
-                {
-                    arr(j, k) = 0.0;
-                }
-            }
-
-            for (arma::uword i = 0; i < nc; i++)
-            {
-                double q;
-                double v = par[0];
-
-                for (arma::uword j = 1; j <= numRegressors; j++)
-                {
-                    v += par[j] * x(j, i);
-                }
-
-                // if (numRegressors == 3 && regressorNames[0] == "X311MULTINOM.1" &&
-                //     regressorNames[1] == "X311MULTINOM.2" && regressorNames[2] == "X311MULTINOM.3") {
-                //     logfile << std::this_thread::get_id() << "\titer = " << iter << std::endl;
-                //     logfile << std::this_thread::get_id() << "\t|v| > 15 = "
-                // 	     << (std::abs(v) > 15) << std::endl;
-                //     logfile << std::this_thread::get_id() << "\tv = " << v << std::endl;
-                // }
-
-                if (v > 15.0)
-                {
-                    // v = v < expBound ? v : expBound;
-                    lnV = -std::exp(-v);
-                    ln1mV = -v;
-                    q = std::exp(-v);
-                    v = std::exp(lnV);
-                }
-                else
-                {
-                    if (v < -15.0)
-                    {
-                        // v = v > -expBound ? v : -expBound;
-                        lnV = v;
-                        ln1mV = -std::exp(v);
-                        q = std::exp(v);
-                        v = std::exp(lnV);
-                    }
-                    else
-                    {
-                        v = 1.0 / (1 + std::exp(-v));
-                        lnV = std::log(v);
-                        ln1mV = std::log(1.0 - v);
-                        q = v * (1.0 - v);
-                    }
-                }
-
-                ll -= 2.0 * y1[i] * lnV - 2.0 * y0[i] * ln1mV;
-
-                // if (numRegressors == 3 && regressorNames[0] == "X3MULTINOM.1" &&
-                //     regressorNames[1] == "X3MULTINOM.2" &&regressorNames[2] == "X3MULTINOM.3") {
-                //     logfile << "v after = " << v << std::endl;
-                //     logfile << "q = " << q << std::endl;
-                // }
-
-                for (arma::uword j = 0; j <= numRegressors; j++) {
-                    double xij = x(j, i);
-                    arr(j, numRegressors + 1) += xij * (y1[i] * (1.0 - v) + y0[i] * (-v));
-
-                    for (arma::uword k = j; k <= numRegressors; k++)
-                    {
-                        arr(j, k) += xij * x(k, i) * q * (y0[i] + y1[i]);
-                    }
-                }
-            }
+	for (arma::uword i = 0; i < nc; i++) {
+	    double q;
+	    double v = par[0];
 
 	    for (arma::uword j = 1; j <= numRegressors; j++) {
-		// double nextPar = (par[j] + arr(j, numRegressors + 1));
-		double nextPar = par[j];
-		ll -= lam / 2 * std::pow(nextPar, 2);
-		arr(j, numRegressors + 1) -= lam * nextPar;
-		arr(j, j) -= lam * ((nextPar > 0) - (nextPar < 0));
+		v += par[j] * x(j, i);
 	    }
 
-            if (llP == 1e+10)
-            {
-                llN = ll;
-            }
+	    if (v > 15.0) {
+		lnV = -std::exp(-v);
+		ln1mV = -v;
+		q = std::exp(-v);
+		v = std::exp(lnV);
+	    } else {
+		if (v < -15.0) {
+		    lnV = v;
+		    ln1mV = -std::exp(v);
+		    q = std::exp(v);
+		    v = std::exp(lnV);
+		} else {
+		    v = 1.0 / (1 + std::exp(-v));
+		    lnV = std::log(v);
+		    ln1mV = std::log(1.0 - v);
+		    q = v * (1.0 - v);
+		}
+	    }
 
-            for (arma::uword j = 1; j <= numRegressors; j++)
-            {
-                for (arma::uword k = 0; k < j; k++)
-                {
-                    arr(j, k) = arr(k, j);
-                }
-            }
+	    ll -= (2.0 * y1[i] * lnV + 2.0 * y0[i] * ln1mV);
 
-            for (arma::uword i = 0; i <= numRegressors; i++)
-            {
-                double s = arr(i, i);
-                arr(i, i) = 1.0;
-                for (arma::uword k = 0; k <= numRegressors + 1; k++)
-                {
-                    arr(i, k) = arr(i, k) / s;
-                }
+	    for (arma::uword j = 0; j <= numRegressors; j++) {
+		double xij = x(j, i);
+		arr(j, numRegressors + 1) += xij * (y1[i] * (1.0 - v) + y0[i] * (-v));
 
-                for (arma::uword j = 0; j <= numRegressors; j++)
-                {
-                    if (i != j)
-                    {
-                        s = arr(j, i);
-                        arr(j, i) = 0.0;
-                        for (arma::uword k = 0; k <= numRegressors + 1; k++)
-                        {
-                            arr(j, k) = arr(j, k) - s * arr(i, k);
-                        }
-                    }
-                }
-            }
+		for (arma::uword k = j; k <= numRegressors; k++) {
+		    arr(j, k) += xij * x(k, i) * q * (y0[i] + y1[i]);
+		}
+	    }
+	}
 
-            for (arma::uword j = 0; j <= numRegressors; j++)
-            {
-                par[j] += arr(j, numRegressors + 1);
-            }
+	// for (arma::uword j = 1; j <= numRegressors; j++) {
+	//     // double nextPar = (par[j] + arr(j, numRegressors + 1));
+	//     double nextPar = par[j];
+	//     ll += lam / 2 * std::pow(nextPar, 2);
+	//     arr(j, numRegressors + 1) -= lam * nextPar;
+	//     arr(j, j) -= lam * ((nextPar > 0) - (nextPar < 0));
+	// }
 
-	    // logfile << std::endl;
-	    // logfile << "Params:" <<std::endl;
-	    // for (int i = 0; i <= numRegressors; i++) {
-	    // 	if (i==0) logfile << "intercept\t";
-	    // 	else logfile << regressorNames[i-1] << "\t";
-	    // }
-	    // logfile << std::endl;
-	    // for (int i = 0; i <= numRegressors; i++) {
-	    // 	logfile << par[i] << "\t";
-	    // }
-	    // logfile << std::endl;
-	    // logfile << "ll = " << ll << std::endl;
-	    // logfile << std::endl;
-	    
-            iter++;
-        }
+	if (llP == 1e+10) {
+	    llN = ll;
+	}
 
-        chiSq = llN - ll;
+	for (arma::uword j = 1; j <= numRegressors; j++) {
+	    for (arma::uword k = 0; k < j; k++) {
+		arr(j, k) = arr(k, j);
+	    }
+	}
 
-        //Indicates whether each coefficient is significant at the alpha level.
-        // std::vector<std::string> sigMarker;
-        // sigMarker.reserve(numRegressors);
-        // arma::vec pValues = arma::vec(numRegressors + 1);
-        // arma::vec zScores = arma::vec(numRegressors + 1);
+	for (arma::uword i = 0; i <= numRegressors; i++) {
+	    double s = arr(i, i);
+	    arr(i, i) = 1.0;
+	    for (arma::uword k = 0; k <= numRegressors + 1; k++) {
+		arr(i, k) = arr(i, k) / s;
+	    }
 
-        double zScore;
+	    for (arma::uword j = 0; j <= numRegressors; j++) {
+		if (i != j) {
+		    s = arr(j, i);
+		    arr(j, i) = 0.0;
+		    for (arma::uword k = 0; k <= numRegressors + 1; k++) {
+			arr(j, k) = arr(j, k) - s * arr(i, k);
+		    }
+		}
+	    }
+	}
 
-	// logfile.open("../debug.log", std::ios_base::app);
-
-        for (arma::uword j = 1; j <= numRegressors; j++)
-        {
-            par[j] = par[j] / xStdDevs[j];
-            parStdErr[j] = std::sqrt(arr(j, j)) / xStdDevs[j];
-            par[0] = par[0] - par[j] * xMeans[j];
-            zScore = par[j] / parStdErr[j];
-
-            // logfile.open("../debug.log", std::ios_base::app);
-            // if (numRegressors == 3 && regressorNames[0] == "X311MULTINOM.1" &&
-            //  	 regressorNames[1] == "X311MULTINOM.2" &&regressorNames[2] == "X311MULTINOM.3") {
-            if (std::isnan(zScore))
-            {
-                // logfile << "Regressors:" << std::endl;
-                // for (int i = 0; i < numRegressors; i++) {
-                //     logfile << regressorNames[i] << "\t";
-                // }
-                // logfile << std::endl;
-                // for (int i = 0; i < numRegressors; i++) {
-                //     logfile << par[i] << "\t";
-                // }
-                // logfile << std::endl;
-		// logfile << "ll = " << ll << std::endl;
-                // logfile << "xStdDevs[" << j << "] = " << xStdDevs[j] << std::endl;
-                // logfile << "xMeans[" << j << "] = " << xMeans[j] << std::endl;
-                // logfile << "arr(" << j << "," << j << ") = " << arr(j,j) << std::endl;
-                // logfile << "par[" << j << "] = " << par[j] << std::endl;
-                // logfile << "parStdErr[" << j << "] = " << parStdErr[j] << std::endl;
-                // logfile << "zScore = " << zScore << std::endl << std::endl;
-		throw std::runtime_error("Logistic Regression not converging");
-            }
-
-            // double prob = norm(std::abs(zScore));
-            pValues[j] = norm(std::abs(zScore));
-            zScores[j] = zScore;
-        }
-
-        if (std::isnan(zScore))
-        {
-	    // arr.fill(0);
-	    lam = std::max(0.01, lam * 10);
-	    // Rcpp::Rcout << "Re-run, lam = " << lam <<  "\n\n";
-            // logfile << "coefficient, lam = " << lam <<  "\n\n";
-	    throw std::runtime_error("Logistic Regression not converging");
-            // continue;
-        }
-
-        parStdErr[0] = std::sqrt(arr(0, 0));
-        zScore = par[0] / parStdErr[0];
-
-        if (std::isnan(zScore))
-        {
-	    // arr.fill(0);
-            lam = std::max(0.01, lam * 10);
-            // logfile << "intercept, lam = " << lam <<  "\n\n";
-	    throw std::runtime_error("Logistic Regression not converging");
-            // continue;
-        }
-
-	logfile.close();
-
-        pValues[0] = norm(zScore);
-        zScores[0] = zScore;
-
-        break;
+	for (arma::uword j = 0; j <= numRegressors; j++) {
+	    par[j] += arr(j, numRegressors + 1);
+	}
     }
 
-    // logfile.open("../test_results/debug.log", std::ios_base::app);
-    // logfile << "zScore = " << zScore << std::endl;
-    // logfile << "parStdErr[" << 0 << "] = " << parStdErr[0] << std::endl << std::endl;
-    // logfile << "par[" << 0 << "] = " << par[0] << std::endl << std::endl;
-    // logfile.close();
+    chiSq = llN - ll;
+    
+    // if (chiSq <= 0) {
+    // 	RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+    // 			  << "Loglikelihood: " << ll << std::endl
+    // 			  << "ChiSq: " << chiSq << std::endl;
+    // 	throw std::runtime_error("Logistic Regression did not converge");
+    // }
 
-    logfile.close();
+    double zScore;
+
+    for (arma::uword j = 1; j <= numRegressors; j++) {
+	par[j] = par[j] / xStdDevs[j];
+	parStdErr[j] = std::sqrt(arr(j, j)) / xStdDevs[j];
+	par[0] = par[0] - par[j] * xMeans[j];
+	zScore = par[j] / parStdErr[j];
+
+	if (std::isnan(zScore)) {
+	    // RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+	    // 		      << "Loglikelihood: " << ll << std::endl;
+	    throw std::runtime_error("Logistic Regression not converging");
+	}
+
+	// double prob = norm(std::abs(zScore));
+	pValues[j] = norm(std::abs(zScore));
+	zScores[j] = zScore;
+    }
+
+    parStdErr[0] = std::sqrt(arr(0, 0));
+    zScore = par[0] / parStdErr[0];
+
+    if (std::isnan(zScore)) {
+	// RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+	// 		  << "Loglikelihood: " << ll << std::endl;
+	throw std::runtime_error("Logistic Regression not converging");
+    }
+
+    pValues[0] = norm(zScore);
+    zScores[0] = zScore;
 
     double intercept = par[0];
     coefficients = par;

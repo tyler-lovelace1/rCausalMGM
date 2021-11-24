@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // saveGraph
 void saveGraph(const Rcpp::List& list, const std::string& filename);
 RcppExport SEXP _rCausalMGM_saveGraph(SEXP listSEXP, SEXP filenameSEXP) {
@@ -85,8 +90,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // pcStable
-Rcpp::List pcStable(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector verbose);
-RcppExport SEXP _rCausalMGM_pcStable(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List pcStable(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector fdr, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_pcStable(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -95,14 +100,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(pcStable(df, maxDiscrete, initialGraph, alpha, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(pcStable(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // cpcStable
-Rcpp::List cpcStable(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector verbose);
-RcppExport SEXP _rCausalMGM_cpcStable(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List cpcStable(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector fdr, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_cpcStable(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -111,14 +117,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(cpcStable(df, maxDiscrete, initialGraph, alpha, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(cpcStable(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // pcMax
-Rcpp::List pcMax(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector verbose);
-RcppExport SEXP _rCausalMGM_pcMax(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List pcMax(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector fdr, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_pcMax(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -127,14 +134,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(pcMax(df, maxDiscrete, initialGraph, alpha, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(pcMax(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // pc50
-Rcpp::List pc50(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector verbose);
-RcppExport SEXP _rCausalMGM_pc50(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List pc50(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector fdr, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_pc50(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -143,14 +151,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(pc50(df, maxDiscrete, initialGraph, alpha, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(pc50(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // fciStable
-Rcpp::List fciStable(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector verbose);
-RcppExport SEXP _rCausalMGM_fciStable(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List fciStable(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector fdr, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_fciStable(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -159,14 +168,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(fciStable(df, maxDiscrete, initialGraph, alpha, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(fciStable(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // cfci
-Rcpp::List cfci(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector verbose);
-RcppExport SEXP _rCausalMGM_cfci(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List cfci(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector fdr, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_cfci(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -175,14 +185,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(cfci(df, maxDiscrete, initialGraph, alpha, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(cfci(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // fciMax
-Rcpp::List fciMax(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector verbose);
-RcppExport SEXP _rCausalMGM_fciMax(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List fciMax(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, Rcpp::LogicalVector fdr, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_fciMax(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -191,8 +202,30 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(fciMax(df, maxDiscrete, initialGraph, alpha, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(fciMax(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// stars
+Rcpp::List stars(const Rcpp::DataFrame& df, const std::string method, Rcpp::Nullable<Rcpp::NumericVector> params, Rcpp::Nullable<Rcpp::List> initialGraph, const int maxDiscrete, const double g, const int numSub, Rcpp::LogicalVector adjacency, Rcpp::LogicalVector leaveOneOut, const int threads, Rcpp::LogicalVector verbose);
+RcppExport SEXP _rCausalMGM_stars(SEXP dfSEXP, SEXP methodSEXP, SEXP paramsSEXP, SEXP initialGraphSEXP, SEXP maxDiscreteSEXP, SEXP gSEXP, SEXP numSubSEXP, SEXP adjacencySEXP, SEXP leaveOneOutSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type method(methodSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
+    Rcpp::traits::input_parameter< const double >::type g(gSEXP);
+    Rcpp::traits::input_parameter< const int >::type numSub(numSubSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type adjacency(adjacencySEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type leaveOneOut(leaveOneOutSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(stars(df, method, params, initialGraph, maxDiscrete, g, numSub, adjacency, leaveOneOut, threads, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -204,13 +237,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 1},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 9},
-    {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 6},
-    {"_rCausalMGM_cpcStable", (DL_FUNC) &_rCausalMGM_cpcStable, 6},
-    {"_rCausalMGM_pcMax", (DL_FUNC) &_rCausalMGM_pcMax, 6},
-    {"_rCausalMGM_pc50", (DL_FUNC) &_rCausalMGM_pc50, 6},
-    {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 6},
-    {"_rCausalMGM_cfci", (DL_FUNC) &_rCausalMGM_cfci, 6},
-    {"_rCausalMGM_fciMax", (DL_FUNC) &_rCausalMGM_fciMax, 6},
+    {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 7},
+    {"_rCausalMGM_cpcStable", (DL_FUNC) &_rCausalMGM_cpcStable, 7},
+    {"_rCausalMGM_pcMax", (DL_FUNC) &_rCausalMGM_pcMax, 7},
+    {"_rCausalMGM_pc50", (DL_FUNC) &_rCausalMGM_pc50, 7},
+    {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 7},
+    {"_rCausalMGM_cfci", (DL_FUNC) &_rCausalMGM_cfci, 7},
+    {"_rCausalMGM_fciMax", (DL_FUNC) &_rCausalMGM_fciMax, 7},
+    {"_rCausalMGM_stars", (DL_FUNC) &_rCausalMGM_stars, 11},
     {NULL, NULL, 0}
 };
 

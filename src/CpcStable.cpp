@@ -69,6 +69,9 @@ void CpcStable::orientUnshieldedTriples() {
                     }
                 }
             }
+	    if (RcppThread::isInterrupted()) {
+	      break;
+	    }
         }
 
         //Poison Pill
@@ -118,12 +121,12 @@ void CpcStable::orientUnshieldedTriples() {
         }
     }
 
-    std::vector<std::thread> threads;
+    std::vector<RcppThread::Thread> threads;
 
-    threads.push_back(std::thread( producer ));
+    threads.push_back(RcppThread::Thread( producer ));
 
     for (int i = 0; i < parallelism; i++) {
-        threads.push_back(std::thread( consumer ));
+        threads.push_back(RcppThread::Thread( consumer ));
     }
 
     for (int i = 0; i < threads.size(); i++) {
@@ -224,6 +227,7 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
 
     fas.setDepth(depth);
     fas.setVerbose(verbose);
+    fas.setFDR(fdr);
 
     // Note that we are ignoring the sepset map returned by this method
     // on purpose; it is not used in this search.

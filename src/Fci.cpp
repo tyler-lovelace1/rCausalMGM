@@ -71,6 +71,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     // fas->setKnowledge(getKnowledge());
     fas.setDepth(depth);
     fas.setVerbose(verbose);
+    fas.setFDR(fdr);
     this->graph = fas.search();
     this->sepsets = fas.getSepsets();
     graph.reorientAllWith(ENDPOINT_CIRCLE);

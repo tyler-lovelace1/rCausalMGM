@@ -112,8 +112,8 @@ steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, l
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_pcStable`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
+pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = as.logical( c(TRUE)), verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_pcStable`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
 }
 
 #' Runs the causal algorithm CPC Stable on a dataset
@@ -130,8 +130,8 @@ pcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, th
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
-cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_cpcStable`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
+cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = as.logical( c(TRUE)), verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_cpcStable`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
 }
 
 #' Runs the causal algorithm PC Max on a dataset
@@ -148,8 +148,8 @@ cpcStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, t
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
-pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
+pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = as.logical( c(TRUE)), verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_pcMax`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
 }
 
 #' Runs the causal algorithm PC50 on a dataset
@@ -166,8 +166,8 @@ pcMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threa
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pc50(data.n100.p25, initialGraph = ig)
-pc50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_pc50`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
+pc50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = as.logical( c(TRUE)), verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_pc50`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
 }
 
 #' Runs the causal algorithm FCI Stable on a dataset
@@ -184,8 +184,8 @@ pc50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, thread
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
-fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_fciStable`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
+fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = as.logical( c(TRUE)), verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_fciStable`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
 }
 
 #' Runs the causal algorithm CFCI Stable on a dataset
@@ -202,8 +202,8 @@ fciStable <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, t
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::cfci(data.n100.p25, initialGraph = ig)
-cfci <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_cfci`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
+cfci <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = as.logical( c(TRUE)), verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_cfci`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
 }
 
 #' Runs the causal algorithm FCI-Max on a dataset
@@ -220,7 +220,11 @@ cfci <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, thread
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::fciMax(data.n100.p25, initialGraph = ig)
-fciMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.05, threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_fciMax`, df, maxDiscrete, initialGraph, alpha, threads, verbose)
+fciMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = as.logical( c(TRUE)), verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_fciMax`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
+}
+
+stars <- function(df, method, params = NULL, initialGraph = NULL, maxDiscrete = 5L, g = 0.05, numSub = 20L, adjacency = as.logical( c(TRUE)), leaveOneOut = as.logical( c(FALSE)), threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_stars`, df, method, params, initialGraph, maxDiscrete, g, numSub, adjacency, leaveOneOut, threads, verbose)
 }
 

@@ -112,13 +112,13 @@ SepsetMap& PossibleDsepFciConsumerProducer::search() {
 
 void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std::unordered_map<Edge, std::vector<Variable*>>& edgeCondsetMap) {
     const std::unordered_set<Edge> edges(graph.getEdges());
-    std::vector<std::thread> threads;
+    std::vector<RcppThread::Thread> threads;
 
-    threads.push_back(std::thread( [&] { PossibleDsepProducer(edges); } ));
+    threads.push_back(RcppThread::Thread( [&] { PossibleDsepProducer(edges); } ));
 
 
     for (int i = 0; i < parallelism; i++) {
-        threads.push_back(std::thread( [&] { PossibleDsepConsumer(edgeCondsetMap); } ));
+        threads.push_back(RcppThread::Thread( [&] { PossibleDsepConsumer(edgeCondsetMap); } ));
     }
 
     for (int i = 0; i < threads.size(); i++) {
@@ -192,6 +192,10 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::unordered_set<Ed
                 taskQueue.push(newTask);
             }
         }
+
+	if (RcppThread::isInterrupted()) {
+	  break;
+	}
     }
 
     for (int i = 0; i < parallelism; i++) {

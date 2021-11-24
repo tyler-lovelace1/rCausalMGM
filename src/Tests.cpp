@@ -9,6 +9,7 @@
 #include "PcMax.hpp"
 #include "BlockingQueue.hpp"
 #include "STEPS.hpp"
+#include "RcppThread.h"
 #include <thread>
 #include <atomic>
 #include <cstdlib>
@@ -31,16 +32,16 @@ void Tests::testConcurrentQueue() {
 
     std::vector<int> outputs[NTHREADS];
 
-    std::thread producers[NTHREADS];
+    RcppThread::Thread producers[NTHREADS];
 
-    std::thread consumers[NTHREADS];
+    RcppThread::Thread consumers[NTHREADS];
 
     std::atomic<int> prodCount(0);
 
     std::atomic<int> consCount(0);
 
     for (int i = 0; i < NTHREADS; i++) {
-    	producers[i] = std::thread([&]() {
+    	producers[i] = RcppThread::Thread([&]() {
     		int id = prodCount.fetch_add(1, std::memory_order_relaxed);
     		for(int j = id * COUNT / NTHREADS + 1; j <= (id+1) * COUNT / NTHREADS; ++j) {
     		    q.push(j);
@@ -53,7 +54,7 @@ void Tests::testConcurrentQueue() {
     }
 
     for (int i = 0; i < NTHREADS; i++) {
-	consumers[i] = std::thread([&]() {
+	consumers[i] = RcppThread::Thread([&]() {
 		int id = consCount.fetch_add(1, std::memory_order_relaxed);
 		int v = q.pop();
 		while (v != -1) {

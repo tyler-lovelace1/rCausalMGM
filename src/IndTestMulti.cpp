@@ -1,6 +1,7 @@
-// [[Rcpp::depends(BH)]]
+// [[Rcpp::depends(BH, RcppThread)]]
 
 #include "IndTestMulti.hpp"
+#include "RcppThread.h"
 #include <boost/math/distributions/chi_squared.hpp>
 
 #include <fstream>
@@ -106,12 +107,12 @@ bool IndTestMulti::isIndependent(Variable *x, Variable *y, std::vector<Variable 
         // if (debug) Rcpp::Rcout << "Path 1" << std::endl;
 	try {
 	    return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
-	}  catch (std::runtime_error& e) {
+	}  catch (...) {
 	    if (y->isDiscrete()) {
 		try {
 		    // Rcpp::Rcout << "Trying reverse MultinomialLogisticRegression test" << std::endl;
 		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
-		} catch (std::runtime_error& e) {
+		} catch (...) {
 		    return false;
 		}
 	    }
@@ -129,7 +130,7 @@ bool IndTestMulti::isIndependent(Variable *x, Variable *y, std::vector<Variable 
 		// if (debug) Rcpp::Rcout << "Path 3" << std::endl;
 		return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
 	    }
-	} catch (std::runtime_error& e) {
+	} catch (...) {
 	    return false;
 	}
     }
@@ -138,11 +139,11 @@ bool IndTestMulti::isIndependent(Variable *x, Variable *y, std::vector<Variable 
         // if (debug) Rcpp::Rcout << "Path 4" << std::endl;
 	try {
 	    return isIndependentRegression(x, y, z, pReturn);
-	}  catch (std::runtime_error& e) {
+	}  catch (...) {
 	    try {
 		// Rcpp::Rcout << "Trying reverse LinearRegression test" << std::endl;
 		return isIndependentRegression(y, x, z, pReturn);
-	    } catch (std::runtime_error& e) {
+	    } catch (...) {
 		return false;
 	    }
 	    return false;
@@ -266,7 +267,7 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(Variable *x, Varia
 								      zList, rows_);
 	LogisticRegressionResult result1 = logisticRegression.regress((DiscreteVariable *)varX,
 								      yzList, rows_);
-	// } catch (std::runtime_error& e) {
+	// } catch (...) {
 	//     return false;
 	// }
 
@@ -546,7 +547,7 @@ bool IndTestMulti::isIndependentRegression(Variable *x, Variable *y, std::vector
 
     try {
 	result = regression.regress(x, regressors, rows);
-    } catch (std::runtime_error& e) {
+    } catch (...) {
 	return false;
     }
 

@@ -70,6 +70,10 @@ void OrientCollidersMaxP::producer() {
                 testColliderMaxP(a, b, c);
             }
         }
+
+	if (RcppThread::isInterrupted()) {
+	  break;
+	}
     }
 
     // Poison pill
@@ -271,12 +275,12 @@ void OrientCollidersMaxP::addColliders() {
 
     scores.clear();
 
-    std::vector<std::thread> threads;
+    std::vector<RcppThread::Thread> threads;
 
-    threads.push_back(std::thread( [this] { producer(); } ));
+    threads.push_back(RcppThread::Thread( [this] { producer(); } ));
 
     for (int i = 0; i < parallelism; i++) {
-        threads.push_back(std::thread( [this] { consumer(); } ));
+        threads.push_back(RcppThread::Thread( [this] { consumer(); } ));
     }
 
     for (int i = 0; i < threads.size(); i++) {

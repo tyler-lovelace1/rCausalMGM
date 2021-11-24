@@ -10,7 +10,7 @@ Description: More details about what the package does. See
               part.
 License: GPL (>= 2)
 Imports: Rcpp (>= 1.0.3)
-LinkingTo: Rcpp, RcppArmadillo, BH
+LinkingTo: Rcpp, RcppArmadillo, BH, RcppThread
 SystemRequirements: C++14
 RoxygenNote: 7.1.1
 Encoding: UTF-8

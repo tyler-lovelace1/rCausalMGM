@@ -103,6 +103,10 @@ void Pc50::orientUnshieldedTriples() {
                     }
                 }
             }
+	    
+	    if (RcppThread::isInterrupted()) {
+	      break;
+	    }
         }
 
         //Poison Pill
@@ -152,12 +156,12 @@ void Pc50::orientUnshieldedTriples() {
         }
     }
 
-    std::vector<std::thread> threads;
+    std::vector<RcppThread::Thread> threads;
 
-    threads.push_back(std::thread( producer ));
+    threads.push_back(RcppThread::Thread( producer ));
 
     for (int i = 0; i < parallelism; i++) {
-        threads.push_back(std::thread( consumer ));
+        threads.push_back(RcppThread::Thread( consumer ));
     }
 
     for (int i = 0; i < threads.size(); i++) {

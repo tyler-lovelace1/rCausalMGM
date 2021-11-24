@@ -143,12 +143,17 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
 
 bool FasStableProducerConsumer::searchAtDepth0() {
 
-    std::vector<std::thread> threads;
+    std::vector<RcppThread::Thread> threads;
 
-    threads.push_back(std::thread( [this] { producerDepth0(); } ));
+    int numEdges = nodes.size() * (nodes.size() - 1) / 2;
+    // if (initialGraph != NULL) {
+    // 	numEdges = initialGraph->getNumEdges();
+    // }
+
+    threads.push_back(RcppThread::Thread( [this] { producerDepth0(); } ));
 
     for (int i = 0; i < parallelism; i++) {
-        threads.push_back(std::thread( [this] { consumerDepth0(); } ));
+        threads.push_back(RcppThread::Thread( [this] { consumerDepth0(); } ));
     }
 
     for (int i = 0; i < threads.size(); i++) {
@@ -156,6 +161,60 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	    threads[i].join();
 	} else {
 	    Rcpp::Rcout << "#### THREAD " << i << " NOT JOINABLE ####\n";
+	}
+    }
+
+    if (fdr) {
+	std::vector<std::pair<Variable*, Variable*>> edgeVec;
+	std::unordered_set<std::pair<Variable*, Variable*>,
+			   boost::hash<std::pair<Variable*, Variable*>>> edgeSet;
+
+	for (int i = 0; i < nodes.size(); i++) {
+	    Variable* x = nodes[i];
+	    
+	    for (int j = i+1; j < nodes.size(); j++) {
+		Variable* y = nodes[j];
+
+		if (initialGraph != NULL) {
+		    Variable* x2 = initialGraph->getNode(x->getName());
+		    Variable* y2 = initialGraph->getNode(y->getName());
+
+		    if (!initialGraph->isAdjacentTo(x2, y2))
+			continue;
+		}
+
+		edgeSet.insert(std::minmax(x,y));
+	    }
+	}
+
+	edgeVec = std::vector<std::pair<Variable*, Variable*>>(edgeSet.begin(), edgeSet.end());
+
+	
+	std::sort(edgeVec.begin(), edgeVec.end(),
+		  [&](const std::pair<Variable*, Variable*>& e1,
+		      const std::pair<Variable*, Variable*>& e2) {
+		      return edgePvals[e1] < edgePvals[e2];
+		  });
+
+	// numEdges = edgeVec.size();
+	// Rcpp::Rcout << "Number of  edges: " << numEdges << std::endl;
+
+	for (int i = 0; i < edgeVec.size(); i++) {
+	    std::pair<Variable*, Variable*> edgePair = edgeVec.at(i);
+	    double pval = edgePvals[edgeVec.at(i)];
+	    double fdrpval = numEdges / ((double) i+1) * pval;
+
+	    if (pval <= test->getAlpha()) {
+		// Rcpp::Rcout << "  Edge: " << edgePair.first->getName() << " --- "
+		// 	    << edgePair.second->getName() << "\n    p = " << pval
+		// 	    << "\n    FDR p = " << fdrpval << std::endl;
+	    
+		if (fdrpval > test->getAlpha()) {
+		    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
+		    adjacencies[edgePair.first].erase(edgePair.second);
+		    adjacencies[edgePair.second].erase(edgePair.first);
+		}
+	    }
 	}
     }
 
@@ -181,6 +240,11 @@ void FasStableProducerConsumer::producerDepth0() {
 
             taskQueue.push(IndependenceTask(x, y, empty));
         }
+
+	// RcppThread::checkUserInterrupt();
+	if (RcppThread::isInterrupted()) {
+	  break;
+	}
     }
 
     // add poison pill to stop consumers
@@ -199,10 +263,10 @@ void FasStableProducerConsumer::consumerDepth0() {
         if (task.x == NULL && task.y == NULL) return;
 
         numIndependenceTests++;
-	double pval = 0.;
+	double pval = test->getAlpha() + 1e-5;
         bool independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
-        if (independent) {
+	if (independent) {
             numIndependenceJudgements++;
         } else {
             numDependenceJudgement++;
@@ -211,6 +275,15 @@ void FasStableProducerConsumer::consumerDepth0() {
         // Knowledge
         bool noEdgeRequired = true;
         bool forbiddenEdge = false;
+	
+	if (fdr) {
+	    std::lock_guard<std::mutex> pvalLock(pvalMutex);
+	    std::pair<Variable*, Variable*> edgePair = std::minmax(task.x, task.y);
+	    if (edgePvals.find(edgePair) == edgePvals.end() || edgePvals[edgePair] < pval) {
+		edgePvals[edgePair] = pval;
+		edgeMaxPSet[edgePair] = task.z;
+	    }
+	}
 
 	if (independent && noEdgeRequired) {
 	    std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
@@ -237,18 +310,17 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 	bool edgeExists;
 	{
 	    std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
-	    
 	    edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
 	}
 	
         if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
-	double pval = 0.;
+	double pval = test->getAlpha() + 1e-5;
         bool independent;
         independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
-        if (independent) {
+	if (independent) {
             numIndependenceJudgements++;
         } else {
             numDependenceJudgement++;
@@ -256,6 +328,15 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 
         // Knowledge
         bool noEdgeRequired = true;
+
+	if (fdr) {
+	    std::lock_guard<std::mutex> pvalLock(pvalMutex);
+	    std::pair<Variable*, Variable*> edgePair = std::minmax(task.x, task.y);
+	    if (edgePvals.find(edgePair) == edgePvals.end() || edgePvals[edgePair] < pval) {
+		edgePvals[edgePair] = pval;
+		edgeMaxPSet[edgePair] = task.z;
+	    }
+	}
 
 	if (independent && noEdgeRequired) {
 	    std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
@@ -303,7 +384,16 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
                     taskQueue.push(IndependenceTask(x, y, condSet));
                 }
             }
+	    
+	    // RcppThread::checkUserInterrupt();
+	    if (RcppThread::isInterrupted()) {
+	      break;
+	    }
         }
+	
+	if (RcppThread::isInterrupted()) {
+	  break;
+	}
     }
 
     // add poison pill to stop consumers
@@ -338,12 +428,20 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
 
     std::unordered_map<Variable*, std::unordered_set<Variable*>> adjacenciesCopy = adjacencies;
 
-    std::vector<std::thread> threads;
+    int numEdges = 0;
+    
+    if (fdr) {
+	for (auto it = adjacencies.begin(); it != adjacencies.end(); it++)
+	    numEdges += it->second.size();
+	numEdges /= 2;
+    }
 
-    threads.push_back(std::thread( [&] { producerDepth(depth, adjacenciesCopy); } ));
+    std::vector<RcppThread::Thread> threads;
+
+    threads.push_back(RcppThread::Thread( [&] { producerDepth(depth, adjacenciesCopy); } ));
 
     for (int i = 0; i < parallelism; i++) {
-        threads.push_back(std::thread( [&] { consumerDepth(depth); } ));
+        threads.push_back(RcppThread::Thread( [&] { consumerDepth(depth); } ));
     }
 
     for (int i = 0; i < threads.size(); i++) {
@@ -351,6 +449,47 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
 	    threads[i].join();
 	} else {
 	    Rcpp::Rcout << "#### THREAD " << i << " NOT JOINABLE ####\n";
+	}
+    }
+
+    if (fdr) {
+        std::vector<std::pair<Variable*, Variable*>> edgeVec;
+	std::unordered_set<std::pair<Variable*, Variable*>,
+			   boost::hash<std::pair<Variable*, Variable*>>> edgeSet;
+
+        for (Variable* x : nodes) {
+
+	    std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
+	    
+	    for (Variable* y : adjx) {
+		edgeSet.insert(std::minmax(x,y));
+	    }
+	}
+
+	edgeVec = std::vector<std::pair<Variable*, Variable*>>(edgeSet.begin(), edgeSet.end());
+	
+	std::sort(edgeVec.begin(), edgeVec.end(),
+		  [&](const std::pair<Variable*, Variable*>& e1,
+		      const std::pair<Variable*, Variable*>& e2) {
+		      return edgePvals[e1] < edgePvals[e2];
+		  });
+
+	for (int i = 0; i < edgeVec.size(); i++) {
+	    std::pair<Variable*, Variable*> edgePair = edgeVec.at(i);
+	    double pval = edgePvals[edgeVec.at(i)];
+	    double fdrpval = numEdges / ((double) i+1) * pval;
+
+	    if (pval <= test->getAlpha()) {
+		// Rcpp::Rcout << "  Edge " << i << ": " << edgePair.first->getName() << " --- "
+		// 	    << edgePair.second->getName() << "\n    p = " << pval
+		// 	    << "\n    FDR p = " << fdrpval << std::endl;
+
+		if (fdrpval > test->getAlpha()) {
+		    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
+		    adjacencies[edgePair.first].erase(edgePair.second);
+		    adjacencies[edgePair.second].erase(edgePair.first);
+		}
+	    }
 	}
     }
 

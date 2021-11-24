@@ -13,7 +13,10 @@ std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set
 
     std::vector<Triple> colliders;
     std::vector<Triple> colliderList;
+    // std::vector<Triple> tripleList;
     std::unordered_map<Triple, double> scores;
+
+    // int numTriples = 0;
 
     std::vector<Variable*> nodes = graph.getNodes();
 
@@ -41,9 +44,15 @@ std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set
             std::vector<Variable*>* sepset = set.get(a, c);
 
             if (sepset != NULL) {
+
+		// numTriples++;
+		// tripleList.push_back(Triple(a, b, c));
+		// scores[Triple(a, b, c)] = set.getPValue(a, c);
+		
                 if (std::find(sepset->begin(), sepset->end(), b) == sepset->end()) { // !sepset.contains(b)
                     // graph.setEndpoint(a, b, ENDPOINT_ARROW);
                     // graph.setEndpoint(c, b, ENDPOINT_ARROW);
+		    // colliders.push_back(Triple(a, b, c));
                     colliderList.push_back(Triple(a, b, c));
 		    scores[Triple(a, b, c)] = set.getPValue(a, c);
                 }
@@ -51,11 +60,43 @@ std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set
         }
     }
 
+    // std::sort(tripleList.begin(), tripleList.end(),
+    // 	      [&](const Triple& t1, const Triple& t2) {
+    // 		  return scores[t1] < scores[t2];
+    // 	      });
+
+    // int i = 1;
+    // for (Triple triple : tripleList) {
+    //     Variable* a = triple.getX();
+    //     Variable* b = triple.getY();
+    //     Variable* c = triple.getZ();
+
+    // 	double fdrpval = numTriples / ((double) i) * scores[triple];
+
+    // 	if (fdrpval > 0.05) {
+
+    // 	    std::vector<Variable*>* sepset = set.get(a, c);
+
+    // 	    if (std::find(sepset->begin(), sepset->end(), b) == sepset->end()) {
+    // 		graph.setEndpoint(a, b, ENDPOINT_ARROW);
+    // 		graph.setEndpoint(c, b, ENDPOINT_ARROW);
+    // 		colliders.push_back(Triple(a, b, c));
+    // 	    }
+    // 	}
+	
+    // 	i++;
+    // }
+
     // Most independent ones first.
     std::sort(colliderList.begin(), colliderList.end(),
-	      [&](const Triple& t1, const Triple& t2) {
-		  return scores[t1] > scores[t2];
-	      });
+    	      [&](Triple& t1, Triple& t2) {
+		  int s1 = set.get(t1.getX(), t1.getZ())->size();
+		  int s2 = set.get(t2.getX(), t2.getZ())->size();
+		  if (s1 == s2) {
+		      return scores[t1] > scores[t2];
+		  }
+		  return s1 < s2;
+    	      });
 
     for (Triple triple : colliderList) {
         Variable* a = triple.getX();
@@ -63,12 +104,22 @@ std::vector<Triple> SearchGraphUtils::orientCollidersUsingSepsets(SepsetMap& set
         Variable* c = triple.getZ();
 
         if (!(graph.getEndpoint(b, a) == ENDPOINT_ARROW ||
-	      graph.getEndpoint(b, c) == ENDPOINT_ARROW)) {
+    	      graph.getEndpoint(b, c) == ENDPOINT_ARROW)) {
             if (orientCollider(set, graph, a, b, c)) {
-		colliders.push_back(triple);
-	    }
+    		colliders.push_back(triple);
+    	    }
         }
     }
+
+    // for (Edge edge : graph.getEdges()) {
+    // 	if ((edge.getEndpoint1() == ENDPOINT_ARROW) && (edge.getEndpoint2() == ENDPOINT_ARROW)) {
+    // 	    Variable* x = edge.getNode1();
+    // 	    Variable* y = edge.getNode2();
+
+    // 	    graph.setEndpoint(x, y, ENDPOINT_TAIL);
+    // 	    graph.setEndpoint(y, x, ENDPOINT_TAIL);
+    // 	}
+    // }
 
     if (verbose) Rcpp::Rcout << "Finishing Collider Orientation" << std::endl;
 
