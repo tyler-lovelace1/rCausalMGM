@@ -1,7 +1,7 @@
 #ifndef TESTS_HPP
 #define TESTS_HPP
 
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 
 class Tests {
 

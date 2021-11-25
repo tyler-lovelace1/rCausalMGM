@@ -1,12 +1,5 @@
 #include "EdgeListGraph.hpp"
 
-#include "GraphUtils.hpp"
-#include <RcppArmadillo.h>
-#include <string.h>
-#include <fstream>
-#include <stdlib.h>
-#include <iostream>
-#include <cctype>
 
 // Used by constructors
 void EdgeListGraph::initNamesHash() {

@@ -1,7 +1,7 @@
 #ifndef MGMPARAMS_HPP_
 #define MGMPARAMS_HPP_
 
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 
 class MGMParams {
 

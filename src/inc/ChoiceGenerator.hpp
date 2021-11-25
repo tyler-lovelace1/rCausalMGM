@@ -1,7 +1,7 @@
 #ifndef CHOICEGENERATOR_HPP_
 #define CHOICEGENERATOR_HPP_
 
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 
 /**
  * Generates (nonrecursively) all of the combinations of a choose b, where a, b

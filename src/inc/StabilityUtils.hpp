@@ -12,7 +12,7 @@
 #include "FciMax.hpp"
 #include "IndTestMulti.hpp"
 #include "RcppThread.h"
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 #include "BlockingQueue.hpp"
 #include <thread>
 

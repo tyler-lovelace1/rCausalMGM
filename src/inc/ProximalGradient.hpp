@@ -1,7 +1,7 @@
 #ifndef PROXIMAL_GRADIENT_HPP_
 #define PROXIMAL_GRADIENT_HPP_
 
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 #include <ConvexProximal.hpp>
 #include <chrono>
 

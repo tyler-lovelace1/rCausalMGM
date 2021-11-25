@@ -2,7 +2,7 @@
 #define STEPS_HPP_
 
 #include "StabilityUtils.hpp"
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 
 class STEPS {
 

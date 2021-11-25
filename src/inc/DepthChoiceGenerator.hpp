@@ -1,7 +1,7 @@
 #ifndef DEPTHCHOICEGENERATOR_HPP_
 #define DEPTHCHOICEGENERATOR_HPP_
 
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 
 /**
  * Generates (nonrecursively) all of the combinations of a choose b, where a, b

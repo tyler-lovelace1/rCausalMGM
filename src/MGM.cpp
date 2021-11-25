@@ -1,10 +1,5 @@
 #include "MGM.hpp"
 
-#include "ContinuousVariable.hpp"
-#include "DiscreteVariable.hpp"
-#include <math.h>
-#include <RcppArmadillo.h>
-#include <chrono>
 
 MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     

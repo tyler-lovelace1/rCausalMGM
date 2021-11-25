@@ -12,7 +12,7 @@
 #ifndef CONVEXPROXIMAL_HPP_
 #define CONVEXPROXIMAL_HPP_
 
-#include <RcppArmadillo.h>
+#include "armaLapack.hpp"
 
 class ConvexProximal {
 

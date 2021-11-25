@@ -1,10 +1,18 @@
 #ifndef EDGELISTGRAPH_HPP_
 #define EDGELISTGRAPH_HPP_
 
+#include "armaLapack.hpp"
+
 #include "Variable.hpp"
 #include "Edge.hpp"
 #include "Triple.hpp"
 #include "DataSet.hpp"
+#include "GraphUtils.hpp"
+#include <string.h>
+#include <fstream>
+#include <stdlib.h>
+#include <iostream>
+#include <cctype>
 
 
 class EdgeListGraph {
