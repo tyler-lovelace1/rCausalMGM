@@ -116,14 +116,25 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     fciorient_.ruleR0(graph);
     fciorient_.doFinalOrientation(graph);
 
+    // // Set algorithm and type
+    // std::ostringstream alg;
+    // alg << "FCI Stable: alpha = " << test->getAlpha();
+    // graph.setAlgorithm(alg.str());
+    // graph.setGraphType("partial ancestral graph");
+
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "FCI Stable: alpha = " << test->getAlpha();
+    if (initialGraph==NULL) {
+	alg << "FCI-Stable";
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << "FCI-Stable";
+    }
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
-
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
     
+
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+
     if (verbose) {
 	if (elapsedTime < 100*1000) {
 	    Rcpp::Rcout.precision(2);
@@ -132,6 +143,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
 	}
         Rcpp::Rcout << "FCI-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
+    
     return graph;
 }
 

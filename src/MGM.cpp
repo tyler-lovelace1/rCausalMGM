@@ -32,6 +32,30 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vec
 
 MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
 
+    bool mixed = true;
+
+    if (ds.isContinuous()) {
+	dummyVar = new DiscreteVariable("dummy.gLpkx1Hs6x", 4);
+	ds.addVariable(dummyVar);
+	arma::uword j = ds.getColumn(dummyVar);
+	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	    ds.set(i, j, std::floor(R::runif(0,4)));
+	}
+	mixed = false;
+	qDummy = 1;
+    }
+
+    if (ds.isDiscrete()) {
+	dummyVar = new ContinuousVariable("dummy.qCm6jaC1VK");
+	ds.addVariable(dummyVar);
+	arma::uword j = ds.getColumn(dummyVar);
+	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	    ds.set(i, j, std::floor(R::rnorm(0,1)));
+	}
+	mixed = false;
+	pDummy = 1;
+    }
+    
     this->xDat = ds.getContinuousData();
     this->yDat = ds.getDiscreteData();
     this->l = ds.getDiscLevels();
@@ -50,6 +74,10 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     this->initVariables = ds.getVariables();
     this->lambda = arma::vec(lambda);
 
+    if (!mixed) {
+	variables.erase(std::find(variables.begin(), variables.end(), dummyVar));
+	initVariables.erase(std::find(initVariables.begin(), initVariables.end(), dummyVar));
+    }
     //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
     fixData();
 
@@ -67,7 +95,10 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
 MGM::~MGM() {
     // for (int i = 0; i < variables.size(); i++) {
     //     delete variables[i];
-    // }  
+    // }
+
+    // if (dummyVar != NULL)
+    // 	delete dummyVar;
 }
 
 // init all parameters to zeros except for betad which is set to 1s
@@ -301,6 +332,19 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.phi /= (double) n;
 
     // Rcpp::Rcout << "gradOut: \n" << gradOut << std::endl;
+
+    if (pDummy != 0) {
+	gradOut.alpha1.fill(0);
+	gradOut.betad.fill(0);
+	gradOut.beta.fill(0);
+	gradOut.theta.fill(0);
+    }
+
+    if (qDummy != 0) {
+	gradOut.alpha2.fill(0);
+	gradOut.theta.fill(0);
+	gradOut.phi.fill(0);
+    }
 
     gradOutVec = gradOut.toMatrix1D();
 
@@ -700,6 +744,19 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     grad.theta /= (double) n;
     grad.phi /= (double) n;
 
+    if (pDummy != 0) {
+	grad.alpha1.fill(0);
+	grad.betad.fill(0);
+	grad.beta.fill(0);
+	grad.theta.fill(0);
+    }
+
+    if (qDummy != 0) {
+	grad.alpha2.fill(0);
+	grad.theta.fill(0);
+	grad.phi.fill(0);
+    }
+
     return grad.toMatrix1D();
 }
 
@@ -839,20 +896,21 @@ void MGM::learnEdges(int iterLimit, int edgeChangeTol){
  * @return
  */
 arma::mat MGM::adjMatFromMGM() {
-    arma::mat outMat(p+q, p+q, arma::fill::zeros);
+    arma::mat outMat(p+q-pDummy-qDummy, p+q-pDummy-qDummy, arma::fill::zeros);
 
-    outMat(0, 0, arma::size(p, p)) = params.beta + params.beta.t();
+    if (p - pDummy > 0) 
+	outMat(0, 0, arma::size(p, p)) = params.beta + params.beta.t();
 
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < q; j++) {
+    for (arma::uword i = 0; i < p-pDummy; i++) {
+        for (arma::uword j = 0; j < q-qDummy; j++) {
             double val = arma::norm(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1), 2);
             outMat(i, p+j) = val;
             outMat(p+j, i) = val;
         }
     }
 
-    for (arma::uword i = 0; i < q; i++) {
-        for (arma::uword j = i+1; j < q; j++) {
+    for (arma::uword i = 0; i < q-qDummy; i++) {
+        for (arma::uword j = i+1; j < q-qDummy; j++) {
             double val = arma::norm(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j])), "fro");
             outMat(p+i, p+j) = val;
             outMat(p+j, p+i) = val;
@@ -883,7 +941,8 @@ EdgeListGraph MGM::graphFromMGM() {
             double v1 = params.beta(i,j);
 
             if (std::abs(v1) > 0) {
-                if(!g.isAdjacentTo(variables[i], variables[j])) {
+                if(!g.isAdjacentTo(variables[i], variables[j]) &&
+		   !(variables[i] == dummyVar || variables[j] == dummyVar)) {
                     g.addUndirectedEdge(variables[i], variables[j]);
                 }
             }
@@ -895,7 +954,8 @@ EdgeListGraph MGM::graphFromMGM() {
             double v1 = arma::accu(arma::abs(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1)));
 
             if (v1 > 0) {
-                if(!g.isAdjacentTo(variables[i], variables[p+j])) {
+                if(!g.isAdjacentTo(variables[i], variables[p+j]) &&
+		   !(variables[i] == dummyVar || variables[p+j] == dummyVar)) {
                     g.addUndirectedEdge(variables[i], variables[p+j]);
                 }
             }
@@ -907,7 +967,8 @@ EdgeListGraph MGM::graphFromMGM() {
             double v1 = arma::accu(arma::abs(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j]))));
 
             if (v1 > 0) {
-                if(!g.isAdjacentTo(variables[p+i], variables[p+j])) {
+                if(!g.isAdjacentTo(variables[p+i], variables[p+j]) &&
+		   !(variables[p+i] == dummyVar || variables[p+j] == dummyVar)) {
                     g.addUndirectedEdge(variables[p+i], variables[p+j]);
                 }
             }
@@ -916,11 +977,19 @@ EdgeListGraph MGM::graphFromMGM() {
 
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "MGM: lambda = [" 
-        << lambda(0) << ", " << lambda(1) << ", " << lambda(2) << "]";
+    alg << "MGM";// : lambda = [" 
+        // << lambda(0) << ", " << lambda(1) << ", " << lambda(2) << "]";
 
+    // RcppThread::Rcout << "lambda = [" << lambda(0) << ", " << lambda(1) << ", " << lambda(2) << "]\n";
     g.setAlgorithm(alg.str());
     g.setGraphType("undirected");
+    
+    // Rcpp::NumericVector rLambda(lambda.begin(), lambda.end());
+    // for (double l : lambda) rLambda.push_back(l);
+    
+    g.setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
+
+    // g.setHyperParam("lambda", Rcpp::NumericVector::create(lambda(0), lambda(1), lambda(2)));
 
     return g;
 }

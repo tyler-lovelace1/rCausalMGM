@@ -4,8 +4,8 @@
  *
  * @author Willie Wheeler 7/99
  * @author Joseph Ramsey modifications 12/00
-`* @author Tyler Lovelace conversion to C++ 1/20
- */
+ * @author Tyler Lovelace conversion to C++ 1/20
+*/
 
 #ifndef CONTINUOUSVARIABLE_HPP_
 #define CONTINUOUSVARIABLE_HPP_
@@ -18,35 +18,35 @@
 
 class ContinuousVariable : public Variable {
 private:
-  const double MISSING_VALUE = std::numeric_limits<double>::quiet_NaN();
-  const std::string MISSING_VALUE_STRING = "NaN";
+    const double MISSING_VALUE = std::numeric_limits<double>::quiet_NaN();
+    const std::string MISSING_VALUE_STRING = "NaN";
 
 public:
-  ContinuousVariable(const std::string& name) {
-    this->name = name;
-    this->type = CONTINUOUS;
-  }
+    ContinuousVariable(const std::string& name) {
+	this->name = name;
+	this->type = CONTINUOUS;
+    }
 
-  ContinuousVariable(const ContinuousVariable& var) {
-    name = var.name;
-    type = var.type;
-  }
+    ContinuousVariable(const ContinuousVariable& var) {
+	name = var.name;
+	type = var.type;
+    }
   
-  ~ContinuousVariable() {}
+    ~ContinuousVariable() {}
 
-  double getMissingValueMarker() { return this->MISSING_VALUE; }
+    double getMissingValueMarker() { return this->MISSING_VALUE; }
 
-  bool isMissingValue(const double& val) { return std::isnan(val); }
+    bool isMissingValue(const double& val) { return std::isnan(val); }
 
-  bool isMissingValue(const std::string& val) { return val==MISSING_VALUE_STRING; }
+    bool isMissingValue(const std::string& val) { return val==MISSING_VALUE_STRING; }
 
-  // bool checkValue(const double& val) { return true; }
+    // bool checkValue(const double& val) { return true; }
 
-  bool checkValue(const std::string& val);
+    bool checkValue(const std::string& val);
   
-  ContinuousVariable* like(const std::string& name) { return new ContinuousVariable(name); }
+    // ContinuousVariable* like(const std::string& name) { return new ContinuousVariable(name); }
 
-  // friend void test_continuous(const std::string& name, const std::string& val);
+    // friend void test_continuous(const std::string& name, const std::string& val);
 };
 
 #endif /* CONTINUOUSVARIABLE_HPP_ */

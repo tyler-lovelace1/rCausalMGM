@@ -8,12 +8,12 @@ void EdgeListGraph::initNamesHash() {
     }
 }
 
-/**
- * Constructs a new (empty) EdgeListGraph.
- */
-EdgeListGraph::EdgeListGraph() {
-    initNamesHash();
-}
+// /**
+//  * Constructs a new (empty) EdgeListGraph.
+//  */
+// EdgeListGraph::EdgeListGraph() {
+//     initNamesHash();
+// } 
 
 /**
  * Constructs a new graph, with no edges, using the the given variable
@@ -38,22 +38,90 @@ EdgeListGraph::EdgeListGraph(const std::vector<Variable*>& nodes) {
  *              extracted.
  * @throws std::invalid_argument if a duplicate edge is added.
  */
-EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
-    transferNodesAndEdges(graph);
-    ambiguousTriples = graph.ambiguousTriples;
-    underLineTriples = graph.underLineTriples;
-    dottedUnderLineTriples = graph.dottedUnderLineTriples;
+// EdgeListGraph::EdgeListGraph(const EdgeListGraph& graph) {
+//     transferNodesAndEdges(graph);
+//     ambiguousTriples = graph.ambiguousTriples;
+//     underLineTriples = graph.underLineTriples;
+//     dottedUnderLineTriples = graph.dottedUnderLineTriples;
 
-    // for (Edge edge : graph.edgesSet) {
-    //     if (graph.highlightedEdges.count(edge)) {
-    //         setHighlighted(edge, true);
-    //     }
-    // }
+//     // for (Edge edge : graph.edgesSet) {
+//     //     if (graph.highlightedEdges.count(edge)) {
+//     //         setHighlighted(edge, true);
+//     //     }
+//     // }
 
-    namesHash = graph.namesHash;
-    algorithm = graph.algorithm;
-    graph_type = graph.graph_type;
-}
+//     namesHash = graph.namesHash;
+//     hyperparamHash = graph.hyperparamHash;
+//     algorithm = graph.algorithm;
+//     graph_type = graph.graph_type;
+// }
+
+// EdgeListGraph& EdgeListGraph::operator=(const EdgeListGraph& graph) {
+//     transferNodesAndEdges(graph);
+//     ambiguousTriples = graph.ambiguousTriples;
+//     underLineTriples = graph.underLineTriples;
+//     dottedUnderLineTriples = graph.dottedUnderLineTriples;
+
+//     // for (Edge edge : graph.edgesSet) {
+//     //     if (graph.highlightedEdges.count(edge)) {
+//     //         setHighlighted(edge, true);
+//     //     }
+//     // }
+
+//     namesHash = graph.namesHash;
+//     hyperparamHash = graph.hyperparamHash;
+//     algorithm = graph.algorithm;
+//     graph_type = graph.graph_type;
+//     return *this;
+// }
+
+
+/**
+ * Constructs a EdgeListGraph using the nodes and edges of the given graph.
+ * If this cannot be accomplished successfully, an exception is thrown. Note
+ * that any graph constraints from the given graph are forgotten in the new
+ * graph.
+ *
+ * @param graph the graph from which nodes and edges are is to be
+ *              extracted.
+ * @throws std::invalid_argument if a duplicate edge is added.
+ */
+// EdgeListGraph::EdgeListGraph(EdgeListGraph&& graph) {
+//     transferNodesAndEdges(graph);
+//     ambiguousTriples = graph.ambiguousTriples;
+//     underLineTriples = graph.underLineTriples;
+//     dottedUnderLineTriples = graph.dottedUnderLineTriples;
+
+//     // for (Edge edge : graph.edgesSet) {
+//     //     if (graph.highlightedEdges.count(edge)) {
+//     //         setHighlighted(edge, true);
+//     //     }
+//     // }
+    
+//     namesHash = graph.namesHash;
+//     hyperparamHash = graph.hyperparamHash;
+//     algorithm = graph.algorithm;
+//     graph_type = graph.graph_type;
+// }
+
+// EdgeListGraph& EdgeListGraph::operator=(EdgeListGraph&& graph) {
+//     transferNodesAndEdges(graph);
+//     ambiguousTriples = graph.ambiguousTriples;
+//     underLineTriples = graph.underLineTriples;
+//     dottedUnderLineTriples = graph.dottedUnderLineTriples;
+
+//     // for (Edge edge : graph.edgesSet) {
+//     //     if (graph.highlightedEdges.count(edge)) {
+//     //         setHighlighted(edge, true);
+//     //     }
+//     // }
+    
+//     namesHash = graph.namesHash;
+//     hyperparamHash = graph.hyperparamHash;
+//     algorithm = graph.algorithm;
+//     graph_type = graph.graph_type;
+//     return *this;
+// }
 
 EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     if (!validateGraphList(list)) {
@@ -90,6 +158,11 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
 
     std::vector<std::string> t = list["type"];
     graph_type = t[0];
+
+    hyperparamHash["lambda"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["lambda"]));
+    hyperparamHash["alpha"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["alpha"]));
+    // hyperparamHash["penalty"] = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["penalty"]);
+    
 }
 
 /**
@@ -549,18 +622,21 @@ Triple EdgeListGraph::tripleFromString(std::string tripleString) {
 
 bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
     std::vector<std::string> lclass = l.attr("class");
-    if (lclass[0] != "graph") return false;
+    
+    if (std::find(lclass.begin(), lclass.end(), "graph") == lclass.end()) return false;
 
     std::vector<std::string> names = l.names();
 
-    if (names.size() != 7)               return false;
-    if (names[0] != "nodes")             return false;
-    if (names[1] != "edges")             return false;
-    if (names[2] != "ambiguous_triples") return false;
-    if (names[3] != "algorithm")         return false;
-    if (names[4] != "type")              return false;
-    if (names[5] != "markov.blankets")   return false;
-    if (names[6] != "stabilities")       return false;
+    if (names.size() < 2)                                                 return false;
+    if (std::find(names.begin(), names.end(), "nodes") == names.end())    return false;
+    if (std::find(names.begin(), names.end(), "edges") == names.end())    return false;
+    // if (names[0] != "nodes")             return false;
+    // if (names[1] != "edges")             return false;
+    // if (names[2] != "ambiguous_triples") return false;
+    // if (names[3] != "algorithm")         return false;
+    // if (names[4] != "type")              return false;
+    // if (names[5] != "markov.blankets")   return false;
+    // if (names[6] != "stabilities")       return false;
 
     return true;
 }
@@ -946,6 +1022,9 @@ Rcpp::List EdgeListGraph::toList() {
         Rcpp::_["edges"] = edgeStrings,
         Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
         Rcpp::_["algorithm"] = algorithm,
+	Rcpp::_["lambda"] = hyperparamHash["lambda"],
+	Rcpp::_["alpha"] = hyperparamHash["alpha"],
+	// Rcpp::_["penalty"] = hyperparamHash["penalty"],
         Rcpp::_["type"] = graph_type,
         Rcpp::_["markov.blankets"] = R_NilValue,
         Rcpp::_["stabilities"] = R_NilValue
@@ -997,51 +1076,110 @@ std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
 }
 
 // Helper
-void streamGraph(const Rcpp::List& list, std::ostream& os) {
-    os << "Graph Nodes:\n";
+void streamGraph(const Rcpp::List& list, std::ostream& os, std::string ext = "txt") {
 
-    // Nodes
-    std::vector<std::string> nodeNames = list["nodes"];
-    int count = 0;
-    for (std::string nodeName : nodeNames) {
-        count++;
-        os << nodeName;
-        if (count < nodeNames.size()) {
-            os << ",";
-        }
-    }
+    if (ext == "sif") {
 
-    os << "\n\n";
+	// Edges
+	std::vector<std::string> edgeStrings = list["edges"];
+	for (std::string edgeString : edgeStrings) {
+	    std::vector<std::string> edge;
+	    size_t pos = edgeString.find(" ");
+	    while (pos != std::string::npos) {
+		edge.push_back(edgeString.substr(0,pos));
+		edgeString.erase(0,pos+1);
+		pos = edgeString.find(" ");
+	    }
+	    edge.push_back(edgeString);
+	    
+	    // Rcpp::Rcout << "edge.size() = " << edge.size() << std::endl;
+	    // for (auto it = edge.begin(); it != edge.end(); it++)
+	    // 	Rcpp::Rcout << *it << ", ";
+	    // Rcpp::Rcout << "\n";
+	    
+	    if (edge.size() == 3) {
+		os << edge[0] << "\t";
 
-    // Edges
-    os << "Graph Edges:\n";
-    std::vector<std::string> edgeStrings = list["edges"];
-    count = 1;
-    for (std::string edgeString : edgeStrings) {
-        os << count << ". " << edgeString << "\n";
-        count++;
-    }
+		if (edge[1] == "---") {
+		    os << "undir\t";
+		} else if (edge[1] == "o-o") {
+		    os << "cc\t";
+		} else if (edge[1] == "o->") {
+		    os << "ca\t";
+		} else if (edge[1] == "-->") {
+		    os << "dir\t";
+		} else if (edge[1] == "<->") {
+		    os << "bidir\t";
+		} else {
+		    throw std::invalid_argument("ERROR: invalid edge type " +
+						edge[1] + " in edge list.");
+		}
+		
+		os << edge[2] << "\n";
+	    } else {
+		throw std::invalid_argument("ERROR: invalid edge not of the form var1 edgetype var2 in edge list.");
+	    }
+	}
 
-    os << "\n";
+    } else {
+    
+	os << "Graph Nodes:\n";
 
-    // Algorithm
-    std::vector<std::string> algorithms = list["algorithm"];
-    os << "Algorithm: " << algorithms[0] << "\n";
+	// Nodes
+	std::vector<std::string> nodeNames = list["nodes"];
+	int count = 0;
+	for (std::string nodeName : nodeNames) {
+	    count++;
+	    os << nodeName;
+	    if (count < nodeNames.size()) {
+		os << ",";
+	    }
+	}
+	
+	os << "\n\n";
 
-    // Type
-    std::vector<std::string> t = list["type"];
-    os << "Type: " << t[0];
+	// Edges
+	os << "Graph Edges:\n";
+	std::vector<std::string> edgeStrings = list["edges"];
+	count = 1;
+	for (std::string edgeString : edgeStrings) {
+	    os << count << ". " << edgeString << "\n";
+	    count++;
+	}
 
-    os << "\n\n";
+	os << "\n";
+	
+	// Algorithm
+	std::vector<std::string> algorithms = list["algorithm"];
+	os << "Algorithm: " << algorithms[0] << "\n";
 
-    //Triples
-    std::vector<std::string> tripleStrings = list["ambiguous_triples"];
-    if (tripleStrings.size() > 0) {
-        os << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
+	// Lambda
+	Rcpp::Nullable<Rcpp::NumericVector> lambda = list["lambda"];
+	if (!lambda.isNull()) {
+	    os << "Lambda: " << Rcpp::as<Rcpp::NumericVector>(lambda) << "\n";
+	}
 
-        for (std::string tripleString : tripleStrings) {
-            os << tripleString << "\n";
-        }
+	// Alpha
+	Rcpp::Nullable<Rcpp::NumericVector> alpha = list["alpha"];
+	if (!alpha.isNull()) {
+	    os << "Alpha: " << Rcpp::as<Rcpp::NumericVector>(alpha) << "\n";
+	}
+	
+	// Type
+	std::vector<std::string> t = list["type"];
+	os << "Type: " << t[0];
+	
+	os << "\n\n";
+
+	//Triples
+	std::vector<std::string> tripleStrings = list["ambiguous_triples"];
+	if (tripleStrings.size() > 0) {
+	    os << "Ambiguous triples (i.e. list of triples for which there is ambiguous data about whether they are colliders or not):\n";
+
+	    for (std::string tripleString : tripleStrings) {
+		os << tripleString << "\n";
+	    }
+	}
     }
 }
 
@@ -1060,10 +1198,20 @@ void saveGraph(const Rcpp::List& list, const std::string& filename) {
         throw std::invalid_argument("ERROR: list is not in the form of a graph");
     }
 
-    std::ofstream outfile;
-    outfile.open(filename, std::ios::out);
+    std::string ext = filename.substr(filename.find_last_of(".") + 1);
 
-    streamGraph(list, outfile);
+    std::string fn(filename);
+
+    if (ext != "txt" && ext != "sif") {
+	Rcpp::Rcout << "  Unsupported file type detected. Saving graph as a txt file.\n";
+	fn += ".txt";
+	ext = "txt";
+    }
+    
+    std::ofstream outfile;
+    outfile.open(fn, std::ios::out);
+
+    streamGraph(list, outfile, ext);
 
     outfile.close();
 }
@@ -1090,7 +1238,8 @@ Rcpp::List loadGraph(const std::string& filename) {
         while (std::getline(f,line)) {
             if (line.size() > 1 && line.at(line.size()-1) == '\r')
                 line = line.substr(0, line.size()-1);
-            lines.push_back(line);
+	    if (line.size() > 0)
+		lines.push_back(line);
         }
     }
     catch(const std::exception& ex) {
@@ -1098,27 +1247,37 @@ Rcpp::List loadGraph(const std::string& filename) {
         throw std::invalid_argument("Error reading file: " + filename);
     }
 
-    std::vector<std::string>   nodeNames = GraphUtils::splitString(lines[1], ";");
-    if (nodeNames.size() <= 1) nodeNames = GraphUtils::splitString(lines[1], ","); // Check for comma delimiter
+    auto nodeStart = std::find(lines.begin(), lines.end(), "Graph Nodes:");
+    if (nodeStart == lines.end())
+        throw std::invalid_argument("Unable to find 'Graph Nodes:' line in " + filename);
+    int nodeStartIndex = nodeStart - lines.begin();
+    // Rcpp::Rcout << "nodeStartIndex = " << nodeStartIndex << ": " << lines[nodeStartIndex] << std::endl;
+
+    std::vector<std::string>   nodeNames = GraphUtils::splitString(lines[nodeStartIndex+1],
+								   ";");
+    if (nodeNames.size() <= 1) nodeNames = GraphUtils::splitString(lines[nodeStartIndex+1],
+								   ","); // Check for comma delimiter
     if (nodeNames.at(nodeNames.size()-1) == "") nodeNames.pop_back();
 
     std::vector<std::string> edgeStrings;
     std::vector<std::string> ambiguousTriplesStrings;
     std::string algorithm = "";
     std::string graph_type = "";
-
+    Rcpp::Nullable<Rcpp::NumericVector> lambda = R_NilValue;
+    Rcpp::Nullable<Rcpp::NumericVector> alpha = R_NilValue;
+    
     // Start the line after you read 'Graph Edges:'
-    // auto edgeStart = std::find(lines.begin(), lines.end(), "Graph Edges:");
-    // if (edgeStart == lines.end())
-    //     throw std::invalid_argument("Unable to find 'Graph Edges:' line in " + filename);
-    // int edgeStartIndex = edgeStart - lines.begin();
-    // Rcpp::Rcout << "edgeStartIndex = " << edgeStartIndex << std::endl;
+    auto edgeStart = std::find(lines.begin(), lines.end(), "Graph Edges:");
+    if (edgeStart == lines.end())
+        throw std::invalid_argument("Unable to find 'Graph Edges:' line in " + filename);
+    int edgeStartIndex = edgeStart - lines.begin();
+    // Rcpp::Rcout << "edgeStartIndex = " << edgeStartIndex << ": " << lines[edgeStartIndex] << "\n  " << lines[edgeStartIndex+1] << std::endl;
 
     // If there are edges
-    if (lines.size() > 4) {
+    if (lines.size() > 3) {
 
-        int i = 4; // TODO: Hardcoded for now
-
+        int i = edgeStartIndex+1;
+	
         // return true if the string is only whitespace
         auto isWhiteSpace = [](const std::string& _s) {
             std::string s = _s;
@@ -1134,6 +1293,28 @@ Rcpp::List loadGraph(const std::string& filename) {
                 continue;
             }
 
+	    if (edgeString.find("Lambda: ") != std::string::npos) {
+                edgeString = edgeString.substr(8);
+		std::istringstream iss(edgeString);
+		double l;
+		Rcpp::NumericVector temp;
+		while (iss >> l)
+		    temp.push_back(l);
+		    
+		lambda = wrap(Rcpp::clone(temp));
+                continue;
+            }
+
+	    if (edgeString.find("Alpha: ") != std::string::npos) {
+                edgeString = edgeString.substr(7);
+		std::istringstream iss(edgeString);
+		double a;
+		iss >> a;
+		Rcpp::NumericVector temp = {a};
+		alpha = wrap(Rcpp::clone(temp));
+                continue;
+            }
+
             if (edgeString.find("Type: ") != std::string::npos) {
                 graph_type = edgeString.substr(6);
                 continue;
@@ -1146,10 +1327,11 @@ Rcpp::List loadGraph(const std::string& filename) {
 
             if (isWhiteSpace(edgeString)) continue; // Skip empty lines
 
-            if (edgeString.find(". ") == std::string::npos)
+	    std::size_t pos = edgeString.find(". ");
+            if (pos == std::string::npos)
                 throw std::invalid_argument("Error reading graph " + filename + ": edge is not formatted correctly: " + edgeString);
 
-            edgeString = GraphUtils::splitString(edgeString, ". ")[1];
+            edgeString = edgeString.substr(pos+2, std::string::npos);
 
             // Returns true if the edge string is valid
             auto validateEdgeString = [](const std::string& edgeString) {
@@ -1195,6 +1377,8 @@ Rcpp::List loadGraph(const std::string& filename) {
         Rcpp::_["edges"] = edgeStrings,
         Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
         Rcpp::_["algorithm"] = algorithm,
+	Rcpp::_["lambda"] = lambda,
+	Rcpp::_["alpha"] = alpha,
         Rcpp::_["type"] = graph_type,
         Rcpp::_["markov.blankets"] = R_NilValue,
         Rcpp::_["stabilities"] = R_NilValue

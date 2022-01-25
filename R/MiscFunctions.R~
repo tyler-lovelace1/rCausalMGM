@@ -29,8 +29,8 @@ print.graph <- function(x) {
         cat("alpha = ", as.numeric(x[["alpha"]]), "\n")
     }
     
-    ## if (!is.null(x[["stabilities"]])) {
-    ##     cat("Average instability: ", mean( 2 * x[["stabilities"]] * (1 - x[["stabilities"]]) ), "\n")
-    ## }
+    if (!is.null(x[["stabilities"]])) {
+        cat("Average instability: ", mean( 2 * x[["stabilities"]] * (1 - x[["stabilities"]]) ), "\n")
+    }
     invisible(x)
 }

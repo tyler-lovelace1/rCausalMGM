@@ -94,6 +94,13 @@ EdgeListGraph FasStableProducerConsumer::search() {
 
     // if (verbose) Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
 
+    if (initialGraph != NULL) {
+	graph.setHyperParam("lambda", Rcpp::clone(initialGraph->getHyperParam("lambda")));
+	// graph.setHyperParam("penalty", Rcpp::clone(initialGraph.getHyperParam("penalty")));
+    }
+    graph.setHyperParam("alpha", Rcpp::NumericVector::create(test->getAlpha()));
+
+
     return graph;
 }
 

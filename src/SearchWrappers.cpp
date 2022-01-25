@@ -8,6 +8,7 @@
 #include "FciMax.hpp"
 #include "STEPS.hpp"
 #include "STARS.hpp"
+#include "Bootstrap.hpp"
 #include "Tests.hpp"
 #include "IndTestMulti.hpp"
 
@@ -26,44 +27,50 @@
 // [[Rcpp::export]]
 Rcpp::List mgm(
     const Rcpp::DataFrame &df, 
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2), 
+    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const int maxDiscrete = 5,
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+    const bool verbose = false
 ) {
     DataSet ds = DataSet(df, maxDiscrete);
 
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
+    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
 
     std::vector<double> l(lambda.begin(), lambda.end());
 
-    int lamLength;
+    int lamLength = 3;
 
-    if (ds.isMixed()) {
-	// if (ds.isCensored()) {
-	//     lamLength = 5;
-	// } else {
-	//     lamLength = 3;
-	// }
-	lamLength = 3;
-    } else {
-	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
-    }
+    // if (ds.isMixed()) {
+    // 	// if (ds.isCensored()) {
+    // 	//     lamLength = 5;
+    // 	// } else {
+    // 	//     lamLength = 3;
+    // 	// }
+    // 	lamLength = 3;
+    // } // else {
+    // // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
+    // // }
 
     if (l.size() == 1) {
 	for (int i = 1; i < lamLength; i++) {
 	    l.push_back(l[0]);
 	}
     } else if (l.size() != lamLength) {
-	throw std::runtime_error("The length of the vector of regularization parameters should be either " + std::to_string(lamLength) + " for this dataset.");
+	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
     }
 
     MGM mgm(ds, l);
     mgm.setVerbose(v);
     EdgeListGraph mgmGraph = mgm.search();
 
+    auto elapsedTime = mgm.getElapsedTime();
+
     if (v) {
-        Rcpp::Rcout.precision(2);
-        Rcpp::Rcout << "MGM Elapsed time =  " << (mgm.getElapsedTime() / 1000.0) << " s" << std::endl;
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "MGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     Rcpp::List result = mgmGraph.toList();
@@ -96,6 +103,7 @@ Rcpp::List steps(
     Rcpp::Nullable<Rcpp::NumericVector> lambda = R_NilValue, 
     const double g = 0.05,
     const int numSub = 20,
+    const int subSize = -1,
     Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(FALSE),
     Rcpp::LogicalVector computeStabs = Rcpp::LogicalVector::create(FALSE),
     const int threads = -1,
@@ -122,7 +130,12 @@ Rcpp::List steps(
         }
     }
 
-    STEPS steps(ds, l, g, numSub, loo);
+    STEPS steps;
+    if (subSize < 0)
+	steps = STEPS(ds, l, g, numSub, loo);
+    else
+	steps = STEPS(ds, l, g, numSub, subSize, loo);
+      
     if (threads > 0) steps.setThreads(threads);
     steps.setComputeStabs(cs);
     steps.setVerbose(v);
@@ -586,6 +599,121 @@ Rcpp::List stars(
     // } 
 
     // ds.deleteVariables();
+
+    return result;
+
+}
+
+
+// [[Rcpp::export]]
+Rcpp::List bootstrap(
+    const Rcpp::DataFrame& df,
+    Rcpp::CharacterVector method = Rcpp::CharacterVector::create("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim"),
+    Rcpp::CharacterVector ensembleMethod = Rcpp::CharacterVector::create("majority", "highest", "preserved"),
+    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
+    const double alpha = 0.05,
+    const double adjThresh = 0.8,
+    const double sampleFrac = 0.9,
+    const int numBoots = 20,
+    const int maxDiscrete = 5,
+    const bool fdr = true,
+    const int threads = -1,
+    const bool verbose = false
+    ) {
+
+    // Rcpp::Rcout << "running stars...\n";
+
+    std::string alg, _method, ensemble;
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+
+    _method = method[0];
+
+    ensemble = ensembleMethod[0];
+
+    Rcpp::Rcout << _method << std::endl;
+    std::transform(_method.begin(), _method.end(), _method.begin(),
+		   [](unsigned char c){ return std::tolower(c); });
+    Rcpp::Rcout << _method << std::endl;
+    _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
+    Rcpp::Rcout << _method << std::endl;
+
+    std::transform(ensemble.begin(), ensemble.end(), ensemble.begin(),
+		   [](unsigned char c){ return std::tolower(c); });
+
+    if (_method == "mgm") {
+	alg = "mgm";
+    } else if (_method == "pc" || _method == "pcs" || _method == "pcstable") {
+	alg = "pc";
+    } else if (_method == "cpc" || _method == "cpcstable") {
+	alg = "cpc";
+    } else if (_method == "pcm" || _method == "pcmax") {
+	alg = "pcm";
+    } else if (_method == "pc50") {
+	alg = "pc50";
+    }else if (_method == "fci" || _method == "fcistable") {
+	alg = "fci";
+    } else if (_method == "cfci" || _method == "cfcistable") {
+	alg = "cfci";
+    } else if (_method == "fcim" || _method == "fcimax") {
+	alg = "fcim";
+    } else if (_method == "mgmpc" || _method == "mgmpcs" || _method == "mgmpcstable") {
+	alg = "mgmpc";
+    } else if (_method == "mgmcpc" || _method == "mgmcpcstable") {
+	alg = "mgmcpc";
+    } else if (_method == "mgmpcm" || _method == "mgmpcmax") {
+	alg = "mgmpcm";
+    } else if (_method == "mgmpc50") {
+	alg = "mgmpc50";
+    }else if (_method == "mgmfci" || _method == "mgmfcistable") {
+	alg = "mgmfci";
+    } else if (_method == "mgmcfci" || _method == "mgmcfcistable") {
+	alg = "mgmcfci";
+    } else if (_method == "mgmfcim" || _method == "mgmfcimax") {
+	alg = "mgmfcim";
+    }else {
+	throw std::invalid_argument("Invalid algorithm: " + _method
+				    + "\n   Algorithm must be in the list: "
+				    + "{ mgm, pc, cpc, pcm, pc50, fci, cfci, fcim, "
+				    + "mgm-pc, mgm-cpc, mgm-pcm, mgm-pc50, mgm-fci, "
+				    + "mgm-cfci, mgm-fcim }");
+    }
+
+    std::vector<double> l(lambda.begin(), lambda.end());
+
+    int lamLength = 3;
+
+    // if (ds.isMixed()) {
+    // 	// if (ds.isCensored()) {
+    // 	//     lamLength = 5;
+    // 	// } else {
+    // 	//     lamLength = 3;
+    // 	// }
+    // 	lamLength = 3;
+    // } // else {
+    // // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
+    // // }
+
+    if (l.size() == 1) {
+	for (int i = 1; i < lamLength; i++) {
+	    l.push_back(l[0]);
+	}
+    } else if (l.size() != lamLength) {
+	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+    }
+    
+    DataSet ds(df, maxDiscrete);
+
+    Bootstrap boot(ds, alg, ensemble, numBoots, adjThresh, sampleFrac);
+    if (threads > 0) boot.setThreads(threads);
+    boot.setVerbose(verbose);
+    boot.setAlpha(alpha);
+    boot.setLambda(l);
+    boot.setFdr(fdr);
+
+    Rcpp::List result = boot.runBootstrap().toList();
+
+    result["stabilities"] = boot.getStabs();
 
     return result;
 

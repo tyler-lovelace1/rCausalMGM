@@ -47,6 +47,33 @@ arma::urowvec StabilityUtils::subSampleIndices(int N, int subSize) {
     return samp;
 }
 
+
+// arma::umat StabilityUtils::subSampleWithReplacement(int sampSize, int subSize, int numSub) {
+
+//     if (subSize < 1)
+//         throw std::invalid_argument("Sample size must be > 0");
+  
+//     arma::umat sampMat(numSub, subSize);
+
+//     for(arma::uword i = 0; i < numSub; i++) {
+//         arma::urowvec curSamp(arma::floor(sampSize * arma::vec(subSize, fill::randu)));
+//         while(true) {
+//             SAMP:
+//             for (arma::uword j = 0; j < i; j++) {
+//                 if (arma::all(curSamp == sampMat.row(j))) {
+// 		    curSamp = arma::floor(sampSize * arma::vec(subSize, fill::randu))
+//                     goto SAMP;
+//                 }
+//             }
+//             break;
+//         }
+//         sampMat.row(i) = curSamp;
+//     }
+    
+//     return sampMat;
+// }
+
+
 //Get subsample size given sample size
 //Uses the heuristic given in Learning Mixed Graphical Models with Separate Sparsity Parameters and Stability-Based Model Selection
 int StabilityUtils::getSubSize(int sampleSize) {
@@ -272,8 +299,8 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
         }
         attempts--;
         if (attempts == 0) {
-            Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
-            throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least one category of every discrete variable");
+            // Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+            throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least two samples for each category of every discrete variable. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
         }
     }
     // Rcpp::Rcout << std::endl;

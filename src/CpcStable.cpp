@@ -243,9 +243,19 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
 
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "CpcStable: alpha = " << independenceTest->getAlpha();
+    if (initialGraph==NULL) {
+	alg << "CPC-Stable";
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << "CPC-Stable";
+    }
     graph.setAlgorithm(alg.str());
-    graph.setGraphType("markov equivalence class");
+    graph.setGraphType("completed partially directed acyclic graph");
+
+    // // Set algorithm and type
+    // std::ostringstream alg;
+    // alg << "CpcStable: alpha = " << independenceTest->getAlpha();
+    // graph.setAlgorithm(alg.str());
+    // graph.setGraphType("markov equivalence class");
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 

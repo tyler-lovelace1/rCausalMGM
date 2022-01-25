@@ -124,11 +124,22 @@ EdgeListGraph FciMax::search(FasStableProducerConsumer& fas, const std::vector<V
     // if (verbose) Rcpp::Rcout << "Rule 0 finished" << std::endl;
     fciorient_.doFinalOrientation(graph);
 
+    // // Set algorithm and type
+    // std::ostringstream alg;
+    // alg << "FCI-Max: alpha = " << test->getAlpha();
+    // graph.setAlgorithm(alg.str());
+    // graph.setGraphType("partial ancestral graph");
+
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "FCI-Max: alpha = " << test->getAlpha();
+    if (initialGraph==NULL) {
+	alg << "FCI-Max";
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << "FCI-Max";
+    }
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
+    
     
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 

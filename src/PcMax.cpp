@@ -91,9 +91,13 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
 
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "PC-Max: alpha = " << independenceTest->getAlpha();
+    if (initialGraph==NULL) {
+	alg << "PC-Max";
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << "PC-Max";
+    }
     graph.setAlgorithm(alg.str());
-    graph.setGraphType("markov equivalence class");
+    graph.setGraphType("completed partially directed acyclic graph");
 
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 

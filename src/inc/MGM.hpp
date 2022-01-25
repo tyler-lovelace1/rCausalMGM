@@ -35,6 +35,8 @@ private:
     std::vector<Variable*> variables;
     std::vector<Variable*> initVariables;
 
+    Variable* dummyVar = NULL;
+
     arma::vec lambda;
 
     long elapsedTime = 0;
@@ -44,7 +46,9 @@ private:
     int lsum;
     std::vector<int> lcumsum;
     int p;
+    int pDummy = 0;
     int q;
+    int qDummy = 0;
     int n;
     long timeout = -1;
 

@@ -306,19 +306,29 @@ EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Var
     MeekRules meekRules;
     meekRules.orientImplied(graph);
 
+    // // Set algorithm and type
+    // std::ostringstream alg;
+    // alg << "Pc50: alpha = " << independenceTest->getAlpha();
+    // graph.setAlgorithm(alg.str());
+    // graph.setGraphType("markov equivalence class"); 
+
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "Pc50: alpha = " << independenceTest->getAlpha();
+    if (initialGraph==NULL) {
+	alg << "PC50";
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << "PC50";
+    }
     graph.setAlgorithm(alg.str());
-    graph.setGraphType("markov equivalence class");
-
+    graph.setGraphType("completed partially directed acyclic graph");
+    
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     if (verbose) {
 	if (elapsedTime < 100*1000) {
 	    Rcpp::Rcout.precision(2);
 	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0);
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
 	}
         Rcpp::Rcout << "PC50 Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }

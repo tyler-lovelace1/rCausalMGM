@@ -88,7 +88,7 @@ public:
 
     bool checkValue(const std::string& val);
 
-    DiscreteVariable* like(const std::string& name) { return new DiscreteVariable(name); }
+    // DiscreteVariable* like(const std::string& name) { return new DiscreteVariable(name); }
 
     // friend void test_discrete(const std::string& name, const int& numCats, const std::string& val);
 

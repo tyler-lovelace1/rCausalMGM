@@ -61,6 +61,13 @@ private:
 
     std::unordered_map<std::string, Variable*> namesHash;
 
+    std::unordered_map<std::string,
+		       Rcpp::Nullable<Rcpp::NumericVector>> hyperparamHash = {
+	{"lambda", R_NilValue},
+	{"alpha", R_NilValue},
+	{"penalty", R_NilValue}
+    };
+
     // std::unordered_map<Variable*, std::unordered_set<Variable*>> ancestors;
 
     // void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> ancestors);
@@ -102,7 +109,7 @@ public:
     /**
      * Constructs a new (empty) EdgeListGraph.
      */
-    EdgeListGraph();
+    EdgeListGraph() {}
 
     /**
      * Constructs a EdgeListGraph using the nodes and edges of the given graph.
@@ -114,7 +121,22 @@ public:
      *              extracted.
      * @throws std::invalid_argument if a duplicate edge is added.
      */
-    EdgeListGraph(const EdgeListGraph& graph);
+    EdgeListGraph(const EdgeListGraph& graph) = default;
+    EdgeListGraph& operator=(const EdgeListGraph& graph) = default;
+
+    /**
+     * Constructs a EdgeListGraph using the nodes and edges of the given graph.
+     * If this cannot be accomplished successfully, an exception is thrown. Note
+     * that any graph constraints from the given graph are forgotten in the new
+     * graph.
+     *
+     * @param graph the graph from which nodes and edges are is to be
+     *              extracted.
+     * @throws std::invalid_argument if a duplicate edge is added.
+     */
+    EdgeListGraph(EdgeListGraph&& graph) = default;
+    EdgeListGraph& operator=(EdgeListGraph&& graph) = default;
+
 
     /**
      * Constructs a new graph, with no edges, using the the given variable
@@ -601,6 +623,12 @@ public:
 
     void setGraphType(std::string t) { graph_type = t; }
     std::string getGraphType() { return graph_type; }
+
+    void setHyperParam(std::string param, Rcpp::Nullable<Rcpp::NumericVector> v)
+	{ hyperparamHash[param] = v; }
+    
+    Rcpp::Nullable<Rcpp::NumericVector> getHyperParam(std::string param)
+	{ return hyperparamHash[param]; }
 
     /**
      * @return true iff the given object is a graph that is equal to this graph,

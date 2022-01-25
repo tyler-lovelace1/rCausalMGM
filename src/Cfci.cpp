@@ -128,12 +128,34 @@ EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Var
     // if (verbose) Rcpp::Rcout << "Rule 0 finished" << std::endl;
     fciorient_.doFinalOrientation(graph);
 
+    // // Set algorithm and type
+    // std::ostringstream alg;
+    // alg << "CFCI: alpha = " << test->getAlpha();
+    // graph.setAlgorithm(alg.str());
+    // graph.setGraphType("partial ancestral graph");
+    
+    // auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+
+    // if (verbose) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "CFCI Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
+
     // Set algorithm and type
     std::ostringstream alg;
-    alg << "CFCI: alpha = " << test->getAlpha();
+    if (initialGraph==NULL) {
+	alg << "CFCI-Stable";
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << "CFCI-Stable";
+    }
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
     
+
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
     if (verbose) {
@@ -142,7 +164,7 @@ EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Var
 	} else {
 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
 	}
-        Rcpp::Rcout << "CFCI Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+        Rcpp::Rcout << "CFCI-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     delete sepsetsConservative;

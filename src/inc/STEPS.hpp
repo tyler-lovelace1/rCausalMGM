@@ -27,6 +27,8 @@ private:
     int threads = -1;
 
 public:
+    STEPS() {}
+    
     STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, bool loo = false) :
         d(dat),
         leaveOneOut(loo),
@@ -34,6 +36,14 @@ public:
         gamma(g),
         lambda(lam),
         b(StabilityUtils::getSubSize(dat.getNumRows())) {}
+
+    STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, int subSize, bool loo = false) :
+        d(dat),
+        leaveOneOut(loo),
+        N(numSub),
+        gamma(g),
+        lambda(lam),
+        b(subSize) {}
 
     EdgeListGraph runStepsPar();
 

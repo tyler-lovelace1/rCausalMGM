@@ -206,7 +206,8 @@ public:
 template<> struct std::hash<Edge> {
 public:
     std::size_t operator()(const Edge& k) const {
-        return std::hash<Variable*>()(k.node1) + std::hash<Variable*>()(k.node2);
+	return std::hash<Variable*>()(k.node1) + std::hash<Variable*>()(k.node2);
+	// return std::hash<std::string>()(k.toString());
     }
 };
 

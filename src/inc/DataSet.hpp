@@ -66,7 +66,9 @@ public:
     std::vector<Variable *> copyDiscreteVariables();
 
     bool isMixed();
-
+    bool isContinuous();
+    bool isDiscrete();
+    
     void deleteVariables();
 
     int getInt(int row, int col);

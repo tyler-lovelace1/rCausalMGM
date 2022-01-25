@@ -74,7 +74,7 @@ printGraph <- function(graph) {
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::mgm(data.n100.p25)
-mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = as.logical( c(FALSE))) {
+mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, verbose = FALSE) {
     .Call(`_rCausalMGM_mgm`, df, lambda, maxDiscrete, verbose)
 }
 
@@ -94,8 +94,8 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), maxDiscrete = 5L, ve
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::steps(data.n100.p25)
-steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, leaveOneOut = as.logical( c(FALSE)), computeStabs = as.logical( c(FALSE)), threads = -1L, verbose = as.logical( c(FALSE))) {
-    .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, leaveOneOut, computeStabs, threads, verbose)
+steps <- function(df, maxDiscrete = 5L, lambda = NULL, g = 0.05, numSub = 20L, subSize = -1L, leaveOneOut = as.logical( c(FALSE)), computeStabs = as.logical( c(FALSE)), threads = -1L, verbose = as.logical( c(FALSE))) {
+    .Call(`_rCausalMGM_steps`, df, maxDiscrete, lambda, g, numSub, subSize, leaveOneOut, computeStabs, threads, verbose)
 }
 
 #' Runs the causal algorithm PC Stable on a dataset
@@ -226,5 +226,9 @@ fciMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threa
 
 stars <- function(df, method, params = NULL, initialGraph = NULL, maxDiscrete = 5L, g = 0.05, numSub = 20L, adjacency = as.logical( c(TRUE)), leaveOneOut = as.logical( c(FALSE)), threads = -1L, verbose = as.logical( c(FALSE))) {
     .Call(`_rCausalMGM_stars`, df, method, params, initialGraph, maxDiscrete, g, numSub, adjacency, leaveOneOut, threads, verbose)
+}
+
+bootstrap <- function(df, method = as.character( c("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim")), ensembleMethod = as.character( c("majority", "highest", "preserved")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, adjThresh = 0.8, sampleFrac = 0.9, numBoots = 20L, maxDiscrete = 5L, fdr = TRUE, threads = -1L, verbose = FALSE) {
+    .Call(`_rCausalMGM_bootstrap`, df, method, ensembleMethod, lambda, alpha, adjThresh, sampleFrac, numBoots, maxDiscrete, fdr, threads, verbose)
 }
 

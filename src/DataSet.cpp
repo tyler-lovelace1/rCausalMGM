@@ -386,6 +386,42 @@ bool DataSet::isMixed() {
     return hasCont && hasDisc;
 }
 
+bool DataSet::isContinuous() {
+    bool hasCont = false;
+    bool hasDisc = false;
+
+    for (Variable* var : variables) {
+	if (!hasCont)
+	    hasCont = var->isContinuous();
+	
+	if (!hasDisc)
+	    hasDisc = var->isDiscrete();
+	
+	if (hasCont && hasDisc)
+	    break;
+    }
+    
+    return hasCont && !hasDisc;
+}
+
+bool DataSet::isDiscrete() {
+    bool hasCont = false;
+    bool hasDisc = false;
+
+    for (Variable* var : variables) {
+	if (!hasCont)
+	    hasCont = var->isContinuous();
+	
+	if (!hasDisc)
+	    hasDisc = var->isDiscrete();
+	
+	if (hasCont && hasDisc)
+	    break;
+    }
+    
+    return !hasCont && hasDisc;
+}
+
 
 int DataSet::getInt(int row, int col) {
 

@@ -22,33 +22,44 @@ enum DataType { CONTINUOUS, DISCRETE };
 class Variable {
     
 protected:
-  std::string name = "??";
-  DataType type;
+    std::string name = "??";
+    DataType type;
 
 public:
-  Variable() {}
+    Variable() {}
     
-  virtual ~Variable() {}
+    virtual ~Variable() {}
   
-  void setName(const std::string& name) { this->name = name; }
+    void setName(const std::string& name) { this->name = name; }
   
-  std::string getName() { return name; }
+    std::string getName() { return name; }
   
-  DataType getType() { return type; }
+    DataType getType() { return type; }
 
-  bool isContinuous() { return type==CONTINUOUS; }
+    bool isContinuous() { return type==CONTINUOUS; }
 
-  bool isDiscrete() { return type==DISCRETE; }
+    bool isDiscrete() { return type==DISCRETE; }
   
-  // template <typename T>
-  // T getMissingValueMarker();
+    // template <typename T>
+    // T getMissingValueMarker();
   
-  virtual bool isMissingValue(const std::string& val) = 0;
+    virtual bool isMissingValue(const std::string& val) = 0;
   
-  virtual bool checkValue(const std::string& val) = 0;
+    virtual bool checkValue(const std::string& val) = 0;
   
-  virtual Variable* like(const std::string& name) = 0;
+    // virtual Variable* like(const std::string& name) = 0;
+
+    // friend struct std::hash<Variable*>;
     
 };
+
+// template<> struct std::hash<Variable*> {
+// public:
+//     std::size_t operator()(Variable* k) const {
+// 	// return std::hash<Variable*>()(k.node1) + std::hash<Variable*>()(k.node2);
+// 	return std::hash<std::string>()(k->Variable::getName());
+//     }
+// };
+
 
 #endif /* VARIABLE_HPP_ */

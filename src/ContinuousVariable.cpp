@@ -1,12 +1,12 @@
 #include "ContinuousVariable.hpp"
 
 bool ContinuousVariable::checkValue(const std::string& val) {
-  try {
-    double value = stod(val);
-  } catch (std::exception& e) {
-    return false;
-  }
-  return true;
+    try {
+	double value = stod(val);
+    } catch (std::exception& e) {
+	return false;
+    }
+    return true;
 }
 
 
