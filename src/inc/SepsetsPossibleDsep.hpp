@@ -4,7 +4,6 @@
 #include "SepsetProducer.hpp"
 #include "EdgeListGraph.hpp"
 #include "IndependenceTest.hpp"
-#include "Variable.hpp"
 #include "ChoiceGenerator.hpp"
 #include "GraphUtils.hpp"
 #include <vector>
@@ -20,14 +19,14 @@ private:
     int depth = -1;
     bool verbose = false;
 
-    std::vector<Variable*> getCondSet(Variable* node1, Variable* node2, int maxPathLength);
+    std::vector<Node> getCondSet(const Node& node1, const Node& node2, int maxPathLength);
 
-    std::unordered_set<Variable*> getPossibleDsep(Variable* x, Variable* y, int maxPathLength);
+    std::unordered_set<Node> getPossibleDsep(const Node& x, const Node& y, int maxPathLength);
 
     /**
      * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
      */
-    std::vector<Variable*> possibleParents(Variable* x, std::vector<Variable*> nodes
+    std::vector<Node> possibleParents(const Node& x, std::vector<Node> nodes
                                             /*IKnowledge knowledge*/);
 
     // Is dependent on the implementation of background knowledge
@@ -36,25 +35,30 @@ private:
     }
 
 public:
-    SepsetsPossibleDsep(EdgeListGraph& graph, IndependenceTest *test, /*IKnowledge knowledge,*/
-                                 int depth, int maxPathLength);
+    SepsetsPossibleDsep(EdgeListGraph& graph,
+			IndependenceTest *test,
+			/*IKnowledge knowledge,*/
+			int depth,
+			int maxPathLength);
+
+    ~SepsetsPossibleDsep() {}
 
     /**
      * Pick out the sepset from among adj(i) or adj(k) with the highest p value.
      */
-    std::vector<Variable*> getSepset(Variable* i, Variable* k);
+    std::vector<Node> getSepset(const Node& i, const Node& k);
 
-    bool isCollider(Variable* i, Variable* j, Variable* k);
+    bool isCollider(const Node& i, const Node& j, const Node& k);
 
-    bool isNoncollider(Variable* i, Variable* j, Variable* k);
+    bool isNoncollider(const Node& i, const Node& j, const Node& k);
 
-    bool isIndependent(Variable* a, Variable* b, std::vector<Variable*> c) { return test->isIndependent(a, b, c); }
+    bool isIndependent(const Node& a, const Node& b, std::vector<Node>& c) { return test->isIndependent(a, b, c); }
 
     double getPValue() { return test->getPValue(); }
 
     double getScore() { return -(test->getPValue() - test->getAlpha()); }
 
-    std::vector<Variable*> getVariables() { return test->getVariables(); }
+    std::vector<Node> getVariables() { return test->getVariables(); }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
 

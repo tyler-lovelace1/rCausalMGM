@@ -2,7 +2,7 @@
 #define SEPSETPRODUCER_HPP_
 
 
-#include "Variable.hpp"
+#include "Node.hpp"
 #include "EdgeListGraph.hpp"
 #include "IndependenceTest.hpp"
 #include <vector>
@@ -25,21 +25,23 @@ public:
 
     SepsetProducer(EdgeListGraph& _graph, IndependenceTest* _test) : graph(_graph), test(_test) {}
 
+    // virtual ~SepsetProducer() {}
+
     virtual void fillMap() = 0;
 
-    virtual std::vector<Variable*>  getSepset(Variable* a, Variable* b) = 0;
+    virtual std::vector<Node>  getSepset(const Node& a, const Node& b) = 0;
 
-    virtual bool isCollider(Variable* i, Variable* j, Variable* k) = 0;
+    virtual bool isCollider(const Node& i, const Node& j, const Node& k) = 0;
 
-    virtual bool isNoncollider(Variable* i, Variable* j, Variable* k) = 0;
+    virtual bool isNoncollider(const Node& i, const Node& j, const Node& k) = 0;
 
-    virtual bool isIndependent(Variable* a, Variable* b, std::vector<Variable*>  c) = 0;
+    virtual bool isIndependent(const Node& a, const Node& b, std::vector<Node>& c) = 0;
 
     virtual double getPValue() = 0;
 
     virtual double getScore() = 0;
 
-    virtual std::vector<Variable*> getVariables() = 0;
+    virtual std::vector<Node> getVariables() = 0;
 
     virtual void setVerbose(bool verbose) = 0;
 

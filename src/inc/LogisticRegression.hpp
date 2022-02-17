@@ -3,7 +3,7 @@
 
 #include "armaLapack.hpp"
 #include "DataSet.hpp"
-#include "Variable.hpp"
+#include "Node.hpp"
 #include "LogisticRegressionResult.hpp"
 
 class LogisticRegression
@@ -15,20 +15,29 @@ class LogisticRegression
     arma::mat dataCols;
     arma::uvec rows;
 
+    bool binary(const Node& x) { return x.getNumCategories()==2; }
+
   public:
     LogisticRegression() {}
     LogisticRegression(DataSet& data);
-    LogisticRegression(LogisticRegression& lr);
-    LogisticRegression(LogisticRegression&& lr);
+    LogisticRegression(const LogisticRegression& lr) = default;
+    LogisticRegression(LogisticRegression&& lr) = default;
 
-    LogisticRegression& operator=(LogisticRegression& lr);
-    LogisticRegression& operator=(LogisticRegression&& lr);
+    LogisticRegression& operator=(const LogisticRegression& lr) = default;
+    LogisticRegression& operator=(LogisticRegression&& lr) = default;
 
-    LogisticRegressionResult regress(DiscreteVariable* x, std::vector<Variable*>& regressors); // double regressors[][]
+    ~LogisticRegression() = default;
 
-  LogisticRegressionResult regress(DiscreteVariable* x, std::vector<Variable*>& regressors, arma::uvec _rows); // double regressors[][]
+    LogisticRegressionResult regress(const Node& x, std::vector<Node>& regressors); // double regressors[][]
 
-    LogisticRegressionResult regress(arma::uvec& target, std::string targetName, arma::mat& regressors, std::vector<std::string>& regressorNames); //double regressors[][]
+    LogisticRegressionResult regress(const Node& x,
+				     std::vector<Node>& regressors,
+				     arma::uvec _rows); // double regressors[][]
+
+    LogisticRegressionResult regress(arma::uvec& target,
+				     std::string targetName,
+				     arma::mat& regressors,
+				     std::vector<std::string>& regressorNames); //double regressors[][]
 
     double getAlpha() { return this->alpha; }
 

@@ -91,16 +91,16 @@ arma::mat StabilityUtils::skeletonToMatrix(EdgeListGraph& graph, DataSet& d) {
     arma::mat matrix(n, n, arma::fill::zeros);
 
     // map nodes in order of appearance
-    std::unordered_map<Variable*, int> map;
-    for (Variable* node : graph.getNodes()) {
+    std::unordered_map<Node, int> map;
+    for (Node node : graph.getNodes()) {
         map[node] = d.getColumn(node);
     }
 
     // mark edges
     for (Edge edge : graph.getEdges()) {
         // if directed find which is parent/child
-        Variable* node1 = edge.getNode1();
-        Variable* node2 = edge.getNode2();
+        Node node1 = edge.getNode1();
+        Node node2 = edge.getNode2();
 
         matrix(map[node1], map[node2]) = 1.0;
         matrix(map[node2], map[node1]) = 1.0;
@@ -123,8 +123,8 @@ arma::cube StabilityUtils::graphToCube(EdgeListGraph& graph, DataSet& d) {
     arma::cube cube(n, n, m, arma::fill::zeros);
 
     // map nodes in order of appearance
-    std::unordered_map<Variable*, int> map;
-    for (Variable* node : graph.getNodes()) {
+    std::unordered_map<Node, int> map;
+    for (Node node : graph.getNodes()) {
         map[node] = d.getColumn(node);
     }
 
@@ -133,8 +133,8 @@ arma::cube StabilityUtils::graphToCube(EdgeListGraph& graph, DataSet& d) {
 	// mark edges
 	for (Edge edge : graph.getEdges()) {
 	    // if directed find which is parent/child
-	    Variable* node1 = edge.getNode1();
-	    Variable* node2 = edge.getNode2();
+	    Node node1 = edge.getNode1();
+	    Node node2 = edge.getNode2();
 
 	    int i = (map[node1] < map[node2]) ? map[node1] : map[node2];
 	    int j = (map[node1] > map[node2]) ? map[node1] : map[node2];
@@ -147,8 +147,8 @@ arma::cube StabilityUtils::graphToCube(EdgeListGraph& graph, DataSet& d) {
 	// mark edges
 	for (Edge edge : graph.getEdges()) {
 	    // if directed find which is parent/child
-	    Variable* node1 = edge.getNode1();
-	    Variable* node2 = edge.getNode2();
+	    Node node1 = edge.getNode1();
+	    Node node2 = edge.getNode2();
 	    int i, j, k;
 
 	    if (edge.getEndpoint1() == ENDPOINT_TAIL
@@ -182,8 +182,8 @@ arma::cube StabilityUtils::graphToCube(EdgeListGraph& graph, DataSet& d) {
 	// mark edges
 	for (Edge edge : graph.getEdges()) {
 	    // if directed find which is parent/child
-	    Variable* node1 = edge.getNode1();
-	    Variable* node2 = edge.getNode2();
+	    Node node1 = edge.getNode1();
+	    Node node2 = edge.getNode2();
 	    int i, j, k;
 
 	    if (edge.getEndpoint1() == ENDPOINT_TAIL
@@ -230,13 +230,13 @@ arma::cube StabilityUtils::graphToCube(EdgeListGraph& graph, DataSet& d) {
 int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
     arma::mat t = d.getData();
     for (arma::uword i = 0; i < d.getNumColumns(); i++) {
-        if (d.getVariable(i)->isContinuous()) {
+        if (d.getVariable(i).isContinuous()) {
             arma::vec curr = standardizeData(t.col(i));
 
             double var = arma::var(curr);
 
             if (var <= 0.0001) {
-		Rcpp::Rcout << "   " << d.getVariable(i)->getName() << ":  " << var << std::endl;
+		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  " << var << std::endl;
                 return i;
             }
 
@@ -257,7 +257,7 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
 
             for (std::pair<int, int> element : cats) {
                 if (element.second < 2) {
-		    Rcpp::Rcout << "    " << d.getVariable(i)->getName() << ":  {";
+		    Rcpp::Rcout << "    " << d.getVariable(i).getName() << ":  {";
 		    for (std::pair<int, int> item : cats) {
 			Rcpp::Rcout << item.first << " : " << item.second << ", ";
 		    }
@@ -365,6 +365,10 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
             int sample = taskQueue.pop();
 
             if (sample < 0) break; // Poison pill
+
+	    if (RcppThread::isInterrupted()) {
+	      break;
+	    }
 
             DataSet dataSubSamp(data, subs.row(sample));
             MGM mgm(dataSubSamp, lambda);
@@ -589,147 +593,147 @@ double StabilityUtils::stabilitySearchStars(DataSet& data,
     else
 	thetaCube = arma::cube(numVars, numVars, layers, arma::fill::zeros);
 
-    for (int i = 0; i < subs.n_rows; i++) {
-	DataSet dataSubSamp(data, subs.row(i));
+    // for (int i = 0; i < subs.n_rows; i++) {
+    // 	DataSet dataSubSamp(data, subs.row(i));
 	
-	if (alg == "mgm") {
+    // 	if (alg == "mgm") {
 	    
-	    MGM mgm(dataSubSamp, lambda);
-	    g = mgm.search();
+    // 	    MGM mgm(dataSubSamp, lambda);
+    // 	    g = mgm.search();
 	    
-	} else if (alg == "pc") {
+    // 	} else if (alg == "pc") {
 	    
-	    IndTestMulti itm(dataSubSamp, alpha);
+    // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-	    PcStable pcs((IndependenceTest*) &itm);
-	    if (num_threads > 0) pcs.setThreads(num_threads);
+    // 	    PcStable pcs((IndependenceTest*) &itm);
+    // 	    if (num_threads > 0) pcs.setThreads(num_threads);
 	    
-	    pcs.setVerbose(false);
+    // 	    pcs.setVerbose(false);
 
-	    if (!lambda.empty()) {
-		MGM mgm(dataSubSamp, lambda);
-		ig = mgm.search();
-		pcs.setInitialGraph(&ig);
-	    } else {
-		pcs.setInitialGraph(initialGraph);
-	    }
+    // 	    if (!lambda.empty()) {
+    // 		MGM mgm(dataSubSamp, lambda);
+    // 		ig = mgm.search();
+    // 		pcs.setInitialGraph(&ig);
+    // 	    } else {
+    // 		pcs.setInitialGraph(initialGraph);
+    // 	    }
 	    
-	    g = pcs.search();
+    // 	    g = pcs.search();
 	    
-	} else if (alg == "cpc") {
+    // 	} else if (alg == "cpc") {
 	    
-	    IndTestMulti itm(dataSubSamp, alpha);
+    // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-	    CpcStable cpc((IndependenceTest*) &itm);
-	    if (num_threads > 0) cpc.setThreads(num_threads);
+    // 	    CpcStable cpc((IndependenceTest*) &itm);
+    // 	    if (num_threads > 0) cpc.setThreads(num_threads);
 	    
-	    cpc.setVerbose(false);
+    // 	    cpc.setVerbose(false);
 
-	    if (!lambda.empty()) {
-		MGM mgm(dataSubSamp, lambda);
-		ig = mgm.search();
-		cpc.setInitialGraph(&ig);
-	    } else {
-		cpc.setInitialGraph(initialGraph);
-	    }
+    // 	    if (!lambda.empty()) {
+    // 		MGM mgm(dataSubSamp, lambda);
+    // 		ig = mgm.search();
+    // 		cpc.setInitialGraph(&ig);
+    // 	    } else {
+    // 		cpc.setInitialGraph(initialGraph);
+    // 	    }
 	    
-	    g = cpc.search();
+    // 	    g = cpc.search();
 	    
-	} else if (alg == "pcm") {
+    // 	} else if (alg == "pcm") {
 	    
-	    IndTestMulti itm(dataSubSamp, alpha);
+    // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-	    PcMax pcm((IndependenceTest*) &itm);
-	    if (num_threads > 0) pcm.setThreads(num_threads);
+    // 	    PcMax pcm((IndependenceTest*) &itm);
+    // 	    if (num_threads > 0) pcm.setThreads(num_threads);
 	    
-	    pcm.setVerbose(false);
+    // 	    pcm.setVerbose(false);
 	    
-	    if (!lambda.empty()) {
-		MGM mgm(dataSubSamp, lambda);
-		ig = mgm.search();
-		pcm.setInitialGraph(&ig);
-	    } else {
-		pcm.setInitialGraph(initialGraph);
-	    }
+    // 	    if (!lambda.empty()) {
+    // 		MGM mgm(dataSubSamp, lambda);
+    // 		ig = mgm.search();
+    // 		pcm.setInitialGraph(&ig);
+    // 	    } else {
+    // 		pcm.setInitialGraph(initialGraph);
+    // 	    }
 	    
-	    g = pcm.search();
+    // 	    g = pcm.search();
 	    
-	} else if (alg == "fci") {
+    // 	} else if (alg == "fci") {
 	    
-	    IndTestMulti itm(dataSubSamp, alpha);
+    // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-	    Fci fci((IndependenceTest*) &itm);
-	    if (num_threads > 0) fci.setThreads(num_threads);
+    // 	    Fci fci((IndependenceTest*) &itm);
+    // 	    if (num_threads > 0) fci.setThreads(num_threads);
 	    
-	    fci.setVerbose(false);
+    // 	    fci.setVerbose(false);
 	    
-	    if (!lambda.empty()) {
-		MGM mgm(dataSubSamp, lambda);
-		ig = mgm.search();
-		fci.setInitialGraph(&ig);
-	    } else {
-		fci.setInitialGraph(initialGraph);
-	    }
+    // 	    if (!lambda.empty()) {
+    // 		MGM mgm(dataSubSamp, lambda);
+    // 		ig = mgm.search();
+    // 		fci.setInitialGraph(&ig);
+    // 	    } else {
+    // 		fci.setInitialGraph(initialGraph);
+    // 	    }
 	    
-	    g = fci.search();
+    // 	    g = fci.search();
 	    
-	} else if (alg == "cfci") {
+    // 	} else if (alg == "cfci") {
 	    
-	    IndTestMulti itm(dataSubSamp, alpha);
+    // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-	    Cfci cfci((IndependenceTest*) &itm);
-	    if (num_threads > 0) cfci.setThreads(num_threads);
+    // 	    Cfci cfci((IndependenceTest*) &itm);
+    // 	    if (num_threads > 0) cfci.setThreads(num_threads);
 	    
-	    cfci.setVerbose(false);
+    // 	    cfci.setVerbose(false);
 	    
-	    if (!lambda.empty()) {
-		MGM mgm(dataSubSamp, lambda);
-		ig = mgm.search();
-		cfci.setInitialGraph(&ig);
-	    } else {
-		cfci.setInitialGraph(initialGraph);
-	    }
+    // 	    if (!lambda.empty()) {
+    // 		MGM mgm(dataSubSamp, lambda);
+    // 		ig = mgm.search();
+    // 		cfci.setInitialGraph(&ig);
+    // 	    } else {
+    // 		cfci.setInitialGraph(initialGraph);
+    // 	    }
 	    
-	    g = cfci.search();
+    // 	    g = cfci.search();
 	    
-	} else if (alg == "fcim") {
+    // 	} else if (alg == "fcim") {
 	    
-	    IndTestMulti itm(dataSubSamp, alpha);
+    // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-	    FciMax fcim((IndependenceTest*) &itm);
-	    if (num_threads > 0) fcim.setThreads(num_threads);
+    // 	    FciMax fcim((IndependenceTest*) &itm);
+    // 	    if (num_threads > 0) fcim.setThreads(num_threads);
 	    
-	    fcim.setVerbose(false);
+    // 	    fcim.setVerbose(false);
 
-	    if (!lambda.empty()) {
-		MGM mgm(dataSubSamp, lambda);
-		ig = mgm.search();
-		fcim.setInitialGraph(&ig);
-	    } else {
-		fcim.setInitialGraph(initialGraph);
-	    }
+    // 	    if (!lambda.empty()) {
+    // 		MGM mgm(dataSubSamp, lambda);
+    // 		ig = mgm.search();
+    // 		fcim.setInitialGraph(&ig);
+    // 	    } else {
+    // 		fcim.setInitialGraph(initialGraph);
+    // 	    }
 	    
-	    g = fcim.search();
+    // 	    g = fcim.search();
 	    
-	} else {
-	    throw std::invalid_argument("Unrecognized search algorithm");
-	}
+    // 	} else {
+    // 	    throw std::invalid_argument("Unrecognized search algorithm");
+    // 	}
 
-	// arma::cube curAdj = graphToCube(g, dataSubSamp);
-	if (adjacency)
-	    thetaMat += skeletonToMatrix(g, dataSubSamp);
-	else
-	    thetaCube += graphToCube(g, dataSubSamp);
-    }
+    // 	// arma::cube curAdj = graphToCube(g, dataSubSamp);
+    // 	if (adjacency)
+    // 	    thetaMat += skeletonToMatrix(g, dataSubSamp);
+    // 	else
+    // 	    thetaCube += graphToCube(g, dataSubSamp);
+    // }
     
-    if (adjacency) {
-	thetaMat = thetaMat / subs.n_rows;
-	Rcpp::Rcout << thetaMat << std::endl;
-	arma::mat destable = 2 * thetaMat % (1-thetaMat);
-	Rcpp::Rcout << destable << std::endl;
-	Rcpp::Rcout << arma::accu(destable) / 2 << " / " << numPossEdges << std::endl;
-	return (arma::accu(destable) / 2) / numPossEdges;
-    }
+    // if (adjacency) {
+    // 	thetaMat = thetaMat / subs.n_rows;
+    // 	Rcpp::Rcout << thetaMat << std::endl;
+    // 	arma::mat destable = 2 * thetaMat % (1-thetaMat);
+    // 	Rcpp::Rcout << destable << std::endl;
+    // 	Rcpp::Rcout << arma::accu(destable) / 2 << " / " << numPossEdges << std::endl;
+    // 	return (arma::accu(destable) / 2) / numPossEdges;
+    // }
     
     thetaCube = thetaCube / subs.n_rows;
     arma::cube destable = 2 * thetaCube % (1-thetaCube);

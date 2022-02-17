@@ -3,15 +3,15 @@
 #include "GraphUtils.hpp"
 #include "BlockingQueue.hpp"
 
-bool Pc50::isCollider(Triple t) {
+bool Pc50::isCollider(Triple& t) {
     return score[t] > 0.5;
 }
 
-bool Pc50::isNonCollider(Triple t) {
+bool Pc50::isNonCollider(Triple& t) {
     return score[t] <= 0.5;
 }
 
-void Pc50::orientCollider(Variable* a, Variable* b, Variable* c) {
+void Pc50::orientCollider(const Node& a, const Node& b, const Node& c) {
     if (wouldCreateBadCollider(a, b)) return;
     if (wouldCreateBadCollider(c, b)) return;
     if (graph.getEdges(a, b).size() > 1) return;
@@ -23,11 +23,11 @@ void Pc50::orientCollider(Variable* a, Variable* b, Variable* c) {
     // Rcpp::Rcout << "ORIENTED SUCCESSFULLY" << std::endl;
 }
 
-bool Pc50::wouldCreateBadCollider(Variable* x, Variable* y) {
-    std::unordered_set<Variable*> empty = {};
-    std::unordered_set<Variable*> ySet = {y};
+bool Pc50::wouldCreateBadCollider(const Node& x, const Node& y) {
+    std::unordered_set<Node> empty = {};
+    std::unordered_set<Node> ySet = {y};
 
-    for (Variable* z : graph.getAdjacentNodes(y)) {
+    for (const Node& z : graph.getAdjacentNodes(y)) {
         if (x == z) continue;
 
         // if (!graph.isAdjacentTo(x, z) &&
@@ -54,30 +54,30 @@ void Pc50::orientUnshieldedTriples() {
     colliders.clear();
 
     auto producer = [&]() {
-        std::vector<Variable*> nodes = graph.getNodes();
+        std::vector<Node> nodes = graph.getNodes();
 
-        for (Variable* y : nodes) {
-            std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(y);
+        for (const Node& y : nodes) {
+            std::vector<Node> adjacentNodes = graph.getAdjacentNodes(y);
 
             if (adjacentNodes.size() < 2)
                 continue;
 
 	    std::sort(adjacentNodes.begin(),
 		      adjacentNodes.end(),
-		      [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
+		      [] (const Node& a, const Node& b) { return a < b; }
 		);
 	    
             ChoiceGenerator cg(adjacentNodes.size(), 2);
             std::vector<int> *combination;
             for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-                Variable* x = adjacentNodes[(*combination)[0]];
-                Variable* z = adjacentNodes[(*combination)[1]];
+                Node x = adjacentNodes[(*combination)[0]];
+                Node z = adjacentNodes[(*combination)[1]];
 
                 if (graph.isAdjacentTo(x, z))
                     continue;
 
-                std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
-                std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
+                std::vector<Node> adjx = graph.getAdjacentNodes(x);
+                std::vector<Node> adjz = graph.getAdjacentNodes(z);
 
 		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
 
@@ -87,7 +87,7 @@ void Pc50::orientUnshieldedTriples() {
 
                         std::vector<int> *choice;
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
-                            std::vector<Variable*> v = GraphUtils::asList(*choice, adjx);
+                            std::vector<Node> v = GraphUtils::asList(*choice, adjx);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
                         }
                     }
@@ -97,7 +97,7 @@ void Pc50::orientUnshieldedTriples() {
 
                         std::vector<int> *choice;
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
-                            std::vector<Variable*> v = GraphUtils::asList(*choice, adjz);
+                            std::vector<Node> v = GraphUtils::asList(*choice, adjz);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
                         }
                     }
@@ -111,7 +111,7 @@ void Pc50::orientUnshieldedTriples() {
 
         //Poison Pill
         for (int i = 0; i < parallelism; i++) {
-            taskQueue.push(ColliderTask(Triple(NULL, NULL, NULL), {}));
+            taskQueue.push(ColliderTask());
         }
     };
 
@@ -119,10 +119,10 @@ void Pc50::orientUnshieldedTriples() {
         while(true) {
             ColliderTask ct = taskQueue.pop();
             Triple t = ct.t;
-            std::vector<Variable*> sepset = ct.sepset;
+            std::vector<Node> sepset = ct.sepset;
 
             // Poison pill
-            if (t.x == NULL && t.y == NULL && t.z == NULL) {
+            if (t.x.isNull() && t.y.isNull() && t.z.isNull()) {
                 return;
             }
 
@@ -204,9 +204,9 @@ void Pc50::orientUnshieldedTriples() {
 	      });
 
     for (Triple triple : colliderList) {
-        Variable* a = triple.getX();
-        Variable* b = triple.getY();
-        Variable* c = triple.getZ();
+        Node a = triple.getX();
+        Node b = triple.getY();
+        Node c = triple.getZ();
 
         if (!(graph.getEndpoint(b, a) == ENDPOINT_ARROW
 	      || graph.getEndpoint(b, c) == ENDPOINT_ARROW)) {
@@ -269,12 +269,12 @@ EdgeListGraph Pc50::search() {
     return search(independenceTest->getVariables());
 }
 
-EdgeListGraph Pc50::search(const std::vector<Variable*>& nodes) {
+EdgeListGraph Pc50::search(const std::vector<Node>& nodes) {
     FasStableProducerConsumer fas(initialGraph, independenceTest, parallelism);
     return search(fas, nodes);
 }
 
-EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
+EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes) {
     if (verbose) Rcpp::Rcout << "Starting PC50 algorithm..." << std::endl;
 
     // allTriples = {};
@@ -284,22 +284,23 @@ EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Var
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    std::vector<Variable*> allNodes = independenceTest->getVariables();
+    std::vector<Node> allNodes = independenceTest->getVariables();
 
-    for (Variable* node : nodes) {
+    for (const Node& node : nodes) {
         if (std::find(allNodes.begin(), allNodes.end(), node) == allNodes.end())
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
 
     fas.setDepth(depth);
     fas.setVerbose(verbose);
+    fas.setFDR(fdr);
 
     // Note that we are ignoring the sepset map returned by this method
     // on purpose; it is not used in this search.
     graph = fas.search();
     sepsets = fas.getSepsets();
 
-    if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Orienting edges..." << std::endl;
 
     orientUnshieldedTriples();
 

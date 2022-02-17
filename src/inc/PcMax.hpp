@@ -3,8 +3,9 @@
 
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
-#include "Variable.hpp"
-#include "FasStable.hpp"
+#include "Node.hpp"
+// #include "Variable.hpp"
+// #include "FasStable.hpp"
 #include "FasStableProducerConsumer.hpp"
 #include "OrientCollidersMaxP.hpp"
 #include "MeekRules.hpp"
@@ -59,7 +60,7 @@ private:
 
     bool verbose = false;
 
-    bool fdr = true;
+    bool fdr = false;
 
     /**
      * The number of consumer threads to create for multi-threaded steps. -1 to set automatically
@@ -106,7 +107,7 @@ public:
 
     std::unordered_set<Edge> getNonadjacencies();
 
-    std::vector<Variable*> getNodes() { return graph.getNodes(); }
+    std::vector<Node> getNodes() { return graph.getNodes(); }
 
     void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
@@ -129,7 +130,7 @@ public:
      */
     EdgeListGraph search();
 
-    EdgeListGraph search(const std::vector<Variable*>& nodes);
+    EdgeListGraph search(const std::vector<Node>& nodes);
 
 };
 

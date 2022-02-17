@@ -30,19 +30,27 @@ class SepsetProducerConservative : public SepsetProducer {
     /**
      * Represents testing if a and c are independent
      * b is used to determine the corresponding Triple
-     */ 
+     */
     struct IndependenceTask {
-        Variable* a;
-        Variable* b;
-        Variable* c;
-        std::vector<Variable*> s;
+        Node a;
+        Node b;
+        Node c;
+        std::vector<Node> s;
 	IndependenceTask() {}
-        IndependenceTask(Variable* _a, Variable* _b, Variable* _c, const std::vector<Variable*>& _s) :
+        IndependenceTask(const Node& _a,
+			 const Node& _b,
+			 const Node& _c,
+			 const std::vector<Node>& _s) :
 	    a(_a),
 	    b(_b),
 	    c(_c),
 	    s(_s) {} 
-        IndependenceTask(const IndependenceTask& it) { a = it.a; b = it.b; c = it.c; s = it.s; }
+	
+	IndependenceTask(const IndependenceTask& it) = default;
+	IndependenceTask& operator=(const IndependenceTask& other) = default;
+	IndependenceTask(IndependenceTask&& it) = default;
+	IndependenceTask& operator=(IndependenceTask&& other) = default;
+	~IndependenceTask() = default;
     };
 
     void producer();
@@ -74,21 +82,23 @@ public:
         }
     }
 
-    std::vector<Variable*>  getSepset(Variable* a, Variable* b);
+    ~SepsetProducerConservative() {}
+
+    std::vector<Node>  getSepset(const Node& a, const Node& b);
 
     void fillMap();
 
-    bool isCollider(Variable* i, Variable* j, Variable* k);
+    bool isCollider(const Node& i, const Node& j, const Node& k);
 
-    bool isNoncollider(Variable* i, Variable* j, Variable* k);
+    bool isNoncollider(const Node& i, const Node& j, const Node& k);
 
-    bool isIndependent(Variable* a, Variable* b, std::vector<Variable*>  c) { return test->isIndependent(a,b,c); }
+    bool isIndependent(const Node& a, const Node& b, std::vector<Node>& c) { return test->isIndependent(a,b,c); }
 
     double getPValue() { return test->getPValue(); }
 
     double getScore() { return -(test->getPValue() - test->getAlpha()); }
 
-    std::vector<Variable*> getVariables() { return test->getVariables(); }
+    std::vector<Node> getVariables() { return test->getVariables(); }
 
     std::unordered_set<Triple> getAmbiguousTriples() { return ambiguous; }
 

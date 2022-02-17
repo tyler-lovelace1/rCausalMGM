@@ -3,7 +3,7 @@
 
 #include "armaLapack.hpp"
 #include "DataSet.hpp"
-#include "Variable.hpp"
+#include "Node.hpp"
 #include "RegressionResult.hpp"
 #include <list>
 // #include <mutex>
@@ -24,7 +24,7 @@ private:
     /**
      * The variables.
      */
-    std::vector<Variable*> variables;
+    std::vector<Node> variables;
 
     /**
      * The significance level for determining which regressors are significant
@@ -45,12 +45,13 @@ public:
     //============================CONSTRUCTORS==========================//
     LinearRegression() {}
     LinearRegression(DataSet& data);
-    LinearRegression(LinearRegression& lr);
-    LinearRegression(LinearRegression&& lr);
-    // LinearRegression(arma::mat data, std::vector<Variable*>&  variables);
+    LinearRegression(const LinearRegression& lr) = default;
+    LinearRegression(LinearRegression&& lr) = default;
 
-    LinearRegression& operator=(LinearRegression& lr);
-    LinearRegression& operator=(LinearRegression&& lr);
+    LinearRegression& operator=(const LinearRegression& lr) = default;
+    LinearRegression& operator=(LinearRegression&& lr) = default;
+
+    ~LinearRegression() = default;
 
     //===========================PUBLIC METHODS========================//
 
@@ -69,7 +70,7 @@ public:
      * coefficeint, se, t, and p values, and specifying the same for the
      * constant.
      */
-    RegressionResult regress(Variable* target, std::vector<Variable*>& regressors);
+    RegressionResult regress(const Node& target, std::vector<Node>& regressors);
 
     /**
      * Regresses the target on the given regressors.
@@ -81,7 +82,9 @@ public:
      * coefficeint, se, t, and p values, and specifying the same for the
      * constant.
      */
-    RegressionResult regress(Variable *target, std::vector<Variable *>& regressors, arma::uvec& _rows);
+    RegressionResult regress(const Node& target,
+			     std::vector<Node>& regressors,
+			     arma::uvec& _rows);
 
     // static RegressionResult regress(double[] target, double[][] regressors) = 0;
 

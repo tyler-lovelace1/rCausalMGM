@@ -71,9 +71,9 @@ private:
     bool skipDiscriminatingPathRule;
 
     //===========================PRIVATE METHODS=========================//
-    std::vector<Variable*> getSepset(Variable* i, Variable* k) { return sepsets->getSepset(i, k); }
+    std::vector<Node> getSepset(const Node& i, const Node& k) { return sepsets->getSepset(i, k); }
 
-    void printWrongColliderMessage(Variable* a, Variable* b, Variable* c, std::string location, EdgeListGraph& graph);
+    void printWrongColliderMessage(const Node& a, const Node& b, const Node& c, std::string location, EdgeListGraph& graph);
 
     void spirtesFinalOrientation(EdgeListGraph& graph);
 
@@ -81,13 +81,15 @@ private:
 
      /// R1, away from collider
      // If a*->bo-*c and a, c not adjacent then a*->b->c
-    void ruleR1(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    void ruleR1(const Node& a, const Node& b, const Node& c, EdgeListGraph& graph);
 
-    bool isNoncollider(Variable* a, Variable* b, Variable* c) { return sepsets->isNoncollider(a, b, c); }
+    bool isNoncollider(const Node& a,
+		       const Node& b,
+		       const Node& c) { return sepsets->isNoncollider(a, b, c); }
 
      //if a*-oc and either a-->b*->c or a*->b-->c, then a*->c
      // This is Zhang's rule R2.
-    void ruleR2(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    void ruleR2(const Node& a, const Node& b, const Node& c, EdgeListGraph& graph);
 
     /**
      * The triangles that must be oriented this way (won't be done by another
@@ -111,27 +113,29 @@ private:
      * utilizing "reachability" concept from Geiger, Verma, and Pearl 1990. </p>
      * The body of a DDP consists of colliders that are parents of c.
      */
-    void reachablePathFind(Variable* a, Variable* b, Variable* c,
-                           std::list<Variable*> reachable, EdgeListGraph& graph);
+    void reachablePathFind(const Node& a, const Node& b, const Node& c,
+                           std::list<Node> reachable, EdgeListGraph& graph);
 
     /**
      * Orients the edges inside the definte discriminating path triangle. Takes
      * the left endpoint, and a,b,c as arguments.
      */
-    void doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    void doDdpOrientation(const Node& d, const Node& a, const Node& b, const Node& c, EdgeListGraph& graph);
 
     /**
      * Orients the edges inside the definte discriminating path triangle. Takes
      * the left endpoint, and a,b,c as arguments.
      */
-    bool doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable* c,
-                             std::unordered_map<Variable*, Variable*> previous, EdgeListGraph& graph);
+    bool doDdpOrientation(const Node& d, const Node& a, const Node& b, const Node& c,
+                             std::unordered_map<Node, Node> previous, EdgeListGraph& graph);
 
 
-    void printDdp(Variable* d, std::vector<Variable*> path, Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    void printDdp(const Node& d, std::vector<Node> path,
+		  const Node& a, const Node& b, const Node& c,
+		  EdgeListGraph& graph);
 
 
-    std::vector<Variable*> getPath(Variable* c, std::unordered_map<Variable*, Variable*> previous);
+    std::vector<Node> getPath(const Node& c, std::unordered_map<Node, Node> previous);
 
     /**
      * Orients every edge on a path as undirected (i.e. A---B).
@@ -141,7 +145,7 @@ private:
      *
      * @param path The path to orient as all tails.
      */
-    void orientTailPath(std::vector<Variable*> path, EdgeListGraph& graph);
+    void orientTailPath(std::vector<Node> path, EdgeListGraph& graph);
 
     /**
      * Gets a list of every uncovered partially directed path between two nodes
@@ -154,7 +158,9 @@ private:
      * @return A list of uncovered partially directed undirectedPaths from n1 to
      * n2.
      */
-    std::vector<std::vector<Variable*>> getUcPdPaths(Variable* n1, Variable* n2, EdgeListGraph& graph);
+    std::vector<std::vector<Node>> getUcPdPaths(const Node& n1,
+						const Node& n2,
+						EdgeListGraph& graph);
 
     /**
      * Used in getUcPdPaths(n1,n2) to perform a breadth-first search on the
@@ -169,8 +175,8 @@ private:
      * @param end The node to finish the undirectedPaths at.
      * @param ucPdPaths The getModel list of uncovered p.d. undirectedPaths.
      */
-    void getUcPdPsHelper(Variable* curr, std::vector<Variable*> soFar, Variable* end,
-                         std::vector<std::vector<Variable*>> ucPdPaths, EdgeListGraph& graph);
+    void getUcPdPsHelper(const Node& curr, std::vector<Node> soFar, const Node& end,
+                         std::vector<std::vector<Node>> ucPdPaths, EdgeListGraph& graph);
 
     /**
      * Gets a list of every uncovered circle path between two nodes in the graph
@@ -183,7 +189,9 @@ private:
      * @param n2 The ending node of the undirectedPaths.
      * @return A list of uncovered circle undirectedPaths between n1 and n2.
      */
-    std::vector<std::vector<Variable*>> getUcCirclePaths(Variable* n1, Variable* n2, EdgeListGraph& graph);
+    std::vector<std::vector<Node>> getUcCirclePaths(const Node& n1,
+						    const Node& n2,
+						    EdgeListGraph& graph);
 
     /**
      * Tries to apply Zhang's rule R8 to a pair of nodes A and C which are
@@ -197,7 +205,7 @@ private:
      * @param c The node C.
      * @return Whether or not R8 was successfully applied.
      */
-    bool ruleR8(Variable* a, Variable* c, EdgeListGraph& graph);
+    bool ruleR8(const Node& a, const Node& c, EdgeListGraph& graph);
 
     /**
      * Tries to apply Zhang's rule R9 to a pair of nodes A and C which are
@@ -212,7 +220,7 @@ private:
      * @param c The node C.
      * @return Whether or not R9 was succesfully applied.
      */
-    bool ruleR9(Variable* a, Variable* c, EdgeListGraph& graph);
+    bool ruleR9(const Node& a, const Node& c, EdgeListGraph& graph);
 
     /**
      * Tries to apply Zhang's rule R10 to a pair of nodes A and C which are
@@ -228,7 +236,7 @@ private:
      * @param c The node C.
      * @return Whether or not R10 was successfully applied.
      */
-    bool ruleR10(Variable* a, Variable* c, EdgeListGraph& graph);
+    bool ruleR10(const Node& a, const Node& c, EdgeListGraph& graph);
 
 
     /**
@@ -239,7 +247,7 @@ private:
      * @param y The possible point node.
      * @return Whether the arrowpoint is allowed.
      */
-    bool isArrowpointAllowed(Variable* x, Variable* y, EdgeListGraph& graph);
+    bool isArrowpointAllowed(const Node& x, const Node& y, EdgeListGraph& graph);
 
     //============================CONSTRUCTORS============================//
 
@@ -325,7 +333,7 @@ public:
      * utilizing "reachability" concept from Geiger, Verma, and Pearl 1990. </p>
      * The body of a DDP consists of colliders that are parents of c.
      */
-    void ddpOrient(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    void ddpOrient(const Node& a, const Node& b, const Node& c, EdgeListGraph& graph);
 
 
     /**

@@ -1,7 +1,7 @@
 #ifndef EDGE_HPP_
 #define EDGE_HPP_
 
-#include "Variable.hpp"
+#include "Node.hpp"
 
 enum Endpoint {ENDPOINT_TAIL, ENDPOINT_ARROW, ENDPOINT_CIRCLE, ENDPOINT_STAR, ENDPOINT_NULL};
 enum EdgeProperty {dd, nl, pd, pl};
@@ -10,10 +10,15 @@ class Edge {
 
 private:
 
-    Variable* node1;
-    Variable* node2;
-    Endpoint endpoint1;
-    Endpoint endpoint2;
+    Node node1;
+    Node node2;
+    Endpoint endpoint1 = ENDPOINT_NULL;
+    Endpoint endpoint2 = ENDPOINT_NULL;
+
+    // /**
+    //  * Default constructor node will serve as a null node
+    //  */
+    // static Node nullNode;
 
     //TODO - color?
 
@@ -35,33 +40,37 @@ public:
      * @param endpoint1 the endpoint at the first node
      * @param endpoint2 the endpoint at the second node
      */
-    Edge(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoint2);
+    Edge(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint endpoint2);
 
     Edge(const Edge& edge);
 
     // Used by both constructors
-    void init(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoint2);
+    void init(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint endpoint2);
 
-    Variable* getNode1() { return node1; }
-    Variable* getNode2() { return node2; }
-    Endpoint getEndpoint1() { return endpoint1; }
-    Endpoint getEndpoint2() { return endpoint2; }
+    const Node& getNode1() const { return node1; }
+    const Node& getNode2() const { return node2; }
+    Endpoint getEndpoint1() const { return endpoint1; }
+    Endpoint getEndpoint2() const { return endpoint2; }
     void setEndpoint1(Endpoint e) { endpoint1 = e; }
     void setEndpoint2(Endpoint e) { endpoint2 = e; }
+
+    // bool isNull() { return node1.isNull() || node2.isNull(); }
 
     /**
      * @return the endpoint nearest to the given node.
      * @throws std::invalid_argument if the given node is not along the
      *                                  edge.
      */
-    Endpoint getProximalEndpoint(Variable* node);
+    Endpoint getProximalEndpoint(const Node& node);
+    // Endpoint getProximalEndpoint(Node&& node);
 
     /**
      * @return the endpoint furthest from the given node.
      * @throws std::invalid_argument if the given node is not along the
      *                                  edge.
      */
-    Endpoint getDistalEndpoint(Variable* node);
+    Endpoint getDistalEndpoint(const Node& node);
+    // Endpoint getDistalEndpoint(Node&& node);
 
     /**
      * Traverses the edge in an undirected fashion--given one node along the
@@ -69,7 +78,8 @@ public:
      * 
      * Returns null if the given node is not part of the edge 
      */
-    Variable* getDistalNode(Variable* node);
+    Node getDistalNode(const Node& node);
+    // const Node& getDistalNode(Node&& node);
 
     /**
      * @return true just in case this edge is directed.
@@ -80,14 +90,14 @@ public:
      * @return true just in case the edge is pointing toward the given node--
      * that is, x --> node or x o--> node.
      */
-    bool pointsTowards(Variable* node);
+    bool pointsTowards(const Node& node);
 
     /**
      * @return the edge with endpoints reversed.
      */
     Edge reverse();
 
-    bool isNull() { return endpoint1 == ENDPOINT_NULL && endpoint2 == ENDPOINT_NULL; }
+    bool isNull() { return node1.isNull() || node2.isNull() || (endpoint1 == ENDPOINT_NULL && endpoint2 == ENDPOINT_NULL); }
 
     bool isDashed() { return dashed; }
 
@@ -97,7 +107,7 @@ public:
 
     std::string toString();
 
-    friend std::ostream& operator<<(std::ostream& os, Edge& Edge);
+    friend std::ostream& operator<<(std::ostream& os, const Edge& Edge);
     friend bool operator==(const Edge& e1, const Edge& e2);
     friend bool operator!=(const Edge& e1, const Edge& e2);
     friend bool operator> (const Edge& e1, const Edge& e2);
@@ -111,27 +121,27 @@ public:
     /**
      * Constructs a new bidirected edge from nodeA to nodeB (<->).
      */
-    static Edge bidirectedEdge(Variable* nodeA, Variable* nodeB);
+    static Edge bidirectedEdge(const Node& nodeA, const Node& nodeB);
 
     /**
      * Constructs a new directed edge from nodeA to nodeB (-->).
      */
-    static Edge directedEdge(Variable* nodeA, Variable* nodeB);
+    static Edge directedEdge(const Node& nodeA, const Node& nodeB);
 
     /**
      * Constructs a new partially oriented edge from nodeA to nodeB (o->).
      */
-    static Edge partiallyOrientedEdge(Variable* nodeA, Variable* nodeB);
+    static Edge partiallyOrientedEdge(const Node& nodeA, const Node& nodeB);
 
     /**
      * Constructs a new nondirected edge from nodeA to nodeB (o-o).
      */
-    static Edge nondirectedEdge(Variable* nodeA, Variable* nodeB);
+    static Edge nondirectedEdge(const Node& nodeA, const Node& nodeB);
 
     /**
      * Constructs a new undirected edge from nodeA to nodeB (--).
      */
-    static Edge undirectedEdge(Variable* nodeA, Variable* nodeB);
+    static Edge undirectedEdge(const Node& nodeA, const Node& nodeB);
 
     /**
      * @return true iff an edge is a bidirected edge (<->).
@@ -161,27 +171,27 @@ public:
     /**
      * @return the node opposite the given node along the given edge.
      */
-    static Variable* traverse(Variable* node, Edge& edge);
+    static Node traverse(const Node& node, Edge& edge);
 
     /**
      * For A -> B, given A, returns B; otherwise returns null.
      */
-    static Variable* traverseDirected(Variable* node, Edge& edge);
+    static Node traverseDirected(const Node& node, Edge& edge);
 
     /**
      * For A -> B, given B, returns A; otherwise returns null.
      */
-    static Variable* traverseReverseDirected(Variable* node, Edge& edge);
+    static Node traverseReverseDirected(const Node& node, Edge& edge);
 
-    static Variable* traverseReverseSemiDirected(Variable* node, Edge& edge);
+    static Node traverseReverseSemiDirected(const Node& node, Edge& edge);
 
     /**
      * For A --* B or A o-* B, given A, returns B. For A <-* B, returns null.
      */
-    static Variable* traverseSemiDirected(Variable* node, Edge& edge);
+    static Node traverseSemiDirected(const Node& node, Edge& edge);
 
     // Same as traverse()
-    // static Variable* traverseUndirected(Variable* node, Edge& edge);
+    // static const Node& traverseUndirected(const Node& node, Edge& edge);
 
     /**
      * For a directed edge, returns the node adjacent to the arrow endpoint.
@@ -189,7 +199,7 @@ public:
      * @throws std::invalid_argument if the given edge is not a directed
      *                                  edge.
      */
-    static Variable* getDirectedEdgeHead(Edge& edge);
+    static const Node& getDirectedEdgeHead(Edge& edge);
 
     /**
      * For a directed edge, returns the node adjacent to the null endpoint.
@@ -197,7 +207,7 @@ public:
      * @throws std::invalid_argument if the given edge is not a directed
      *                                  edge.
      */
-    static Variable* getDirectedEdgeTail(Edge& edge);
+    static const Node& getDirectedEdgeTail(Edge& edge);
 
     static void sortEdges(std::vector<Edge>& edges);
 
@@ -206,7 +216,9 @@ public:
 template<> struct std::hash<Edge> {
 public:
     std::size_t operator()(const Edge& k) const {
-	return std::hash<Variable*>()(k.node1) + std::hash<Variable*>()(k.node2);
+	std::size_t res = 7;
+	res += 11 * (std::hash<Node>()(k.node1) + std::hash<Node>()(k.node2));
+	return res;
 	// return std::hash<std::string>()(k.toString());
     }
 };

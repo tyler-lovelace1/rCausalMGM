@@ -9,28 +9,30 @@ class SepsetsSet : public SepsetProducer  {
 
 private:
     SepsetMap sepsets;
-    IndependenceTest *test;
+    IndependenceTest* test;
     double p;
     bool verbose = false;
 
 public:
     SepsetsSet(SepsetMap sepsets, IndependenceTest *test);
 
+    ~SepsetsSet() {}
+
     void fillMap() {}
 
-    std::vector<Variable*> getSepset(Variable* a, Variable* b) { return *sepsets.get(a, b); }
+    std::vector<Node> getSepset(const Node& a, const Node& b) { return *sepsets.get(a, b); }
 
-    bool isCollider(Variable* i, Variable* j, Variable* k);
+    bool isCollider(const Node& i, const Node& j, const Node& k);
 
-    bool isNoncollider(Variable* i, Variable* j, Variable* k);
+    bool isNoncollider(const Node& i, const Node& j, const Node& k);
 
-    bool isIndependent(Variable* a, Variable* b, std::vector<Variable*> c) { return test->isIndependent(a, b, c); }
+    bool isIndependent(const Node& a, const Node& b, std::vector<Node>& c) { return test->isIndependent(a, b, c); }
 
     double getPValue() { return test->getPValue(); }
 
     double getScore() { return -(test->getPValue() - test->getAlpha()); }
 
-    std::vector<Variable*> getVariables() { return test->getVariables(); }
+    std::vector<Node> getVariables() { return test->getVariables(); }
 
     bool isVerbose() { return verbose; }
 

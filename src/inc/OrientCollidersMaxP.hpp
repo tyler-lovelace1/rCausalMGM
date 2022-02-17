@@ -44,21 +44,21 @@ private:
 
     std::unordered_map<Triple, bool> colliders; // True if Triple is a collider, false otherwise
 
-    void testColliderMaxP(Variable* a, Variable* b, Variable* c);
+    void testColliderMaxP(const Node& a, const Node& b, const Node& c);
 
-    void testColliderHeuristic(Variable* a, Variable* b, Variable* c);
+    void testColliderHeuristic(const Node& a, const Node& b, const Node& c);
 
-    void orientCollider(Variable* a, Variable* b, Variable* c);
+    void orientCollider(const Node& a, const Node& b, const Node& c);
 
-    bool wouldCreateBadCollider(Variable* x, Variable* y);
+    bool wouldCreateBadCollider(const Node& x, const Node& y);
 
     // Finds a sepset containing the nodes in 'containing' but not the nodes in 'notContaining'
     // Returns true of that set exists, false if not
     // If the set exists, it will be placed into output
-    bool sepset(Variable* a, Variable* c, std::unordered_set<Variable*>& containing, std::unordered_set<Variable*>& notContaining, std::vector<Variable*>* output = NULL);
+    bool sepset(const Node& a, const Node& c, std::unordered_set<Node>& containing, std::unordered_set<Node>& notContaining, std::vector<Node>* output = NULL);
 
     // Returns true if there is an undirected path from x to either y or z within the given number of steps.
-    bool existsShortPath(Variable* x, Variable* z, int bound);
+    bool existsShortPath(const Node& x, const Node& z, int bound);
 
     // Concurrency
     /**
@@ -66,17 +66,24 @@ private:
      * b is used to determine the corresponding Triple
      */ 
     struct IndependenceTask {
-        Variable* a;
-        Variable* b;
-        Variable* c;
-        std::vector<Variable*> s;
+        Node a;
+        Node b;
+        Node c;
+        std::vector<Node> s;
 	IndependenceTask() {}
-        IndependenceTask(Variable* _a, Variable* _b, Variable* _c,
-			 const std::vector<Variable*>& _s) : a(_a),
-							     b(_b),
-							     c(_c),
-							     s(_s) {} 
-        IndependenceTask(const IndependenceTask& it) { a = it.a; b = it.b; c = it.c; s = it.s; }
+        IndependenceTask(const Node& _a, const Node& _b, const Node& _c,
+			 const std::vector<Node>& _s) : a(_a),
+							b(_b),
+							c(_c),
+							s(_s) {}
+	
+	IndependenceTask(const IndependenceTask& it) = default;
+	IndependenceTask& operator=(const IndependenceTask& other) = default;
+	IndependenceTask(IndependenceTask&& it) = default;
+	IndependenceTask& operator=(IndependenceTask&& other) = default;
+	~IndependenceTask() = default;
+        
+	// IndependenceTask(const IndependenceTask& it) { a = it.a; b = it.b; c = it.c; s = it.s; }
     };
 
     void producer();

@@ -130,8 +130,11 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             Z += Xold * (1 - (1.0 / theta));
         }
 
-        printIter = 1;
+        printIter = 5;
         if (iterCount % printIter == 0) {
+	    if (RcppThread::isInterrupted()) {
+		break;
+	    }
             // Rcpp::Rcout << "Iter: " << iterCount << 
             //     " |dx|/|x|: " << dx << 
             //     " normX: " << arma::norm(X, 2) << 
@@ -284,8 +287,11 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             Z += Xold * (1 - (1.0 / theta));
         }
 
-        printIter = 1;
+        printIter = 5;
         if (iterCount % printIter == 0) {
+	    if (RcppThread::isInterrupted()) {
+		break;
+	    }
             // Rcpp::Rcout << "Iter: " << iterCount << 
             //     " |dx|/|x|: " << dx << 
             //     " normX: " << arma::norm(X, 2) << 

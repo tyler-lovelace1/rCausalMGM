@@ -3,13 +3,12 @@
 
 #include "armaLapack.hpp"
 
+#include "Node.hpp"
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"
 #include "MGMParams.hpp"
 #include "ProximalGradient.hpp"
 #include "EdgeListGraph.hpp"
-#include "ContinuousVariable.hpp"
-#include "DiscreteVariable.hpp"
 #include <math.h>
 #include <chrono>
 
@@ -32,10 +31,10 @@ private:
     //Discrete Data coded as dummy variables
     arma::mat dDat;
 
-    std::vector<Variable*> variables;
-    std::vector<Variable*> initVariables;
+    std::vector<Node> variables;
+    std::vector<Node> initVariables;
 
-    Variable* dummyVar = NULL;
+    Node dummyVar;
 
     arma::vec lambda;
 
@@ -74,9 +73,14 @@ public:
     int iterCount = 0;
 
     MGM() {}
-    MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda);
+    MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
     MGM(DataSet& ds, std::vector<double>& lambda);
-    ~MGM();
+
+    MGM(MGM& other) = default;
+    MGM& operator=(MGM& other) = default;
+    MGM(MGM&& other) = default;
+    MGM& operator=(MGM&& other) = default;
+    ~MGM() = default;
 
     MGMParams getParams() {return params;}
     void setParams(MGMParams& newParams) {params = newParams;}

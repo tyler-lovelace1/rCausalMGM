@@ -1,7 +1,7 @@
 #ifndef TRIPLE_HPP_
 #define TRIPLE_HPP_
 
-#include "Variable.hpp"
+#include "Node.hpp"
 
 class Triple {
 private:
@@ -9,16 +9,21 @@ private:
 
 public:
 
-    Variable* x;
-    Variable* y;
-    Variable* z;
+    Node x;
+    Node y;
+    Node z;
 
-    Triple(Variable* x, Variable* y, Variable* z) : x(x), y(y), z(z) {}
     Triple() {}
+    Triple(const Node& x, const Node& y, const Node& z) : x(x), y(y), z(z) {}
+    Triple(const Triple& other) = default;
+    Triple& operator=(const Triple& other) = default;
+    Triple(Triple&& other) = default;
+    Triple& operator=(Triple&& other) = default;
+    ~Triple() = default;
 
-    Variable* getX() { return x; }
-    Variable* getY() { return y; }
-    Variable* getZ() { return z; }
+    Node getX() { return x; }
+    Node getY() { return y; }
+    Node getZ() { return z; }
 
     std::string toString();
 
@@ -31,8 +36,8 @@ public:
 
 template<> struct std::hash<Triple> {
     std::size_t operator()(const Triple& t) const {
-        return 17 + (19 * std::hash<Variable*>()(t.x) * std::hash<Variable*>()(t.z)) + 
-                (23 * std::hash<Variable*>()(t.y));
+        return 17 + (19 * std::hash<Node>()(t.x) * std::hash<Node>()(t.z)) + 
+                (23 * std::hash<Node>()(t.y));
     }
 };
 

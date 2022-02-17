@@ -59,10 +59,10 @@ void FciOrient::ruleR0(EdgeListGraph& graph) {
 
   // Rcpp::Rcout << "Executing rule 0:\n" << graph << std::endl;
 
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
-  for (Variable* b : nodes) {
-      std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(b);
+  for (const Node& b : nodes) {
+      std::vector<Node> adjacentNodes = graph.getAdjacentNodes(b);
 
       if (adjacentNodes.size() < 2) {
           continue;
@@ -72,8 +72,8 @@ void FciOrient::ruleR0(EdgeListGraph& graph) {
       std::vector<int>  *combination;
 
       for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-          Variable* a = adjacentNodes.at(combination->at(0));
-          Variable* c = adjacentNodes.at(combination->at(1));
+          Node a = adjacentNodes.at(combination->at(0));
+          Node c = adjacentNodes.at(combination->at(1));
 
           // Skip triples that are shielded.
           if (graph.isAdjacentTo(a, c)) {
@@ -97,16 +97,16 @@ void FciOrient::ruleR0(EdgeListGraph& graph) {
               graph.setEndpoint(c, b, ENDPOINT_ARROW);
 
               /**FOR ANALYZING CONSISTENCY**/
-              // std::vector<Variable*> temp = sepsets->getSepset(a,c);
-	      whyOrient.insert(std::pair<std::string, std::string>(a->getName() + "," + b->getName(), "0"));
-	      whyOrient.insert(std::pair<std::string, std::string>(c->getName() + "," + b->getName(), "0"));
+              // std::vector<Node> temp = sepsets->getSepset(a,c);
+	      whyOrient.insert(std::pair<std::string, std::string>(a.getName() + "," + b.getName(), "0"));
+	      whyOrient.insert(std::pair<std::string, std::string>(c.getName() + "," + b.getName(), "0"));
               // if(temp.empty()) {
               //     whyOrient.insert(std::pair<std::string, std::string>(a->getName() + "," + b->getName(), "0,null"));
               //     whyOrient.insert(std::pair<std::string, std::string>(c->getName() + "," + b->getName(), "0,null"));
               // }
               // else {
               //     std::string x = "0";
-              //     for(Variable* p:temp) {
+              //     for(Node p:temp) {
               //         x+=(","+p->getName());
               //     }
               //     whyOrient.insert(std::pair<std::string, std::string>(a->getName()+","+b->getName(),x));
@@ -134,10 +134,10 @@ void FciOrient::doFinalOrientation(EdgeListGraph& graph) {
 //Does all 3 of these rules at once instead of going through all
 // triples multiple times per iteration of doFinalOrientation.
 void FciOrient::rulesR1R2cycle(EdgeListGraph& graph) {
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
-  for (Variable* B : nodes) {
-      std::vector<Variable*> adj = graph.getAdjacentNodes(B);
+  for (const Node& B : nodes) {
+      std::vector<Node> adj = graph.getAdjacentNodes(B);
 
       if (adj.size() < 2) {
           continue;
@@ -147,8 +147,8 @@ void FciOrient::rulesR1R2cycle(EdgeListGraph& graph) {
       std::vector<int> *combination;
 
       for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-          Variable* A = adj.at(combination->at(0));
-          Variable* C = adj.at(combination->at(1));
+          Node A = adj.at(combination->at(0));
+          Node C = adj.at(combination->at(1));
 
           //choice gen doesnt do diff orders, so must switch A & C around.
           ruleR1(A, B, C, graph);
@@ -168,15 +168,15 @@ void FciOrient::rulesR1R2cycle(EdgeListGraph& graph) {
  * This is Zhang's rule R3.
  */
 void FciOrient::ruleR3(EdgeListGraph& graph) {
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
 
-  for (Variable* B : nodes) {
+  for (const Node& B : nodes) {
 
-      std::vector<Variable*> intoBArrows = graph.getNodesInTo(B, ENDPOINT_ARROW);
-      std::vector<Variable*> intoBCircles = graph.getNodesInTo(B, ENDPOINT_CIRCLE);
+      std::vector<Node> intoBArrows = graph.getNodesInTo(B, ENDPOINT_ARROW);
+      std::vector<Node> intoBCircles = graph.getNodesInTo(B, ENDPOINT_CIRCLE);
 
-      for (Variable* D : intoBCircles) {
+      for (const Node& D : intoBCircles) {
           if (intoBArrows.size() < 2) {
               continue;
           }
@@ -185,8 +185,8 @@ void FciOrient::ruleR3(EdgeListGraph& graph) {
           std::vector<int> *combination;
 
           for (combination = gen.next(); combination != NULL; combination = gen.next()) {
-              Variable* A = intoBArrows.at(combination->at(0));
-              Variable* C = intoBArrows.at(combination->at(1));
+              Node A = intoBArrows.at(combination->at(0));
+              Node C = intoBArrows.at(combination->at(1));
 
               if (graph.isAdjacentTo(A, C)) {
                   continue;
@@ -215,7 +215,7 @@ void FciOrient::ruleR3(EdgeListGraph& graph) {
 
               graph.setEndpoint(D, B, ENDPOINT_ARROW);
 
-              whyOrient.insert(std::pair<std::string, std::string>(D->getName() + "," + B->getName(),"3,"+A->getName()+","+C->getName()));
+              whyOrient.insert(std::pair<std::string, std::string>(D.getName() + "," + B.getName(),"3,"+A.getName()+","+C.getName()));
 
               changeFlag = true;
           }
@@ -243,17 +243,17 @@ void FciOrient::ruleR4B(EdgeListGraph& graph) {
       return;
   }
 
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
-  for (Variable* b : nodes) {
+  for (const Node& b : nodes) {
 
       //potential A and C candidate pairs are only those
       // that look like this:   A<-*Bo-*C
-      std::vector<Variable*> possA = graph.getNodesOutTo(b, ENDPOINT_ARROW);
-      std::vector<Variable*> possC = graph.getNodesInTo(b, ENDPOINT_CIRCLE);
+      std::vector<Node> possA = graph.getNodesOutTo(b, ENDPOINT_ARROW);
+      std::vector<Node> possC = graph.getNodesInTo(b, ENDPOINT_CIRCLE);
 
-      for (Variable* a : possA) {
-          for (Variable* c : possC) {
+      for (const Node& a : possA) {
+          for (const Node& c : possC) {
               if (!graph.isParentOf(a, c)) {
                   continue;
               }
@@ -274,28 +274,31 @@ void FciOrient::ruleR4B(EdgeListGraph& graph) {
  * utilizing "reachability" concept from Geiger, Verma, and Pearl 1990. </p>
  * The body of a DDP consists of colliders that are parents of c.
  */
-void FciOrient::ddpOrient(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
-  std::queue<Variable*> Q;
+void FciOrient::ddpOrient(const Node& a,
+			  const Node& b,
+			  const Node& c,
+			  EdgeListGraph& graph) {
+  std::queue<Node> Q;
 
-  std::unordered_set<Variable*> V;
+  std::unordered_set<Node> V;
 
-  Variable* e = NULL;
+  Node e;
   int distance = 0;
 
-  std::unordered_map<Variable*, Variable*> previous;
+  std::unordered_map<Node, Node> previous;
 
-  std::vector<Variable*> cParents = graph.getParents(c);
+  std::vector<Node> cParents = graph.getParents(c);
 
   Q.push(a);
   V.insert(a);
   V.insert(b);
-  previous.insert(std::pair<Variable*,Variable*>(a, b));
+  previous.insert(std::pair<Node,Node>(a, b));
 
   while (!Q.empty()) {
-      Variable* t = Q.front();
+      Node t = Q.front();
       Q.pop();
 
-      if (e == NULL || e == t) {
+      if (e.isNull() || e == t) {
           e = t;
           distance++;
           if (distance > 0 && (distance > (maxPathLength == -1) ? 1000 : maxPathLength)) {
@@ -303,21 +306,21 @@ void FciOrient::ddpOrient(Variable* a, Variable* b, Variable* c, EdgeListGraph& 
           }
       }
 
-      const std::vector<Variable*> nodesInTo = graph.getNodesInTo(t, ENDPOINT_ARROW);
+      const std::vector<Node> nodesInTo = graph.getNodesInTo(t, ENDPOINT_ARROW);
 
-      for (Variable* d : nodesInTo) {
+      for (const Node& d : nodesInTo) {
           if (std::count(V.begin(), V.end(), d) != 0) {
               continue;
           }
 
-          previous.insert(std::pair<Variable*, Variable*>(d, t));
-          Variable* p = previous.at(t);
+          previous.insert(std::pair<Node, Node>(d, t));
+          Node p = previous.at(t);
 
           if (!graph.isDefCollider(d, t, p)) {
               continue;
           }
 
-          previous.insert(std::pair<Variable*, Variable*>(d, t));
+          previous.insert(std::pair<Node, Node>(d, t));
 
           if (!graph.isAdjacentTo(d, c)) {
               if (doDdpOrientation(d, a, b, c, previous, graph)) {
@@ -339,26 +342,26 @@ void FciOrient::ddpOrient(Variable* a, Variable* b, Variable* c, EdgeListGraph& 
  * and orient every edge on u undirected.
  */
 void FciOrient::ruleR5(EdgeListGraph& graph) {
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
-  for (Variable* a : nodes) {
-      std::vector<Variable*> adjacents = graph.getNodesInTo(a, ENDPOINT_CIRCLE);
+  for (const Node& a : nodes) {
+      std::vector<Node> adjacents = graph.getNodesInTo(a, ENDPOINT_CIRCLE);
 
-      for (Variable* b : adjacents) {
+      for (const Node& b : adjacents) {
           if (!(graph.getEndpoint(a, b) == ENDPOINT_CIRCLE)) {
               continue;
           }
           // We know Ao-oB.
 
-          std::vector<std::vector<Variable*>> ucCirclePaths = getUcCirclePaths(a, b, graph);
+          std::vector<std::vector<Node>> ucCirclePaths = getUcCirclePaths(a, b, graph);
 
-          for (std::vector<Variable*> u : ucCirclePaths) {
+          for (const std::vector<Node>& u : ucCirclePaths) {
               if (u.size() < 3) {
                   continue;
               }
 
-              Variable* c = u.at(1);
-              Variable* d = u.at(u.size() - 2);
+              Node c = u.at(1);
+              Node d = u.at(u.size() - 2);
 
               if (graph.isAdjacentTo(a, d)) {
                   continue;
@@ -384,10 +387,10 @@ void FciOrient::ruleR5(EdgeListGraph& graph) {
  * and A,C nonadjacent, then A--oB--*C
  */
 void FciOrient::ruleR6R7(EdgeListGraph& graph) {
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
-  for (Variable* b : nodes) {
-      std::vector<Variable*> adjacents = graph.getAdjacentNodes(b);
+  for (const Node& b : nodes) {
+      std::vector<Node> adjacents = graph.getAdjacentNodes(b);
 
       if (adjacents.size() < 2) {
           continue;
@@ -397,8 +400,8 @@ void FciOrient::ruleR6R7(EdgeListGraph& graph) {
       std::vector<int>  *combination;
 
       for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-          Variable* a = adjacents.at(combination->at(0));
-          Variable* c = adjacents.at(combination->at(1));
+          Node a = adjacents.at(combination->at(0));
+          Node c = adjacents.at(combination->at(1));
 
           if (graph.isAdjacentTo(a, c)) {
               continue;
@@ -439,12 +442,12 @@ void FciOrient::ruleR6R7(EdgeListGraph& graph) {
  * Ao->C in the graph.
  */
 void FciOrient::rulesR8R9R10(EdgeListGraph& graph) {
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
-  for (Variable* c : nodes) {
-      std::vector<Variable*> intoCArrows = graph.getNodesInTo(c, ENDPOINT_ARROW);
+  for (const Node& c : nodes) {
+      std::vector<Node> intoCArrows = graph.getNodesInTo(c, ENDPOINT_ARROW);
 
-      for (Variable* a : intoCArrows) {
+      for (const Node& a : intoCArrows) {
           if (!(graph.getEndpoint(c, a) == ENDPOINT_CIRCLE)) {
               continue;
           }
@@ -476,7 +479,7 @@ void FciOrient::setMaxPathLength(int maxPathLength) {
 
 //============================PRIVATE METHODS============================//
 
-void FciOrient::printWrongColliderMessage(Variable* a, Variable* b, Variable* c, std::string location, EdgeListGraph& graph) {
+void FciOrient::printWrongColliderMessage(const Node& a, const Node& b, const Node& c, std::string location, EdgeListGraph& graph) {
   // if (&truePag != NULL && graph.isDefCollider(a, b, c) && !truePag.isDefCollider(a, b, c)) {
   if (truePag.getNumNodes() >= 1 && graph.isDefCollider(a, b, c) && !truePag.isDefCollider(a, b, c)) {
       Rcpp::Rcout << location << ": Orienting collider by mistake: " << a << "*->" << b << "<-*" << c;
@@ -543,7 +546,7 @@ void FciOrient::zhangFinalOrientation(EdgeListGraph& graph) {
 
  /// R1, away from collider
  // If a*->bo-*c and a, c not adjacent then a*->b->c
-void FciOrient::ruleR1(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
+void FciOrient::ruleR1(const Node& a, const Node& b, const Node& c, EdgeListGraph& graph) {
   if (graph.isAdjacentTo(a, c)) {
       return;
   }
@@ -555,7 +558,7 @@ void FciOrient::ruleR1(Variable* a, Variable* b, Variable* c, EdgeListGraph& gra
 
       graph.setEndpoint(c, b, ENDPOINT_TAIL);
       graph.setEndpoint(b, c, ENDPOINT_ARROW);
-      whyOrient.insert(std::pair<std::string, std::string>(b->getName() + "," + c->getName(),"1"));
+      whyOrient.insert(std::pair<std::string, std::string>(b.getName() + "," + c.getName(),"1"));
       changeFlag = true;
   }
 }
@@ -563,7 +566,7 @@ void FciOrient::ruleR1(Variable* a, Variable* b, Variable* c, EdgeListGraph& gra
 
  //if a*-oc and either a-->b*->c or a*->b-->c, then a*->c
  // This is Zhang's rule R2.
-void FciOrient::ruleR2(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
+void FciOrient::ruleR2(const Node& a, const Node& b, const Node& c, EdgeListGraph& graph) {
   if ((graph.isAdjacentTo(a, c))
           && (graph.getEndpoint(a, c) == ENDPOINT_CIRCLE)) {
 
@@ -576,7 +579,7 @@ void FciOrient::ruleR2(Variable* a, Variable* b, Variable* c, EdgeListGraph& gra
           }
 
           graph.setEndpoint(a, c, ENDPOINT_ARROW);
-          whyOrient.insert(std::pair<std::string, std::string>(a->getName() + "," + c->getName(), "2," + b->getName()));
+          whyOrient.insert(std::pair<std::string, std::string>(a.getName() + "," + c.getName(), "2," + b.getName()));
 
           changeFlag = true;
       }
@@ -598,17 +601,17 @@ void FciOrient::ruleR2(Variable* a, Variable* b, Variable* c, EdgeListGraph& gra
  * This is Zhang's rule R4, discriminating undirectedPaths.
  */
 void FciOrient::ruleR4A(EdgeListGraph& graph) {
-  std::vector<Variable*> nodes = graph.getNodes();
+  std::vector<Node> nodes = graph.getNodes();
 
-  for (Variable* b : nodes) {
+  for (const Node& b : nodes) {
 
       //potential A and C candidate pairs are only those
       // that look like this:   A<-*Bo-*C
-      std::vector<Variable*> possA = graph.getNodesOutTo(b, ENDPOINT_ARROW);
-      std::vector<Variable*> possC = graph.getNodesInTo(b, ENDPOINT_CIRCLE);
+      std::vector<Node> possA = graph.getNodesOutTo(b, ENDPOINT_ARROW);
+      std::vector<Node> possC = graph.getNodesInTo(b, ENDPOINT_CIRCLE);
 
-      for (Variable* a : possA) {
-          for (Variable* c : possC) {
+      for (const Node& a : possA) {
+          for (const Node& c : possC) {
               if (!graph.isParentOf(a, c)) {
                   continue;
               }
@@ -617,7 +620,7 @@ void FciOrient::ruleR4A(EdgeListGraph& graph) {
                   continue;
               }
 
-              std::list<Variable*> reachable;
+              std::list<Node> reachable;
               reachable.push_back(a);
           }
       }
@@ -630,8 +633,8 @@ void FciOrient::ruleR4A(EdgeListGraph& graph) {
  * utilizing "reachability" concept from Geiger, Verma, and Pearl 1990. </p>
  * The body of a DDP consists of colliders that are parents of c.
  */
-void FciOrient::reachablePathFind(Variable* a, Variable* b, Variable* c,
-                                  std::list<Variable*> reachable, EdgeListGraph& graph) {
+void FciOrient::reachablePathFind(const Node& a, const Node& b, const Node& c,
+                                  std::list<Node> reachable, EdgeListGraph& graph) {
 //        Map<Node, Node> next = new HashMap<Node, Node>();   // RFCI: stores the next node in the disciminating path
 //        // path containing the nodes in the traiangle
 //        next.put(a, b);
@@ -639,23 +642,23 @@ void FciOrient::reachablePathFind(Variable* a, Variable* b, Variable* c,
 
 
 
-  std::vector<Variable*> v = graph.getParents(c);
-  std::unordered_set<Variable*> cParents(v.begin(), v.end());
+  std::vector<Node> v = graph.getParents(c);
+  std::unordered_set<Node> cParents(v.begin(), v.end());
 
 
   // Needed to avoid cycles in failure case.
-  std::unordered_set<Variable*> visited;
+  std::unordered_set<Node> visited;
   visited.insert(b);
   visited.insert(c);
 
-  Variable* e = reachable.front();
+  Node e = reachable.front();
   int distance = 0;
 
   // We don't want to include a,b,or c on the path, so they are added to
   // the "visited" set.  b and c are added explicitly here; a will be
   // added in the first while iteration.
   while (reachable.size() > 0) {
-      Variable* x = reachable.front();
+      Node x = reachable.front();
       reachable.pop_front();
       visited.insert(x);
 
@@ -670,12 +673,12 @@ void FciOrient::reachablePathFind(Variable* a, Variable* b, Variable* c,
       }
 
       // Possible DDP path endpoints.
-      std::vector<Variable*> pathExtensions = graph.getNodesInTo(x, ENDPOINT_ARROW);
-      for (Variable* var: visited) {
+      std::vector<Node> pathExtensions = graph.getNodesInTo(x, ENDPOINT_ARROW);
+      for (const Node& var: visited) {
         std::remove(pathExtensions.begin(), pathExtensions.end(), var);
       }
 
-      for (Variable* d : pathExtensions) {
+      for (const Node& d : pathExtensions) {
           // If d is reachable and not adjacent to c, its a DDP
           // endpoint, so do DDP orientation. Otherwise, if d <-> c,
           // add d to the list of reachable nodes.
@@ -697,9 +700,9 @@ void FciOrient::reachablePathFind(Variable* a, Variable* b, Variable* c,
  * Orients the edges inside the definte discriminating path triangle. Takes
  * the left endpoint, and a,b,c as arguments.
  */
-void FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
+void FciOrient::doDdpOrientation(const Node& d, const Node& a, const Node& b, const Node& c, EdgeListGraph& graph) {
 
-  std::vector<Variable*> sepset = getSepset(d, c);
+  std::vector<Node> sepset = getSepset(d, c);
 
   if (sepset.empty()) {
       return;
@@ -728,13 +731,13 @@ void FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable
  * Orients the edges inside the definte discriminating path triangle. Takes
  * the left endpoint, and a,b,c as arguments.
  */
-bool FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable* c,
-                                 std::unordered_map<Variable*, Variable*> previous, EdgeListGraph& graph) {
+bool FciOrient::doDdpOrientation(const Node& d, const Node& a, const Node& b, const Node& c,
+                                 std::unordered_map<Node, Node> previous, EdgeListGraph& graph) {
 
   if (dag.getNumNodes() != 0) {
       if (dag.isAncestorOf(b, c)) {
           graph.setEndpoint(c, b, ENDPOINT_TAIL);
-          whyOrient.insert(std::pair<std::string, std::string>(c->getName() + "," + b->getName(),"4"));
+          whyOrient.insert(std::pair<std::string, std::string>(c.getName() + "," + b.getName(),"4"));
           changeFlag = true;
       } else {
           if (!isArrowpointAllowed(a, b, graph)) {
@@ -747,8 +750,8 @@ bool FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable
 
           graph.setEndpoint(a, b, ENDPOINT_ARROW);
           graph.setEndpoint(c, b, ENDPOINT_ARROW);
-          whyOrient.insert(std::pair<std::string, std::string>(a->getName() + "," + b->getName(),"4"));
-          whyOrient.insert(std::pair<std::string, std::string>(c->getName() + "," + b->getName(),"4"));
+          whyOrient.insert(std::pair<std::string, std::string>(a.getName() + "," + b.getName(),"4"));
+          whyOrient.insert(std::pair<std::string, std::string>(c.getName() + "," + b.getName(),"4"));
 
           changeFlag = true;
       }
@@ -760,17 +763,17 @@ bool FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable
       throw std::invalid_argument("Illegal Argument");
   }
 
-  std::vector<Variable*> path = getPath(d, previous);
+  std::vector<Node> path = getPath(d, previous);
 
   bool ind = getSepsets()->isIndependent(d, c, path);
 
-  // std::vector<Variable*> path2 (path);
+  // std::vector<Node> path2 (path);
   // path2.remove(b);
-  std::vector<Variable*> path2(path);
+  std::vector<Node> path2(path);
   if (std::find(path2.begin(), path2.end(), b) != path2.end()) {
     path2.erase(std::find(path2.begin(), path2.end(), b));
   }
-  for(Variable* var: path) {
+  for(const Node& var: path) {
     if (var != b) {
       path2.push_back(var);
     }
@@ -780,7 +783,7 @@ bool FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable
   bool ind2 = getSepsets()->isIndependent(d, c, path2);
 
   if (!ind && !ind2) {
-      std::vector<Variable*> sepset = getSepsets()->getSepset(d, c);
+      std::vector<Node> sepset = getSepsets()->getSepset(d, c);
 
       if (sepset.empty()) {
           return false;
@@ -816,10 +819,12 @@ bool FciOrient::doDdpOrientation(Variable* d, Variable* a, Variable* b, Variable
 }
 
 // graph is only used in the deleted verbose section, making it unnecessary here.
-void FciOrient::printDdp(Variable* d, std::vector<Variable*> path, Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
-  std::vector<Variable*> nodes;
+void FciOrient::printDdp(const Node& d, std::vector<Node> path,
+			 const Node& a, const Node& b, const Node& c,
+			 EdgeListGraph& graph) {
+  std::vector<Node> nodes;
   nodes.push_back(d);
-  for(Variable* var: path) {
+  for(const Node& var: path) {
     nodes.push_back(var);
   }
   nodes.push_back(a);
@@ -828,18 +833,22 @@ void FciOrient::printDdp(Variable* d, std::vector<Variable*> path, Variable* a, 
 }
 
 
-std::vector<Variable*> FciOrient::getPath(Variable* c, std::unordered_map<Variable*, Variable*> previous) {
-  std::vector<Variable*> l;
+std::vector<Node> FciOrient::getPath(const Node& c,
+				     std::unordered_map<Node, Node> previous) {
+  std::vector<Node> l;
 
-  Variable* p = c;
+  Node p = c;
 
   do {
       p = previous.at(p);
 
-      if (p != NULL) {
+      if (!p.isNull()) {
           l.push_back(p);
+	  // Rcpp::Rcout << "The loop that never ends\n";
+      } else {
+	Rcpp::Rcout << "The loop actually ends\n";
       }
-  } while (p != NULL);
+  } while (!p.isNull());
 
   return l;
 }
@@ -852,10 +861,10 @@ std::vector<Variable*> FciOrient::getPath(Variable* c, std::unordered_map<Variab
  *
  * @param path The path to orient as all tails.
  */
-void FciOrient::orientTailPath(std::vector<Variable*> path, EdgeListGraph& graph) {
+void FciOrient::orientTailPath(std::vector<Node> path, EdgeListGraph& graph) {
   for (int i = 0; i < path.size() - 1; i++) {
-      Variable* n1 = path.at(i);
-      Variable* n2 = path.at(i + 1);
+      Node n1 = path.at(i);
+      Node n2 = path.at(i + 1);
 
       graph.setEndpoint(n1, n2, ENDPOINT_TAIL);
       graph.setEndpoint(n2, n1, ENDPOINT_TAIL);
@@ -874,15 +883,15 @@ void FciOrient::orientTailPath(std::vector<Variable*> path, EdgeListGraph& graph
  * @return A list of uncovered partially directed undirectedPaths from n1 to
  * n2.
  */
-std::vector<std::vector<Variable*>> FciOrient::getUcPdPaths(Variable* n1, Variable* n2, EdgeListGraph& graph) {
-  std::vector<std::vector<Variable*>> ucPdPaths;
+std::vector<std::vector<Node>> FciOrient::getUcPdPaths(const Node& n1, const Node& n2, EdgeListGraph& graph) {
+  std::vector<std::vector<Node>> ucPdPaths;
 
-  std::vector<Variable*> soFar;
+  std::vector<Node> soFar;
 
   soFar.push_back(n1);
 
-  std::vector<Variable*> adjacencies = graph.getAdjacentNodes(n1);
-  for (Variable* curr : adjacencies) {
+  std::vector<Node> adjacencies = graph.getAdjacentNodes(n1);
+  for (const Node& curr : adjacencies) {
       getUcPdPsHelper(curr, soFar, n2, ucPdPaths, graph);
   }
 
@@ -902,19 +911,19 @@ std::vector<std::vector<Variable*>> FciOrient::getUcPdPaths(Variable* n1, Variab
  * @param end The node to finish the undirectedPaths at.
  * @param ucPdPaths The getModel list of uncovered p.d. undirectedPaths.
  */
-void FciOrient::getUcPdPsHelper(Variable* curr, std::vector<Variable*> soFar, Variable* end,
-                                std::vector<std::vector<Variable*>> ucPdPaths, EdgeListGraph& graph) {
+void FciOrient::getUcPdPsHelper(const Node& curr, std::vector<Node> soFar, const Node& end,
+                                std::vector<std::vector<Node>> ucPdPaths, EdgeListGraph& graph) {
 
   if (std::count(soFar.begin(), soFar.end(), curr) != 0) {
       return;
   }
 
-  Variable* prev = soFar.at(soFar.size() - 1);
+  Node prev = soFar.at(soFar.size() - 1);
   if (graph.getEndpoint(prev, curr) == ENDPOINT_TAIL
           || graph.getEndpoint(curr, prev) == ENDPOINT_ARROW) {
       return; // Adding curr would make soFar not p.d.
   } else if (soFar.size() >= 2) {
-      Variable* prev2 = soFar.at(soFar.size() - 2);
+      Node prev2 = soFar.at(soFar.size() - 2);
       if (graph.isAdjacentTo(prev2, curr)) {
           return; // Adding curr would make soFar not uncovered.
       }
@@ -924,12 +933,12 @@ void FciOrient::getUcPdPsHelper(Variable* curr, std::vector<Variable*> soFar, Va
 
   if (curr == end) {
       // We've reached the goal! Save soFar as a path.
-      std::vector<Variable*> soFar_copy(soFar);
+      std::vector<Node> soFar_copy(soFar);
       ucPdPaths.push_back(soFar_copy);
   } else {
       // Otherwise, try each node adjacent to the getModel one.
-      std::vector<Variable*> adjacents = graph.getAdjacentNodes(curr);
-      for (Variable* next : adjacents) {
+      std::vector<Node> adjacents = graph.getAdjacentNodes(curr);
+      for (const Node& next : adjacents) {
           getUcPdPsHelper(next, soFar, end, ucPdPaths, graph);
       }
   }
@@ -948,14 +957,14 @@ void FciOrient::getUcPdPsHelper(Variable* curr, std::vector<Variable*> soFar, Va
  * @param n2 The ending node of the undirectedPaths.
  * @return A list of uncovered circle undirectedPaths between n1 and n2.
  */
-std::vector<std::vector<Variable*>> FciOrient::getUcCirclePaths(Variable* n1, Variable* n2, EdgeListGraph& graph) {
-  std::vector<std::vector<Variable*>> ucCirclePaths;
-  std::vector<std::vector<Variable*>> ucPdPaths = getUcPdPaths(n1, n2, graph);
+std::vector<std::vector<Node>> FciOrient::getUcCirclePaths(const Node& n1, const Node& n2, EdgeListGraph& graph) {
+  std::vector<std::vector<Node>> ucCirclePaths;
+  std::vector<std::vector<Node>> ucPdPaths = getUcPdPaths(n1, n2, graph);
 
-  for (std::vector<Variable*> path : ucPdPaths) {
+  for (const std::vector<Node>& path : ucPdPaths) {
       for (int i = 0; i < path.size() - 1; i++) {
-          Variable* j = path.at(i);
-          Variable* sj = path.at(i + 1);
+          Node j = path.at(i);
+          Node sj = path.at(i + 1);
 
           if (!(graph.getEndpoint(j, sj) == ENDPOINT_CIRCLE)) {
               break;
@@ -987,11 +996,11 @@ std::vector<std::vector<Variable*>> FciOrient::getUcCirclePaths(Variable* n1, Va
  * @param c The node C.
  * @return Whether or not R8 was successfully applied.
  */
-bool FciOrient::ruleR8(Variable* a, Variable* c, EdgeListGraph& graph) {
+bool FciOrient::ruleR8(const Node& a, const Node& c, EdgeListGraph& graph) {
 
-  std::vector<Variable*> intoCArrows = graph.getNodesInTo(c, ENDPOINT_ARROW);
+  std::vector<Node> intoCArrows = graph.getNodesInTo(c, ENDPOINT_ARROW);
 
-  for (Variable* b : intoCArrows) {
+  for (const Node& b : intoCArrows) {
       // We have B*->C.
       if (!graph.isAdjacentTo(a, b)) {
           continue;
@@ -1036,11 +1045,11 @@ bool FciOrient::ruleR8(Variable* a, Variable* c, EdgeListGraph& graph) {
  * @param c The node C.
  * @return Whether or not R9 was succesfully applied.
  */
-bool FciOrient::ruleR9(Variable* a, Variable* c, EdgeListGraph& graph) {
-  std::vector<std::vector<Variable*>> ucPdPsToC = getUcPdPaths(a, c, graph);
+bool FciOrient::ruleR9(const Node& a, const Node& c, EdgeListGraph& graph) {
+  std::vector<std::vector<Node>> ucPdPsToC = getUcPdPaths(a, c, graph);
 
-  for (std::vector<Variable*> u : ucPdPsToC) {
-      Variable* b = u.at(1);
+  for (const std::vector<Node>& u : ucPdPsToC) {
+      Node b = u.at(1);
       if (graph.isAdjacentTo(b, c)) {
           continue;
       }
@@ -1072,10 +1081,10 @@ bool FciOrient::ruleR9(Variable* a, Variable* c, EdgeListGraph& graph) {
  * @param c The node C.
  * @return Whether or not R10 was successfully applied.
  */
-bool FciOrient::ruleR10(Variable* a, Variable* c, EdgeListGraph& graph) {
-  std::vector<Variable*> intoCArrows = graph.getNodesInTo(c, ENDPOINT_ARROW);
+bool FciOrient::ruleR10(const Node& a, const Node& c, EdgeListGraph& graph) {
+  std::vector<Node> intoCArrows = graph.getNodesInTo(c, ENDPOINT_ARROW);
 
-  for (Variable* b : intoCArrows) {
+  for (const Node& b : intoCArrows) {
       if (b == a) {
           continue;
       }
@@ -1085,7 +1094,7 @@ bool FciOrient::ruleR10(Variable* a, Variable* c, EdgeListGraph& graph) {
       }
       // We know Ao->C and B-->C.
 
-      for (Variable* d : intoCArrows) {
+      for (const Node& d : intoCArrows) {
           if (d == a || d == b) {
               continue;
           }
@@ -1095,12 +1104,12 @@ bool FciOrient::ruleR10(Variable* a, Variable* c, EdgeListGraph& graph) {
           }
           // We know Ao->C and B-->C<--D.
 
-          std::vector<std::vector<Variable*>> ucPdPsToB = getUcPdPaths(a, b, graph);
-          std::vector<std::vector<Variable*>> ucPdPsToD = getUcPdPaths(a, d, graph);
-          for (std::vector<Variable*> u1 : ucPdPsToB) {
-              Variable* m = u1.at(1);
-              for (std::vector<Variable*> u2 : ucPdPsToD) {
-                  Variable* n = u2.at(1);
+          std::vector<std::vector<Node>> ucPdPsToB = getUcPdPaths(a, b, graph);
+          std::vector<std::vector<Node>> ucPdPsToD = getUcPdPaths(a, d, graph);
+          for (const std::vector<Node>& u1 : ucPdPsToB) {
+              Node m = u1.at(1);
+              for (const std::vector<Node>& u2 : ucPdPsToD) {
+                  Node n = u2.at(1);
 
                   if (m == n) {
                       continue;
@@ -1132,7 +1141,7 @@ bool FciOrient::ruleR10(Variable* a, Variable* c, EdgeListGraph& graph) {
  * @param y The possible point node.
  * @return Whether the arrowpoint is allowed.
  */
-bool FciOrient::isArrowpointAllowed(Variable* x, Variable* y, EdgeListGraph& graph) {
+bool FciOrient::isArrowpointAllowed(const Node& x, const Node& y, EdgeListGraph& graph) {
   if (graph.getEndpoint(x, y) == ENDPOINT_ARROW) {
       return true;
   }

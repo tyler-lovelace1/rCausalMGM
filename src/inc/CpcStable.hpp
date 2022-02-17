@@ -5,7 +5,6 @@
 
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
-#include "Variable.hpp"
 #include "SepsetMap.hpp"
 #include "FasStableProducerConsumer.hpp"
 #include "SearchGraphUtils.hpp"
@@ -78,7 +77,7 @@ private:
 
     bool verbose = false;
 
-    bool fdr = true;
+    bool fdr = false;
 
     // First int in pair = # sepsets containing y
     // Second int in pair = # sepsets without y
@@ -86,10 +85,11 @@ private:
 
     struct ColliderTask {
         Triple t;
-        std::vector<Variable*> sepset;
-        ColliderTask(Triple _t, const std::vector<Variable*>& _sepset): t(_t), sepset(_sepset) {}
+        std::vector<Node> sepset;
+	ColliderTask() {}
+        ColliderTask(Triple _t, const std::vector<Node>& _sepset): t(_t), sepset(_sepset) {}
         ColliderTask(const ColliderTask& ct): t(ct.t), sepset(ct.sepset) {}
-        ColliderTask(): t(NULL, NULL, NULL), sepset({}) {}
+        // ColliderTask(): t(NULL, NULL, NULL), sepset({}) {}
     };
 
     /**
@@ -100,9 +100,9 @@ private:
 
     void orientUnshieldedTriples();
 
-    bool isCollider(Triple t);
+    bool isCollider(Triple& t);
 
-    bool isNonCollider(Triple t);
+    bool isNonCollider(Triple& t);
 
 public:
 
@@ -162,7 +162,7 @@ public:
      */
     void setDepth(int depth);
 
-    std::vector<Variable*> getNodes() { return graph.getNodes(); }
+    std::vector<Node> getNodes() { return graph.getNodes(); }
 
     void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
@@ -178,9 +178,9 @@ public:
      */
     EdgeListGraph search();
 
-    EdgeListGraph search(const std::vector<Variable*>& nodes);
+    EdgeListGraph search(const std::vector<Node>& nodes);
 
-    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes);
+    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes);
 
 };
 

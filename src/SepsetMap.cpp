@@ -12,8 +12,8 @@ SepsetMap::SepsetMap(SepsetMap& map) {
 /**
  * Sets the sepset for {x, y} to be z. Note that {x, y} is unordered.
  */
-void SepsetMap::set(Variable* x, Variable* y, std::vector<Variable*>& z) {
-    VariablePair pair = std::minmax(x, y);
+void SepsetMap::set(const Node& x, const Node& y, std::vector<Node>& z) {
+    NodePair pair = std::minmax(x, y);
     sepsets[pair] = z;
 }
 
@@ -22,8 +22,8 @@ void SepsetMap::set(Variable* x, Variable* y, std::vector<Variable*>& z) {
  * then z is only updated if p is greater than the previously recorded sepset.
  * Note that {x, y} is unordered.
  */
-void SepsetMap::set(Variable* x, Variable* y, std::vector<Variable*>& z, double p) {
-    VariablePair pair = std::minmax(x, y);
+void SepsetMap::set(const Node& x, const Node& y, std::vector<Node>& z, double p) {
+    NodePair pair = std::minmax(x, y);
     if (sepsets.count(pair) > 0) {
 	if (p > pValues[pair]) {
 	    sepsets[pair] = z;
@@ -38,13 +38,13 @@ void SepsetMap::set(Variable* x, Variable* y, std::vector<Variable*>& z, double 
 /** 
  * Removes the list associated with the pair
  */
-void SepsetMap::remove(Variable* x, Variable* y) {
-    VariablePair pair = std::minmax(x, y);
+void SepsetMap::remove(const Node& x, const Node& y) {
+    NodePair pair = std::minmax(x, y);
     sepsets.erase(pair);
 }
 
-void SepsetMap::setPValue(Variable* x, Variable* y, double p) {
-    VariablePair pair = std::minmax(x, y);
+void SepsetMap::setPValue(const Node& x, const Node& y, double p) {
+    NodePair pair = std::minmax(x, y);
     pValues[pair] = p;
 }
 
@@ -52,8 +52,8 @@ void SepsetMap::setPValue(Variable* x, Variable* y, double p) {
 /**
  * Retrieves the sepset previously set for {a, b}, or NULL if no such set was previously set.
  */
-std::vector<Variable*>* SepsetMap::get(Variable* a, Variable* b) {
-    VariablePair pair = std::minmax(a, b);
+std::vector<Node>* SepsetMap::get(const Node& a, const Node& b) {
+    NodePair pair = std::minmax(a, b);
 
     // if (correlations != boost::none && correlations.get().count(pair) == 0) {
     //     return &emptyList;
@@ -68,12 +68,12 @@ std::vector<Variable*>* SepsetMap::get(Variable* a, Variable* b) {
     return &sepsets[pair];
 }
 
-double SepsetMap::getPValue(Variable* x, Variable* y) {
-    VariablePair pair = std::minmax(x, y);
+double SepsetMap::getPValue(const Node& x, const Node& y) {
+    NodePair pair = std::minmax(x, y);
     return pValues[pair];
 }
 
-void SepsetMap::set(Variable* x, std::unordered_set<Variable*>& z) {
+void SepsetMap::set(const Node& x, std::unordered_set<Node>& z) {
     if (parents.count(x) != 0) {
         parents[x].insert(z.begin(), z.end());
     } else {
@@ -81,8 +81,8 @@ void SepsetMap::set(Variable* x, std::unordered_set<Variable*>& z) {
     }
 }
 
-std::unordered_set<Variable*> SepsetMap::get(Variable* x) {
-    if (parents.count(x) == 0) return std::unordered_set<Variable*>();
+std::unordered_set<Node> SepsetMap::get(const Node& x) {
+    if (parents.count(x) == 0) return std::unordered_set<Node>();
     else return parents[x];
 }
 
@@ -97,21 +97,21 @@ int SepsetMap::size() {
 std::ostream& operator<<(std::ostream& os, SepsetMap& ssm) {
     // Sepsets
     os << "Sepsets:\n";
-    for (std::pair<VariablePair, std::vector<Variable*>> element : ssm.sepsets) {
-        VariablePair varPair = element.first;
-        os << "{" << varPair.first->getName() << ", " << varPair.second->getName() << "} -> [";
-        for (Variable* var : element.second) {
-            os << var->getName() << ", ";
+    for (std::pair<NodePair, std::vector<Node>> element : ssm.sepsets) {
+        NodePair varPair = element.first;
+        os << "{" << varPair.first << ", " << varPair.second << "} -> [";
+        for (const Node& var : element.second) {
+            os << var << ", ";
         }
         os << "]\n";
     }
 
     // Parents
     os << "Parents:\n";
-    for (std::pair<Variable*, std::unordered_set<Variable*>> element : ssm.parents) {
-        os << element.first->getName() << " -> {";
-        for (Variable* par : element.second) {
-            os << par->getName() << ", ";
+    for (std::pair<Node, std::unordered_set<Node>> element : ssm.parents) {
+        os << element.first << " -> {";
+        for (const Node& par : element.second) {
+            os << par << ", ";
         }
         os << "}\n";
     }

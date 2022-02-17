@@ -3,9 +3,8 @@
 
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
-#include "Variable.hpp"
 #include "SepsetMap.hpp"
-#include "FasStable.hpp"
+// #include "FasStable.hpp"
 #include "FasStableProducerConsumer.hpp"
 #include "SearchGraphUtils.hpp"
 #include "MeekRules.hpp"
@@ -69,7 +68,7 @@ private:
 
     bool verbose = false;
 
-    bool fdr = true;
+    bool fdr = false;
 
 public:
 
@@ -121,7 +120,7 @@ public:
      */
     void setDepth(int depth);
 
-    std::vector<Variable*> getNodes() { return graph.getNodes(); }
+    std::vector<Node> getNodes() { return graph.getNodes(); }
 
     void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
@@ -149,7 +148,7 @@ public:
      * <p>
      * All of the given nodes must be in the domain of the given conditional independence test.
      */
-    EdgeListGraph search(const std::vector<Variable*>& nodes);
+    EdgeListGraph search(const std::vector<Node>& nodes);
 
 };
 

@@ -21,17 +21,23 @@ EdgeListGraph STEPS::runStepsPar() {
     int p = 0;
     int q = 0;
 
-    for (Variable* n : d.getVariables()) {
-        if (n->isDiscrete()) {
+    if (verbose) Rcpp::Rcout << "Running STEPS for " << lambda.size() << " lambdas from "
+			     << lambda[lambda.size()-1] << " to " << lambda[0] << "..."
+			     << std::endl;
+
+    for (Node n : d.getVariables()) {
+        if (n.isDiscrete()) {
             q++;
-        } else {
-            p++;
-        }
+        } else if (n.isContinuous()) {
+	    p++;
+	} else {
+	    throw std::runtime_error("Invalid variable type for node " + n.getName());
+	}
     }
 
     // go until we break by having instability better than threshold
     while(true) {
-        if (verbose) Rcpp::Rcout << "Testing lambda = " << lambda[currIndex] << std::endl;
+        if (verbose) Rcpp::Rcout << "  Testing lambda = " << lambda[currIndex] << std::endl;
 
         std::vector<double> lambdaCurr = { lambda[currIndex], lambda[currIndex], lambda[currIndex] };
 
@@ -56,13 +62,13 @@ EdgeListGraph STEPS::runStepsPar() {
         // We assume here that the subsamples have the variables in the same order
         for (int j = 0; j < d.getNumColumns(); j++) {
             for (int k = j + 1; k < d.getNumColumns(); k++) {
-                Variable* one = d.getVariable(j);
-                Variable* two = d.getVariable(k);
+                Node one = d.getVariable(j);
+                Node two = d.getVariable(k);
 
-                if (one->isDiscrete() && two->isDiscrete()) {
+                if (one.isDiscrete() && two.isDiscrete()) {
                     numDD++;
                     ddDestable += 2 * adjMat(j, k) * (1 - adjMat(j, k));
-                } else if (one->isDiscrete() || two->isDiscrete()) {
+                } else if (one.isDiscrete() || two.isDiscrete()) {
                     numCD++;
                     cdDestable += 2 * adjMat(j, k) * (1 - adjMat(j, k));
                 } else {
@@ -86,7 +92,7 @@ EdgeListGraph STEPS::runStepsPar() {
 	if (numDD == 0)
 	    ddDestable = 0.5;
 
-	if (verbose) Rcpp::Rcout << "  Instabilities for lambda = " << lambda[currIndex]
+	if (verbose) Rcpp::Rcout << "    Instabilities for lambda = " << lambda[currIndex]
 				 << ":  {" << ccDestable << ", " << cdDestable << ", "
 				 << ddDestable << "}" << std::endl;
 
@@ -134,7 +140,8 @@ EdgeListGraph STEPS::runStepsPar() {
         DD = DDMaxI;
 
     std::vector<double> lambda = { CC, CD, DD };
-    Rcpp::Rcout << "Lambdas: { " << CC << " " << CD << " " << DD << " }" << std::endl;
+    if (verbose) Rcpp::Rcout << "Selected lambdas: { " << CC << ", " << CD << ", " << DD
+			     << " }" << std::endl;
     if (oneLamb == -1)
         origLambda = allMaxI;
     else

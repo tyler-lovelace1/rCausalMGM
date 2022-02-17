@@ -11,7 +11,7 @@ Fci::Fci(IndependenceTest* test) {
     }
 
     this->test = test;
-    std::vector<Variable*> vars = test->getVariables();
+    std::vector<Node> vars = test->getVariables();
     this->variables.insert(variables.end(), vars.begin(), vars.end());
     buildIndexing(vars);
 }
@@ -20,20 +20,20 @@ Fci::Fci(IndependenceTest* test) {
  * Constructs a new FCI search for the given independence test and background knowledge and a list of variables to
  * search over.
  */
-Fci::Fci(IndependenceTest* test, std::vector<Variable*> searchVars) {
+Fci::Fci(IndependenceTest* test, std::vector<Node> searchVars) {
     if (test == NULL /*|| knowledge == null*/) {
         throw std::invalid_argument("independenceTest cannot be null");
     }
 
     this->test = test;
-    std::vector<Variable*> vars = test->getVariables();
+    std::vector<Node> vars = test->getVariables();
     this->variables.insert(variables.end(), vars.begin(), vars.end());
 
-    std::unordered_set<Variable*> remVars;
-    for (Variable* node1 : this->variables) {
+    std::unordered_set<Node> remVars;
+    for (const Node& node1 : this->variables) {
         bool search = false;
-        for (Variable* node2 : searchVars) {
-            if (node1->getName() == node2->getName()) {
+        for (const Node& node2 : searchVars) {
+            if (node1 == node2) {
                 search = true;
             }
         }
@@ -41,7 +41,7 @@ Fci::Fci(IndependenceTest* test, std::vector<Variable*> searchVars) {
             remVars.insert(node1);
         }
     }
-    for (Variable* var: remVars) {
+    for (const Node& var: remVars) {
 	std::remove(this->variables.begin(), this->variables.end(), var);
     }
 }
@@ -52,13 +52,13 @@ EdgeListGraph Fci::search() {
     return search(test->getVariables());
 }
 
-EdgeListGraph Fci::search(const std::vector<Variable*>& nodes) {
+EdgeListGraph Fci::search(const std::vector<Node>& nodes) {
     FasStableProducerConsumer fas(initialGraph, test, threads);
 
     return search(fas, nodes);
 }
 
-EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
+EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes) {
     if (verbose) Rcpp::Rcout << "Starting FCI-Stable algorithm..." << std::endl;
 
     whyOrient = std::unordered_map<std::string, std::string>();
@@ -82,7 +82,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
-	if (verbose) Rcpp::Rcout << "Starting Posssible DSep search" << std::endl;
+	if (verbose) Rcpp::Rcout << "  Starting Posssible DSep search" << std::endl;
 	// SepsetsSet ssset(sepsets, test);
 	// FciOrient orienter(&ssset);
 
@@ -107,7 +107,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Vari
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new FciOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
-    if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Starting Orientations..." << std::endl;
     SepsetsSet sepsetsset_(sepsets, test);
     FciOrient fciorient_(&sepsetsset_, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
@@ -159,19 +159,19 @@ void Fci::setMaxPathLength(int maxPathLength) {
 
 //========================PRIVATE METHODS==========================//
 
-void Fci::buildIndexing(std::vector<Variable*> nodes) {
-    this->hashIndices =  std::unordered_map<Variable*, int>();
-    for (Variable* node : nodes) {
+void Fci::buildIndexing(std::vector<Node> nodes) {
+    this->hashIndices =  std::unordered_map<Node, int>();
+    for (const Node& node : nodes) {
         auto itr = find(variables.begin(), variables.end(), node);
         int index = std::distance(variables.begin(), itr);
-        this->hashIndices.insert(std::pair<Variable*, int>(node, index));
+        this->hashIndices.insert(std::pair<Node, int>(node, index));
     }
 }
 
 /**
  * Orients according to background knowledge
  */
-void Fci::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Variable*> variables) {
+void Fci::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Node> variables) {
 
     // for (Iterator<KnowledgeEdge> it =
     //      bk.forbiddenEdgesIterator(); it.hasNext(); ) {

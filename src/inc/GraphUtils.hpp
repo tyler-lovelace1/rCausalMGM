@@ -17,17 +17,19 @@ class GraphUtils {
 
 private:
 
-    static std::vector<Variable*> getSepsetVisit(Variable* x, Variable* y, EdgeListGraph& graph, int bound);
+    static std::vector<Node> getSepsetVisit(Node x, Node y, EdgeListGraph& graph, int bound);
 
-    static bool sepsetPathFound(Variable* a, Variable* b, Variable* y, std::unordered_set<Variable*>& path, std::vector<Variable*>& z,
-                                EdgeListGraph& graph, std::unordered_set<Triple>& colliders, int bound);
+    static bool sepsetPathFound(Node a, Node b, Node y,
+				std::unordered_set<Node>& path,
+				std::vector<Node>& z, EdgeListGraph& graph,
+				std::unordered_set<Triple>& colliders, int bound);
 
-    static void addToList(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* b, Variable* c);
+    static void addToList(std::unordered_map<Node, std::vector<Node>> previous,
+			  Node b, Node c);
 
-    static bool existOnePathWithPossibleParents(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* w,
-                                Variable* x, Variable* b, EdgeListGraph& graph);
+    static bool existOnePathWithPossibleParents(std::unordered_map<Node, std::vector<Node>> previous, Node w, Node x, Node b, EdgeListGraph& graph);
 
-    static bool existsSemidirectedPath(Variable* from, Variable* to, EdgeListGraph& G);
+    static bool existsSemidirectedPath(Node from, Node to, EdgeListGraph& G);
     
 public:
 
@@ -39,32 +41,32 @@ public:
      * cycles. The case where from = to but there is no cycle from from to to
      * needs to be checked separately.
      */
-    static bool existsDirectedPathFromToBreathFirst(Variable* from, Variable* to, EdgeListGraph& G);
+    static bool existsDirectedPathFromToBreathFirst(Node from, Node to, EdgeListGraph& G);
 
     // Breadth first.
-    static bool isDConnectedTo(Variable* x, Variable* y, std::vector<Variable*>& z, EdgeListGraph& graph);
+    static bool isDConnectedTo(Node x, Node y, std::vector<Node>& z, EdgeListGraph& graph);
 
-    static std::vector<Variable*> getSepset(Variable* x, Variable* y, EdgeListGraph& graph);
+    static std::vector<Node> getSepset(Node x, Node y, EdgeListGraph& graph);
 
-    static std::vector<Variable*> getCausalOrdering(EdgeListGraph& graph);
-
-    /**
-     * @return A list of triples of the form <X, Y, Z>, where <X, Y, Z> is a
-     * definite noncollider in the given graph.
-     */
-    static std::vector<Triple> getAmbiguousTriplesFromGraph(Variable* node, EdgeListGraph& graph);
+    static std::vector<Node> getCausalOrdering(EdgeListGraph& graph);
 
     /**
      * @return A list of triples of the form <X, Y, Z>, where <X, Y, Z> is a
      * definite noncollider in the given graph.
      */
-    static std::vector<Triple> getUnderlinedTriplesFromGraph(Variable* node, EdgeListGraph& graph);
+    static std::vector<Triple> getAmbiguousTriplesFromGraph(Node node, EdgeListGraph& graph);
 
     /**
      * @return A list of triples of the form <X, Y, Z>, where <X, Y, Z> is a
      * definite noncollider in the given graph.
      */
-    static std::vector<Triple> getDottedUnderlinedTriplesFromGraph(Variable* node, EdgeListGraph& graph);
+    static std::vector<Triple> getUnderlinedTriplesFromGraph(Node node, EdgeListGraph& graph);
+
+    /**
+     * @return A list of triples of the form <X, Y, Z>, where <X, Y, Z> is a
+     * definite noncollider in the given graph.
+     */
+    static std::vector<Triple> getDottedUnderlinedTriplesFromGraph(Node node, EdgeListGraph& graph);
 
     /**
      * Constructs a list of nodes from the given <code>nodes</code> list at the
@@ -74,15 +76,15 @@ public:
      * @param nodes The list of nodes from which we select a sublist.
      * @return the The sublist selected.
      */
-    static std::vector<Variable*> asList(std::vector<int>& indices, std::vector<Variable*>& nodes);
+    static std::vector<Node> asList(std::vector<int>& indices, std::vector<Node>& nodes);
 
-    static std::unordered_set<Variable*> asSet(std::vector<int>& indices, std::vector<Variable*>& nodes);
+    static std::unordered_set<Node> asSet(std::vector<int>& indices, std::vector<Node>& nodes);
 
     static EdgeListGraph completeGraph(EdgeListGraph& graph);
 
     static EdgeListGraph undirectedGraph(EdgeListGraph& graph);
 
-    static std::unordered_set<Variable*> possibleDsep(Variable* x, Variable* y, EdgeListGraph& graph, int maxPathLength);
+    static std::unordered_set<Node> possibleDsep(Node x, Node y, EdgeListGraph& graph, int maxPathLength);
 
 };
 

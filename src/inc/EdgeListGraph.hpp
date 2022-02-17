@@ -3,7 +3,7 @@
 
 #include "armaLapack.hpp"
 
-#include "Variable.hpp"
+#include "Node.hpp"
 #include "Edge.hpp"
 #include "Triple.hpp"
 #include "DataSet.hpp"
@@ -21,7 +21,12 @@ private:
     /**
      * A list of the nodes in the graph, in the order in which they were added.
      */
-    std::vector<Variable*> nodes;
+    std::vector<Node> nodes;
+
+    /**
+     * Default constructor node will serve as a null node
+     */
+    // static Node nullNode;
 
     /**
      * The edges in the graph.
@@ -31,7 +36,7 @@ private:
     /**
      * Map from each node to the List of edges connected to that node.
      */
-    std::unordered_map<Variable*, std::vector<Edge>> edgeLists;
+    std::unordered_map<Node, std::vector<Edge>> edgeLists;
 
     // TODO - PCS?
     // TODO - Triples?
@@ -59,7 +64,7 @@ private:
 
     // std::unordered_set<Edge> highlightedEdges;
 
-    std::unordered_map<std::string, Variable*> namesHash;
+    std::unordered_map<std::string, Node> namesHash;
 
     std::unordered_map<std::string,
 		       Rcpp::Nullable<Rcpp::NumericVector>> hyperparamHash = {
@@ -68,18 +73,18 @@ private:
 	{"penalty", R_NilValue}
     };
 
-    // std::unordered_map<Variable*, std::unordered_set<Variable*>> ancestors;
+    // std::unordered_map<Node, std::unordered_set<Node>> ancestors;
 
-    // void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> ancestors);
-    void collectAncestorsVisit(Variable* node, std::unordered_set<Variable*>& ancestors);
+    // void collectAncestorsVisit(const Node& node, std::unordered_set<Node> ancestors);
+    void collectAncestorsVisit(const Node& node, std::unordered_set<Node>& ancestors);
 
 
-    void collectDescendantsVisit(Variable* node, std::unordered_set<Variable*>& descendants);
+    void collectDescendantsVisit(const Node& node, std::unordered_set<Node>& descendants);
 
     /**
      * closure under the child relation
      */
-    void doChildClosureVisit(Variable* node, std::unordered_set<Variable*>& closure);
+    void doChildClosureVisit(const Node& node, std::unordered_set<Node>& closure);
 
     /**
      * This is a simple auxiliary visit method for the isDConnectedTo() method
@@ -90,19 +95,19 @@ private:
      * @param closure the closure of the conditioning set uner the parent
      *                relation (to be calculated recursively).
      */
-    void doParentClosureVisit(Variable* node, std::unordered_set<Variable*>& closure);
+    void doParentClosureVisit(const Node& node, std::unordered_set<Node>& closure);
 
     /**
      * @return true iff there is a directed path from node1 to node2.
      */
-    bool existsUndirectedPathVisit(Variable* node1, Variable* node2, std::unordered_set<Variable*>& path);
+    bool existsUndirectedPathVisit(const Node& node1, const Node& node2, std::unordered_set<Node>& path);
 
-    bool existsDirectedPathVisit(Variable* node1, Variable* node2, std::unordered_set<Variable*>& path);
+    bool existsDirectedPathVisit(const Node& node1, const Node& node2, std::unordered_set<Node>& path);
 
     /**
      * @return true iff there is a semi-directed path from node1 to node2
      */
-    bool existsSemiDirectedPathVisit(Variable* node1, std::unordered_set<Variable*>& nodes2, std::vector<Variable*>& path);
+    bool existsSemiDirectedPathVisit(const Node& node1, std::unordered_set<Node>& nodes2, std::vector<Node>& path);
 
 public:
 
@@ -139,10 +144,17 @@ public:
 
 
     /**
+     * Destructor for EdgeListGraph.
+     */
+    ~EdgeListGraph() = default;
+
+
+
+    /**
      * Constructs a new graph, with no edges, using the the given variable
      * names.
      */
-    EdgeListGraph(const std::vector<Variable*>& nodes);
+    EdgeListGraph(const std::vector<Node>& nodes);
 
     /**
      * Makes a graph from an R list
@@ -160,7 +172,7 @@ public:
      * @param node1 the "from" node.
      * @param node2 the "to" node.
      */
-    bool addDirectedEdge(Variable* node1, Variable* node2);
+    bool addDirectedEdge(const Node& node1, const Node& node2);
 
     /**
      * Adds an undirected edge to the graph from node A to node B.
@@ -168,7 +180,7 @@ public:
      * @param node1 the "from" node.
      * @param node2 the "to" node.
      */
-    bool addUndirectedEdge(Variable* node1, Variable* node2);
+    bool addUndirectedEdge(const Node& node1, const Node& node2);
 
     /**
      * Adds a bidirected edge to the graph from node A to node B.
@@ -176,7 +188,7 @@ public:
      * @param node1 the "from" node.
      * @param node2 the "to" node.
      */
-    bool addBidirectedEdge(Variable* node1, Variable* node2);
+    bool addBidirectedEdge(const Node& node1, const Node& node2);
 
     /**
      * Adds a partially oriented edge to the graph from node A to node B.
@@ -184,7 +196,7 @@ public:
      * @param node1 the "from" node.
      * @param node2 the "to" node.
      */
-    bool addPartiallyOrientedEdge(Variable* node1, Variable* node2);
+    bool addPartiallyOrientedEdge(const Node& node1, const Node& node2);
 
     /**
      * Adds a nondirected edge to the graph from node A to node B.
@@ -192,12 +204,12 @@ public:
      * @param node1 the "from" node.
      * @param node2 the "to" node.
      */
-    bool addNondirectedEdge(Variable* node1, Variable* node2);
+    bool addNondirectedEdge(const Node& node1, const Node& node2);
 
     bool existsDirectedCycle();
 
-    bool isDirectedFromTo(Variable* node1, Variable* node2);
-    bool isUndirectedFromTo(Variable* node1, Variable* node2);
+    bool isDirectedFromTo(const Node& node1, const Node& node2);
+    bool isUndirectedFromTo(const Node& node1, const Node& node2);
 
     /**
      * added by ekorber, 2004/06/11
@@ -212,17 +224,17 @@ public:
      * std::invalid_argument  raised (by isDirectedFromTo(getEndpoint) or by
      * getEdge) if there are multiple edges between any of the node pairs.
      */
-    bool isDefNoncollider(Variable* node1, Variable* node2, Variable* node3);
+    bool isDefNoncollider(const Node& node1, const Node& node2, const Node& node3);
 
-    bool isDefCollider(Variable* node1, Variable* node2, Variable* node3);
+    bool isDefCollider(const Node& node1, const Node& node2, const Node& node3);
 
     /**
      * @return true iff there is a directed path from node1 to node2.
      * a
      */
-    bool existsDirectedPathFromTo(Variable* node1, Variable* node2);
-    bool existsUndirectedPathFromTo(Variable* node1, Variable* node2);
-    bool existsSemiDirectedPathFromTo(Variable* node1, std::unordered_set<Variable*>& nodes);
+    bool existsDirectedPathFromTo(const Node& node1, const Node& node2);
+    bool existsUndirectedPathFromTo(const Node& node1, const Node& node2);
+    bool existsSemiDirectedPathFromTo(const Node& node1, std::unordered_set<Node>& nodes);
 
     /**
      * Determines whether a trek exists between two nodes in the graph.  A trek
@@ -230,16 +242,16 @@ public:
      * some third node in the graph, there is a path to each of the two nodes in
      * question.
      */
-    bool existsTrek(Variable* node1, Variable* node2);
+    bool existsTrek(const Node& node1, const Node& node2);
 
     /**
      * @return the list of children for a node.
      */
-    std::vector<Variable*> getChildren(Variable* node);
+    std::vector<Node> getChildren(const Node& node);
 
     int getConnectivity();
 
-    std::vector<Variable*> getDescendants(std::vector<Variable*>& nodes);
+    std::vector<Node> getDescendants(std::vector<Node>& nodes);
 
     /**
      * @return the edge connecting node1 and node2, provided a unique such edge
@@ -247,75 +259,75 @@ public:
      *
      * Throws std::invalid_argument if not
      */
-    Edge getEdge(Variable* node1, Variable* node2);
+    Edge getEdge(const Node& node1, const Node& node2);
 
-    Edge getDirectedEdge(Variable* node1, Variable* node2);
+    Edge getDirectedEdge(const Node& node1, const Node& node2);
 
     /**
      * @return the list of parents for a node.
      */
-    std::vector<Variable*> getParents(Variable* node);
+    std::vector<Node> getParents(const Node& node);
 
     /**
      * @return the number of edges into the given node.
      */
-    int getIndegree(Variable* node);
+    int getIndegree(const Node& node);
 
-    int getDegree(Variable* node);
+    int getDegree(const Node& node);
 
     /**
      * @return the number of edges out of the given node.
      */
-    int getOutdegree(Variable* node);
+    int getOutdegree(const Node& node);
 
     /**
      * Determines whether some edge or other exists between two nodes.
      */
-    bool isAdjacentTo(Variable* node1, Variable* node2);
+    bool isAdjacentTo(const Node& node1, const Node& node2);
 
     /**
      * Determines whether one node is an ancestor of another.
      */
-    bool isAncestorOf(Variable* node1, Variable* node2);
+    bool isAncestorOf(const Node& node1, const Node& node2);
 
-    bool possibleAncestor(Variable* node1, Variable* node2);
+    bool possibleAncestor(const Node& node1, const Node& node2);
 
     /**
      * @return true iff node1 is a possible ancestor of at least one member of
      * nodes2
      */
-    // bool possibleAncestorSet(Variable* node1, std::vector<Variable*>& nodes2);
+    // bool possibleAncestorSet(const Node& node1, std::vector<Node>& nodes2);
 
-    // std::vector<Variable*> getAncestors(std::vector<Variable*>& nodes);
-    std::unordered_set<Variable*> getAncestors(std::vector<Variable*>& nodes);
+    // std::vector<Node> getAncestors(std::vector<Node>& nodes);
+    std::unordered_set<Node> getAncestors(std::vector<Node>& nodes);
 
 
     /**
      * Determines whether one node is a child of another.
      */
-    bool isChildOf(Variable* node1, Variable* node2);
+    bool isChildOf(const Node& node1, const Node& node2);
 
     /**
      * Determines whether one node is a descendent of another.
      */
-    bool isDescendentOf(Variable* node1, Variable* node2);
+    bool isDescendentOf(const Node& node1, const Node& node2);
 
     /**
      * @return true iff node2 is a definite nondecendent of node1
      */
-    bool defNonDescendent(Variable* node1, Variable* node2);
+    bool defNonDescendent(const Node& node1, const Node& node2);
 
-    bool isDConnectedTo(Variable* x, Variable* y, std::vector<Variable*>& z);
+    bool isDConnectedTo(const Node& x, const Node& y, std::vector<Node>& z);
 
-    bool isDConnectedTo(std::vector<Variable*>& x, std::vector<Variable*>& y, std::vector<Variable*>& z);
+    bool isDConnectedTo(std::vector<Node>& x, std::vector<Node>& y, std::vector<Node>& z);
 
-    std::vector<Variable*> getSepset(Variable* x, Variable* y);
+    std::vector<Node> getSepset(const Node& x, const Node& y);
 
-    void setNodes(std::vector<Variable*>& nodes);
+    void setNodes(std::vector<Node>& nodes);
 
-    // std::unordered_set<Variable*> zAncestors(std::vector<Variable*>& z);
+    // std::unordered_set<Node> zAncestors(std::vector<Node>& z);
 
-    bool isDSeparatedFrom(std::vector<Variable*>& x, std::vector<Variable*>& y, std::vector<Variable*>& z);
+    bool isDSeparatedFrom(std::vector<Node>& x, std::vector<Node>& y, std::vector<Node>& z);
 
     /**
      * Determines whether one n ode is d-separated from another. According to
@@ -334,9 +346,9 @@ public:
      * not.
      * @see #isDConnectedTo
      */
-    bool isDSeparatedFrom(Variable* node1, Variable* node2, std::vector<Variable*>& z);
+    bool isDSeparatedFrom(const Node& node1, const Node& node2, std::vector<Node>& z);
 
-    bool possDConnectedTo(Variable* node1, Variable* node2, std::vector<Variable*>& condNodes);
+    bool possDConnectedTo(const Node& node1, const Node& node2, std::vector<Node>& condNodes);
 
     /**
      * Determines whether an inducing path exists between node1 and node2, given
@@ -346,7 +358,7 @@ public:
      * @param node2 the second node.
      * @return true if an inducing path exists, false if not.
      */
-    bool existsInducingPath(Variable* node1, Variable* node2);
+    bool existsInducingPath(const Node& node1, const Node& node2);
 
     /**
      * Determines whether one node is a parent of another.
@@ -358,17 +370,17 @@ public:
      * @see #getParents
      * @see #getChildren
      */
-    bool isParentOf(Variable* node1, Variable* node2);
+    bool isParentOf(const Node& node1, const Node& node2);
 
     /**
      * Determines whether one node is a proper ancestor of another.
      */
-    bool isProperAncestorOf(Variable* node1, Variable* node2);
+    bool isProperAncestorOf(const Node& node1, const Node& node2);
 
     /**
      * Determines whether one node is a proper decendent of another
      */
-    bool isProperDescendentOf(Variable* node1, Variable* node2);
+    bool isProperDescendentOf(const Node& node1, const Node& node2);
 
     /**
      * Transfers nodes and edges from one graph to another.  One way this is
@@ -386,24 +398,29 @@ public:
     /**
      * Determines whether a node in a graph is exogenous.
      */
-    bool isExogenous(Variable* node);
+    bool isExogenous(const Node& node);
 
     /**
      * @return the set of nodes adjacent to the given node. If there are multiple edges between X and Y, Y will show
      * up twice in the list of adjacencies for X, for optimality; simply create a list an and array from these to
      * eliminate the duplication.
      */
-    std::vector<Variable*> getAdjacentNodes(Variable* node);
+    std::vector<Node> getAdjacentNodes(const Node& node);
 
     /**
      * Removes the edge connecting the two given nodes.
      */
-    bool removeEdge(Variable* node1, Variable* node2);
+    bool removeEdge(const Node& node1, const Node& node2);
 
+    /**
+     * Removes the edge connecting the two given nodes.
+     */
+    bool removeEdge(Node&& node1, Node&& node2);
+    
     /**
      * @return the endpoint along the edge from node to node2 at the node2 end.
      */
-    Endpoint getEndpoint(Variable* node1, Variable* node2);
+    Endpoint getEndpoint(const Node& node1, const Node& node2);
 
     /**
      * If there is currently an edge from node1 to node2, sets the endpoint at
@@ -415,17 +432,17 @@ public:
      * @throws IllegalArgumentException if the edge with the revised endpoint
      *                                  cannot be added to the graph.
      */
-    bool setEndpoint(Variable* from, Variable* to, Endpoint endPoint);
+    bool setEndpoint(const Node& from, const Node& to, Endpoint endPoint);
 
     /**
      * Nodes adjacent to the given node with the given proximal endpoint.
      */
-    std::vector<Variable*> getNodesInTo(Variable* node, Endpoint endpoint);
+    std::vector<Node> getNodesInTo(const Node& node, Endpoint endpoint);
 
     /**
      * Nodes adjacent to the given node with the given distal endpoint.
      */
-    std::vector<Variable*> getNodesOutTo(Variable* node, Endpoint endpoint);
+    std::vector<Node> getNodesOutTo(const Node& node, Endpoint endpoint);
 
     /**
      * @return a matrix of endpoints for the nodes in this graph, with nodes in
@@ -439,7 +456,7 @@ public:
      * @param edge the edge to be added
      * @return true if the edge was added, false if not.
      */
-    bool addEdge(Edge& edge);
+    bool addEdge(Edge edge);
 
     /**
      * Add edge from string
@@ -453,7 +470,16 @@ public:
      * @param node the node to be added.
      * @return true if the the node was added, false if not.
      */
-    bool addNode(Variable* node);
+    bool addNode(Node node);
+
+    /**
+     * Adds a node to the graph. Precondition: The proposed name of the node
+     * cannot already be used by any other node in the same graph.
+     *
+     * @param node the node to be added.
+     * @return true if the the node was added, false if not.
+     */
+    // bool addNode(Node&& node);
 
     /**
      * @return the set of edges in the graph.
@@ -470,17 +496,17 @@ public:
     std::unordered_set<Triple> getUnderLines() { return underLineTriples; }
     std::unordered_set<Triple> getDottedUnderlines() { return dottedUnderLineTriples; }
 
-    bool isAmbiguousTriple(Variable* x, Variable* y, Variable* z) { return ambiguousTriples.count(Triple(x, y, z)); }
-    bool isUnderlineTriple(Variable* x, Variable* y, Variable* z) { return underLineTriples.count(Triple(x, y, z)); }
-    bool isDottedUnderlineTriple(Variable* x, Variable* y, Variable* z) { return dottedUnderLineTriples.count(Triple(x, y, z)); }
+    bool isAmbiguousTriple(const Node& x, const Node& y, const Node& z) { return ambiguousTriples.count(Triple(x, y, z)); }
+    bool isUnderlineTriple(const Node& x, const Node& y, const Node& z) { return underLineTriples.count(Triple(x, y, z)); }
+    bool isDottedUnderlineTriple(const Node& x, const Node& y, const Node& z) { return dottedUnderLineTriples.count(Triple(x, y, z)); }
 
-    void addAmbiguousTriple(Variable* x, Variable* y, Variable* z) { ambiguousTriples.insert(Triple(x, y, z)); }
-    void addUnderlineTriple(Variable* x, Variable* y, Variable* z) { underLineTriples.insert(Triple(x, y, z)); }
-    void addDottedUnderlineTriple(Variable* x, Variable* y, Variable* z) { dottedUnderLineTriples.insert(Triple(x, y, z)); }
+    void addAmbiguousTriple(const Node& x, const Node& y, const Node& z) { ambiguousTriples.insert(Triple(x, y, z)); }
+    void addUnderlineTriple(const Node& x, const Node& y, const Node& z) { underLineTriples.insert(Triple(x, y, z)); }
+    void addDottedUnderlineTriple(const Node& x, const Node& y, const Node& z) { dottedUnderLineTriples.insert(Triple(x, y, z)); }
 
-    void removeAmbiguousTriple(Variable* x, Variable* y, Variable* z);
-    void removeUnderlineTriple(Variable* x, Variable* y, Variable* z);
-    void removeDottedUnderlineTriple(Variable* x, Variable* y, Variable* z);
+    void removeAmbiguousTriple(const Node& x, const Node& y, const Node& z);
+    void removeUnderlineTriple(const Node& x, const Node& y, const Node& z);
+    void removeDottedUnderlineTriple(const Node& x, const Node& y, const Node& z);
 
     void setAmbiguousTriples(std::unordered_set<Triple>& triples);
     void setUnderLineTriples(std::unordered_set<Triple>& triples);
@@ -488,7 +514,7 @@ public:
 
     void removeTriplesNotInGraph();
 
-    std::vector<std::vector<Triple>> getTriplesLists(Variable* node);
+    std::vector<std::vector<Triple>> getTriplesLists(const Node& node);
 
     Triple tripleFromString(std::string tripleString);
 
@@ -503,7 +529,7 @@ public:
      * @return the list of edges connected to a particular node. No particular
      * ordering of the edges in the list is guaranteed.
      */
-    std::vector<Edge> getEdges(Variable* node) {
+    std::vector<Edge> getEdges(const Node& node) {
         // Rcpp::Rcout << "Getting edges..." << std::endl;
         return edgeLists[node];
     }
@@ -521,7 +547,7 @@ public:
     /**
      * @return the node with the given name, or null if no such node exists.
      */
-    Variable* getNode(std::string name) { auto itr = namesHash.find(name); return itr == namesHash.end() ? NULL : itr->second; }
+    Node getNode(std::string name) { auto itr = namesHash.find(name); return itr == namesHash.end() ? Node() : itr->second; }
 
     /**
      * @return the number of nodes in the graph.
@@ -536,9 +562,9 @@ public:
     /**
      * @return the number of edges connected to a particular node in the graph.
      */
-    int getNumEdges(Variable* node);
+    int getNumEdges(const Node& node);
 
-    std::vector<Variable*> getNodes() { return nodes; }
+    std::vector<Node> getNodes() { return nodes; }
 
     /**
      * Removes all nodes (and therefore all edges) from the graph.
@@ -573,7 +599,16 @@ public:
      * @param node2 the second node.
      * @return true if edges were removed between A and B, false if not.
      */
-    bool removeEdges(Variable* node1, Variable* node2);
+    bool removeEdges(const Node& node1, const Node& node2);
+
+    /**
+     * Removes all edges connecting node A to node B.
+     *
+     * @param node1 the first node.,
+     * @param node2 the second node.
+     * @return true if edges were removed between A and B, false if not.
+     */
+    bool removeEdges(Node&& node1, Node&& node2);
 
     /**
      * Removes all edges
@@ -583,7 +618,7 @@ public:
     /**
      * Removes a node from the graph.
      */
-    bool removeNode(Variable* node);
+    bool removeNode(const Node& node);
 
     /**
      * Removes any relevant node objects found in this collection.
@@ -591,20 +626,20 @@ public:
      * @param newNodes the collection of nodes to remove.
      * @return true if nodes from the collection were removed, false if not.
      */
-    bool removeNodes(std::vector<Variable*>& newNodes);
+    bool removeNodes(std::vector<Node>& newNodes);
 
-    EdgeListGraph subgraph(std::vector<Variable*>& nodes);
+    EdgeListGraph subgraph(std::vector<Node>& nodes);
 
     /**
      * @return the edges connecting node1 and node2.
      */
-    std::vector<Edge> getEdges(Variable* node1, Variable* node2);
+    std::vector<Edge> getEdges(const Node& node1, const Node& node2);
 
     // TODO - Triples?
 
     std::vector<std::string> getNodeNames();
 
-    std::vector<Variable*> getCausalOrdering();
+    std::vector<Node> getCausalOrdering();
 
     // void setHighlighted(Edge& edge, bool highlighted) { if (highlighted) highlightedEdges.insert(edge); else highlightedEdges.erase(edge); } ;
 

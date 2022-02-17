@@ -3,13 +3,13 @@
 #include "GraphUtils.hpp"
 #include "BlockingQueue.hpp"
 
-bool CpcStable::isCollider(Triple t) {
+bool CpcStable::isCollider(Triple& t) {
     std::pair<int, int> count = sepsetCount[t];
 
     return (count.first == 0) && (count.second > 0);
 }
 
-bool CpcStable::isNonCollider(Triple t) {
+bool CpcStable::isNonCollider(Triple& t) {
     std::pair<int, int> count = sepsetCount[t];
 
     return (count.first > 0) && (count.second == 0);
@@ -20,30 +20,30 @@ void CpcStable::orientUnshieldedTriples() {
     BlockingQueue<ColliderTask> taskQueue(100);
 
     auto producer = [&]() {
-        std::vector<Variable*> nodes = graph.getNodes();
+        std::vector<Node> nodes = graph.getNodes();
 
-        for (Variable* y : nodes) {
-            std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(y);
+        for (const Node& y : nodes) {
+            std::vector<Node> adjacentNodes = graph.getAdjacentNodes(y);
 
             if (adjacentNodes.size() < 2)
                 continue;
 
 	    std::sort(adjacentNodes.begin(),
 		      adjacentNodes.end(),
-		      [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
+		      [] (const Node& a, const Node& b) {return a < b; }
 		);
 	    
             ChoiceGenerator cg(adjacentNodes.size(), 2);
             std::vector<int> *combination;
             for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-                Variable* x = adjacentNodes[(*combination)[0]];
-                Variable* z = adjacentNodes[(*combination)[1]];
+                Node x = adjacentNodes[(*combination)[0]];
+                Node z = adjacentNodes[(*combination)[1]];
 
                 if (graph.isAdjacentTo(x, z))
                     continue;
 
-                std::vector<Variable*> adjx = graph.getAdjacentNodes(x);
-                std::vector<Variable*> adjz = graph.getAdjacentNodes(z);
+                std::vector<Node> adjx = graph.getAdjacentNodes(x);
+                std::vector<Node> adjz = graph.getAdjacentNodes(z);
 
 		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
 
@@ -53,7 +53,7 @@ void CpcStable::orientUnshieldedTriples() {
 
                         std::vector<int> *choice;
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
-                            std::vector<Variable*> v = GraphUtils::asList(*choice, adjx);
+                            std::vector<Node> v = GraphUtils::asList(*choice, adjx);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
                         }
                     }
@@ -63,7 +63,7 @@ void CpcStable::orientUnshieldedTriples() {
 
                         std::vector<int> *choice;
                         for (choice = gen.next(); choice != NULL; choice = gen.next()) {
-                            std::vector<Variable*> v = GraphUtils::asList(*choice, adjz);
+                            std::vector<Node> v = GraphUtils::asList(*choice, adjz);
                             taskQueue.push(ColliderTask(Triple(x, y, z), v));
                         }
                     }
@@ -76,7 +76,7 @@ void CpcStable::orientUnshieldedTriples() {
 
         //Poison Pill
         for (int i = 0; i < parallelism; i++) {
-            taskQueue.push(ColliderTask(Triple(NULL, NULL, NULL), {}));
+            taskQueue.push(ColliderTask());
         }
     };
 
@@ -84,10 +84,10 @@ void CpcStable::orientUnshieldedTriples() {
         while(true) {
             ColliderTask ct = taskQueue.pop();
             Triple t = ct.t;
-            std::vector<Variable*> sepset = ct.sepset;
+            std::vector<Node> sepset = ct.sepset;
 
             // Poison pill
-            if (t.x == NULL && t.y == NULL && t.z == NULL) {
+            if (t.x.isNull() && t.y.isNull() && t.z.isNull()) {
                 return;
             }
 
@@ -203,12 +203,12 @@ EdgeListGraph CpcStable::search() {
     return search(independenceTest->getVariables());
 }
 
-EdgeListGraph CpcStable::search(const std::vector<Variable*>& nodes) {
+EdgeListGraph CpcStable::search(const std::vector<Node>& nodes) {
     FasStableProducerConsumer fas(initialGraph, independenceTest, parallelism);
     return search(fas, nodes);
 }
 
-EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
+EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes) {
     if (verbose) Rcpp::Rcout << "Starting CPC-Stable algorithm..." << std::endl;
 
     allTriples = {};
@@ -218,9 +218,9 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    std::vector<Variable*> allNodes = independenceTest->getVariables();
+    std::vector<Node> allNodes = independenceTest->getVariables();
 
-    for (Variable* node : nodes) {
+    for (const Node& node : nodes) {
         if (std::find(allNodes.begin(), allNodes.end(), node) == allNodes.end())
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
@@ -234,7 +234,7 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
     graph = fas.search();
     sepsets = fas.getSepsets();
 
-    if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Orienting edges..." << std::endl;
 
     orientUnshieldedTriples();
 

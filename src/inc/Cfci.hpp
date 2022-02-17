@@ -47,7 +47,7 @@ private:
     /**
      * The SepsetProducer being constructed.
      */
-    SepsetProducer* sepsetsConservative;
+    // SepsetProducer* sepsetsConservative = NULL;
 
     // /**
     //  * The background knowledge.
@@ -57,7 +57,7 @@ private:
     /**
      * The variables to search over (optional)
      */
-    std::vector<Variable*> variables;
+    std::vector<Node> variables;
 
     IndependenceTest *test;
 
@@ -99,9 +99,9 @@ private:
      */
 
     bool verbose = false;
-    bool fdr = true;
+    bool fdr = false;
     EdgeListGraph truePag;
-    std::unordered_map<Variable*, int> hashIndices;   // must lock
+    std::unordered_map<Node, int> hashIndices;   // must lock
     // ICovarianceMatrix covarianceMatrix;
     double penaltyDiscount = 2;
     SepsetMap possibleDsepSepsets ();
@@ -110,12 +110,12 @@ private:
 
         //========================PRIVATE METHODS==========================//
 
-    void buildIndexing(std::vector<Variable*> nodes);
+    void buildIndexing(std::vector<Node> nodes);
 
     /**
      * Orients according to background knowledge
      */
-    void fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Variable*> variables);
+    void fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Node> variables);
 
 
 public:
@@ -129,7 +129,9 @@ public:
      * Constructs a new CFCI search for the given independence test and background knowledge and 
      * a list of variables to search over.
      */
-    Cfci(IndependenceTest *test, std::vector<Variable*> searchVars);
+    Cfci(IndependenceTest *test, std::vector<Node> searchVars);
+
+    ~Cfci() {}
 
        //========================PUBLIC METHODS==========================//
 
@@ -143,9 +145,9 @@ public:
 
     EdgeListGraph search();
 
-    EdgeListGraph search(const std::vector<Variable*>& nodes);
+    EdgeListGraph search(const std::vector<Node>& nodes);
 
-    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes);
+    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes);
 
     SepsetMap getSepsets() { return this->sepsets; }
 

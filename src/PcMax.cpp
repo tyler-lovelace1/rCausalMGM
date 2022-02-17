@@ -58,7 +58,7 @@ EdgeListGraph PcMax::search() {
 /**
  * Runs PC search, returning the output pattern, over the given nodes.
  */
-EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
+EdgeListGraph PcMax::search(const std::vector<Node>& nodes) {
     if (verbose) Rcpp::Rcout << "Starting PC-Max algorithm..." << std::endl;
 
     if (independenceTest == NULL)
@@ -66,9 +66,9 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    std::vector<Variable*> allNodes = independenceTest->getVariables();
+    std::vector<Node> allNodes = independenceTest->getVariables();
 
-    for (Variable* node : nodes) {
+    for (Node node : nodes) {
         if (std::find(allNodes.begin(), allNodes.end(), node) == allNodes.end())
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
@@ -79,7 +79,7 @@ EdgeListGraph PcMax::search(const std::vector<Variable*>& nodes) {
     fas.setFDR(fdr);
     graph = fas.search();
 
-    if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Orienting edges..." << std::endl;
 
     OrientCollidersMaxP orientCollidersMaxP(independenceTest, &graph, threads);
     orientCollidersMaxP.setUseHeuristic(useHeuristic);

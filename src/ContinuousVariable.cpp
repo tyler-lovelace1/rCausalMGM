@@ -10,7 +10,7 @@ bool ContinuousVariable::checkValue(const std::string& val) {
 }
 
 
-// // [[Rcpp::export]]
+// // no export // [[Rcpp::export]]
 // void test_continuous(const std::string& name, const std::string& val) {
 //   ContinuousVariable cv = ContinuousVariable(name);
 //   Rcpp::Rcout << std::boolalpha;

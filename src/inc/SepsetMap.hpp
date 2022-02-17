@@ -5,9 +5,9 @@
 
 // #include <boost/optional/optional.hpp>
 #include <boost/functional/hash.hpp>
-#include "Variable.hpp"
+#include "Node.hpp"
 
-typedef std::pair<Variable*, Variable*> VariablePair;
+typedef std::pair<Node, Node> NodePair;
 
 /**
  * <p>Stores a map from pairs of variables to separating sets--that is, for each unordered pair of variables {variable1, variable2} in a
@@ -26,52 +26,52 @@ class SepsetMap {
 
 private:
 
-    std::unordered_map<VariablePair, std::vector<Variable*>, boost::hash<VariablePair>> sepsets;
-    std::unordered_map<VariablePair, double, boost::hash<VariablePair>> pValues;
+    std::unordered_map<NodePair, std::vector<Node>, boost::hash<NodePair>> sepsets;
+    std::unordered_map<NodePair, double, boost::hash<NodePair>> pValues;
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> parents;
-    // boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>> correlations = boost::none;
+    std::unordered_map<Node, std::unordered_set<Node>> parents;
+    // boost::optional<std::unordered_set<NodePair, boost::hash<NodePair>>> correlations = boost::none;
     bool returnEmptyIfNotSet = false;
-    std::vector<Variable*> emptyList; // stays empty
+    std::vector<Node> emptyList; // stays empty
 
 public:
 
     SepsetMap() {}
     SepsetMap(SepsetMap& map);
 
-    // void setCorrelations(boost::optional<std::unordered_set<VariablePair, boost::hash<VariablePair>>>& pairs) { this->correlations = pairs; }
+    // void setCorrelations(boost::optional<std::unordered_set<NodePair, boost::hash<NodePair>>>& pairs) { this->correlations = pairs; }
     bool isReturnEmptyIfNotSet() { return returnEmptyIfNotSet; }
     void setReturnEmptyIfNotSet(bool returnEmptyIfNotSet) { this->returnEmptyIfNotSet = returnEmptyIfNotSet; }
 
     /**
      * Sets the sepset for {x, y} to be z. Note that {x, y} is unordered.
      */
-    void set(Variable* x, Variable* y, std::vector<Variable*>& z);
+    void set(const Node& x, const Node& y, std::vector<Node>& z);
 
     /**
      * Sets the sepset for {x, y} to be z. If {x, y} is already in the SepsetMap, 
      * then z is only updated if p is greater than the previously recorded sepset.
      * Note that {x, y} is unordered.
      */
-    void set(Variable* x, Variable* y, std::vector<Variable*>& z, double p);
+    void set(const Node& x, const Node& y, std::vector<Node>& z, double p);
 
     /** 
      * Removes the list associated with the pair
      */
-    void remove(Variable* x, Variable* y);
+    void remove(const Node& x, const Node& y);
 
-    void setPValue(Variable* x, Variable* y, double p);
+    void setPValue(const Node& x, const Node& y, double p);
 
     /**
      * Retrieves the sepset previously set for {a, b}, or NULL if no such set was previously set.
      */
-    std::vector<Variable*>* get(Variable* a, Variable* b);
+    std::vector<Node>* get(const Node& a, const Node& b);
 
-    double getPValue(Variable* x, Variable* y);
+    double getPValue(const Node& x, const Node& y);
 
-    void set(Variable* x, std::unordered_set<Variable*>& z);
+    void set(const Node& x, std::unordered_set<Node>& z);
 
-    std::unordered_set<Variable*> get(Variable* x);
+    std::unordered_set<Node> get(const Node& x);
 
     void addAll(SepsetMap& newSepsets);
 

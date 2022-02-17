@@ -1,8 +1,8 @@
 #ifndef STEPS_HPP_
 #define STEPS_HPP_
 
-#include "StabilityUtils.hpp"
 #include "armaLapack.hpp"
+#include "StabilityUtils.hpp"
 
 class STEPS {
 

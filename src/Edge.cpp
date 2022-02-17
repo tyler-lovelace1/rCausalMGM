@@ -1,5 +1,7 @@
 #include "Edge.hpp"
 
+// const Node& Edge::nullconst Node& = Node();
+
 /**
  * Constructs a new edge by specifying the nodes it connects and the
  * endpoint types.
@@ -9,7 +11,7 @@
  * @param endpoint1 the endpoint at the first node
  * @param endpoint2 the endpoint at the second node
  */
-Edge::Edge(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoint2) {
+Edge::Edge(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint endpoint2) {
     init(node1, node2, endpoint1, endpoint2);
 }
 
@@ -17,8 +19,8 @@ Edge::Edge(const Edge& edge) {
     init(edge.node1, edge.node2, edge.endpoint1, edge.endpoint2);
 }
 
-void Edge::init(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint endpoint2) {
-    if (node1 == NULL || node2 == NULL) {
+void Edge::init(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint endpoint2) {
+    if (node1.isNull() || node2.isNull()) {
         throw std::invalid_argument("Nodes must not be null");
     }
 
@@ -41,7 +43,7 @@ void Edge::init(Variable* node1, Variable* node2, Endpoint endpoint1, Endpoint e
  * @throws std::invalid_argument if the given node is not along the
  *                                  edge.
  */
-Endpoint Edge::getProximalEndpoint(Variable* node) {
+Endpoint Edge::getProximalEndpoint(const Node& node) {
     if (node1 == node) {
         return endpoint1;
     } else if (node2 == node) {
@@ -56,7 +58,7 @@ Endpoint Edge::getProximalEndpoint(Variable* node) {
  * @throws std::invalid_argument if the given node is not along the
  *                                  edge.
  */
-Endpoint Edge::getDistalEndpoint(Variable* node) {
+Endpoint Edge::getDistalEndpoint(const Node& node) {
     if (node1 == node) {
         return endpoint2;
     } else if (node2 == node) {
@@ -72,7 +74,7 @@ Endpoint Edge::getDistalEndpoint(Variable* node) {
  * 
  * Returns null if the given node is not part of the edge 
  */
-Variable* Edge::getDistalNode(Variable* node) {
+Node Edge::getDistalNode(const Node& node) {
     if (node1 == node) {
         return node2;
     }
@@ -81,7 +83,7 @@ Variable* Edge::getDistalNode(Variable* node) {
         return node1;
     }
 
-    return NULL;
+    return Node();
 }
 
 /**
@@ -95,7 +97,7 @@ bool Edge::isDirected() {
  * @return true just in case the edge is pointing toward the given node--
  * that is, x --> node or x o--> node.
  */
-bool Edge::pointsTowards(Variable* node) {
+bool Edge::pointsTowards(const Node& node) {
     Endpoint proximal = getProximalEndpoint(node);
     Endpoint distal = getDistalEndpoint(node);
     return (proximal == ENDPOINT_ARROW && (distal == ENDPOINT_TAIL || distal == ENDPOINT_CIRCLE));
@@ -120,8 +122,8 @@ bool Edge::pointingLeft(Endpoint endpoint1, Endpoint endpoint2) {
 /**
  * Constructs a new bidirected edge from nodeA to nodeB (<->).
  */
-Edge Edge::bidirectedEdge(Variable* nodeA, Variable* nodeB) {
-    if (nodeA->getName() < nodeB->getName()) {
+Edge Edge::bidirectedEdge(const Node& nodeA, const Node& nodeB) {
+    if (nodeA.getName() < nodeB.getName()) {
 	return Edge(nodeA, nodeB, ENDPOINT_ARROW, ENDPOINT_ARROW);
     } 
     return Edge(nodeB, nodeA, ENDPOINT_ARROW, ENDPOINT_ARROW);
@@ -130,7 +132,7 @@ Edge Edge::bidirectedEdge(Variable* nodeA, Variable* nodeB) {
 /**
  * Constructs a new directed edge from nodeA to nodeB (-->).
  */
-Edge Edge::directedEdge(Variable* nodeA, Variable* nodeB) {
+Edge Edge::directedEdge(const Node& nodeA, const Node& nodeB) {
     Edge newEdge(nodeA, nodeB, ENDPOINT_TAIL, ENDPOINT_ARROW);
     return newEdge;
 }
@@ -138,7 +140,7 @@ Edge Edge::directedEdge(Variable* nodeA, Variable* nodeB) {
 /**
  * Constructs a new partially oriented edge from nodeA to nodeB (o->).
  */
-Edge Edge::partiallyOrientedEdge(Variable* nodeA, Variable* nodeB) {
+Edge Edge::partiallyOrientedEdge(const Node& nodeA, const Node& nodeB) {
     Edge newEdge(nodeA, nodeB, ENDPOINT_CIRCLE, ENDPOINT_ARROW);
     return newEdge;
 }
@@ -146,8 +148,8 @@ Edge Edge::partiallyOrientedEdge(Variable* nodeA, Variable* nodeB) {
 /**
  * Constructs a new nondirected edge from nodeA to nodeB (o-o).
  */
-Edge Edge::nondirectedEdge(Variable* nodeA, Variable* nodeB) {
-    if (nodeA->getName() < nodeB->getName()) {
+Edge Edge::nondirectedEdge(const Node& nodeA, const Node& nodeB) {
+    if (nodeA.getName() < nodeB.getName()) {
 	return Edge(nodeA, nodeB, ENDPOINT_CIRCLE, ENDPOINT_CIRCLE);
     } 
     return Edge(nodeB, nodeA, ENDPOINT_CIRCLE, ENDPOINT_CIRCLE);
@@ -156,8 +158,8 @@ Edge Edge::nondirectedEdge(Variable* nodeA, Variable* nodeB) {
 /**
  * Constructs a new undirected edge from nodeA to nodeB (--).
  */
-Edge Edge::undirectedEdge(Variable* nodeA, Variable* nodeB) {
-    if (nodeA->getName() < nodeB->getName()) {
+Edge Edge::undirectedEdge(const Node& nodeA, const Node& nodeB) {
+    if (nodeA.getName() < nodeB.getName()) {
 	return Edge(nodeA, nodeB, ENDPOINT_TAIL, ENDPOINT_TAIL);
     } 
     return Edge(nodeB, nodeA, ENDPOINT_TAIL, ENDPOINT_TAIL);
@@ -205,58 +207,58 @@ bool Edge::isUndirectedEdge(const Edge& edge) {
  * 
  * Return null if the node is not part of the edge
  */
-Variable* Edge::traverse(Variable* node, Edge& edge) {
-    if (node == NULL) return NULL;
+Node Edge::traverse(const Node& node, Edge& edge) {
+    if (node.isNull()) return Node();
 
     if (node == edge.node1) return edge.node2;
     if (node == edge.node2) return edge.node1;
 
-    return NULL;
+    return Node();
 }
 
 /**
  * For A -> B, given A, returns B; otherwise returns null.
  */
-Variable* Edge::traverseDirected(Variable* node, Edge& edge) {
+Node Edge::traverseDirected(const Node& node, Edge& edge) {
     if (node == edge.node1 && edge.endpoint1 == ENDPOINT_TAIL && edge.endpoint2 == ENDPOINT_ARROW)
         return edge.node2;
     if (node == edge.node2 && edge.endpoint2 == ENDPOINT_TAIL && edge.endpoint1 == ENDPOINT_ARROW)
         return edge.node1;
     
-    return NULL;
+    return Node();
 }
 
 /**
  * For A -> B, given B, returns A; otherwise returns null.
  */
-Variable* Edge::traverseReverseDirected(Variable* node, Edge& edge) {
+Node Edge::traverseReverseDirected(const Node& node, Edge& edge) {
     if (node == edge.node1 && edge.endpoint1 == ENDPOINT_ARROW && edge.endpoint2 == ENDPOINT_TAIL)
         return edge.node2;
     if (node == edge.node2 && edge.endpoint2 == ENDPOINT_ARROW && edge.endpoint1 == ENDPOINT_TAIL)
         return edge.node1;
     
-    return NULL;
+    return Node();
 }
 
-Variable* Edge::traverseReverseSemiDirected(Variable* node, Edge& edge) {
+Node Edge::traverseReverseSemiDirected(const Node& node, Edge& edge) {
     if (node == edge.node1 && (edge.endpoint2 == ENDPOINT_TAIL || edge.endpoint2 == ENDPOINT_CIRCLE))
         return edge.node2;
     if (node == edge.node2 && (edge.endpoint1 == ENDPOINT_TAIL || edge.endpoint1 == ENDPOINT_CIRCLE))
         return edge.node1;
     
-    return NULL;
+    return Node();
 }
 
 /**
  * For A --* B or A o-* B, given A, returns B. For A <-* B, returns null.
  */
-Variable* Edge::traverseSemiDirected(Variable* node, Edge& edge) {
+Node Edge::traverseSemiDirected(const Node& node, Edge& edge) {
     if (node == edge.node1 && (edge.endpoint1 == ENDPOINT_TAIL || edge.endpoint1 == ENDPOINT_CIRCLE))
         return edge.node2;
     if (node == edge.node2 && (edge.endpoint2 == ENDPOINT_TAIL || edge.endpoint2 == ENDPOINT_CIRCLE))
         return edge.node1;
     
-    return NULL;
+    return Node();
 }
 
 /**
@@ -265,7 +267,7 @@ Variable* Edge::traverseSemiDirected(Variable* node, Edge& edge) {
  * @throws std::invalid_argument if the given edge is not a directed
  *                                  edge.
  */
-Variable* Edge::getDirectedEdgeHead(Edge& edge) {
+const Node& Edge::getDirectedEdgeHead(Edge& edge) {
     if (edge.endpoint1 == ENDPOINT_ARROW && edge.endpoint2 == ENDPOINT_TAIL)
         return edge.node1;
     if (edge.endpoint2 == ENDPOINT_ARROW && edge.endpoint1 == ENDPOINT_TAIL)
@@ -283,7 +285,7 @@ Variable* Edge::getDirectedEdgeHead(Edge& edge) {
  * @throws std::invalid_argument if the given edge is not a directed
  *                                  edge.
  */
-Variable* Edge::getDirectedEdgeTail(Edge& edge) {
+const Node& Edge::getDirectedEdgeTail(Edge& edge) {
     if (edge.endpoint2 == ENDPOINT_ARROW && edge.endpoint1 == ENDPOINT_TAIL)
         return edge.node1;
     if (edge.endpoint1 == ENDPOINT_ARROW && edge.endpoint2 == ENDPOINT_TAIL)
@@ -303,8 +305,8 @@ std::string Edge::toString() {
     return result.str();
 }
 
-std::ostream& operator<<(std::ostream& os, Edge& edge) {
-    os << edge.node1->getName() << " ";
+std::ostream& operator<<(std::ostream& os, const Edge& edge) {
+    os << edge.node1.getName() << " ";
 
     switch(edge.endpoint1) {
         case ENDPOINT_TAIL:
@@ -332,7 +334,7 @@ std::ostream& operator<<(std::ostream& os, Edge& edge) {
             break;
     }
 
-    os << " " << edge.node2->getName();
+    os << " " << edge.node2.getName();
 
     return os;
 }
@@ -359,9 +361,9 @@ bool operator!=(const Edge& e1, const Edge& e2) {
 
 bool operator< (const Edge& e1, const Edge& e2) {
     if (e1.node1 != e2.node1) {
-        return e1.node1->getName() < e2.node1->getName();
+        return e1.node1 < e2.node1;
     }
-    return e1.node2->getName() < e2.node2->getName();
+    return e1.node2 < e2.node2;
 }
 
 bool operator>= (const Edge& e1, const Edge& e2) {

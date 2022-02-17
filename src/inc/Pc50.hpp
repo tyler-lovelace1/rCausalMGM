@@ -5,7 +5,6 @@
 
 #include "IndependenceTest.hpp"
 #include "EdgeListGraph.hpp"
-#include "Variable.hpp"
 #include "SepsetMap.hpp"
 #include "FasStableProducerConsumer.hpp"
 #include "SearchGraphUtils.hpp"
@@ -72,7 +71,7 @@ private:
 
     bool verbose = false;
 
-    bool fdr = true;
+    bool fdr = false;
 
     /**
      * The number of consumer threads to create for multi-threaded steps. -1 to set automatically
@@ -91,23 +90,24 @@ private:
 
     struct ColliderTask {
         Triple t;
-        std::vector<Variable*> sepset;
-        ColliderTask(Triple _t, const std::vector<Variable*>& _sepset): t(_t), sepset(_sepset) {}
+        std::vector<Node> sepset;	
+	ColliderTask() {};
+        ColliderTask(Triple _t, const std::vector<Node>& _sepset): t(_t), sepset(_sepset) {}
         ColliderTask(const ColliderTask& ct): t(ct.t), sepset(ct.sepset) {}
-        ColliderTask(): t(NULL, NULL, NULL), sepset({}) {}
+	// ColliderTask(): t(NULL, NULL, NULL), sepset({}) {}
     };
 
     std::mutex mapMutex;
     
     void orientUnshieldedTriples();
 
-    bool isCollider(Triple t);
+    bool isCollider(Triple& t);
 
-    bool isNonCollider(Triple t);
+    bool isNonCollider(Triple& t);
 
-    void orientCollider(Variable* a, Variable* b, Variable* c);
+    void orientCollider(const Node& a, const Node& b, const Node& c);
 
-    bool wouldCreateBadCollider(Variable* x, Variable* y);
+    bool wouldCreateBadCollider(const Node& x, const Node& y);
 
 public:
 
@@ -167,7 +167,7 @@ public:
      */
     void setDepth(int depth);
 
-    std::vector<Variable*> getNodes() { return graph.getNodes(); }
+    std::vector<Node> getNodes() { return graph.getNodes(); }
 
     void setInitialGraph(EdgeListGraph *initialGraph) { this->initialGraph = initialGraph; }
 
@@ -183,9 +183,9 @@ public:
      */
     EdgeListGraph search();
 
-    EdgeListGraph search(const std::vector<Variable*>& nodes);
+    EdgeListGraph search(const std::vector<Node>& nodes);
 
-    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes);
+    EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes);
 
 };
 

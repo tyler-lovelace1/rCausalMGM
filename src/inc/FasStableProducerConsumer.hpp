@@ -26,7 +26,12 @@ private:
     /**
      * The search nodes.
      */
-    std::vector<Variable*> nodes;
+    std::vector<Node> nodes;
+
+    // /**
+    //  * Default constructor node will serve as a null node
+    //  */
+    // static Node nullNode;
 
     /**
      * The independence test. This should be appropriate to the types
@@ -74,13 +79,13 @@ private:
      */
     // bool fci = false;
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> adjacencies;
+    std::unordered_map<Node, std::unordered_set<Node>> adjacencies;
 
-    std::unordered_map<std::pair<Variable*, Variable*>, double,
-		       boost::hash<std::pair<Variable*, Variable*>>> edgePvals;
+    std::unordered_map<std::pair<Node, Node>, double,
+		       boost::hash<std::pair<Node, Node>>> edgePvals;
 
-    std::unordered_map<std::pair<Variable*, Variable*>, std::vector<Variable*>,
-		       boost::hash<std::pair<Variable*, Variable*>>> edgeMaxPSet;
+    std::unordered_map<std::pair<Node, Node>, std::vector<Node>,
+		       boost::hash<std::pair<Node, Node>>> edgeMaxPSet;
 
     /**
      * The depth 0 graph, specified initially.
@@ -91,7 +96,7 @@ private:
 
     bool sepsetsReturnEmptyIfNotFixed = true;
 
-    bool fdr = true;
+    bool fdr = false;
 
     bool searchAtDepth0();
 
@@ -100,22 +105,27 @@ private:
     bool searchAtDepth(int depth);
 
     // Knowlegde
-    // std::vector<Variable*> possibleParents(Variable* x, std::vector<Variable*>& adjx, IKnowledge knowledge);
+    // std::vector<Node> possibleParents(Node x, std::vector<Node>& adjx, IKnowledge knowledge);
     // bool possibleParentOf(std::string z, std::string x, IKnowledge knowledge);
-    // bool forbiddenEdge(Variable* x, Variable* y);
+    // bool forbiddenEdge(Node x, Node y);
 
     // Concurrency
     struct IndependenceTask {
-        Variable* x;
-        Variable* y;
-        std::vector<Variable*> z;
-	IndependenceTask() : x(new ContinuousVariable("EJWMX3RCpPi0qbp")),
-			     y(new ContinuousVariable("nLtWU7DmeZyYPZs")),
-			     z(std::vector<Variable*>()) {}
-        IndependenceTask(Variable* _x, Variable* _y, std::vector<Variable*>& _z) : x(_x),
-										   y(_y),
-										   z(_z) {} 
-        IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
+        Node x;
+        Node y;
+        std::vector<Node> z;
+	IndependenceTask() : x(),
+			     y(),
+			     z() {}
+        IndependenceTask(const Node& _x, const Node& _y, std::vector<Node>& _z) : x(_x),
+										  y(_y),
+										  z(_z) {}
+	IndependenceTask(const IndependenceTask& it) = default;
+	IndependenceTask& operator=(const IndependenceTask& other) = default;
+	IndependenceTask(IndependenceTask&& it) = default;
+	IndependenceTask& operator=(IndependenceTask&& other) = default;
+	~IndependenceTask() = default;
+        // IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
     };
 
     const int MAX_QUEUE_SIZE = 100;
@@ -129,7 +139,7 @@ private:
     void producerDepth0();
 
     void consumerDepth(int depth);
-    void producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy);
+    void producerDepth(int depth, std::unordered_map<Node, std::unordered_set<Node>>& adjacenciesCopy);
 
 public:
 
@@ -148,7 +158,7 @@ public:
      */
     EdgeListGraph search();
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> searchMapOnly();
+    std::unordered_map<Node, std::unordered_set<Node>> searchMapOnly();
 
     int getDepth() { return depth; }
     void setDepth(int depth);
@@ -173,7 +183,7 @@ public:
     // bool isAggressivelyPreventCycles() { return false; }
     // void setAggressivelyPreventCycles(bool aggressivelyPreventCycles) {}
 
-    std::vector<Variable*> getNodes() { return test->getVariables(); }
+    std::vector<Node> getNodes() { return test->getVariables(); }
 
     int getNumIndependenceJudgements() { return numIndependenceJudgements; }
 

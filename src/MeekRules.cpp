@@ -7,7 +7,7 @@ void MeekRules::orientImplied(EdgeListGraph& graph) {
     orientImplied(graph, nodes);
 }
 
-void MeekRules::orientImplied(EdgeListGraph& graph, std::vector<Variable*>& nodes) {
+void MeekRules::orientImplied(EdgeListGraph& graph, std::vector<Node>& nodes) {
     this->nodes = nodes;
     visited.insert(nodes.begin(), nodes.end());
 
@@ -19,21 +19,21 @@ void MeekRules::orientUsingMeekRulesLocally(EdgeListGraph& graph) {
     oriented = {};
 
     if (shouldUndirectUnforcedEdges) {
-        for (Variable* node : nodes) {
+        for (Node node : nodes) {
             undirectUnforcedEdges(node, graph);
-            std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(node);
-            for (Variable* adj : adjacentNodes) {
+            std::vector<Node> adjacentNodes = graph.getAdjacentNodes(node);
+            for (Node adj : adjacentNodes) {
                 directStack.push(adj);
             }
         }
     }
 
-    for (Variable* node : nodes) {
+    for (Node node : nodes) {
         runMeekRules(node, graph);
     }
 
     while(!directStack.empty()) {
-        Variable* node = directStack.top();
+        Node node = directStack.top();
         directStack.pop();
 
         if (shouldUndirectUnforcedEdges) {
@@ -44,7 +44,7 @@ void MeekRules::orientUsingMeekRulesLocally(EdgeListGraph& graph) {
     }
 }
 
-void MeekRules::runMeekRules(Variable* node, EdgeListGraph& graph) {
+void MeekRules::runMeekRules(Node node, EdgeListGraph& graph) {
     meekR1(node, graph);
     meekR2(node, graph);
     meekR3(node, graph);
@@ -54,8 +54,8 @@ void MeekRules::runMeekRules(Variable* node, EdgeListGraph& graph) {
 /**
  * Meek's rule R1: if a-->b, b---c, and a not adj to c, then a-->c
  */
-void MeekRules::meekR1(Variable* b, EdgeListGraph& graph) {
-    std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(b);
+void MeekRules::meekR1(Node b, EdgeListGraph& graph) {
+    std::vector<Node> adjacentNodes = graph.getAdjacentNodes(b);
 
     if (adjacentNodes.size() < 2) {
         return;
@@ -65,9 +65,9 @@ void MeekRules::meekR1(Variable* b, EdgeListGraph& graph) {
     std::vector<int> *choice;
 
     for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-        std::vector<Variable*> nodes = GraphUtils::asList(*choice, adjacentNodes);
-        Variable* a = nodes[0];
-        Variable* c = nodes[1];
+        std::vector<Node> nodes = GraphUtils::asList(*choice, adjacentNodes);
+        Node a = nodes[0];
+        Node c = nodes[1];
 
         r1Helper(a, b, c, graph);
         r1Helper(c, b, a, graph);
@@ -76,7 +76,7 @@ void MeekRules::meekR1(Variable* b, EdgeListGraph& graph) {
 
 }
 
-void MeekRules::r1Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
+void MeekRules::r1Helper(Node a, Node b, Node c, EdgeListGraph& graph) {
     if (!graph.isAdjacentTo(a, c) && graph.isDirectedFromTo(a, b) && graph.isUndirectedFromTo(b, c)) {
         if (!isUnshieldedNoncollider(a, b, c, graph)) {
             return;
@@ -94,8 +94,8 @@ void MeekRules::r1Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& g
 /**
  * If a-->b-->c, a--c, then b-->c.
  */
-void MeekRules::meekR2(Variable* c, EdgeListGraph& graph) {
-    std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(c);
+void MeekRules::meekR2(Node c, EdgeListGraph& graph) {
+    std::vector<Node> adjacentNodes = graph.getAdjacentNodes(c);
 
     if (adjacentNodes.size() < 2) {
         return;
@@ -105,9 +105,9 @@ void MeekRules::meekR2(Variable* c, EdgeListGraph& graph) {
     std::vector<int> *choice;
 
     for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-        std::vector<Variable*> nodes = GraphUtils::asList(*choice, adjacentNodes);
-        Variable* a = nodes[0];
-        Variable* b = nodes[1];
+        std::vector<Node> nodes = GraphUtils::asList(*choice, adjacentNodes);
+        Node a = nodes[0];
+        Node b = nodes[1];
 
         r2Helper(a, b, c, graph);
         r2Helper(b, a, c, graph);
@@ -116,7 +116,7 @@ void MeekRules::meekR2(Variable* c, EdgeListGraph& graph) {
     }
 }
 
-void MeekRules::r2Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
+void MeekRules::r2Helper(Node a, Node b, Node c, EdgeListGraph& graph) {
     if (graph.isDirectedFromTo(a, b) && graph.isDirectedFromTo(b, c) && graph.isUndirectedFromTo(a, c)) {
         if (isArrowpointAllowed(a, c)) {
             direct(a, c, graph);
@@ -129,25 +129,25 @@ void MeekRules::r2Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& g
 /**
  * Meek's rule R3. If a--b, a--c, a--d, c-->b, d-->b, then orient a-->b.
  */
-void MeekRules::meekR3(Variable* a, EdgeListGraph& graph) {
-    std::vector<Variable*> adjacentNodes = graph.getAdjacentNodes(a);
+void MeekRules::meekR3(Node a, EdgeListGraph& graph) {
+    std::vector<Node> adjacentNodes = graph.getAdjacentNodes(a);
 
     if (adjacentNodes.size() < 3) {
         return;
     }
 
-    for (Variable* d : adjacentNodes) {
+    for (Node d : adjacentNodes) {
         if (Edge::isUndirectedEdge(graph.getEdge(a, d))) {
-            std::vector<Variable*> otherAdjacents(adjacentNodes);
+            std::vector<Node> otherAdjacents(adjacentNodes);
             otherAdjacents.erase(std::remove(otherAdjacents.begin(), otherAdjacents.end(), d), otherAdjacents.end());
 
             ChoiceGenerator cg(otherAdjacents.size(), 2);
             std::vector<int> *choice;
 
             for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-                std::vector<Variable*> nodes = GraphUtils::asList(*choice, otherAdjacents);
-                Variable* b = nodes[0];
-                Variable* c = nodes[1];
+                std::vector<Node> nodes = GraphUtils::asList(*choice, otherAdjacents);
+                Node b = nodes[0];
+                Node c = nodes[1];
 
                 if (isKite(a, d, b, c, graph)) {
                     if (isArrowpointAllowed(d, a)) {
@@ -166,7 +166,7 @@ void MeekRules::meekR3(Variable* a, EdgeListGraph& graph) {
     }
 }
 
-bool MeekRules::isKite(Variable* a, Variable* d, Variable* b, Variable* c, EdgeListGraph& graph) {
+bool MeekRules::isKite(Node a, Node d, Node b, Node c, EdgeListGraph& graph) {
     return graph.isUndirectedFromTo(d, c) &&
            graph.isUndirectedFromTo(d, b) &&
            graph.isDirectedFromTo(b, a) &&
@@ -174,7 +174,7 @@ bool MeekRules::isKite(Variable* a, Variable* d, Variable* b, Variable* c, EdgeL
            graph.isUndirectedFromTo(d, a);
 }
 
-void MeekRules::meekR4(Variable* a, EdgeListGraph& graph) {
+void MeekRules::meekR4(Node a, EdgeListGraph& graph) {
     if (!useRule4) {
         return;
     }
@@ -183,7 +183,7 @@ void MeekRules::meekR4(Variable* a, EdgeListGraph& graph) {
     Rcpp::Rcout << "Since rule4 requires knowlegde, this function should never be used" << std::endl;
 }
 
-void MeekRules::direct(Variable* a, Variable* c, EdgeListGraph& graph) {
+void MeekRules::direct(Node a, Node c, EdgeListGraph& graph) {
     Edge before = graph.getEdge(a, c);
 
     Edge after = Edge::directedEdge(a, c);
@@ -199,7 +199,7 @@ void MeekRules::direct(Variable* a, Variable* c, EdgeListGraph& graph) {
     directStack.push(c);
 }
 
-bool MeekRules::isUnshieldedNoncollider(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph) {
+bool MeekRules::isUnshieldedNoncollider(Node a, Node b, Node c, EdgeListGraph& graph) {
     if (!graph.isAdjacentTo(a, b)) {
         return false;
     }
@@ -220,17 +220,17 @@ bool MeekRules::isUnshieldedNoncollider(Variable* a, Variable* b, Variable* c, E
              graph.getEndpoint(c, b) == ENDPOINT_ARROW);
 }
 
-bool MeekRules::isArrowpointAllowed(Variable* from, Variable* to) {
+bool MeekRules::isArrowpointAllowed(Node from, Node to) {
     // Knowledge
     return true;
 }
 
-void MeekRules::undirectUnforcedEdges(Variable* y, EdgeListGraph& graph) {
-    std::unordered_set<Variable*> parentsToUndirect;
-    std::vector<Variable*> parents = graph.getParents(y);
+void MeekRules::undirectUnforcedEdges(Node y, EdgeListGraph& graph) {
+    std::unordered_set<Node> parentsToUndirect;
+    std::vector<Node> parents = graph.getParents(y);
 
-    for (Variable* x : parents) {
-        for (Variable* parent : parents) {
+    for (Node x : parents) {
+        for (Node parent : parents) {
             if (parent != x) {
                 if (!graph.isAdjacentTo(parent, x)) {
                     oriented.insert(graph.getEdge(x, y));
@@ -245,7 +245,7 @@ void MeekRules::undirectUnforcedEdges(Variable* y, EdgeListGraph& graph) {
 
     bool didit = false;
 
-    for (Variable* x : parentsToUndirect) {
+    for (Node x : parentsToUndirect) {
         bool mustOrient = false; // Knowledge
 
         if (!oriented.count(graph.getEdge(x, y)) && !mustOrient) {
@@ -258,7 +258,7 @@ void MeekRules::undirectUnforcedEdges(Variable* y, EdgeListGraph& graph) {
     }
 
     if (didit) {
-        for (Variable* z : graph.getAdjacentNodes(y)) {
+        for (Node z : graph.getAdjacentNodes(y)) {
             directStack.push(z);
         }
 

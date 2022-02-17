@@ -3,6 +3,8 @@
 #include "ChoiceGenerator.hpp"
 #include "GraphUtils.hpp"
 
+// Node FasStableProducerConsumer::nullNode = Node();
+
 FasStableProducerConsumer::FasStableProducerConsumer(EdgeListGraph *initialGraph, IndependenceTest *test, int threads) : FasStableProducerConsumer(test, threads) 
 {
     this->initialGraph = initialGraph;
@@ -54,14 +56,14 @@ EdgeListGraph FasStableProducerConsumer::search() {
 
     adjacencies.clear();
 
-    for (Variable* node : nodes) {
+    for (const Node& node : nodes) {
         adjacencies[node] = {};
     }
 
     for (int d = 0; d <= _depth; d++) {
         bool more;
 
-	if (verbose) Rcpp::Rcout << "    Searching at depth " << d << "..." << std::endl;
+	if (verbose) Rcpp::Rcout << "    Searching at depth " << d << "...\r";
 
         if (d == 0) {
             more = searchAtDepth0();
@@ -75,8 +77,8 @@ EdgeListGraph FasStableProducerConsumer::search() {
     graph = EdgeListGraph(nodes);
 
     // Should be more efficient than the above code
-    for (Variable* x : nodes) {
-        for (Variable* y : adjacencies[x]) {
+    for (const Node& x : nodes) {
+        for (const Node& y : adjacencies[x]) {
             graph.addUndirectedEdge(x, y);
         }
     }
@@ -89,7 +91,7 @@ EdgeListGraph FasStableProducerConsumer::search() {
 	} else {
 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
 	}
-        Rcpp::Rcout << "  FAS Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+        Rcpp::Rcout << std::endl << "  FAS Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     // if (verbose) Rcpp::Rcout << "Fas graph: \n" << graph << std::endl;
@@ -100,11 +102,10 @@ EdgeListGraph FasStableProducerConsumer::search() {
     }
     graph.setHyperParam("alpha", Rcpp::NumericVector::create(test->getAlpha()));
 
-
     return graph;
 }
 
-std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerConsumer::searchMapOnly() {
+std::unordered_map<Node, std::unordered_set<Node>> FasStableProducerConsumer::searchMapOnly() {
     if (verbose) Rcpp::Rcout << "Starting FasStableProducerConsumer Adjacency Search." << std::endl;
 
     graph.removeEdges(graph.getEdgeList());
@@ -115,17 +116,17 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
 
     if (_depth == -1) _depth = 1000;
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> adjacencies;
-    std::vector<Variable*> nodes = graph.getNodes();
+    std::unordered_map<Node, std::unordered_set<Node>> adjacencies;
+    std::vector<Node> nodes = graph.getNodes();
 
-    for (Variable* node : nodes) {
+    for (const Node& node : nodes) {
         adjacencies[node] = {};
     }
 
     for (int d = 0; d <= _depth; d++) {
         bool more;
 
-	if (verbose) Rcpp::Rcout << "Searching at depth " << d << "..." << std::endl;
+	if (verbose) Rcpp::Rcout << "Searching at depth " << d << "...\r";
 
         if (d == 0) {
             more = searchAtDepth0();
@@ -135,7 +136,7 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
 
 	int edgeCount = 0;
 
-	for (Variable* node : nodes) {
+	for (const Node& node : nodes) {
 	    edgeCount += adjacencies[node].size();
 	}
 
@@ -144,7 +145,7 @@ std::unordered_map<Variable*, std::unordered_set<Variable*>> FasStableProducerCo
         if (!more) break;
     }
 
-    if (verbose) Rcpp::Rcout << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
+    if (verbose) Rcpp::Rcout << std::endl << "Finishing FasStableProducerConsumer Adjacency Search." << std::endl;
     return adjacencies;
 }
 
@@ -153,9 +154,9 @@ bool FasStableProducerConsumer::searchAtDepth0() {
     std::vector<RcppThread::Thread> threads;
 
     int numEdges = nodes.size() * (nodes.size() - 1) / 2;
-    // if (initialGraph != NULL) {
-    // 	numEdges = initialGraph->getNumEdges();
-    // }
+    if (initialGraph != NULL) {
+    	numEdges = initialGraph->getNumEdges();
+    }
 
     threads.push_back(RcppThread::Thread( [this] { producerDepth0(); } ));
 
@@ -172,19 +173,19 @@ bool FasStableProducerConsumer::searchAtDepth0() {
     }
 
     if (fdr) {
-	std::vector<std::pair<Variable*, Variable*>> edgeVec;
-	std::unordered_set<std::pair<Variable*, Variable*>,
-			   boost::hash<std::pair<Variable*, Variable*>>> edgeSet;
+	std::vector<NodePair> edgeVec;
+	std::unordered_set<NodePair,
+			   boost::hash<NodePair>> edgeSet;
 
 	for (int i = 0; i < nodes.size(); i++) {
-	    Variable* x = nodes[i];
+	    const Node& x = nodes[i];
 	    
 	    for (int j = i+1; j < nodes.size(); j++) {
-		Variable* y = nodes[j];
+		const Node& y = nodes[j];
 
 		if (initialGraph != NULL) {
-		    Variable* x2 = initialGraph->getNode(x->getName());
-		    Variable* y2 = initialGraph->getNode(y->getName());
+		    const Node& x2 = initialGraph->getNode(x.getName());
+		    const Node& y2 = initialGraph->getNode(y.getName());
 
 		    if (!initialGraph->isAdjacentTo(x2, y2))
 			continue;
@@ -194,29 +195,46 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	    }
 	}
 
-	edgeVec = std::vector<std::pair<Variable*, Variable*>>(edgeSet.begin(), edgeSet.end());
+	edgeVec = std::vector<NodePair>(edgeSet.begin(), edgeSet.end());
 
 	
 	std::sort(edgeVec.begin(), edgeVec.end(),
-		  [&](const std::pair<Variable*, Variable*>& e1,
-		      const std::pair<Variable*, Variable*>& e2) {
+		  [&](const NodePair& e1,
+		      const NodePair& e2) {
 		      return edgePvals[e1] < edgePvals[e2];
 		  });
 
 	// numEdges = edgeVec.size();
-	// Rcpp::Rcout << "Number of  edges: " << numEdges << std::endl;
+	
+	double harmonicSum = 0;
+	if (initialGraph != NULL) {
+	    for (int i = 1; i <= numEdges; i++) harmonicSum += (1 / (double) i);
+	}
 
+	// Rcpp::Rcout << "Number of  edges: " << numEdges << std::endl;
+	// if (initialGraph != NULL) {
+	//     Rcpp::Rcout << "Multiplier = " << harmonicSum << std::endl;
+	// }
+	
+	double maxFdrpval = 0;
 	for (int i = 0; i < edgeVec.size(); i++) {
-	    std::pair<Variable*, Variable*> edgePair = edgeVec.at(i);
+	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
 	    double fdrpval = numEdges / ((double) i+1) * pval;
+	    
+	    if (initialGraph != NULL) {
+		fdrpval *= harmonicSum;
+	    }
+
+	    maxFdrpval = std::max(maxFdrpval, fdrpval);
+
 
 	    if (pval <= test->getAlpha()) {
-		// Rcpp::Rcout << "  Edge: " << edgePair.first->getName() << " --- "
-		// 	    << edgePair.second->getName() << "\n    p = " << pval
-		// 	    << "\n    FDR p = " << fdrpval << std::endl;
+		// Rcpp::Rcout << "  Edge: " << edgePair.first << " --- "
+		// 	    << edgePair.second << "\n    p = " << pval
+		// 	    << "\n    FDR p = " << maxFdrpval << std::endl;
 	    
-		if (fdrpval > test->getAlpha()) {
+		if (maxFdrpval > test->getAlpha()) {
 		    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
 		    adjacencies[edgePair.first].erase(edgePair.second);
 		    adjacencies[edgePair.second].erase(edgePair.first);
@@ -229,17 +247,17 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 }
 
 void FasStableProducerConsumer::producerDepth0() {
-    std::vector<Variable*> empty = {};
+    std::vector<Node> empty = {};
 
     for (int i = 0; i < nodes.size(); i++) {
-        Variable* x = nodes[i];
+        const Node& x = nodes[i];
 
         for (int j = i+1; j < nodes.size(); j++) {
-            Variable* y = nodes[j];
+            const Node& y = nodes[j];
 
             if (initialGraph != NULL) {
-                Variable* x2 = initialGraph->getNode(x->getName());
-                Variable* y2 = initialGraph->getNode(y->getName());
+                const Node& x2 = initialGraph->getNode(x.getName());
+                const Node& y2 = initialGraph->getNode(y.getName());
 
                 if (!initialGraph->isAdjacentTo(x2, y2))
                     continue;
@@ -254,8 +272,17 @@ void FasStableProducerConsumer::producerDepth0() {
 	}
     }
 
+    // RcppThread::Rcout << "\nCreating poison pills\n";
+
     // add poison pill to stop consumers
-    IndependenceTask poisonPill(NULL, NULL, empty);
+    IndependenceTask poisonPill; // (Node(), Node(), empty);
+
+    // RcppThread::Rcout << "Poison pills created\n";
+    
+    // RcppThread::Rcout << "X is NULL:  " << ((poisonPill.x.isNull()) ? "true" : "false")
+    // 		      << "\nY is NULL:  " << ((poisonPill.y.isNull()) ? "true" : "false")
+    // 		      << std::endl;
+
     for (int i = 0; i < parallelism; i++) {
         taskQueue.push(poisonPill);
     }
@@ -266,11 +293,12 @@ void FasStableProducerConsumer::consumerDepth0() {
     while(true) {
         IndependenceTask task = taskQueue.pop();
 
+	// RcppThread::Rcout << "X = " << task.x << "\nY = " << task.y << "\n";
         //If poison, return
-        if (task.x == NULL && task.y == NULL) return;
+        if (task.x.isNull() && task.y.isNull())  return;
 
         numIndependenceTests++;
-	double pval = test->getAlpha() + 1e-5;
+	double pval;
         bool independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
 	if (independent) {
@@ -285,7 +313,7 @@ void FasStableProducerConsumer::consumerDepth0() {
 	
 	if (fdr) {
 	    std::lock_guard<std::mutex> pvalLock(pvalMutex);
-	    std::pair<Variable*, Variable*> edgePair = std::minmax(task.x, task.y);
+	    NodePair edgePair = std::minmax(task.x, task.y);
 	    if (edgePvals.find(edgePair) == edgePvals.end() || edgePvals[edgePair] < pval) {
 		edgePvals[edgePair] = pval;
 		edgeMaxPSet[edgePair] = task.z;
@@ -312,7 +340,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         IndependenceTask task = taskQueue.pop();
 
         //If poison, return
-        if (task.x == NULL && task.y == NULL) return;
+        if (task.x.isNull() && task.y.isNull()) return;
 
 	bool edgeExists;
 	{
@@ -323,7 +351,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
-	double pval = test->getAlpha() + 1e-5;
+	double pval;
         bool independent;
         independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
@@ -338,7 +366,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 
 	if (fdr) {
 	    std::lock_guard<std::mutex> pvalLock(pvalMutex);
-	    std::pair<Variable*, Variable*> edgePair = std::minmax(task.x, task.y);
+	    NodePair edgePair = std::minmax(task.x, task.y);
 	    if (edgePvals.find(edgePair) == edgePvals.end() || edgePvals[edgePair] < pval) {
 		edgePvals[edgePair] = pval;
 		edgeMaxPSet[edgePair] = task.z;
@@ -356,33 +384,30 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
     }
 }
 
-void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Variable*, std::unordered_set<Variable*>>& adjacenciesCopy) {
-    for (Variable* x : nodes) {
+void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Node, std::unordered_set<Node>>& adjacenciesCopy) {
+    for (const Node& x : nodes) {
 
-        std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
+        std::unordered_set<Node> adjx = adjacenciesCopy[x];
 
-        for (Variable* y : adjx) {
+        for (const Node& y : adjx) {
 
-            std::vector<Variable*> _adjx(adjx.begin(), adjx.end());
+            std::vector<Node> _adjx(adjx.begin(), adjx.end());
             _adjx.erase(std::remove(_adjx.begin(), _adjx.end(), y), _adjx.end());
 
             // Knowledge: possible parents
-            std::vector<Variable*> ppx = _adjx;
+            std::vector<Node> ppx = _adjx;
 
-	    std::sort(ppx.begin(),
-		      ppx.end(),
-		      [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
-		);
+	    std::sort(ppx.begin(), ppx.end());
 
             if (ppx.size() >= depth) {
                 ChoiceGenerator cg(ppx.size(), depth);
                 std::vector<int> *choice;
 
                 for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-                    std::vector<Variable*> condSet = GraphUtils::asList(*choice, ppx);
+                    std::vector<Node> condSet = GraphUtils::asList(*choice, ppx);
 
 		    // std::sort(condSet.begin(), condSet.end(),
-		    // 	      []( Variable* lhs, Variable* rhs )
+		    // 	      []( const Node& lhs, const Node& rhs )
 		    // 	      {
 		    // 		  return lhs->getName() < rhs->getName();
 		    // 	      }
@@ -404,8 +429,14 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
     }
 
     // add poison pill to stop consumers
-    std::vector<Variable*> empty = {};
-    IndependenceTask poisonPill(NULL, NULL, empty);
+    // RcppThread::Rcout << "Creating poison pills\n";
+    // std::vector<Node> empty = {};
+    IndependenceTask poisonPill; // (Node(), Node(), empty);
+    
+    // RcppThread::Rcout << "X is NULL:  " << ((poisonPill.x.isNull()) ? "true" : "false")
+    // 		      << "\nY is NULL:  " << ((poisonPill.y.isNull()) ? "true" : "false")
+    // 		      << std::endl;
+
     for (int i = 0; i < parallelism; i++) {
         taskQueue.push(poisonPill);
     }
@@ -415,11 +446,11 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Vari
 int FasStableProducerConsumer::freeDegree() {
     int max = 0;
 
-    for (Variable* x : nodes) {
-        std::unordered_set<Variable*> opposites = adjacencies[x];
+    for (const Node& x : nodes) {
+        std::unordered_set<Node> opposites = adjacencies[x];
 
-        for (Variable* y : opposites) {
-            std::unordered_set<Variable*> adjx(opposites);
+        for (const Node& y : opposites) {
+            std::unordered_set<Node> adjx(opposites);
             adjx.erase(y);
 
             if (adjx.size() > max) {
@@ -433,7 +464,7 @@ int FasStableProducerConsumer::freeDegree() {
 
 bool FasStableProducerConsumer::searchAtDepth(int depth) {
 
-    std::unordered_map<Variable*, std::unordered_set<Variable*>> adjacenciesCopy = adjacencies;
+    std::unordered_map<Node, std::unordered_set<Node>> adjacenciesCopy = adjacencies;
 
     int numEdges = 0;
     
@@ -460,38 +491,53 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
     }
 
     if (fdr) {
-        std::vector<std::pair<Variable*, Variable*>> edgeVec;
-	std::unordered_set<std::pair<Variable*, Variable*>,
-			   boost::hash<std::pair<Variable*, Variable*>>> edgeSet;
+        std::vector<NodePair> edgeVec;
+	std::unordered_set<NodePair,
+			   boost::hash<NodePair>> edgeSet;
 
-        for (Variable* x : nodes) {
+        for (const Node& x : nodes) {
 
-	    std::unordered_set<Variable*> adjx = adjacenciesCopy[x];
+	    std::unordered_set<Node> adjx = adjacenciesCopy[x];
 	    
-	    for (Variable* y : adjx) {
+	    for (const Node& y : adjx) {
 		edgeSet.insert(std::minmax(x,y));
 	    }
 	}
 
-	edgeVec = std::vector<std::pair<Variable*, Variable*>>(edgeSet.begin(), edgeSet.end());
+	edgeVec = std::vector<NodePair>(edgeSet.begin(), edgeSet.end());
 	
 	std::sort(edgeVec.begin(), edgeVec.end(),
-		  [&](const std::pair<Variable*, Variable*>& e1,
-		      const std::pair<Variable*, Variable*>& e2) {
+		  [&](const NodePair& e1,
+		      const NodePair& e2) {
 		      return edgePvals[e1] < edgePvals[e2];
 		  });
 
+	
+	double harmonicSum = 0;
+	for (int i = 1; i <= numEdges; i++) harmonicSum += (1 / (double) i);
+
+	// Rcpp::Rcout << "\nNumber of Edges = " << numEdges << std::endl;
+	// Rcpp::Rcout << "Multiplier = " << harmonicSum << std::endl;
+
+	if (numEdges * harmonicSum > nodes.size() * (nodes.size() - 1) / 2) {
+	    numEdges = nodes.size() * (nodes.size() - 1) / 2;
+	    harmonicSum = 1;
+	}
+	
+	double maxFdrpval = 0;
 	for (int i = 0; i < edgeVec.size(); i++) {
-	    std::pair<Variable*, Variable*> edgePair = edgeVec.at(i);
+	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
-	    double fdrpval = numEdges / ((double) i+1) * pval;
+	    double fdrpval = numEdges * harmonicSum / ((double) i+1) * pval;
 
+	    maxFdrpval = std::max(maxFdrpval, fdrpval);
+	    
 	    if (pval <= test->getAlpha()) {
-		// Rcpp::Rcout << "  Edge " << i << ": " << edgePair.first->getName() << " --- "
-		// 	    << edgePair.second->getName() << "\n    p = " << pval
-		// 	    << "\n    FDR p = " << fdrpval << std::endl;
+		// Rcpp::Rcout << "  Edge " << i << ": " << edgePair.first << " --- "
+		// 	    << edgePair.second << "\n    p = " << pval
+		// 	    << "\n    FDR p = " << maxFdrpval << std::endl;
 
-		if (fdrpval > test->getAlpha()) {
+		if (maxFdrpval > test->getAlpha()) {
 		    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
 		    adjacencies[edgePair.first].erase(edgePair.second);
 		    adjacencies[edgePair.second].erase(edgePair.first);

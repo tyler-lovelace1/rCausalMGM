@@ -17,6 +17,12 @@
 class ConvexProximal {
 
 public:
+    // ConvexProximal() {}
+    // ConvexProximal(const ConvexProximal& other) = default;
+    // ConvexProximal& operator=(const ConvexProximal& other) = default;
+    // ConvexProximal(ConvexProximal&& other) = default;
+    // ConvexProximal& operator=(ConvexProximal&& other) = default;
+    // virtual ~ConvexProximal() = 0;
     /**
      * Calculate value of smooth function g(X)
      *

@@ -25,8 +25,8 @@ std::vector<std::string> GraphUtils::splitString(std::string s, const std::strin
  * @param nodes The list of nodes from which we select a sublist.
  * @return the The sublist selected.
  */
-std::vector<Variable*> GraphUtils::asList(std::vector<int>& indices, std::vector<Variable*>& nodes) {
-    std::vector<Variable*> list;
+std::vector<Node> GraphUtils::asList(std::vector<int>& indices, std::vector<Node>& nodes) {
+    std::vector<Node> list;
 
     for (int i : indices) {
         list.push_back(nodes[i]);
@@ -35,8 +35,8 @@ std::vector<Variable*> GraphUtils::asList(std::vector<int>& indices, std::vector
     return list;
 }
 
-std::unordered_set<Variable*> GraphUtils::asSet(std::vector<int>& indices, std::vector<Variable*>& nodes) {
-    std::unordered_set<Variable*> set;
+std::unordered_set<Node> GraphUtils::asSet(std::vector<int>& indices, std::vector<Node>& nodes) {
+    std::unordered_set<Node> set;
 
     for (int i : indices) {
         set.insert(nodes[i]);
@@ -50,12 +50,12 @@ EdgeListGraph GraphUtils::completeGraph(EdgeListGraph& graph) {
 
     graph2.removeEdges();
 
-    std::vector<Variable*> nodes = graph2.getNodes();
+    std::vector<Node> nodes = graph2.getNodes();
 
     for (int i = 0; i < nodes.size(); i++) {
         for (int j = i+1; j < nodes.size(); j++) {
-            Variable* node1 = nodes[i];
-            Variable* node2 = nodes[j];
+            Node node1 = nodes[i];
+            Node node2 = nodes[j];
             graph2.addUndirectedEdge(node1, node2);
         }
     }
@@ -73,24 +73,24 @@ EdgeListGraph GraphUtils::undirectedGraph(EdgeListGraph& graph) {
     return graph2;
 }
 
-std::unordered_set<Variable*> GraphUtils::possibleDsep(Variable* x, Variable* y, EdgeListGraph& graph, int maxPathLength) {
-    std::unordered_set<Variable*> dsep;
+std::unordered_set<Node> GraphUtils::possibleDsep(Node x, Node y, EdgeListGraph& graph, int maxPathLength) {
+    std::unordered_set<Node> dsep;
 
-    std::queue<boost::optional<std::pair<Variable*,Variable*>>> Q;
-    std::unordered_set<std::pair<Variable*,Variable*>, boost::hash<std::pair<Variable*, Variable*> > > V;
+    std::queue<boost::optional<std::pair<Node,Node>>> Q;
+    std::unordered_set<std::pair<Node,Node>, boost::hash<std::pair<Node, Node> > > V;
 
-    std::unordered_map<Variable*, std::vector<Variable*>> previous;
-    std::vector<Variable*> null_vector = {};
-    previous.insert(std::pair<Variable*, std::vector<Variable*>>(x, null_vector));
+    std::unordered_map<Node, std::vector<Node>> previous;
+    std::vector<Node> null_vector = {};
+    previous.insert(std::pair<Node, std::vector<Node>>(x, null_vector));
 
-    boost::optional<std::pair<Variable*,Variable*>> e = {};
+    boost::optional<std::pair<Node,Node>> e = {};
     int distance = 0;
 
-    for (Variable* b : graph.getAdjacentNodes(x)) {
+    for (Node b : graph.getAdjacentNodes(x)) {
         if (b == y) {
             continue;
         }
-        boost::optional<std::pair<Variable*,Variable*> > edge = std::pair<Variable*,Variable*>(x, b);
+        boost::optional<std::pair<Node,Node> > edge = std::pair<Node,Node>(x, b);
         if (!e) {
             e = edge;
         }
@@ -100,7 +100,7 @@ std::unordered_set<Variable*> GraphUtils::possibleDsep(Variable* x, Variable* y,
         dsep.insert(b);
     }
     while (!Q.empty()) {
-        boost::optional<std::pair<Variable*, Variable*> > t = Q.front();
+        boost::optional<std::pair<Node, Node> > t = Q.front();
         Q.pop();
 
         if (e == t) {
@@ -111,13 +111,13 @@ std::unordered_set<Variable*> GraphUtils::possibleDsep(Variable* x, Variable* y,
             }
         }
 
-        Variable* a = t->first;
-        Variable* b = t->second;
+        Node a = t->first;
+        Node b = t->second;
         if (existOnePathWithPossibleParents(previous, b, x, b, graph)) {
             dsep.insert(b);
         }
 
-        for (Variable* c : graph.getAdjacentNodes(b)) {
+        for (Node c : graph.getAdjacentNodes(b)) {
             if (c == a) {
                 continue;
             }
@@ -131,7 +131,7 @@ std::unordered_set<Variable*> GraphUtils::possibleDsep(Variable* x, Variable* y,
             addToList(previous, b, c);
 
             if (graph.isDefCollider(a, b, c) || graph.isAdjacentTo(a, c)) {
-                boost::optional<std::pair<Variable*, Variable*> > u = std::pair<Variable*, Variable*>(a,c);
+                boost::optional<std::pair<Node, Node> > u = std::pair<Node, Node>(a,c);
                 if (std::count(V.begin(), V.end(), *u) != 0) {
                     continue;
                 }
@@ -150,27 +150,27 @@ std::unordered_set<Variable*> GraphUtils::possibleDsep(Variable* x, Variable* y,
     return dsep;
 }
 
-void GraphUtils::addToList(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* b, Variable* c) {
-    std::vector<Variable*> list = previous[c];
+void GraphUtils::addToList(std::unordered_map<Node, std::vector<Node>> previous, Node b, Node c) {
+    std::vector<Node> list = previous[c];
 
     if (list.empty()) {
-        std::vector<Variable*> null_list = {};
+        std::vector<Node> null_list = {};
         list = null_list;
     }
 
     list.push_back(b);
 }
 
-bool GraphUtils::existOnePathWithPossibleParents(std::unordered_map<Variable*, std::vector<Variable*>> previous, Variable* w, Variable* x, Variable* b, EdgeListGraph& graph) {
+bool GraphUtils::existOnePathWithPossibleParents(std::unordered_map<Node, std::vector<Node>> previous, Node w, Node x, Node b, EdgeListGraph& graph) {
     if (w == x) {
         return true;
     }
-    const std::vector<Variable*> p = previous[w];
+    const std::vector<Node> p = previous[w];
     if (p.empty()) {
         return false;
     }
 
-    for (Variable* r : p) {
+    for (Node r : p) {
         if (r == b || r == x) {
             continue;
         }
@@ -185,24 +185,24 @@ bool GraphUtils::existOnePathWithPossibleParents(std::unordered_map<Variable*, s
     return false;
 }
 
-bool GraphUtils::existsSemidirectedPath(Variable* from, Variable* to, EdgeListGraph& G) {
-    std::queue<Variable*> Q;
+bool GraphUtils::existsSemidirectedPath(Node from, Node to, EdgeListGraph& G) {
+    std::queue<Node> Q;
 
-    std::unordered_set<Variable*> V;
+    std::unordered_set<Node> V;
     Q.push(from);
     V.insert(from);
 
     while (!Q.empty()) {
-        Variable* t = Q.front();
+        Node t = Q.front();
         Q.pop();
         if (t == to) {
             return true;
         }
-        for (Variable* u : G.getAdjacentNodes(t)) {
+        for (Node u : G.getAdjacentNodes(t)) {
             Edge edge = G.getEdge(t, u);
-            Variable* c = Edge::traverseSemiDirected(t, edge);
+            Node c = Edge::traverseSemiDirected(t, edge);
 
-            if (c == NULL) {
+            if (c.isNull()) {
                 continue;
             }
             if (std::count(V.begin(), V.end(), c) != 0) {

@@ -17,16 +17,16 @@
 #include "armaLapack.hpp"
 #include <string>
 
-enum DataType { CONTINUOUS, DISCRETE };
+enum DataType { NONE, CONTINUOUS, DISCRETE };
 
 class Variable {
     
 protected:
     std::string name = "??";
-    DataType type;
+    DataType type = NONE;
 
 public:
-    Variable() {}
+    // Variable() {}
     
     virtual ~Variable() {}
   

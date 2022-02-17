@@ -11,7 +11,7 @@ Cfci::Cfci(IndependenceTest* test) {
     }
 
     this->test = test;
-    std::vector<Variable*> vars = test->getVariables();
+    std::vector<Node> vars = test->getVariables();
     this->variables.insert(variables.end(), vars.begin(), vars.end());
     buildIndexing(vars);
 }
@@ -20,20 +20,20 @@ Cfci::Cfci(IndependenceTest* test) {
  * Constructs a new FCI search for the given independence test and background knowledge and a list of variables to
  * search over.
  */
-Cfci::Cfci(IndependenceTest* test, std::vector<Variable*> searchVars) {
+Cfci::Cfci(IndependenceTest* test, std::vector<Node> searchVars) {
     if (test == NULL /*|| knowledge == null*/) {
         throw std::invalid_argument("independenceTest cannot be null");
     }
 
     this->test = test;
-    std::vector<Variable*> vars = test->getVariables();
+    std::vector<Node> vars = test->getVariables();
     this->variables.insert(variables.end(), vars.begin(), vars.end());
 
-    std::unordered_set<Variable*> remVars;
-    for (Variable* node1 : this->variables) {
+    std::unordered_set<Node> remVars;
+    for (const Node& node1 : this->variables) {
         bool search = false;
-        for (Variable* node2 : searchVars) {
-            if (node1->getName() == node2->getName()) {
+        for (const Node& node2 : searchVars) {
+            if (node1 == node2) {
                 search = true;
             }
         }
@@ -41,7 +41,7 @@ Cfci::Cfci(IndependenceTest* test, std::vector<Variable*> searchVars) {
             remVars.insert(node1);
         }
     }
-    for (Variable* var: remVars) {
+    for (const Node& var: remVars) {
 	std::remove(this->variables.begin(), this->variables.end(), var);
     }
 }
@@ -52,13 +52,13 @@ EdgeListGraph Cfci::search() {
     return search(test->getVariables());
 }
 
-EdgeListGraph Cfci::search(const std::vector<Variable*>& nodes) {
+EdgeListGraph Cfci::search(const std::vector<Node>& nodes) {
     FasStableProducerConsumer fas(initialGraph, test, threads);
 
     return search(fas, nodes);
 }
 
-EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Variable*>& nodes) {
+EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes) {
 
     auto startTime = std::chrono::high_resolution_clock::now();
     
@@ -82,7 +82,7 @@ EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Var
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
-        if (verbose) Rcpp::Rcout << "Starting Posssible DSep search..." << std::endl;
+        if (verbose) Rcpp::Rcout << "  Starting Posssible DSep search..." << std::endl;
         // SepsetsSet ssset(sepsets, test);
         // CfciOrient orienter(&ssset);
 
@@ -103,26 +103,26 @@ EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Var
         graph.reorientAllWith(ENDPOINT_CIRCLE);
     }
 
-    if (verbose) Rcpp::Rcout << "Starting Orientations..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Starting Orientations..." << std::endl;
 
-    sepsetsConservative = (SepsetProducer*) new SepsetProducerConservative(graph, test, sepsets, threads);
-    sepsetsConservative->setDepth(depth);
-    sepsetsConservative->setVerbose(verbose);
-    sepsetsConservative->fillMap();
+    SepsetProducerConservative sepsetsConservative(graph, test, sepsets, threads);
+    sepsetsConservative.setDepth(depth);
+    sepsetsConservative.setVerbose(verbose);
+    sepsetsConservative.fillMap();
 
     // Step CI C (Zhang's step F3.)
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new CfciOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
     //SepsetsSet sepsetsset_(sepsets, test);
-    FciOrient fciorient_(sepsetsConservative, whyOrient);
+    FciOrient fciorient_(&sepsetsConservative, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
     fciorient_.setMaxPathLength(maxPathLength);
     // fciOrient.setKnowledge(knowledge);
     // if (verbose) Rcpp::Rcout << "FCIOrient Set Up" << std::endl;
     fciorient_.ruleR0(graph);
 
-    for (auto t : ((SepsetProducerConservative*) sepsetsConservative)->getAmbiguousTriples())
+    for (auto t : sepsetsConservative.getAmbiguousTriples())
 	graph.addAmbiguousTriple(t.x, t.y, t.z);
     
     // if (verbose) Rcpp::Rcout << "Rule 0 finished" << std::endl;
@@ -166,8 +166,6 @@ EdgeListGraph Cfci::search(FasStableProducerConsumer& fas, const std::vector<Var
 	}
         Rcpp::Rcout << "CFCI-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
-
-    delete sepsetsConservative;
     
     return graph;
 }
@@ -184,19 +182,19 @@ void Cfci::setMaxPathLength(int maxPathLength) {
 
 //========================PRIVATE METHODS==========================//
 
-void Cfci::buildIndexing(std::vector<Variable*> nodes) {
-    this->hashIndices =  std::unordered_map<Variable*, int>();
-    for (Variable* node : nodes) {
+void Cfci::buildIndexing(std::vector<Node> nodes) {
+    this->hashIndices =  std::unordered_map<Node, int>();
+    for (const Node& node : nodes) {
         auto itr = find(variables.begin(), variables.end(), node);
         int index = std::distance(variables.begin(), itr);
-        this->hashIndices.insert(std::pair<Variable*, int>(node, index));
+        this->hashIndices.insert(std::pair<Node, int>(node, index));
     }
 }
 
 /**
  * Orients according to background knowledge
  */
-void Cfci::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Variable*> variables) {
+void Cfci::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Node> variables) {
 
     // for (Iterator<KnowledgeEdge> it =
     //      bk.forbiddenEdgesIterator(); it.hasNext(); ) {

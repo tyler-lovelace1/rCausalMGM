@@ -26,13 +26,13 @@ private:
     bool useRule4 = false;
 
     // The stack of nodes to be visited.
-    std::stack<Variable*> directStack;
+    std::stack<Node> directStack;
 
     // The initial list of nodes to visit.
-    std::vector<Variable*> nodes;
+    std::vector<Node> nodes;
 
-    // The lsit of nodes actually visited.
-    std::unordered_set<Variable*> visited;
+    // The list of nodes actually visited.
+    std::unordered_set<Node> visited;
 
     // Edges already oriented by the algorithm to avoid repeats and prevent cycles.
     std::unordered_set<Edge> oriented;
@@ -42,35 +42,35 @@ private:
 
     void orientUsingMeekRulesLocally(EdgeListGraph& graph);
 
-    void runMeekRules(Variable* node, EdgeListGraph& graph);
+    void runMeekRules(Node node, EdgeListGraph& graph);
 
     /**
      * Meek's rule R1: if a-->b, b---c, and a not adj to c, then a-->c
      */
-    void meekR1(Variable* b, EdgeListGraph& graph);
-    void r1Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    void meekR1(Node b, EdgeListGraph& graph);
+    void r1Helper(Node a, Node b, Node c, EdgeListGraph& graph);
 
     /**
      * If a-->b-->c, a--c, then b-->c.
      */
-    void meekR2(Variable* c, EdgeListGraph& graph);
-    void r2Helper(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    void meekR2(Node c, EdgeListGraph& graph);
+    void r2Helper(Node a, Node b, Node c, EdgeListGraph& graph);
 
     /**
      * Meek's rule R3. If a--b, a--c, a--d, c-->b, d-->b, then orient a-->b.
      */
-    void meekR3(Variable* a, EdgeListGraph& graph);
-    bool isKite(Variable* a, Variable* d, Variable* b, Variable* c, EdgeListGraph& graph);
+    void meekR3(Node a, EdgeListGraph& graph);
+    bool isKite(Node a, Node d, Node b, Node c, EdgeListGraph& graph);
 
-    void meekR4(Variable* a, EdgeListGraph& graph);
+    void meekR4(Node a, EdgeListGraph& graph);
 
-    void direct(Variable* a, Variable* c, EdgeListGraph& graph);
+    void direct(Node a, Node c, EdgeListGraph& graph);
 
-    static bool isUnshieldedNoncollider(Variable* a, Variable* b, Variable* c, EdgeListGraph& graph);
+    static bool isUnshieldedNoncollider(Node a, Node b, Node c, EdgeListGraph& graph);
 
-    static bool isArrowpointAllowed(Variable* from, Variable* to);
+    static bool isArrowpointAllowed(Node from, Node to);
 
-    void undirectUnforcedEdges(Variable* y, EdgeListGraph& graph);
+    void undirectUnforcedEdges(Node y, EdgeListGraph& graph);
 
 public:
 
@@ -78,7 +78,7 @@ public:
 
     void orientImplied(EdgeListGraph& graph);
 
-    void orientImplied(EdgeListGraph& graph, std::vector<Variable*>& nodes);
+    void orientImplied(EdgeListGraph& graph, std::vector<Node>& nodes);
 
     bool isAggressivelyPreventCycles() { return aggressivelyPreventCycles; }
     void setAggressivelyPreventCycles(bool aggressivelyPreventCycles) { this->aggressivelyPreventCycles = aggressivelyPreventCycles; }
@@ -86,7 +86,7 @@ public:
     bool isUndirectUnforcedEdges() { return shouldUndirectUnforcedEdges; }
     void setUndirectUnforcedEdges(bool shouldUndirectUnforcedEdges) { this->shouldUndirectUnforcedEdges = shouldUndirectUnforcedEdges; }
 
-    std::unordered_set<Variable*> getVisited() { return visited; }
+    std::unordered_set<Node> getVisited() { return visited; }
 
 };
 

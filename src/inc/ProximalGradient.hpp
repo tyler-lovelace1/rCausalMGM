@@ -1,7 +1,10 @@
 #ifndef PROXIMAL_GRADIENT_HPP_
 #define PROXIMAL_GRADIENT_HPP_
 
+// [[Rcpp::depends(RcppThread)]]
+
 #include "armaLapack.hpp"
+#include "RcppThread.h"
 #include <ConvexProximal.hpp>
 #include <chrono>
 

@@ -12,15 +12,21 @@ class IndTestMulti : public IndependenceTest {
 private:
     int timesCalled;
     DataSet originalData;
-    std::vector<Variable*> searchVariables;
+    std::vector<Node> searchVariables;
     DataSet internalData;
     double alpha;
     double lastP;
-    std::map<Variable*, std::vector<Variable*>> variablesPerNode;
+    std::map<Node, std::vector<Node>> variablesPerNode;
     LogisticRegression logisticRegression;
     LinearRegression regression;
     bool verbose = false;
     bool preferLinear;
+
+    // /**
+    //  * Default constructor node will serve as a null node
+    //  */
+    // static const Node& nullNode;
+
 
 public:
     IndTestMulti() {}
@@ -29,25 +35,31 @@ public:
 
     IndTestMulti(DataSet& data, double alpha, bool preferLinear);
 
-    ~IndTestMulti();
+    IndTestMulti(const IndTestMulti& other) = default;
+    IndTestMulti& operator=(const IndTestMulti& other) = default;
+
+    IndTestMulti(IndTestMulti&& other) = default;
+    IndTestMulti& operator=(IndTestMulti&& other) = default;
+
+    ~IndTestMulti() = default;
 
     int reset();
 
-    bool isIndependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
+    bool isIndependent(const Node& x, const Node& y, std::vector<Node>& z, double* pReturn = NULL);
 
-    // private synchronized List<Node> expandVariable(DataSet dataSet, Node node)
-    std::vector<Variable*> expandVariable(DataSet& dataSet, Variable* var);
+    // private synchronized List<Node> expandVariable(DataSet dataSet, const Node& node)
+    std::vector<Node> expandVariable(DataSet& dataSet, const Node& var);
 
-    bool isIndependentMultinomialLogisticRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
+    bool isIndependentMultinomialLogisticRegression(const Node& x, const Node& y, std::vector<Node>& z, double* pReturn = NULL);
 
     // This takes an inordinate amount of time. -jdramsey 20150929
-    arma::uvec getNonMissingRows(Variable* x, Variable* y, std::vector<Variable*>& z);
+    arma::uvec getNonMissingRows(const Node& x, const Node& y, std::vector<Node>& z);
 
-    bool isMissing(Variable* x, int i);
+    bool isMissing(const Node& x, int i);
 
-    double multiLL(arma::mat& coeffs, Variable* dep, std::vector<Variable*>& indep);
+    double multiLL(arma::mat& coeffs, const Node& dep, std::vector<Node>& indep);
 
-    bool isIndependentRegression(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn = NULL);
+    bool isIndependentRegression(const Node& x, const Node& y, std::vector<Node>& z, double* pReturn = NULL);
 
     /**
      * @return true if the given independence question is judged false, true if not. The independence question is of the
@@ -55,7 +67,7 @@ public:
      * getVariableNames().
      * Optionally return the p-value into pReturn
      */
-    bool isDependent(Variable* x, Variable* y, std::vector<Variable*>& z, double* pReturn) { return !isIndependent(x, y, z, pReturn); }
+    bool isDependent(const Node& x, const Node& y, std::vector<Node>& z, double* pReturn) { return !isIndependent(x, y, z, pReturn); }
 
     /**
      * @return the probability associated with the most recently executed independence test, of Double.NaN if p value is
@@ -68,19 +80,19 @@ public:
      * relations.
      */
     // Make sure the variables from the ORIGINAL data set are returned, not the modified dataset!
-    std::vector<Variable*> getVariables() {return this->searchVariables; }
+    std::vector<Node> getVariables() {return this->searchVariables; }
 
     /**
      * @return the list of variable varNames.
      */
     std::vector<std::string> getVariableNames();
 
-    Variable* getVariable(std::string name);
+    Node getVariable(std::string name);
 
     /**
      * @return true if y is determined the variable in z.
      */
-    bool determines(std::vector<Variable*>& z, Variable* y) { return false; /*stub ?????*/ }
+    bool determines(std::vector<Node>& z, const Node& y) { return false; /*stub ?????*/ }
 
     double getAlpha() { return this->alpha; /*STUB ?????*/ }
 
@@ -94,7 +106,7 @@ public:
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
 
-    arma::mat getSubsetData(DataSet& origData, std::vector<Variable*>& varSubset);
+    arma::mat getSubsetData(DataSet& origData, std::vector<Node>& varSubset);
 
     int getSampleSize() { return originalData.getNumRows(); }
 

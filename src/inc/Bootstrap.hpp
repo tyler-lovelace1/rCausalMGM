@@ -2,6 +2,15 @@
 #define BOOTSTRAP_HPP_
 
 #include "StabilityUtils.hpp"
+#include "SepsetMap.hpp"
+#include "IndTestMulti.hpp"
+#include "PcStable.hpp"
+#include "CpcStable.hpp"
+#include "PcMax.hpp"
+#include "Pc50.hpp"
+#include "Fci.hpp"
+#include "Cfci.hpp"
+#include "FciMax.hpp"
 #include "armaLapack.hpp"
 
 class Bootstrap {
@@ -12,17 +21,18 @@ private:
     std::string alg, ensemble;
     int B;
     int N;
-    int subSize;
+    // int subSize;
     std::vector<double> lambda;
     double alpha;
-    double thresh;
+    // double thresh;
     int iterLimit = 500;
     // EdgeListGraph* baseGraph = NULL;
+    bool useNondirected = false;
     EdgeListGraph finalGraph;
     Rcpp::DataFrame stabs;
-    arma::cube theta;
+    // arma::cube theta;
     // arma::umat subs;
-    bool fdr;
+    // bool fdr;
     bool verbose = false;
     int threads = -1;
 
@@ -32,15 +42,15 @@ private:
 
 
 public:
-    Bootstrap(DataSet& dat, std::string alg, std::string ensemble,
-	      int numBoots, double thresh, double sampleFrac) :
+    Bootstrap(DataSet& dat, std::string alg, std::string ensemble, int numBoots) :
         d(dat),
 	alg(alg),
 	ensemble(ensemble),
         B(numBoots),
-	thresh(thresh),
-        subSize(std::floor(sampleFrac * dat.getNumRows())),
-	N(dat.getNumRows()) {}
+	// thresh(thresh),
+        // subSize(std::floor(sampleFrac * dat.getNumRows())),
+	N(dat.getNumRows()),
+	useNondirected(alg.find("fci") != std::string::npos) {}
 
     EdgeListGraph runBootstrap();
 
@@ -54,7 +64,7 @@ public:
     void setAlpha(double a) { alpha = a; }
     void setLambda(std::vector<double> l) { lambda = l; }
     void setAlgorithm(std::string alg) { this->alg = alg; }
-    void setFdr(bool fdr) { this->fdr = fdr; }
+    //void setFdr(bool fdr) { this->fdr = fdr; }
     // void setBaseGraph(EdgeListGraph* bg) {
     // 	baseGraph = bg;
     // 	alg = bg->getAlgorithm();

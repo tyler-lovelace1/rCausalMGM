@@ -7,10 +7,10 @@
 #include "Cfci.hpp"
 #include "FciMax.hpp"
 #include "STEPS.hpp"
-#include "STARS.hpp"
+// #include "STARS.hpp"
 #include "Bootstrap.hpp"
-#include "Tests.hpp"
-#include "IndTestMulti.hpp"
+// #include "Tests.hpp"
+// #include "IndTestMulti.hpp"
 
 
 //' Calculate the MGM graph on a dataset
@@ -62,6 +62,8 @@ Rcpp::List mgm(
     mgm.setVerbose(v);
     EdgeListGraph mgmGraph = mgm.search();
 
+    RcppThread::checkUserInterrupt();
+
     auto elapsedTime = mgm.getElapsedTime();
 
     if (v) {
@@ -74,8 +76,6 @@ Rcpp::List mgm(
     }
 
     Rcpp::List result = mgmGraph.toList();
-
-    // ds.deleteVariables();
 
     return result;
 }
@@ -104,17 +104,14 @@ Rcpp::List steps(
     const double g = 0.05,
     const int numSub = 20,
     const int subSize = -1,
-    Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(FALSE),
-    Rcpp::LogicalVector computeStabs = Rcpp::LogicalVector::create(FALSE),
+    const bool leaveOneOut = false,
+    const bool computeStabs = false,
     const int threads = -1,
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+    const bool verbose = false
 ) {
 
     std::vector<double> l;
-    bool loo = Rcpp::is_true(Rcpp::all(leaveOneOut));
-    bool cs = Rcpp::is_true(Rcpp::all(computeStabs));
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-
+    
     DataSet ds(df, maxDiscrete);
 
     if (lambda.isNotNull()) {
@@ -132,17 +129,17 @@ Rcpp::List steps(
 
     STEPS steps;
     if (subSize < 0)
-	steps = STEPS(ds, l, g, numSub, loo);
+	steps = STEPS(ds, l, g, numSub, leaveOneOut);
     else
-	steps = STEPS(ds, l, g, numSub, subSize, loo);
+	steps = STEPS(ds, l, g, numSub, subSize, leaveOneOut);
       
     if (threads > 0) steps.setThreads(threads);
-    steps.setComputeStabs(cs);
-    steps.setVerbose(v);
+    steps.setComputeStabs(computeStabs);
+    steps.setVerbose(verbose);
 
     Rcpp::List result = steps.runStepsPar().toList();
 
-    if (cs) {
+    if (computeStabs) {
         result["stabilities"] = steps.getStabs();
         std::vector<std::string> names = ds.getVariableNames();
         Rcpp::rownames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
@@ -176,20 +173,20 @@ Rcpp::List pcStable(
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
-    Rcpp::LogicalVector fdr = Rcpp::LogicalVector::create(TRUE),
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+    const bool fdr = true,
+    const bool verbose = false
 ) {
     DataSet ds(df, maxDiscrete);
 
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-    bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
     IndTestMulti itm(ds, alpha);
 
     PcStable pcs((IndependenceTest*) &itm);
     if (threads > 0) pcs.setThreads(threads);
-    pcs.setVerbose(v);
-    pcs.setFDR(_fdr);
+    pcs.setVerbose(verbose);
+    pcs.setFDR(fdr);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -225,20 +222,20 @@ Rcpp::List cpcStable(
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
-    Rcpp::LogicalVector fdr = Rcpp::LogicalVector::create(TRUE),
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+    const bool fdr = true,
+    const bool verbose = false
 ) {
     DataSet ds(df, maxDiscrete);
 
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-    bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
     IndTestMulti itm(ds, alpha);
 
     CpcStable cpc((IndependenceTest*) &itm);
     if (threads > 0) cpc.setThreads(threads);
-    cpc.setVerbose(v);
-    cpc.setFDR(_fdr);
+    cpc.setVerbose(verbose);
+    cpc.setFDR(fdr);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -273,20 +270,17 @@ Rcpp::List pcMax(
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
-    Rcpp::LogicalVector fdr = Rcpp::LogicalVector::create(TRUE),
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+    const bool fdr = true,
+    const bool verbose = false
 ) {
     DataSet ds(df, maxDiscrete);
-
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-    bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
     IndTestMulti itm(ds, alpha);
 
     PcMax pcm((IndependenceTest*) &itm);
     if (threads > 0) pcm.setThreads(threads);
-    pcm.setVerbose(v);
-    pcm.setFDR(_fdr);
+    pcm.setVerbose(verbose);
+    pcm.setFDR(fdr);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -294,8 +288,6 @@ Rcpp::List pcMax(
         pcm.setInitialGraph(&ig);
     }
     Rcpp::List result = pcm.search().toList();
-
-    // ds.deleteVariables();
 
     return result;
 }
@@ -322,20 +314,20 @@ Rcpp::List pc50(
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
-    Rcpp::LogicalVector fdr = Rcpp::LogicalVector::create(TRUE),
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+    const bool fdr = true,
+    const bool verbose = false
 ) {
     DataSet ds(df, maxDiscrete);
 
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-    bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
     IndTestMulti itm(ds, alpha);
 
     Pc50 pc50((IndependenceTest*) &itm);
     if (threads > 0) pc50.setThreads(threads);
-    pc50.setVerbose(v);
-    pc50.setFDR(_fdr);
+    pc50.setVerbose(verbose);
+    pc50.setFDR(fdr);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -372,20 +364,20 @@ Rcpp::List fciStable(
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
         const int threads = -1,
-	Rcpp::LogicalVector fdr = Rcpp::LogicalVector::create(TRUE),
-        Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+	const bool fdr = true,
+        const bool verbose = false
 ) {
     DataSet ds(df, maxDiscrete);
     
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-    bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
     IndTestMulti itm(ds, alpha);
     
     Fci fci((IndependenceTest*) &itm);
     if (threads > 0) fci.setThreads(threads);
-    fci.setVerbose(v);
-    fci.setFDR(_fdr);
+    fci.setVerbose(verbose);
+    fci.setFDR(fdr);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -422,20 +414,20 @@ Rcpp::List cfci(
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
         const int threads = -1,
-	Rcpp::LogicalVector fdr = Rcpp::LogicalVector::create(TRUE),
-        Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+	const bool fdr = true,
+        const bool verbose = false
 ) {
     DataSet ds(df, maxDiscrete);
     
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-    bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
     IndTestMulti itm(ds, alpha);
     
     Cfci cfci((IndependenceTest*) &itm);
     if (threads > 0) cfci.setThreads(threads);
-    cfci.setVerbose(v);
-    cfci.setFDR(_fdr);
+    cfci.setVerbose(verbose);
+    cfci.setFDR(fdr);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -472,20 +464,20 @@ Rcpp::List fciMax(
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
         const int threads = -1,
-	Rcpp::LogicalVector fdr = Rcpp::LogicalVector::create(TRUE),
-        Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
+	const bool fdr = true,
+        const bool verbose = false
 ) {
     DataSet ds(df, maxDiscrete);
     
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
-    bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
     IndTestMulti itm(ds, alpha);
     
     FciMax fcimax((IndependenceTest*) &itm);
     if (threads > 0) fcimax.setThreads(threads);
-    fcimax.setVerbose(v);
-    fcimax.setFDR(_fdr);
+    fcimax.setVerbose(verbose);
+    fcimax.setFDR(fdr);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -499,124 +491,119 @@ Rcpp::List fciMax(
     } catch(std::exception& e) {
 	Rcpp::Rcout << e.what() << std::endl;
     }
-    
-    // ds.deleteVariables();
-    
+        
     return result;
 }
 
-// [[Rcpp::export]]
-Rcpp::List stars(
-    const Rcpp::DataFrame& df,
-    const std::string method, 
-    Rcpp::Nullable<Rcpp::NumericVector> params = R_NilValue,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    const int maxDiscrete = 5,
-    const double g = 0.05,
-    const int numSub = 20,
-    Rcpp::LogicalVector adjacency = Rcpp::LogicalVector::create(TRUE),
-    Rcpp::LogicalVector leaveOneOut = Rcpp::LogicalVector::create(FALSE),
-    const int threads = -1,
-    Rcpp::LogicalVector verbose = Rcpp::LogicalVector::create(FALSE)
-    ) {
+// // no export // [[Rcpp::export]]
+// Rcpp::List stars(
+//     const Rcpp::DataFrame& df,
+//     const std::string method, 
+//     Rcpp::Nullable<Rcpp::NumericVector> params = R_NilValue,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     const int maxDiscrete = 5,
+//     const double g = 0.05,
+//     const int numSub = 20,
+//     const bool adjacency = true,
+//     const bool leaveOneOut = false,
+//     const int threads = -1,
+//     const bool verbose = false
+//     ) {
 
-    // Rcpp::Rcout << "running stars...\n";
+//     // Rcpp::Rcout << "running stars...\n";
 
-    std::string alg, _method;
-    std::vector<double> par;
-    bool adj = Rcpp::is_true(Rcpp::all(adjacency));
-    bool loo = Rcpp::is_true(Rcpp::all(leaveOneOut));
-    // bool cs = Rcpp::is_true(Rcpp::all(computeStabs));
-    bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     std::string alg, _method;
+//     std::vector<double> par;
+//     bool adj = Rcpp::is_true(Rcpp::all(adjacency));
+//     bool loo = Rcpp::is_true(Rcpp::all(leaveOneOut));
+//     // bool cs = Rcpp::is_true(Rcpp::all(computeStabs));
+//     bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    _method = method;
+//     _method = method;
 
-    Rcpp::Rcout << _method << std::endl;
-    std::transform(_method.begin(), _method.end(), _method.begin(),
-		   [](unsigned char c){ return std::tolower(c); });
-    Rcpp::Rcout << _method << std::endl;
+//     Rcpp::Rcout << _method << std::endl;
+//     std::transform(_method.begin(), _method.end(), _method.begin(),
+// 		   [](unsigned char c){ return std::tolower(c); });
+//     Rcpp::Rcout << _method << std::endl;
 
-    if (_method == "mgm") {
-	alg = "mgm";
-    } else if (_method == "pc" || _method == "pcs" || _method == "pcstable") {
-	alg = "pc";
-    } else if (_method == "cpc" || _method == "cpcstable") {
-	alg = "cpc";
-    } else if (_method == "pcm" || _method == "pcmax") {
-	alg = "pcm";
-    } else if (_method == "fci" || _method == "fcistable") {
-	alg = "fci";
-    } else if (_method == "cfci" || _method == "cfcistable") {
-	alg = "cfci";
-    } else if (_method == "fcim" || _method == "fcimax") {
-	alg = "fcim";
-    } else {
-	throw std::invalid_argument("Invalid algorithm: " + _method
-				    + "\n   Algorithm must be in the list: "
-				    + "{ mgm, pc, cpc, pcm, fci, cfci, fcim }");
-    }
+//     if (_method == "mgm") {
+// 	alg = "mgm";
+//     } else if (_method == "pc" || _method == "pcs" || _method == "pcstable") {
+// 	alg = "pc";
+//     } else if (_method == "cpc" || _method == "cpcstable") {
+// 	alg = "cpc";
+//     } else if (_method == "pcm" || _method == "pcmax") {
+// 	alg = "pcm";
+//     } else if (_method == "fci" || _method == "fcistable") {
+// 	alg = "fci";
+//     } else if (_method == "cfci" || _method == "cfcistable") {
+// 	alg = "cfci";
+//     } else if (_method == "fcim" || _method == "fcimax") {
+// 	alg = "fcim";
+//     } else {
+// 	throw std::invalid_argument("Invalid algorithm: " + _method
+// 				    + "\n   Algorithm must be in the list: "
+// 				    + "{ mgm, pc, cpc, pcm, fci, cfci, fcim }");
+//     }
     
-    DataSet ds(df, maxDiscrete);
+//     DataSet ds(df, maxDiscrete);
 
-    if (params.isNotNull()) {
-        Rcpp::NumericVector _params(params); 
-	par = std::vector<double>(_params.begin(), _params.end());
-    } else {
-	if (alg == "mgm") {
-	    if (ds.getNumRows() > ds.getNumColumns()) {
-		arma::vec _params = arma::logspace(std::log10(0.05), std::log10(0.8), 20); 
-		par = std::vector<double>(_params.begin(), _params.end());
-	    } else {
-		arma::vec _params = arma::logspace(std::log10(0.1), std::log10(0.8), 20); 
-		par = std::vector<double>(_params.begin(), _params.end());
-	    }
-	} else {
-	    par = { 0.001, 0.005, 0.01, 0.05, 0.1 };
-	}
-    }
+//     if (params.isNotNull()) {
+//         Rcpp::NumericVector _params(params); 
+// 	par = std::vector<double>(_params.begin(), _params.end());
+//     } else {
+// 	if (alg == "mgm") {
+// 	    if (ds.getNumRows() > ds.getNumColumns()) {
+// 		arma::vec _params = arma::logspace(std::log10(0.05), std::log10(0.8), 20); 
+// 		par = std::vector<double>(_params.begin(), _params.end());
+// 	    } else {
+// 		arma::vec _params = arma::logspace(std::log10(0.1), std::log10(0.8), 20); 
+// 		par = std::vector<double>(_params.begin(), _params.end());
+// 	    }
+// 	} else {
+// 	    par = { 0.001, 0.005, 0.01, 0.05, 0.1 };
+// 	}
+//     }
 
-    // Rcpp::Rcout << "params vector filled\n";
-    STARS stars(ds, alg, par, g, numSub, adj, loo);
-    // Rcpp::Rcout << "stars object created\n";
-    if (threads > 0) stars.setThreads(threads);
-    // stars.setComputeStabs(cs);
-    stars.setVerbose(v);
+//     // Rcpp::Rcout << "params vector filled\n";
+//     STARS stars(ds, alg, par, g, numSub, adj, loo);
+//     // Rcpp::Rcout << "stars object created\n";
+//     if (threads > 0) stars.setThreads(threads);
+//     // stars.setComputeStabs(cs);
+//     stars.setVerbose(v);
 
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        stars.setInitialGraph(&ig);
-    }
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         stars.setInitialGraph(&ig);
+//     }
 
-    Rcpp::List result = stars.runStarsPar().toList();
+//     Rcpp::List result = stars.runStarsPar().toList();
 
-    // if (cs) {
-    //     result["stabilities"] = steps.getStabs();
-    //     std::vector<std::string> names = ds.getVariableNames();
-    //     Rcpp::rownames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-    //     Rcpp::colnames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-    // } 
+//     // if (cs) {
+//     //     result["stabilities"] = steps.getStabs();
+//     //     std::vector<std::string> names = ds.getVariableNames();
+//     //     Rcpp::rownames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+//     //     Rcpp::colnames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+//     // } 
 
-    // ds.deleteVariables();
+//     // ds.deleteVariables();
 
-    return result;
+//     return result;
 
-}
+// }
 
 
 // [[Rcpp::export]]
 Rcpp::List bootstrap(
     const Rcpp::DataFrame& df,
-    Rcpp::CharacterVector method = Rcpp::CharacterVector::create("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim"),
-    Rcpp::CharacterVector ensembleMethod = Rcpp::CharacterVector::create("majority", "highest", "preserved"),
+    Rcpp::StringVector method = Rcpp::CharacterVector::create("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim"),
+    Rcpp::StringVector ensembleMethod = Rcpp::CharacterVector::create("majority", "highest"),
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const double alpha = 0.05,
-    const double adjThresh = 0.8,
-    const double sampleFrac = 0.9,
     const int numBoots = 20,
     const int maxDiscrete = 5,
-    const bool fdr = true,
     const int threads = -1,
     const bool verbose = false
     ) {
@@ -631,12 +618,12 @@ Rcpp::List bootstrap(
 
     ensemble = ensembleMethod[0];
 
-    Rcpp::Rcout << _method << std::endl;
+    // Rcpp::Rcout << _method << std::endl;
     std::transform(_method.begin(), _method.end(), _method.begin(),
 		   [](unsigned char c){ return std::tolower(c); });
-    Rcpp::Rcout << _method << std::endl;
+    // Rcpp::Rcout << _method << std::endl;
     _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
-    Rcpp::Rcout << _method << std::endl;
+    // Rcpp::Rcout << _method << std::endl;
 
     std::transform(ensemble.begin(), ensemble.end(), ensemble.begin(),
 		   [](unsigned char c){ return std::tolower(c); });
@@ -704,12 +691,12 @@ Rcpp::List bootstrap(
     
     DataSet ds(df, maxDiscrete);
 
-    Bootstrap boot(ds, alg, ensemble, numBoots, adjThresh, sampleFrac);
+    Bootstrap boot(ds, alg, ensemble, numBoots);
     if (threads > 0) boot.setThreads(threads);
     boot.setVerbose(verbose);
     boot.setAlpha(alpha);
     boot.setLambda(l);
-    boot.setFdr(fdr);
+    // boot.setFdr(fdr);
 
     Rcpp::List result = boot.runBootstrap().toList();
 

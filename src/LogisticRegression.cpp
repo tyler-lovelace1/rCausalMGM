@@ -2,13 +2,14 @@
 
 #include "LogisticRegression.hpp"
 #include "LogisticRegressionResult.hpp"
-#include "Variable.hpp"
-#include "DiscreteVariable.hpp"
+// #include "Variable.hpp"
+// #include "DiscreteVariable.hpp"
+#include "Node.hpp"
 #include "RcppThread.h"
 #include <iostream>
 #include <algorithm>
 #include <math.h>
-#include <boost/math/constants/constants.hpp>
+// #include <boost/math/constants/constants.hpp>
 #include <boost/math/distributions/chi_squared.hpp>
 
 #include <fstream>
@@ -23,79 +24,80 @@ LogisticRegression::LogisticRegression(DataSet &data)
         rows[i] = i;
 }
 
-LogisticRegression::LogisticRegression(LogisticRegression &lr)
+// LogisticRegression::LogisticRegression(LogisticRegression &lr)
+// {
+//     this->data = lr.data;
+//     this->dataCols = this->data.getData().t();
+//     this->rows = arma::uvec(this->data.getNumRows());
+//     for (int i = 0; i < this->data.getNumRows(); i++)
+//         rows[i] = i;
+// }
+
+// LogisticRegression::LogisticRegression(LogisticRegression &&lr)
+// {
+//     this->data = lr.data;
+//     this->dataCols = this->data.getData().t();
+//     this->rows = arma::uvec(this->data.getNumRows());
+//     for (int i = 0; i < this->data.getNumRows(); i++)
+//         rows[i] = i;
+// }
+
+// LogisticRegression &LogisticRegression::operator=(LogisticRegression &lr)
+// {
+//     this->data = lr.data;
+//     this->dataCols = this->data.getData().t();
+//     this->rows = arma::uvec(this->data.getNumRows());
+//     for (int i = 0; i < this->data.getNumRows(); i++)
+//         rows[i] = i;
+//     return *this;
+// }
+
+// LogisticRegression &LogisticRegression::operator=(LogisticRegression &&lr)
+// {
+//     this->data = lr.data;
+//     this->dataCols = this->data.getData().t();
+//     this->rows = arma::uvec(this->data.getNumRows());
+//     for (int i = 0; i < this->data.getNumRows(); i++)
+//         rows[i] = i;
+//     return *this;
+// }
+
+LogisticRegressionResult LogisticRegression::regress(const Node& x,
+						     std::vector<Node>& regressors)
 {
-    this->data = lr.data;
-    this->dataCols = this->data.getData().t();
-    this->rows = arma::uvec(this->data.getNumRows());
-    for (int i = 0; i < this->data.getNumRows(); i++)
-        rows[i] = i;
-}
+    if (!binary(x)) {
+        throw std::runtime_error("Target must be binary.");
+    }
 
-LogisticRegression::LogisticRegression(LogisticRegression &&lr)
-{
-    this->data = lr.data;
-    this->dataCols = this->data.getData().t();
-    this->rows = arma::uvec(this->data.getNumRows());
-    for (int i = 0; i < this->data.getNumRows(); i++)
-        rows[i] = i;
-}
+    for (const Node& var : regressors) {
+        if (!var.isContinuous() && !binary(var)) {
+            throw std::runtime_error("Regressors must be continuous or binary.");
+        }
+    }
 
-LogisticRegression &LogisticRegression::operator=(LogisticRegression &lr)
-{
-    this->data = lr.data;
-    this->dataCols = this->data.getData().t();
-    this->rows = arma::uvec(this->data.getNumRows());
-    for (int i = 0; i < this->data.getNumRows(); i++)
-        rows[i] = i;
-    return *this;
-}
-
-LogisticRegression &LogisticRegression::operator=(LogisticRegression &&lr)
-{
-    this->data = lr.data;
-    this->dataCols = this->data.getData().t();
-    this->rows = arma::uvec(this->data.getNumRows());
-    for (int i = 0; i < this->data.getNumRows(); i++)
-        rows[i] = i;
-    return *this;
-}
-
-LogisticRegressionResult LogisticRegression::regress(DiscreteVariable* x, std::vector<Variable*>& regressors)
-{
-    // if (!binary(x)) {
-    //     throw new IllegalArgumentException("Target must be binary.");
-    // }
-
-    // for (Variable var : regressors) {
-    //     if (!(node instanceof ContinuousVariable || binary(node))) {
-    //         throw new IllegalArgumentException("Regressors must be continuous or binary.");
-    //     }
-    // }
-
-    std::ofstream logfile;
-    logfile.open("log_reg_debug.log", std::ios_base::app);
+    // std::ofstream logfile;
+    // logfile.open("log_reg_debug.log", std::ios_base::app);
 
     arma::mat regressors_ = arma::mat(regressors.size(), rows.size());
 
     for (arma::uword j = 0; j < regressors.size(); j++)
     {
-	logfile << regressors[j]->getName() + '\t';
+	// logfile << regressors[j]->getName() + '\t';
         int col = data.getColumn(regressors[j]);
-	logfile << col + '\t';
+	// logfile << col + '\t';
 
-        for (arma::uword i = 0; i < getRows().size(); i++)
+        for (arma::uword i = 0; i < rows.size(); i++)
         {
             regressors_(j, i) = dataCols(col, rows[i]);
         }
     }
 
-    logfile << "\n";
+    // logfile << "\n";
 
     arma::uvec target = arma::uvec(rows.size());
-    logfile << x->getName() << std::endl;
-    int col = data.getColumn(data.getVariable(x->getName()));
-    logfile << col + '\n';
+    // logfile << x->getName() << std::endl;
+    int col = data.getColumn(x);
+    // logfile << col + '\n';
 
     for (arma::uword k = 0; k < rows.size(); k++)
     {
@@ -106,27 +108,28 @@ LogisticRegressionResult LogisticRegression::regress(DiscreteVariable* x, std::v
 
     for (int l = 0; l < regressors.size(); l++)
     {
-        Variable *var = regressors[l];
-        regressorNames[l] = var->getName();
+        regressorNames[l] = regressors[l].getName();
     }
 
-    logfile.close();
+    // logfile.close();
 
-    return regress(target, x->getName(), regressors_, regressorNames);
+    return regress(target, x.getName(), regressors_, regressorNames);
 }
 
 
-LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::vector<Variable*>& regressors, arma::uvec _rows)
+LogisticRegressionResult LogisticRegression::regress(const Node& x,
+						     std::vector<Node>& regressors,
+						     arma::uvec _rows)
 {
-    // if (!binary(x)) {
-    //     throw new IllegalArgumentException("Target must be binary.");
-    // }
+    if (!binary(x)) {
+        throw std::runtime_error("Target must be binary.");
+    }
 
-    // for (Variable var : regressors) {
-    //     if (!(node instanceof ContinuousVariable || binary(node))) {
-    //         throw new IllegalArgumentException("Regressors must be continuous or binary.");
-    //     }
-    // }
+    for (const Node& var : regressors) {
+        if (!var.isContinuous() && !binary(var)) {
+            throw std::runtime_error("Regressors must be continuous or binary.");
+        }
+    }
 
     arma::mat regressors_ = arma::mat(regressors.size(), _rows.size());
 
@@ -141,7 +144,7 @@ LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::v
     }
 
     arma::uvec target = arma::uvec(_rows.size());
-    int col = data.getColumn(data.getVariable(x->getName()));
+    int col = data.getColumn(x);
 
     for (arma::uword k = 0; k < _rows.size(); k++)
     {
@@ -152,17 +155,17 @@ LogisticRegressionResult LogisticRegression::regress(DiscreteVariable *x, std::v
 
     for (int l = 0; l < regressors.size(); l++)
     {
-        Variable *var = regressors[l];
-        regressorNames[l] = var->getName();
+        regressorNames[l] = regressors[l].getName();
     }
 
-    return regress(target, x->getName(), regressors_, regressorNames);
+    return regress(target, x.getName(), regressors_, regressorNames);
 }
 
 
 LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
-                                                      std::string targetName, arma::mat& regressors,
-                                                      std::vector<std::string>& regressorNames)
+						     std::string targetName,
+						     arma::mat& regressors,
+						     std::vector<std::string>& regressorNames)
 {
     arma::mat x;
     int numRegressors = regressors.n_rows;
@@ -266,9 +269,10 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
     while (std::abs(llP - ll) > 1e-7) {
 	double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
-	if (curr > 5) {
-	    RcppThread::Rcout << "Logistic Regression not converging" << std::endl
-			      << "Loglikelihood: " << ll << std::endl;
+	iter++;
+	if (curr > 5 || iter > 100) {
+	    // RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+	    // 		      << "Loglikelihood: " << ll << std::endl;
 	    throw std::runtime_error("Logistic Regression not converging");
 	}
 
@@ -415,8 +419,8 @@ double LogisticRegression::norm(double z)
     // logfile.open("../debug.log", std::ios_base::app);
 
     double q = z * z;
-    const double pi = boost::math::constants::pi<double>();
-    double piOver2 = pi / 2.0;
+    // const double pi = M_PI;
+    double piOver2 = M_PI / 2.0;
 
     // Rcpp::Rcout << "chisq = " << q << std::endl;
     
@@ -449,9 +453,9 @@ double LogisticRegression::norm(double z)
 // 	Rcpp::Rcout << "-----START----- \n";
 // 	if(data.getVariable(i)->isDiscrete())
 // 	    {
-// 		DiscreteVariable* x = (DiscreteVariable*)data.getVariable(i);
+// 		const Node& x = (Node)data.getVariable(i);
 // 		Rcpp::Rcout << x->getName() << std::endl;
-// 		std::vector<Variable*> regressors(data.getVariables());
+// 		std::vector<Node> regressors(data.getVariables());
 
 // 		regressors.erase(regressors.begin() + i);
 

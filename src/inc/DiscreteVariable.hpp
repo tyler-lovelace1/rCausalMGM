@@ -42,35 +42,47 @@ public:
 	    this->categories.push_back(categories.at(i));
     }
 
-    DiscreteVariable(const DiscreteVariable& var) {
-	this->name = var.name;
-	this->type = var.type;
-	for (int i = 0; i < var.categories.size(); i++)
-	    this->categories.push_back(var.categories.at(i));
+    DiscreteVariable(Variable* var) {
+	if (var->getType() == DISCRETE) {
+	    this->name = var->getName();
+	    this->type = DISCRETE;
+	    std::vector<std::string> cats = ((DiscreteVariable*)var)->getCategories();
+	    for (int i = 0; i < cats.size(); i++)
+		this->categories.push_back(cats.at(i));
+	} else {
+	    throw std::runtime_error("Trying to construct discrete variable from a variable of a different type");
+	}
     }
 
-    DiscreteVariable& operator=(const DiscreteVariable& var) {
-	this->name = var.name;
-	this->type = var.type;
-	for (int i = 0; i < var.categories.size(); i++)
-	    this->categories.push_back(var.categories.at(i));
-	return *this;
-    }
+    DiscreteVariable(const DiscreteVariable& var) = default; // {
+    // 	this->name = var.name;
+    // 	this->type = var.type;
+    // 	for (int i = 0; i < var.categories.size(); i++)
+    // 	    this->categories.push_back(var.categories.at(i));
+    // }
 
-    DiscreteVariable(DiscreteVariable&& var) {
-	this->name = var.name;
-	this->type = var.type;
-	this->categories = var.categories;
-    }
+    DiscreteVariable& operator=(const DiscreteVariable& var) = default; // {
+    // 	this->name = var.name;
+    // 	this->type = var.type;
+    // 	for (int i = 0; i < var.categories.size(); i++)
+    // 	    this->categories.push_back(var.categories.at(i));
+    // 	return *this;
+    // }
 
-    DiscreteVariable& operator=(DiscreteVariable&& var) {
-	this->name = var.name;
-	this->type = var.type;
-	this->categories = var.categories;
-	return *this;
-    }
+    DiscreteVariable(DiscreteVariable&& var) = default; // {
+    // 	this->name = std::move(var.name);
+    // 	this->type = std::exchange(var.type,0);
+    // 	this->categories = std::move(var.categories);
+    // }
+
+    DiscreteVariable& operator=(DiscreteVariable&& var) = default; // {
+    // 	this->name = std::move(var.name);
+    // 	this->type = std::exchange(var.type,0);
+    // 	this->categories = std::move(var.categories);
+    // 	return *this;
+    // }
   
-    ~DiscreteVariable() {}
+    ~DiscreteVariable() = default; // {}
 
     int getMissingValueMarker() { return MISSING_VALUE; }
 

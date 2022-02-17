@@ -35,25 +35,22 @@ void OrientCollidersMaxP::setDepth(int depth) {
 }
 
 void OrientCollidersMaxP::producer() {
-    for (Variable* b : graph->getNodes()) {
+    for (const Node& b : graph->getNodes()) {
         
-        std::vector<Variable*> adjacentNodes = graph->getAdjacentNodes(b);
+        std::vector<Node> adjacentNodes = graph->getAdjacentNodes(b);
 
         if (adjacentNodes.size() < 2) {
             continue;
         }
 
-	std::sort(adjacentNodes.begin(),
-		  adjacentNodes.end(),
-		  [] (Variable* a, Variable* b) {return a->getName() < b->getName(); }
-	    );
+	std::sort(adjacentNodes.begin(), adjacentNodes.end());
 
         ChoiceGenerator cg(adjacentNodes.size(), 2);
         std::vector<int> *choice;
 
         for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-	    Variable* a = adjacentNodes[(*choice)[0]];
-            Variable* c = adjacentNodes[(*choice)[1]];
+	    const Node& a = adjacentNodes[(*choice)[0]];
+            const Node& c = adjacentNodes[(*choice)[1]];
 
             // Skip triples that are shielded.
             if (graph->isAdjacentTo(a, c)) {
@@ -72,13 +69,13 @@ void OrientCollidersMaxP::producer() {
         }
 
 	if (RcppThread::isInterrupted()) {
-	  break;
+	    break;
 	}
     }
 
     // Poison pill
     for (int i = 0; i < parallelism; i++) {
-        taskQueue.push(IndependenceTask(NULL, NULL, NULL, {}));
+        taskQueue.push(IndependenceTask());
     }
 }
 
@@ -87,16 +84,16 @@ void OrientCollidersMaxP::consumer() {
         IndependenceTask it = taskQueue.pop();
 
         // Poison Pill
-        if (it.a == NULL && it.b == NULL && it.c == NULL) break;
+        if (it.a.isNull() && it.b.isNull() && it.c.isNull()) break;
 
         double score;
         bool indep = independenceTest->isIndependent(it.a, it.c, it.s, &score);
 
 
 	{
-	  std::lock_guard<std::mutex> mapLock(mapMutex);
+	    std::lock_guard<std::mutex> mapLock(mapMutex);
 
-	  if (scores.count(Triple(it.a, it.b, it.c))) {
+	    if (scores.count(Triple(it.a, it.b, it.c))) {
 		if (indep && (score > scores[Triple(it.a, it.b, it.c)])) {
 		    scores.at(Triple(it.a, it.b, it.c)) = score;
 		    colliders.at(Triple(it.a, it.b, it.c)) = (std::find(it.s.begin(),
@@ -119,15 +116,15 @@ void OrientCollidersMaxP::consumer() {
     }
 }
 
-void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c) {
+void OrientCollidersMaxP::testColliderMaxP(const Node& a, const Node& b, const Node& c) {
     
-    std::vector<Variable*> adja = graph->getAdjacentNodes(a);
-    std::vector<Variable*> adjc = graph->getAdjacentNodes(c);
+    std::vector<Node> adja = graph->getAdjacentNodes(a);
+    std::vector<Node> adjc = graph->getAdjacentNodes(c);
 
     DepthChoiceGenerator cg1(adja.size(), -1);
     std::vector<int> *comb2;
     for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
-        std::vector<Variable*> s = GraphUtils::asList(*comb2, adja);
+        std::vector<Node> s = GraphUtils::asList(*comb2, adja);
 
         // If !s.contains(b) TODO - should this condition be here?
         taskQueue.push(IndependenceTask(a, b, c, s));
@@ -136,7 +133,7 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
     DepthChoiceGenerator cg2(adjc.size(), -1);
     std::vector<int> *comb3;
     for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
-        std::vector<Variable*> s = GraphUtils::asList(*comb3, adjc);
+        std::vector<Node> s = GraphUtils::asList(*comb3, adjc);
         // If !s.contains(b) TODO - should this condition be here?
 	if (s.empty()) continue;
         taskQueue.push(IndependenceTask(c, b, a, s));
@@ -144,7 +141,7 @@ void OrientCollidersMaxP::testColliderMaxP(Variable* a, Variable* b, Variable* c
 
 }
 
-void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variable* c) {
+void OrientCollidersMaxP::testColliderHeuristic(const Node& a, const Node& b, const Node& c) {
     // TODO - should this be here?
     if (graph->getEdges(a, b).size() > 1 || graph->getEdges(b, c).size() > 1) {
         return;
@@ -154,7 +151,7 @@ void OrientCollidersMaxP::testColliderHeuristic(Variable* a, Variable* b, Variab
     taskQueue.push(IndependenceTask(a, b, c, {b}));
 }
 
-void OrientCollidersMaxP::orientCollider(Variable* a, Variable* b, Variable* c) {
+void OrientCollidersMaxP::orientCollider(const Node& a, const Node& b, const Node& c) {
     if (wouldCreateBadCollider(a, b)) return;
     if (wouldCreateBadCollider(c, b)) return;
     if (graph->getEdges(a, b).size() > 1) return;
@@ -166,11 +163,11 @@ void OrientCollidersMaxP::orientCollider(Variable* a, Variable* b, Variable* c) 
     // Rcpp::Rcout << "ORIENTED SUCCESSFULLY" << std::endl;
 }
 
-bool OrientCollidersMaxP::wouldCreateBadCollider(Variable* x, Variable* y) {
-    std::unordered_set<Variable*> empty = {};
-    std::unordered_set<Variable*> ySet = {y};
+bool OrientCollidersMaxP::wouldCreateBadCollider(const Node& x, const Node& y) {
+    std::unordered_set<Node> empty = {};
+    std::unordered_set<Node> ySet = {y};
 
-    for (Variable* z : graph->getAdjacentNodes(y)) {
+    for (const Node& z : graph->getAdjacentNodes(y)) {
         if (x == z) continue;
 
         // if (!graph->isAdjacentTo(x, z) &&
@@ -192,9 +189,9 @@ bool OrientCollidersMaxP::wouldCreateBadCollider(Variable* x, Variable* y) {
 // Returns true of that set exists, false if not
 // If the set exists, it will be placed into output
 // If the set is not needed, set output = NULL
-bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Variable*>& containing, std::unordered_set<Variable*>& notContaining, std::vector<Variable*>* output /* = NULL */) {
-    std::vector<Variable*> adj = graph->getAdjacentNodes(a);
-    for (Variable* node : graph->getAdjacentNodes(c)) adj.push_back(node);
+bool OrientCollidersMaxP::sepset(const Node& a, const Node& c, std::unordered_set<Node>& containing, std::unordered_set<Node>& notContaining, std::vector<Node>* output /* = NULL */) {
+    std::vector<Node> adj = graph->getAdjacentNodes(a);
+    for (const Node& node : graph->getAdjacentNodes(c)) adj.push_back(node);
     adj.erase(std::remove(adj.begin(), adj.end(), a), adj.end());  // adj.remove(a)
     adj.erase(std::remove(adj.begin(), adj.end(), c), adj.end());  // adj.remove(c)
 
@@ -205,13 +202,13 @@ bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Va
             std::vector<int> *choice;
 
             for (choice = cg.next(); choice != NULL; choice = cg.next()) {
-                std::unordered_set<Variable*> v2 = GraphUtils::asSet(*choice, adj);
-                for (Variable* n : containing) v2.insert(n);
-                for (Variable* n : notContaining) v2.erase(n);
+                std::unordered_set<Node> v2 = GraphUtils::asSet(*choice, adj);
+                for (const Node& n : containing) v2.insert(n);
+                for (const Node& n : notContaining) v2.erase(n);
                 v2.erase(a);
                 v2.erase(c);
 
-                std::vector<Variable*> v2List(v2.begin(), v2.end());
+                std::vector<Node> v2List(v2.begin(), v2.end());
                 double p2;
                 independenceTest->isIndependent(a, c, v2List, &p2);
 
@@ -231,28 +228,28 @@ bool OrientCollidersMaxP::sepset(Variable* a, Variable* c, std::unordered_set<Va
 
 //TODO - what should this be testing?
 // Returns true if there is an undirected path from x to either y or z within the given number of steps.
-bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
+bool OrientCollidersMaxP::existsShortPath(const Node& x, const Node& z, int bound) {
     
-    std::queue<Variable*> q;
-    std::unordered_set<Variable*> v;
+    std::queue<Node> q;
+    std::unordered_set<Node> v;
     q.push(x);
     v.insert(x);
-    Variable* e = NULL;
+    Node e = Node();
     int distance = 0;
 
     while(!q.empty()) {
-        Variable* t = q.front();
+        Node t = q.front();
         q.pop();
         
         if (e == t) {
-            e = NULL;
+	    e = Node();
             distance++;
             if (distance > (bound == -1 ? 1000 : bound)) {
                 return false;
             }
         }
 
-        for (Variable* u : graph->getAdjacentNodes(t)) {
+        for (const Node& u : graph->getAdjacentNodes(t)) {
             if (u == z && distance > 2) {
                 return true;
             } 
@@ -261,7 +258,7 @@ bool OrientCollidersMaxP::existsShortPath(Variable* x, Variable* z, int bound) {
                 v.insert(u);
                 q.push(u);
 
-                if (e == NULL) {
+                if (e.isNull()) {
                     e = u;
                 }
             }
@@ -299,14 +296,14 @@ void OrientCollidersMaxP::addColliders() {
 
     // Most independent ones first.
     std::sort(colliderList.begin(), colliderList.end(),
-        [&](const Triple& t1, const Triple& t2) {
-            return scores[t1] > scores[t2];
-        });
+	      [&](const Triple& t1, const Triple& t2) {
+		  return scores[t1] > scores[t2];
+	      });
 
     for (Triple triple : colliderList) {
-        Variable* a = triple.getX();
-        Variable* b = triple.getY();
-        Variable* c = triple.getZ();
+        const Node& a = triple.getX();
+        const Node& b = triple.getY();
+        const Node& c = triple.getZ();
 
         if (!(graph->getEndpoint(b, a) == ENDPOINT_ARROW || graph->getEndpoint(b, c) == ENDPOINT_ARROW)) {
             orientCollider(a, b, c);

@@ -1,7 +1,5 @@
 #include "Triple.hpp"
 
-#include "GraphUtils.hpp"
-
 std::string Triple::toString() {
     std::ostringstream result;
 
@@ -11,10 +9,10 @@ std::string Triple::toString() {
 }
 
 std::ostream& operator<<(std::ostream& os, const Triple& triple) {
-    if (triple.x->getName() < triple.z->getName())
-	os << "<" << triple.x->getName() << "," << triple.y->getName() << "," << triple.z->getName() << ">";
+    if (triple.x.getName() < triple.z.getName())
+	os << "<" << triple.x.getName() << "," << triple.y.getName() << "," << triple.z.getName() << ">";
     else
-	os << "<" << triple.z->getName() << "," << triple.y->getName() << "," << triple.x->getName() << ">";
+	os << "<" << triple.z.getName() << "," << triple.y.getName() << "," << triple.x.getName() << ">";
     return os;
 }
 

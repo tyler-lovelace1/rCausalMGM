@@ -27,12 +27,27 @@ public:
 	this->type = CONTINUOUS;
     }
 
-    ContinuousVariable(const ContinuousVariable& var) {
-	name = var.name;
-	type = var.type;
+    ContinuousVariable(Variable* var) {
+	if (var->getType() == CONTINUOUS) {
+	    this->name = var->getName();
+	    this->type = CONTINUOUS;
+	} else {
+	    throw std::runtime_error("Trying to construct continuous variable from a variable of a different type");
+	}
     }
+
+    ContinuousVariable(const ContinuousVariable& var) = default; // {
+    // 	name = var.name;
+    // 	type = var.type;
+    // }
+
+    ContinuousVariable& operator=(const ContinuousVariable& var) = default;
+    
+    ContinuousVariable(ContinuousVariable&& var) = default;
+
+    ContinuousVariable& operator=(ContinuousVariable&& var) = default;     
   
-    ~ContinuousVariable() {}
+    ~ContinuousVariable() = default;// {}
 
     double getMissingValueMarker() { return this->MISSING_VALUE; }
 

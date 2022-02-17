@@ -51,7 +51,7 @@ EdgeListGraph PcStable::search() {
  * <p>
  * All of the given nodes must be in the domain of the given conditional independence test.
  */
-EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
+EdgeListGraph PcStable::search(const std::vector<Node>& nodes) {
     if (verbose) Rcpp::Rcout << "Starting PC-Stable algorithm..." << std::endl;
 
     if (independenceTest == NULL)
@@ -59,9 +59,9 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
 
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    std::vector<Variable*> allNodes = independenceTest->getVariables();
+    std::vector<Node> allNodes = independenceTest->getVariables();
 
-    for (Variable* node : nodes) {
+    for (const Node& node : nodes) {
         if (std::find(allNodes.begin(), allNodes.end(), node) == allNodes.end())
             throw std::invalid_argument("All of the given nodes must be in the domain of the independence test provided.");
     }
@@ -76,7 +76,7 @@ EdgeListGraph PcStable::search(const std::vector<Variable*>& nodes) {
     graph = fas.search();
     sepsets = fas.getSepsets();
 
-    if (verbose) Rcpp::Rcout << "Orienting edges..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Orienting edges..." << std::endl;
 
     SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph, verbose);
 

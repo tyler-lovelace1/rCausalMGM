@@ -1,10 +1,11 @@
 #include "EdgeListGraph.hpp"
 
+// Node EdgeListGraph::nullNode = Node();
 
 // Used by constructors
 void EdgeListGraph::initNamesHash() {
-    for (Variable* node: nodes) {
-        namesHash[node->getName()] = node;
+    for (const Node& node: nodes) {
+        namesHash[node.getName()] = node;
     }
 }
 
@@ -19,8 +20,8 @@ void EdgeListGraph::initNamesHash() {
  * Constructs a new graph, with no edges, using the the given variable
  * names.
  */
-EdgeListGraph::EdgeListGraph(const std::vector<Variable*>& nodes) {
-    for (Variable* variable : nodes) {
+EdgeListGraph::EdgeListGraph(const std::vector<Node>& nodes) {
+    for (const Node& variable : nodes) {
         if(!addNode(variable))
             throw std::invalid_argument("Issue adding variable to graph");
     }
@@ -177,12 +178,12 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
  *                                  basicConstraints of this graph.
  */
 void EdgeListGraph::transferNodesAndEdges(const EdgeListGraph& graph) {
-    for (Variable* node : graph.nodes) {
+    for (const Node& node : graph.nodes) {
         if (!addNode(node))
             throw std::invalid_argument("Problem copying graph nodes");
     }
 
-    for (Edge edge : graph.edgesSet) {
+    for (const Edge& edge : graph.edgesSet) {
         if (!addEdge(edge))
             throw std::invalid_argument("Problem copying edges");
     }
@@ -194,7 +195,7 @@ void EdgeListGraph::transferNodesAndEdges(const EdgeListGraph& graph) {
  * @param node1 the "from" node.
  * @param node2 the "to" node.
  */
-bool EdgeListGraph::addUndirectedEdge(Variable* node1, Variable* node2) {
+bool EdgeListGraph::addUndirectedEdge(const Node& node1, const Node& node2) {
     Edge newEdge = Edge::undirectedEdge(node1, node2);
     return addEdge(newEdge);
 }
@@ -205,7 +206,7 @@ bool EdgeListGraph::addUndirectedEdge(Variable* node1, Variable* node2) {
  * @param node1 the "from" node.
  * @param node2 the "to" node.
  */
-bool EdgeListGraph::addDirectedEdge(Variable* node1, Variable* node2) {
+bool EdgeListGraph::addDirectedEdge(const Node& node1, const Node& node2) {
     Edge newEdge = Edge::directedEdge(node1, node2);
     return addEdge(newEdge);
 }
@@ -216,7 +217,7 @@ bool EdgeListGraph::addDirectedEdge(Variable* node1, Variable* node2) {
  * @param node1 the "from" node.
  * @param node2 the "to" node.
  */
-bool EdgeListGraph::addBidirectedEdge(Variable* node1, Variable* node2) {
+bool EdgeListGraph::addBidirectedEdge(const Node& node1, const Node& node2) {
     Edge newEdge = Edge::bidirectedEdge(node1, node2);
     return addEdge(newEdge);
 }
@@ -227,7 +228,7 @@ bool EdgeListGraph::addBidirectedEdge(Variable* node1, Variable* node2) {
  * @param node1 the "from" node.
  * @param node2 the "to" node.
  */
-bool EdgeListGraph::addPartiallyOrientedEdge(Variable* node1, Variable* node2) {
+bool EdgeListGraph::addPartiallyOrientedEdge(const Node& node1, const Node& node2) {
     Edge newEdge = Edge::partiallyOrientedEdge(node1, node2);
     return addEdge(newEdge);
 }
@@ -238,7 +239,7 @@ bool EdgeListGraph::addPartiallyOrientedEdge(Variable* node1, Variable* node2) {
  * @param node1 the "from" node.
  * @param node2 the "to" node.
  */
-bool EdgeListGraph::addNondirectedEdge(Variable* node1, Variable* node2) {
+bool EdgeListGraph::addNondirectedEdge(const Node& node1, const Node& node2) {
     Edge newEdge = Edge::nondirectedEdge(node1, node2);
     return addEdge(newEdge);
 }
@@ -249,7 +250,7 @@ bool EdgeListGraph::addNondirectedEdge(Variable* node1, Variable* node2) {
  * @param edge the edge to be added
  * @return true if the edge was added, false if not.
  */
-bool EdgeListGraph::addEdge(Edge& edge) {
+bool EdgeListGraph::addEdge(Edge edge) {
 
     auto itr1 = edgeLists.find(edge.getNode1());
     auto itr2 = edgeLists.find(edge.getNode2());
@@ -294,13 +295,13 @@ bool EdgeListGraph::addEdge(std::string edgeString) {
     if (edgeComponents.size() != 3)
         throw std::invalid_argument("Edge from string must have 3 components (node edge node): " + edgeString);
 
-    Variable* node1 = getNode(edgeComponents[0]);
-    Variable* node2 = getNode(edgeComponents[2]);
+    Node node1 = getNode(edgeComponents[0]);
+    Node node2 = getNode(edgeComponents[2]);
 
-    if (node1 == NULL)
+    if (node1.isNull())
         throw std::invalid_argument("Edge node not found in graph: " + edgeComponents[0]);
 
-    if (node2 == NULL)
+    if (node2.isNull())
         throw std::invalid_argument("Edge node not found in graph: " + edgeComponents[2]);
 
     std::string edgeMid = edgeComponents[1];
@@ -334,16 +335,16 @@ bool EdgeListGraph::addEdge(std::string edgeString) {
  * @param node the node to be added.
  * @return true if the the node was added, false if not.
  */
-bool EdgeListGraph::addNode(Variable* node) {
+bool EdgeListGraph::addNode(Node node) {
+    if (node.isNull())
+        throw std::invalid_argument("Can't add NULL node to graph");
+  
     // If nodes contains node
     if (std::find(nodes.begin(), nodes.end(), node) != nodes.end()) return true;
-
-    if (node == NULL)
-        throw std::invalid_argument("Can't add NULL node to graph");
-
-    if (!(getNode(node->getName()) == NULL)) {
+    
+    if (!(getNode(node.getName()).isNull())) {
         if (std::find(nodes.begin(), nodes.end(), node) != nodes.end()) {
-            namesHash[node->getName()] = node;
+            namesHash[node.getName()] = node;
         }
     }
 
@@ -351,10 +352,39 @@ bool EdgeListGraph::addNode(Variable* node) {
 
     edgeLists[node] = {};
     nodes.push_back(node);
-    namesHash[node->getName()] = node;
+    namesHash[node.getName()] = node;
 
     return true;
 }
+
+/**
+ * Adds a node to the graph. Precondition: The proposed name of the node
+ * cannot already be used by any other node in the same graph.
+ *
+ * @param node the node to be added.
+ * @return true if the the node was added, false if not.
+ */
+// bool EdgeListGraph::addNode(Node&& node) {
+//     // If nodes contains node
+//     if (std::find(nodes.begin(), nodes.end(), node) != nodes.end()) return true;
+
+//     if (node.isNull())
+//         throw std::invalid_argument("Can't add NULL node to graph");
+
+//     if (!(getNode(node.getName()).isNull())) {
+//         if (std::find(nodes.begin(), nodes.end(), node) != nodes.end()) {
+//             namesHash[node.getName()] = node;
+//         }
+//     }
+
+//     if (edgeLists.count(node)) return false;
+
+//     edgeLists[node] = {};
+//     nodes.push_back(node);
+//     namesHash[node.getName()] = node;
+
+//     return true;
+// }
 
 /**
  * Removes any relevant edge objects found in this collection. G
@@ -380,7 +410,18 @@ bool EdgeListGraph::removeEdges(const std::vector<Edge>& edges) {
  * @param node2 the second node.
  * @return true if edges were removed between A and B, false if not.
  */
-bool EdgeListGraph::removeEdges(Variable* node1, Variable* node2) {
+bool EdgeListGraph::removeEdges(const Node& node1, const Node& node2) {
+    return removeEdges(getEdges(node1, node2));
+}
+
+/**
+ * Removes all edges connecting node A to node B.
+ *
+ * @param node1 the first node.,
+ * @param node2 the second node.
+ * @return true if edges were removed between A and B, false if not.
+ */
+bool EdgeListGraph::removeEdges(Node&& node1, Node&& node2) {
     return removeEdges(getEdges(node1, node2));
 }
 
@@ -425,11 +466,24 @@ bool EdgeListGraph::removeEdge(Edge& edge) {
 /**
  * Removes the edge connecting the two given nodes.
  */
-bool EdgeListGraph::removeEdge(Variable* node1, Variable* node2) {
+bool EdgeListGraph::removeEdge(const Node& node1, const Node& node2) {
     std::vector<Edge> edges = getEdges(node1, node2);
 
     if (edges.size() > 1) {
-        throw std::invalid_argument("There is more than one edge between " + node1->getName() + " and " + node2->getName());
+        throw std::invalid_argument("There is more than one edge between " + node1.getName() + " and " + node2.getName());
+    }
+
+    return removeEdges(edges);
+}
+
+/**
+ * Removes the edge connecting the two given nodes.
+ */
+bool EdgeListGraph::removeEdge(Node&& node1, Node&& node2) {
+    std::vector<Edge> edges = getEdges(node1, node2);
+
+    if (edges.size() > 1) {
+        throw std::invalid_argument("There is more than one edge between " + node1.getName() + " and " + node2.getName());
     }
 
     return removeEdges(edges);
@@ -438,8 +492,8 @@ bool EdgeListGraph::removeEdge(Variable* node1, Variable* node2) {
 /**
  * Determines whether some edge or other exists between two nodes.
  */
-bool EdgeListGraph::isAdjacentTo(Variable* node1, Variable* node2) {
-    if (node1 == NULL || node2 == NULL ||
+bool EdgeListGraph::isAdjacentTo(const Node& node1, const Node& node2) {
+    if (node1.isNull() || node2.isNull() ||
         edgeLists.find(node1) == edgeLists.end() ||
         edgeLists.find(node2) == edgeLists.end()) {
             return false;
@@ -452,14 +506,14 @@ bool EdgeListGraph::isAdjacentTo(Variable* node1, Variable* node2) {
     return false;
 }
 
-bool EdgeListGraph::isDirectedFromTo(Variable* node1, Variable* node2) {
+bool EdgeListGraph::isDirectedFromTo(const Node& node1, const Node& node2) {
     std::vector<Edge> edges = getEdges(node1, node2);
     if (edges.size() != 1) return false;
     Edge edge = edges[0];
     return edge.pointsTowards(node2);
 }
 
-bool EdgeListGraph::isUndirectedFromTo(Variable* node1, Variable* node2) {
+bool EdgeListGraph::isUndirectedFromTo(const Node& node1, const Node& node2) {
 
     Edge edge;
     try {
@@ -476,16 +530,16 @@ bool EdgeListGraph::isUndirectedFromTo(Variable* node1, Variable* node2) {
  * up twice in the list of adjacencies for X, for optimality; simply create a list an and array from these to
  * eliminate the duplication.
  */
-std::vector<Variable*> EdgeListGraph::getAdjacentNodes(Variable* node) {
+std::vector<Node> EdgeListGraph::getAdjacentNodes(const Node& node) {
     std::vector<Edge> edges = edgeLists[node];
-    std::unordered_set<Variable*> adj;
+    std::unordered_set<Node> adj;
 
     for (Edge edge : edges) {
-        Variable* z = edge.getDistalNode(node);
+        Node z = edge.getDistalNode(node);
         adj.insert(z);
     }
 
-    return std::vector<Variable*>(adj.begin(), adj.end());
+    return std::vector<Node>(adj.begin(), adj.end());
 }
 
 /**
@@ -494,7 +548,7 @@ std::vector<Variable*> EdgeListGraph::getAdjacentNodes(Variable* node) {
  *
  * Throws std::invalid_argument if not
  */
-Edge EdgeListGraph::getEdge(Variable* node1, Variable* node2) {
+Edge EdgeListGraph::getEdge(const Node& node1, const Node& node2) {
 
     std::vector<Edge> edges = edgeLists[node1];
 
@@ -509,14 +563,14 @@ Edge EdgeListGraph::getEdge(Variable* node1, Variable* node2) {
         }
     }
 
-    throw std::invalid_argument("node1 and node2 not connected by edge. node1: " + node1->getName() + " node2: " + node2->getName());
+    throw std::invalid_argument("node1 and node2 not connected by edge. node1: " + node1.getName() + " node2: " + node2.getName());
 
 }
 
 /**
  * @return the edges connecting node1 and node2.
  */
-std::vector<Edge> EdgeListGraph::getEdges(Variable* node1, Variable* node2) {
+std::vector<Edge> EdgeListGraph::getEdges(const Node& node1, const Node& node2) {
     std::vector<Edge> edges = edgeLists[node1];
     std::vector<Edge> _edges;
 
@@ -532,7 +586,7 @@ std::vector<Edge> EdgeListGraph::getEdges(Variable* node1, Variable* node2) {
 /**
  * @return the endpoint along the edge from node to node2 at the node2 end.
  */
-Endpoint EdgeListGraph::getEndpoint(Variable* node1, Variable* node2) {
+Endpoint EdgeListGraph::getEndpoint(const Node& node1, const Node& node2) {
     std::vector<Edge> edges = getEdges(node2);
 
     for (Edge edge : edges) {
@@ -545,8 +599,8 @@ Endpoint EdgeListGraph::getEndpoint(Variable* node1, Variable* node2) {
 /**
  * @return the list of parents for a node.
  */
-std::vector<Variable*> EdgeListGraph::getParents(Variable* node) {
-    std::vector<Variable*> parents;
+std::vector<Node> EdgeListGraph::getParents(const Node& node) {
+    std::vector<Node> parents;
     std::vector<Edge> edges = edgeLists[node];
 
     for (Edge edge : edges) {
@@ -571,7 +625,7 @@ std::vector<Variable*> EdgeListGraph::getParents(Variable* node) {
  * @throws std::invalid_argument if the edge with the revised endpoint
  *                                  cannot be added to the graph.
  */
-bool EdgeListGraph::setEndpoint(Variable* from, Variable* to, Endpoint endPoint) {
+bool EdgeListGraph::setEndpoint(const Node& from, const Node& to, Endpoint endPoint) {
     std::vector<Edge> edges = getEdges(from, to);
 
     if (endPoint == ENDPOINT_NULL)
@@ -613,11 +667,20 @@ Triple EdgeListGraph::tripleFromString(std::string tripleString) {
     if (nodeNames.size() != 3)
         throw std::invalid_argument("Triple must take form <X,Y,Z>: <" + tripleString + ">");
 
-    return Triple(
-        getNode(nodeNames[0]),
-        getNode(nodeNames[1]),
-        getNode(nodeNames[2])
-    );
+    Node nodeX = getNode(nodeNames[0]);
+    Node nodeY = getNode(nodeNames[1]);
+    Node nodeZ = getNode(nodeNames[2]);
+
+    if (nodeX.isNull())
+        throw std::invalid_argument("Edge node not found in graph: " + nodeNames[0]);
+
+    if (nodeY.isNull())
+        throw std::invalid_argument("Edge node not found in graph: " + nodeNames[1]);
+
+    if (nodeZ.isNull())
+        throw std::invalid_argument("Edge node not found in graph: " + nodeNames[2]);
+    
+    return Triple(nodeX, nodeY, nodeZ);
 }
 
 bool EdgeListGraph::validateGraphList(const Rcpp::List& l) {
@@ -702,15 +765,21 @@ Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
     std::vector<std::string> edges = graph["edges"];
 
     std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
-    std::unordered_map<std::string, std::unordered_set<std::string>> confoundingNeighbors; // Nodes connected by o-o, o->, or <->
+    std::unordered_map<std::string, std::unordered_set<std::string>> confoundingNeighbors; // Nodes connected by o->, or <->
     std::unordered_map<std::string, std::unordered_set<std::string>> parents;
     std::unordered_map<std::string, std::unordered_set<std::string>> children;
+    std::unordered_map<std::string, std::unordered_set<std::string>> partialParents;
+    std::unordered_map<std::string, std::unordered_set<std::string>> partialChildren;
+    std::unordered_map<std::string, std::unordered_set<std::string>> nondirected;
 
     for (std::string n : nodes) {
         blankets[n] = std::unordered_set<std::string>();
-        confoundingNeighbors[n] = std::unordered_set<std::string>();
+        partialParents[n] = std::unordered_set<std::string>();
+	partialChildren[n] = std::unordered_set<std::string>();
+	confoundingNeighbors[n] = std::unordered_set<std::string>();
         parents[n] = std::unordered_set<std::string>();
         children[n] = std::unordered_set<std::string>();
+	nondirected[n] = std::unordered_set<std::string>();
     }
 
     // Get neighbors of every node
@@ -721,13 +790,21 @@ Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
         std::string n2 = e[2];
         std::string edge = e[1];
 
-        if (edge == "o-o" || edge == "o->" || edge == "<->") {
+        if (edge == "<->") {
             confoundingNeighbors[n1].insert(n2);
             confoundingNeighbors[n2].insert(n1);
+	    // confoundingChildren[n1].insert(n2);
+	    // confoundingChildren[n2].insert(n1);
+	} else if (edge == "o->") {
+	    partialChildren[n1].insert(n2);
+            partialParents[n2].insert(n1);
         } else if (edge == "-->") {
             children[n1].insert(n2);
             parents[n2].insert(n1);
-        } 
+        } else if (edge == "o-o") {
+	    nondirected[n1].insert(n2);
+	    nondirected[n2].insert(n1);
+	}
 
     }
 
@@ -737,28 +814,72 @@ Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
         std::unordered_set<std::string> spouses;
         for (std::string child : children[target]) {
             spouses.insert(parents[child].begin(), parents[child].end());
+	    spouses.insert(partialParents[child].begin(),
+			   partialParents[child].end());
         }
 
-        std::unordered_set<std::string> rule2(confoundingNeighbors[target]);
+	std::unordered_set<std::string> partialSpouses;
+        for (std::string child : partialChildren[target]) {
+            partialSpouses.insert(parents[child].begin(), parents[child].end());
+	    partialSpouses.insert(partialParents[child].begin(),
+				      partialParents[child].end());
+        }
+
+        std::unordered_set<std::string> rule2; // (confoundingNeighbors[target]);
 	std::unordered_set<std::string> rule3;
         for (std::string child : children[target]) {
+            rule2.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
+        }
+	
+	for (std::string child : partialChildren[target]) {
             rule3.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
         }
 
         std::unordered_set<std::string> rule4;
         std::unordered_set<std::string> rule5;
-        for (std::string Y : rule2) {
+	std::unordered_set<std::string> rule6;
+        for (std::string Y : confoundingNeighbors[target]) {
             rule4.insert(parents[Y].begin(), parents[Y].end());
-            rule5.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+	    rule5.insert(partialParents[Y].begin(), partialParents[Y].end());
+            rule6.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+        }
+
+	std::unordered_set<std::string> rule7;
+	for (std::string Y : rule2) {
+            rule7.insert(parents[Y].begin(), parents[Y].end());
+	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
+            rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+        }
+
+	for (std::string Y : rule3) {
+            rule7.insert(parents[Y].begin(), parents[Y].end());
+	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
+            rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+        }
+
+	for (std::string Y : rule6) {
+            rule7.insert(parents[Y].begin(), parents[Y].end());
+	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
+            rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
         }
 
         blankets[target].insert(parents[target].begin(), parents[target].end());
         blankets[target].insert(children[target].begin(), children[target].end());
         blankets[target].insert(spouses.begin(), spouses.end());
+	blankets[target].insert(partialParents[target].begin(),
+				partialParents[target].end());
+        blankets[target].insert(partialChildren[target].begin(),
+				partialChildren[target].end());
+        blankets[target].insert(partialSpouses.begin(),
+				partialSpouses.end());
+	blankets[target].insert(confoundingNeighbors[target].begin(),
+				confoundingNeighbors[target].end());
+	blankets[target].insert(nondirected[target].begin(), nondirected[target].end());
         blankets[target].insert(rule2.begin(), rule2.end());
         blankets[target].insert(rule3.begin(), rule3.end());
         blankets[target].insert(rule4.begin(), rule4.end());
 	blankets[target].insert(rule5.begin(), rule5.end());
+	blankets[target].insert(rule6.begin(), rule6.end());
         blankets[target].erase(target);
     }
 
@@ -892,7 +1013,7 @@ Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
         throw std::invalid_argument("ERROR: list is not in the form of a graph");
     }
 
-    if (Rcpp::as<std::string>(graph["type"]) == "markov equivalence class")
+    if (Rcpp::as<std::string>(graph["type"]) == "completed partially directed acyclic graph")
       return markovBlanketMEC(graph);
     if (Rcpp::as<std::string>(graph["type"]) == "partial ancestral graph")
       return markovBlanketPAG(graph);
@@ -900,9 +1021,9 @@ Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
       return markovBlanketUndirected(graph);
 }
 
-bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
+bool EdgeListGraph::isParentOf(const Node& node1, const Node& node2) {
     for (Edge edge : getEdges(node1)) {
-        Variable* sub = Edge::traverseDirected(node1, edge);
+        Node sub = Edge::traverseDirected(node1, edge);
 
         if (sub == node2) {
             return true;
@@ -915,8 +1036,8 @@ bool EdgeListGraph::isParentOf(Variable* node1, Variable* node2) {
 /**
  * Nodes adjacent to the given node with the given proximal endpoint.
  */
-std::vector<Variable*> EdgeListGraph::getNodesInTo(Variable* node, Endpoint endpoint) {
-    std::vector<Variable*> nodes;
+std::vector<Node> EdgeListGraph::getNodesInTo(const Node& node, Endpoint endpoint) {
+    std::vector<Node> nodes;
     std::vector<Edge> edges = getEdges(node);
 
     for (Edge edge1 : edges) {
@@ -931,8 +1052,8 @@ std::vector<Variable*> EdgeListGraph::getNodesInTo(Variable* node, Endpoint endp
 /**
  * Nodes adjacent to the given node with the given distal endpoint.
  */
-std::vector<Variable*> EdgeListGraph::getNodesOutTo(Variable* node, Endpoint endpoint) {
-    std::vector<Variable*> nodes;
+std::vector<Node> EdgeListGraph::getNodesOutTo(const Node& node, Endpoint endpoint) {
+    std::vector<Node> nodes;
     std::vector<Edge> edges = getEdges(node);
 
     for (Edge edge1 : edges) {
@@ -947,36 +1068,36 @@ std::vector<Variable*> EdgeListGraph::getNodesOutTo(Variable* node, Endpoint end
 /**
  * Determines whether one node is an ancestor of another.
  */
-bool EdgeListGraph::isAncestorOf(Variable* node1, Variable* node2) {
-    std::vector<Variable*> tempList;
+bool EdgeListGraph::isAncestorOf(const Node& node1, const Node& node2) {
+    std::vector<Node> tempList;
     tempList.push_back(node2);
-    std::unordered_set<Variable*> ancestors = getAncestors(tempList);
+    std::unordered_set<Node> ancestors = getAncestors(tempList);
     return (std::find(ancestors.begin(), ancestors.end(), node1) != ancestors.end());
 }
 
-std::unordered_set<Variable*> EdgeListGraph::getAncestors(std::vector<Variable*>& nodes) {
-    std::unordered_set<Variable*> ancestors;
+std::unordered_set<Node> EdgeListGraph::getAncestors(std::vector<Node>& nodes) {
+    std::unordered_set<Node> ancestors;
 
-    for (Variable* node1 : nodes) {
+    for (const Node& node1 : nodes) {
         collectAncestorsVisit(node1, ancestors);
     }
     return ancestors;
 }
 
-void EdgeListGraph::collectAncestorsVisit(Variable* node, std::unordered_set<Variable*> &ancestors) {
+void EdgeListGraph::collectAncestorsVisit(const Node& node, std::unordered_set<Node> &ancestors) {
     if (std::find(ancestors.begin(), ancestors.end(), node) != ancestors.end()) return;
 
     ancestors.insert(node);
-    std::vector<Variable*> parents = getParents(node);
+    std::vector<Node> parents = getParents(node);
 
     if (!parents.empty()) {
-        for (Variable* parent : parents) {
+        for (const Node& parent : parents) {
             collectAncestorsVisit(parent, ancestors);
         }
     }
 }
 
-bool EdgeListGraph::isDefCollider(Variable* node1, Variable* node2, Variable* node3) {
+bool EdgeListGraph::isDefCollider(const Node& node1, const Node& node2, const Node& node3) {
     if (!(isAdjacentTo(node1,node2) && isAdjacentTo(node2,node3))) {
         return false;
     }
@@ -987,26 +1108,26 @@ bool EdgeListGraph::isDefCollider(Variable* node1, Variable* node2, Variable* no
 
 }
 
-void EdgeListGraph::reorientAllWith(Endpoint endpoint) {
-  for (Edge edge : getEdges()) {
-      Variable* a = edge.getNode1();
-      Variable* b = edge.getNode2();
+void EdgeListGraph::reorientAllWith(Endpoint endpoint) {    
+    for (auto&& edge : getEdgeList()) {
+	Node a = edge.getNode1();
+	Node b = edge.getNode2();
 
-      setEndpoint(a, b, endpoint);
-      setEndpoint(b, a, endpoint);
-  }
+	setEndpoint(a, b, endpoint);
+	setEndpoint(b, a, endpoint);
+    }
 }
 
 Rcpp::List EdgeListGraph::toList() {
     std::vector<std::string> nodeNames;
-    for (Variable* node : nodes) {
-        nodeNames.push_back(node->getName());
+    for (Node& node : nodes) {
+        nodeNames.push_back(node.getName());
     }
 
     std::vector<std::string> edgeStrings;
     std::vector<Edge> edges = getEdgeList();
     Edge::sortEdges(edges); //TODO - commented out for testing
-    for (Edge edge: edges) {
+    for (Edge& edge: edges) {
         edgeStrings.push_back(edge.toString());
     }
 
@@ -1040,12 +1161,12 @@ Rcpp::List EdgeListGraph::toList() {
 std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
 
     os << "Graph Nodes:\n";
-    std::vector<Variable*> nodes = graph.getNodes();
+    std::vector<Node> nodes = graph.getNodes();
     int size = nodes.size();
     int count = 0;
-    for (Variable* node : nodes) {
+    for (Node node : nodes) {
         count++;
-        os << node->getName();
+        os << node.getName();
         if (count < size) {
             os << ",";
         }
@@ -1404,7 +1525,7 @@ Rcpp::List loadGraph(const std::string& filename) {
 // [[Rcpp::export]]
 Rcpp::List adjMat2Graph(arma::mat adj,
 		  Rcpp::StringVector nodes,
-		  Rcpp::LogicalVector directed = Rcpp::LogicalVector::create(0) // FALSE
+		  bool directed = false // FALSE
     ) {
     std::vector<std::string> nodeNames(nodes.begin(), nodes.end());
 
@@ -1416,9 +1537,9 @@ Rcpp::List adjMat2Graph(arma::mat adj,
 	throw std::invalid_argument("Input node names do not match the number of variables in the adjacency matrix");
     }
 
-    std::vector<Variable*> _nodes;
+    std::vector<Node> _nodes;
     for (int i = 0; i < nodeNames.size(); i++) {
-	_nodes.push_back(new ContinuousVariable(nodeNames[i]));
+	_nodes.push_back(Node(new ContinuousVariable(nodeNames[i])));
     }
 
     EdgeListGraph g(_nodes);
@@ -1426,8 +1547,8 @@ Rcpp::List adjMat2Graph(arma::mat adj,
     // std::vector<std::string> edgeStrings;
     // std::vector<std::string> ambiguousTriplesStrings;
 
-    bool dir = Rcpp::is_true(Rcpp::all(directed));
-    if (dir) {
+    // bool dir = Rcpp::is_true(Rcpp::all(directed));
+    if (directed) {
 	for (arma::uword i = 0; i < adj.n_rows; i++) {
 	    for (arma::uword j = 0; j < adj.n_rows; j++) {
 		if (i==j) continue;
@@ -1449,11 +1570,6 @@ Rcpp::List adjMat2Graph(arma::mat adj,
     }
 
     Rcpp::List result = g.toList();
-
-    // Delete variables
-    for (Variable * v : g.getNodes()) {
-        delete v;
-    }
 
     return result;
 }

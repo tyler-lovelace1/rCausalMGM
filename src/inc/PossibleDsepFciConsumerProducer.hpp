@@ -52,19 +52,25 @@ private:
     */
     int parallelism;
 
-    Edge poisonEdge;
+    // Edge poisonEdge;
 
     struct PossibleDsepTask {
         Edge edge;
-        std::vector<Variable*> condSet;
+        std::vector<Node> condSet;
 
-        PossibleDsepTask() : edge(),
-             condSet(std::vector<Variable*>()) {}
+        PossibleDsepTask() :
+	    edge(),
+	    condSet(std::vector<Node>()) {}
 
-        PossibleDsepTask(Edge edge_, std::vector<Variable*> condSet_) : edge(edge_),
-        condSet(condSet_) {}
+        PossibleDsepTask(const Edge& edge_, std::vector<Node> condSet_) :
+	    edge(edge_),
+	    condSet(condSet_) {}
 
-        PossibleDsepTask(const PossibleDsepTask& it) { edge = it.edge; condSet = it.condSet; }
+        PossibleDsepTask(const PossibleDsepTask& it) = default;
+	PossibleDsepTask& operator=(const PossibleDsepTask& other) = default;
+	PossibleDsepTask(PossibleDsepTask&& it) = default;
+	PossibleDsepTask& operator=(PossibleDsepTask&& other) = default;
+	~PossibleDsepTask() = default;
 
     };
 
@@ -74,14 +80,14 @@ private:
 
     void PossibleDsepProducer(std::unordered_set<Edge> edges);
 
-    void PossibleDsepConsumer(std::unordered_map<Edge, std::vector<Variable*>>& edgeCondsetMap);
+    void PossibleDsepConsumer(std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap);
 
           //========================PRIVATE METHODS==========================//
 
     /**
      * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
      */
-    std::vector<Variable*> possibleParents(Variable* x, std::vector<Variable*> nodes /*, IKnowledge knowledge*/);
+    std::vector<Node> possibleParents(const Node& x, std::vector<Node> nodes /*, IKnowledge knowledge*/);
 
     bool possibleParentOf(std::string _z, std::string _x /* , IKnowledge bk */) { return true; /*!(bk.isForbidden(_z, _x) || bk.isRequired(_x, _z)); */ }
 
@@ -95,7 +101,8 @@ private:
      * 		(b) X is adjacent to Z.
      * </pre>
      */
-    std::unordered_set<Variable*> getPossibleDsep(Variable* node1, Variable* node2, int maxPathLength);
+    std::unordered_set<Node> getPossibleDsep(const Node& node1,
+					     const Node& node2, int maxPathLength);
 
 public:
 
@@ -111,7 +118,7 @@ public:
 
     PossibleDsepFciConsumerProducer(IndependenceTest *test, int threads = -1);
 
-    ~PossibleDsepFciConsumerProducer() { delete poisonEdge.getNode1(); delete poisonEdge.getNode2(); }
+    ~PossibleDsepFciConsumerProducer() = default;
 
      //========================PUBLIC METHODS==========================//
 
@@ -124,7 +131,7 @@ public:
      */
     SepsetMap& search();
 
-    void concurrentSearch(EdgeListGraph& graph, std::unordered_map<Edge, std::vector<Variable*>>& edgeCondsetMap);
+    void concurrentSearch(EdgeListGraph& graph, std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap);
 
     int getDepth() { return depth; }
 

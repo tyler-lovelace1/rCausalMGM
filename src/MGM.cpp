@@ -1,7 +1,7 @@
 #include "MGM.hpp"
 
 
-MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Variable*>& variables, std::vector<int>& l, std::vector<double>& lambda) {
+MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda) {
     
     if (l.size() != y.n_cols)
         throw std::invalid_argument("length of l doesn't match number of variables in Y");
@@ -35,18 +35,18 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     bool mixed = true;
 
     if (ds.isContinuous()) {
-	dummyVar = new DiscreteVariable("dummy.gLpkx1Hs6x", 4);
+	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
-	    ds.set(i, j, std::floor(R::runif(0,4)));
+	    ds.set(i, j, std::floor(R::runif(0,2)));
 	}
 	mixed = false;
 	qDummy = 1;
     }
 
     if (ds.isDiscrete()) {
-	dummyVar = new ContinuousVariable("dummy.qCm6jaC1VK");
+	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
@@ -64,9 +64,9 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     this->n = xDat.n_rows;
 
     //the variables are now ordered continuous first then discrete
-    std::vector<Variable*> cVar = ds.getContinuousVariables();
-    std::vector<Variable*> dVar = ds.getDiscreteVariables();
-    this->variables = std::vector<Variable*>();
+    std::vector<Node> cVar = ds.getContinuousVariables();
+    std::vector<Node> dVar = ds.getDiscreteVariables();
+    this->variables = std::vector<Node>();
     this->variables.reserve(p+q);
     this->variables.insert(this->variables.end(), cVar.begin(), cVar.end());
     this->variables.insert(this->variables.end(), dVar.begin(), dVar.end());
@@ -91,15 +91,6 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     makeDummy();
 }
 
-// Variables are deleted in the DataSet destructor
-MGM::~MGM() {
-    // for (int i = 0; i < variables.size(); i++) {
-    //     delete variables[i];
-    // }
-
-    // if (dummyVar != NULL)
-    // 	delete dummyVar;
-}
 
 // init all parameters to zeros except for betad which is set to 1s
 void MGM::initParameters() {
@@ -158,7 +149,7 @@ void MGM::makeDummy() {
         for(int j = 0; j < l[i]; j++) {
             arma::vec curCol = arma::vec(yDat.col(i)).transform( [j](double val) { return val == j+1 ? 1 : 0; } );
             if (arma::sum(curCol) == 0)
-                throw std::invalid_argument("Discrete data is missing a level: variable " + variables[p+i]->getName() + " level " + std::to_string(j));
+                throw std::invalid_argument("Discrete data is missing a level: variable " + variables[p+i].getName() + " level " + std::to_string(j));
             dDat.col(lcumsum[i]+j) = curCol;
         }
     }
@@ -934,7 +925,7 @@ arma::mat MGM::adjMatFromMGM() {
  * @return
  */
 EdgeListGraph MGM::graphFromMGM() {
-    EdgeListGraph g(variables);
+    EdgeListGraph g(initVariables);
 
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = i+1; j < p; j++) {
