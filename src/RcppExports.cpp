@@ -12,17 +12,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// DataSetTest
-void DataSetTest(const Rcpp::DataFrame& df, const int maxDiscrete);
-RcppExport SEXP _rCausalMGM_DataSetTest(SEXP dfSEXP, SEXP maxDiscreteSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
-    DataSetTest(df, maxDiscrete);
-    return R_NilValue;
-END_RCPP
-}
 // saveGraph
 void saveGraph(const Rcpp::List& list, const std::string& filename);
 RcppExport SEXP _rCausalMGM_saveGraph(SEXP listSEXP, SEXP filenameSEXP) {
@@ -242,7 +231,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rCausalMGM_DataSetTest", (DL_FUNC) &_rCausalMGM_DataSetTest, 2},
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
     {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},

@@ -467,7 +467,7 @@ std::vector<int> DataSet::getDiscLevels() {
     return result;
 }
 
-//[[Rcpp::export]]
+// no export //[[Rcpp::export]]
 void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
     DataSet ds = DataSet(df, maxDiscrete);
     // Rcpp::Rcout << ds;
