@@ -76,12 +76,89 @@ EdgeListGraph FasStableProducerConsumer::search() {
 
     graph = EdgeListGraph(nodes);
 
+    // int numEdges = nodes.size() * (nodes.size() - 1) / 2;
+    // if (initialGraph != NULL) {
+    // 	numEdges = initialGraph->getNumEdges();
+    // }
+
+    // if (fdr) {
+    // 	std::vector<NodePair> edgeVec;
+    // 	std::unordered_set<NodePair,
+    // 			   boost::hash<NodePair>> edgeSet;
+
+    // 	for (int i = 0; i < nodes.size(); i++) {
+    // 	    const Node& x = nodes[i];
+	    
+    // 	    for (int j = i+1; j < nodes.size(); j++) {
+    // 		const Node& y = nodes[j];
+
+    // 		if (initialGraph != NULL) {
+    // 		    const Node& x2 = initialGraph->getNode(x.getName());
+    // 		    const Node& y2 = initialGraph->getNode(y.getName());
+
+    // 		    if (!initialGraph->isAdjacentTo(x2, y2))
+    // 			continue;
+    // 		}
+
+    // 		edgeSet.insert(std::minmax(x,y));
+    // 	    }
+    // 	}
+
+    // 	edgeVec = std::vector<NodePair>(edgeSet.begin(), edgeSet.end());
+
+	
+    // 	std::sort(edgeVec.begin(), edgeVec.end(),
+    // 		  [&](const NodePair& e1,
+    // 		      const NodePair& e2) {
+    // 		      return edgePvals[e1] < edgePvals[e2];
+    // 		  });
+
+    // 	// numEdges = edgeVec.size();
+	
+    // 	double harmonicSum = 0;
+    // 	if (initialGraph != NULL) {
+    // 	    for (int i = 1; i <= numEdges; i++) harmonicSum += (1 / (double) i);
+    // 	}
+
+    // 	Rcpp::Rcout << "Number of edges: " << numEdges << std::endl;
+    // 	if (initialGraph != NULL) {
+    // 	    Rcpp::Rcout << "Multiplier = " << harmonicSum << std::endl;
+    // 	}
+	
+    // 	double maxFdrpval = 0;
+    // 	for (int i = 0; i < edgeVec.size(); i++) {
+    // 	    NodePair edgePair = edgeVec.at(i);
+    // 	    double pval = edgePvals[edgeVec.at(i)];
+    // 	    double fdrpval = numEdges / ((double) i+1) * pval;
+	    
+    // 	    if (initialGraph != NULL) {
+    // 		fdrpval *= harmonicSum;
+    // 	    }
+
+    // 	    maxFdrpval = std::max(maxFdrpval, fdrpval);
+
+
+    // 	    if (pval <= test->getAlpha()) {
+    // 		Rcpp::Rcout << "  Edge " << i << ": " << edgePair.first << " --- "
+    // 			    << edgePair.second << "\n    p = " << pval
+    // 			    << "\n    FDR p = " << maxFdrpval << std::endl;
+	    
+    // 		if (maxFdrpval > test->getAlpha()) {
+    // 		    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
+    // 		    adjacencies[edgePair.first].erase(edgePair.second);
+    // 		    adjacencies[edgePair.second].erase(edgePair.first);
+    // 		}
+    // 	    }
+    // 	}
+    // }
+    
     // Should be more efficient than the above code
     for (const Node& x : nodes) {
-        for (const Node& y : adjacencies[x]) {
-            graph.addUndirectedEdge(x, y);
-        }
+	for (const Node& y : adjacencies[x]) {
+	    graph.addUndirectedEdge(x, y);
+	}
     }
+    
 
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 

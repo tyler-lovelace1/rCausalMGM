@@ -161,6 +161,19 @@ EdgeListGraph Bootstrap::runBootstrap() {
 		}
 	    
 		graphVec.push_back(causalAlg.search());
+	    } else if (alg.find("fci50") != std::string::npos) {
+		
+		Fci50 causalAlg((IndependenceTest*) &itm);
+		if (threads > 0) causalAlg.setThreads(threads);
+	    
+		causalAlg.setVerbose(false);
+		causalAlg.setFDR(false);
+	    
+		if (mgmInit) {
+		    causalAlg.setInitialGraph(&ig);
+		}
+	    
+		graphVec.push_back(causalAlg.search());
 	    } else if (alg.find("fci") != std::string::npos) {
 		
 		Fci causalAlg((IndependenceTest*) &itm);
@@ -206,6 +219,14 @@ EdgeListGraph Bootstrap::runBootstrap() {
 	fullAlg += "PC50";
     } else if (alg.find("pc") != std::string::npos) {
 	fullAlg += "PC-Stable";
+    } else if (alg.find("fcim") != std::string::npos) {
+	fullAlg += "FCI-Max";
+    } else if (alg.find("cfci") != std::string::npos) {
+	fullAlg += "CFCI-Stable";
+    } else if (alg.find("fci50") != std::string::npos) {
+	fullAlg += "FCI50";
+    } else if (alg.find("fci") != std::string::npos) {
+	fullAlg += "FCI-Stable";
     }
 
     if (verbose) {

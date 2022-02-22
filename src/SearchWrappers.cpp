@@ -6,6 +6,7 @@
 #include "Fci.hpp"
 #include "Cfci.hpp"
 #include "FciMax.hpp"
+#include "Fci50.hpp"
 #include "STEPS.hpp"
 // #include "STARS.hpp"
 #include "Bootstrap.hpp"
@@ -495,6 +496,57 @@ Rcpp::List fciMax(
     return result;
 }
 
+
+//' Runs the causal algorithm FCI50 Stable on a dataset
+//'
+//' @param df The dataframe
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::fci50(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List fci50(
+        const Rcpp::DataFrame &df,
+        const int maxDiscrete = 5,
+        Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+        const double alpha = 0.1,
+        const int threads = -1,
+	const bool fdr = true,
+        const bool verbose = false
+) {
+    DataSet ds(df, maxDiscrete);
+    
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    
+    IndTestMulti itm(ds, alpha);
+    
+    Fci50 fci50((IndependenceTest*) &itm);
+    if (threads > 0) fci50.setThreads(threads);
+    fci50.setVerbose(verbose);
+    fci50.setFDR(fdr);
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        fci50.setInitialGraph(&ig);
+    }
+    
+    Rcpp::List result = fci50.search().toList();
+    
+    // ds.deleteVariables();
+    
+    return result;
+}
+
+
 // // no export // [[Rcpp::export]]
 // Rcpp::List stars(
 //     const Rcpp::DataFrame& df,
@@ -598,8 +650,8 @@ Rcpp::List fciMax(
 // [[Rcpp::export]]
 Rcpp::List bootstrap(
     const Rcpp::DataFrame& df,
-    Rcpp::StringVector method = Rcpp::CharacterVector::create("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim"),
-    Rcpp::StringVector ensembleMethod = Rcpp::CharacterVector::create("majority", "highest"),
+    Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50"),
+    Rcpp::StringVector ensemble = Rcpp::CharacterVector::create("highest", "majority"),
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const double alpha = 0.05,
     const int numBoots = 20,
@@ -610,13 +662,13 @@ Rcpp::List bootstrap(
 
     // Rcpp::Rcout << "running stars...\n";
 
-    std::string alg, _method, ensemble;
+    std::string alg, _method, _ensemble;
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    _method = method[0];
+    _method = algorithm[0];
 
-    ensemble = ensembleMethod[0];
+    _ensemble = ensemble[0];
 
     // Rcpp::Rcout << _method << std::endl;
     std::transform(_method.begin(), _method.end(), _method.begin(),
@@ -625,7 +677,7 @@ Rcpp::List bootstrap(
     _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
     // Rcpp::Rcout << _method << std::endl;
 
-    std::transform(ensemble.begin(), ensemble.end(), ensemble.begin(),
+    std::transform(_ensemble.begin(), _ensemble.end(), _ensemble.begin(),
 		   [](unsigned char c){ return std::tolower(c); });
 
     if (_method == "mgm") {
@@ -644,6 +696,8 @@ Rcpp::List bootstrap(
 	alg = "cfci";
     } else if (_method == "fcim" || _method == "fcimax") {
 	alg = "fcim";
+    } else if (_method == "fci50") {
+	alg = "fci50";
     } else if (_method == "mgmpc" || _method == "mgmpcs" || _method == "mgmpcstable") {
 	alg = "mgmpc";
     } else if (_method == "mgmcpc" || _method == "mgmcpcstable") {
@@ -658,12 +712,14 @@ Rcpp::List bootstrap(
 	alg = "mgmcfci";
     } else if (_method == "mgmfcim" || _method == "mgmfcimax") {
 	alg = "mgmfcim";
-    }else {
+    } else if (_method == "mgmfci50") {
+	alg = "mgmfci50";
+    } else {
 	throw std::invalid_argument("Invalid algorithm: " + _method
 				    + "\n   Algorithm must be in the list: "
-				    + "{ mgm, pc, cpc, pcm, pc50, fci, cfci, fcim, "
+				    + "{ mgm, pc, cpc, pcm, pc50, fci, cfci, fcim, fci50, "
 				    + "mgm-pc, mgm-cpc, mgm-pcm, mgm-pc50, mgm-fci, "
-				    + "mgm-cfci, mgm-fcim }");
+				    + "mgm-cfci, mgm-fcim, mgm-fci50 }");
     }
 
     std::vector<double> l(lambda.begin(), lambda.end());
@@ -691,7 +747,7 @@ Rcpp::List bootstrap(
     
     DataSet ds(df, maxDiscrete);
 
-    Bootstrap boot(ds, alg, ensemble, numBoots);
+    Bootstrap boot(ds, alg, _ensemble, numBoots);
     if (threads > 0) boot.setThreads(threads);
     boot.setVerbose(verbose);
     boot.setAlpha(alpha);

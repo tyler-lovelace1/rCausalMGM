@@ -210,22 +210,39 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// bootstrap
-Rcpp::List bootstrap(const Rcpp::DataFrame& df, Rcpp::StringVector method, Rcpp::StringVector ensembleMethod, Rcpp::NumericVector lambda, const double alpha, const int numBoots, const int maxDiscrete, const int threads, const bool verbose);
-RcppExport SEXP _rCausalMGM_bootstrap(SEXP dfSEXP, SEXP methodSEXP, SEXP ensembleMethodSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP numBootsSEXP, SEXP maxDiscreteSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+// fci50
+Rcpp::List fci50(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::List> initialGraph, const double alpha, const int threads, const bool fdr, const bool verbose);
+RcppExport SEXP _rCausalMGM_fci50(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP initialGraphSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< Rcpp::StringVector >::type method(methodSEXP);
-    Rcpp::traits::input_parameter< Rcpp::StringVector >::type ensembleMethod(ensembleMethodSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fdr(fdrSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(fci50(df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// bootstrap
+Rcpp::List bootstrap(const Rcpp::DataFrame& df, Rcpp::StringVector algorithm, Rcpp::StringVector ensemble, Rcpp::NumericVector lambda, const double alpha, const int numBoots, const int maxDiscrete, const int threads, const bool verbose);
+RcppExport SEXP _rCausalMGM_bootstrap(SEXP dfSEXP, SEXP algorithmSEXP, SEXP ensembleSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP numBootsSEXP, SEXP maxDiscreteSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type ensemble(ensembleSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type numBoots(numBootsSEXP);
     Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(bootstrap(df, method, ensembleMethod, lambda, alpha, numBoots, maxDiscrete, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(bootstrap(df, algorithm, ensemble, lambda, alpha, numBoots, maxDiscrete, threads, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -244,6 +261,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 7},
     {"_rCausalMGM_cfci", (DL_FUNC) &_rCausalMGM_cfci, 7},
     {"_rCausalMGM_fciMax", (DL_FUNC) &_rCausalMGM_fciMax, 7},
+    {"_rCausalMGM_fci50", (DL_FUNC) &_rCausalMGM_fci50, 7},
     {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 9},
     {NULL, NULL, 0}
 };

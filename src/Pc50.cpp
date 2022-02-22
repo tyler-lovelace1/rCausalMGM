@@ -178,7 +178,7 @@ void Pc50::orientUnshieldedTriples() {
 	std::pair<int, int> count = element.second;
 	colliders[t] = false;
 
-	score[t] = element.second.second / (double) std::max(count.first + count.second, 1);
+	score[t] = count.second / (double) std::max(count.first + count.second, 1);
 
 	// logfile << t << ":   {" << count.first << "," << count.second
 	// 	<< "}   :   " << score[t] << std::endl;

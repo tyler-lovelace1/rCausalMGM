@@ -11,6 +11,7 @@
 #include "Fci.hpp"
 #include "Cfci.hpp"
 #include "FciMax.hpp"
+#include "Fci50.hpp"
 #include "armaLapack.hpp"
 
 class Bootstrap {

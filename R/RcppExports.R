@@ -224,7 +224,25 @@ fciMax <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threa
     .Call(`_rCausalMGM_fciMax`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
 }
 
-bootstrap <- function(df, method = as.character( c("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim")), ensembleMethod = as.character( c("majority", "highest")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, numBoots = 20L, maxDiscrete = 5L, threads = -1L, verbose = FALSE) {
-    .Call(`_rCausalMGM_bootstrap`, df, method, ensembleMethod, lambda, alpha, numBoots, maxDiscrete, threads, verbose)
+#' Runs the causal algorithm FCI50 Stable on a dataset
+#'
+#' @param df The dataframe
+#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+#' @param initialGraph The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+#' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' ig <- rCausalMGM::mgm(data.n100.p25)
+#' g <- rCausalMGM::fci50(data.n100.p25, initialGraph = ig)
+fci50 <- function(df, maxDiscrete = 5L, initialGraph = NULL, alpha = 0.1, threads = -1L, fdr = TRUE, verbose = FALSE) {
+    .Call(`_rCausalMGM_fci50`, df, maxDiscrete, initialGraph, alpha, threads, fdr, verbose)
+}
+
+bootstrap <- function(df, algorithm = as.character( c("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50")), ensemble = as.character( c("highest", "majority")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, numBoots = 20L, maxDiscrete = 5L, threads = -1L, verbose = FALSE) {
+    .Call(`_rCausalMGM_bootstrap`, df, algorithm, ensemble, lambda, alpha, numBoots, maxDiscrete, threads, verbose)
 }
 
