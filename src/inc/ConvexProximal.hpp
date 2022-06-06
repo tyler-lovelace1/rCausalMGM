@@ -23,6 +23,7 @@ public:
     // ConvexProximal(ConvexProximal&& other) = default;
     // ConvexProximal& operator=(ConvexProximal&& other) = default;
     // virtual ~ConvexProximal() = 0;
+  
     /**
      * Calculate value of smooth function g(X)
      *

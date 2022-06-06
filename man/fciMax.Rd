@@ -8,8 +8,10 @@ fciMax(
   df,
   maxDiscrete = 5L,
   initialGraph = NULL,
-  alpha = 0.05,
-  verbose = as.logical(c(FALSE))
+  alpha = 0.1,
+  threads = -1L,
+  fdr = TRUE,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -17,9 +19,13 @@ fciMax(
 
 \item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
 
-\item{initialGraph}{The MGM graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.}
+\item{initialGraph}{An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.}
 
 \item{alpha}{The p value below which results are considered significant. Defaults to 0.05.}
+
+\item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
+
+\item{fdr}{Whether or not to run with FDR correction for the adjacencies.}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }

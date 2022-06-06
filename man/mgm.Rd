@@ -8,13 +8,13 @@ mgm(
   df,
   lambda = as.numeric(c(0.2, 0.2, 0.2)),
   maxDiscrete = 5L,
-  verbose = as.logical(c(FALSE))
+  verbose = FALSE
 )
 }
 \arguments{
 \item{df}{The dataframe}
 
-\item{lambda}{A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2)}
+\item{lambda}{A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.}
 
 \item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
 

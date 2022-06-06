@@ -2,17 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{steps}
 \alias{steps}
-\title{Calculate the optimal lambda values for the MGM algorithm and run the algorithm using those values. Optimal values are printed}
+\title{Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed}
 \usage{
 steps(
   df,
   maxDiscrete = 5L,
-  lambda = NULL,
+  lambdas = NULL,
+  nLambda = 20L,
   g = 0.05,
   numSub = 20L,
-  leaveOneOut = as.logical(c(FALSE)),
-  computeStabs = as.logical(c(FALSE)),
-  verbose = as.logical(c(FALSE))
+  subSize = -1L,
+  leaveOneOut = FALSE,
+  computeStabs = FALSE,
+  threads = -1L,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -20,15 +23,19 @@ steps(
 
 \item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
 
-\item{lambda}{A vector of the lambda values to test. Defaults to a logspaced vector with 20 values ranging from 0.9 to 0.09 if n < p, or from 0.9 to 0.009 if n > p.}
+\item{lambdas}{A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.}
 
 \item{g}{The gamma parameter for STEPS. Defaults to 0.05}
 
 \item{numSub}{The number of subsets to split the data into. Defaults to 20}
 
+\item{subSize}{The size of the subsamples used for STEPS. If the value is -1, the size of the subsamples is set to floor(10*sqrt(n)). If the value is in the range (0,1), the size of the subsamples is set to floor(subSize * n). Otherwise, if subSize is in the range [1,n), the size of the subsamples is set to subSize. Defaults to -1.}
+
 \item{leaveOneOut}{If TRUE, performs leave-one-out subsampling. Defaults to FALSE.}
 
 \item{computeStabs}{If TRUE, stability values are calculated. Defaults to FALSE.}
+
+\item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }
@@ -36,7 +43,7 @@ steps(
 The calculated MGM graph
 }
 \description{
-Calculate the optimal lambda values for the MGM algorithm and run the algorithm using those values. Optimal values are printed
+Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed
 }
 \examples{
 data("data.n100.p25")

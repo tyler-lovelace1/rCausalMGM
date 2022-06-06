@@ -1,27 +1,43 @@
 #include "StabilityUtils.hpp"
 
-arma::umat StabilityUtils::subSampleNoReplacement(int sampSize, int subSize, int numSub) {
+arma::umat StabilityUtils::subSampleNoReplacement(DataSet& data, int subSize, int numSub) {
 
-    if (subSize < 1)
-        throw std::invalid_argument("Sample size must be > 0");
+    int sampSize = data.getNumRows();
+    
+    if (subSize <= 1)
+        throw std::invalid_argument("Subsample size must be > 1");
+
+    if (subSize >= sampSize) 
+	throw std::invalid_argument("Subample size must be < " + std::to_string(sampSize));
 
     arma::urowvec indices(sampSize);
     for (arma::uword i = 0; i < sampSize; i++) {
         indices(i) = i;
     }
 
+    int attempts = 5000;
+    
     arma::umat sampMat(numSub, subSize);
 
     for(arma::uword i = 0; i < numSub; i++) {
-        indices = arma::shuffle(indices);
         arma::urowvec curSamp;
         while(true) {
-            SAMP:
-            curSamp = subSampleIndices(sampSize, subSize);
+            SAMP:   
+	    if (attempts == 0) {
+		// Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+		throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(subSize) + " where there are at least two samples for each category of every discrete variable and each continuous variable has a variance > 0. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
+	    }
+	    indices = arma::shuffle(indices);
+            curSamp = indices.head(subSize);
             for (arma::uword j = 0; j < i; j++) {
                 if (arma::all(curSamp == sampMat.row(j))) {
                     goto SAMP;
                 }
+		DataSet subset(data, curSamp);
+		if (checkForVariance(subset, data) != -1) {
+		    attempts--;
+		    goto SAMP;
+		}
             }
             break;
         }
@@ -31,21 +47,45 @@ arma::umat StabilityUtils::subSampleNoReplacement(int sampSize, int subSize, int
     return sampMat;
 }
 
-arma::urowvec StabilityUtils::subSampleIndices(int N, int subSize) {
+arma::umat StabilityUtils::subSampleLOO(DataSet& data) {
+    arma::umat sampMat(data.getNumRows(), data.getNumRows()-1);
 
-    arma::urowvec indices(N);
-    for (arma::uword i = 0; i < N; i++) {
-        indices(i) = i;
+    for(int i = 0; i < sampMat.n_rows; i++) {
+        int count = 0;
+        for(int j = 0; j < sampMat.n_rows; j++) {
+            if(i==j) goto A;
+            sampMat(i, count) = j;
+            count++;
+            A:;
+        }
+    }
+    
+    // Print a warning if there's a variance issue
+    for (int s = 0; s < sampMat.n_rows; s++) {
+        DataSet dataSubSamp(data, sampMat.row(s));
+        if (checkForVariance(dataSubSamp, data) != -1) {
+            Rcpp::Rcout << "Variance issue with dataset: " << s << std::endl;
+        }
     }
 
-    indices = arma::shuffle(indices);
-    arma::urowvec samp(subSize);
-    for (arma::uword i = 0; i < subSize; i++) {
-        samp(i) = indices(i);
-    }
-
-    return samp;
+    return sampMat;
 }
+
+// arma::urowvec StabilityUtils::subSampleIndices(int N, int subSize) {
+
+//     arma::urowvec indices(N);
+//     for (arma::uword i = 0; i < N; i++) {
+//         indices(i) = i;
+//     }
+
+//     indices = arma::shuffle(indices);
+//     arma::urowvec samp(subSize);
+//     for (arma::uword i = 0; i < subSize; i++) {
+//         samp(i) = indices(i);
+//     }
+
+//     return samp;
+// }
 
 
 // arma::umat StabilityUtils::subSampleWithReplacement(int sampSize, int subSize, int numSub) {
@@ -73,6 +113,44 @@ arma::urowvec StabilityUtils::subSampleIndices(int N, int subSize) {
 //     return sampMat;
 // }
 
+
+arma::umat StabilityUtils::subSampleWithReplacement(DataSet& data, int subSize, int numSub) {
+
+    int sampSize = data.getNumRows();
+    
+    if (subSize <= 1)
+        throw std::invalid_argument("Subsample size must be > 1");
+
+    int attempts = 5000;
+    
+    arma::umat sampMat(numSub, subSize);
+
+    for(arma::uword i = 0; i < numSub; i++) {
+        arma::urowvec curSamp;
+        while(true) {
+            SAMP:   
+	    if (attempts == 0) {
+		// Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+		throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(subSize) + " where there are at least two samples for each category of every discrete variable and each continuous variable has a variance > 0. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
+	    }
+            curSamp = arma::conv_to<arma::urowvec>::from(arma::floor(sampSize * arma::vec(subSize, arma::fill::randu)));
+            for (arma::uword j = 0; j < i; j++) {
+                if (arma::all(curSamp == sampMat.row(j))) {
+                    goto SAMP;
+                }
+		DataSet subset(data, curSamp);
+		if (checkForVariance(subset, data) != -1) {
+		    attempts--;
+		    goto SAMP;
+		}
+            }
+            break;
+        }
+        sampMat.row(i) = curSamp;
+    }
+    
+    return sampMat;
+}
 
 //Get subsample size given sample size
 //Uses the heuristic given in Learning Mixed Graphical Models with Separate Sparsity Parameters and Stability-Based Model Selection
@@ -282,27 +360,51 @@ arma::vec StabilityUtils::standardizeData(const arma::vec& data) {
     return data2;
 }
 
+// arma::umat StabilityUtils::subsampData(DataSet& data, int N, int b) {
+//     arma::umat samp = subSampleNoReplacement(data.getNumRows(), b, N);
+//     int attempts = 5000;
+//     bool done = false;
+//     while(!done) {
+//         // Rcpp::Rcout << "Attempt " << 5000 - attempts;
+//         samp = subSampleNoReplacement(data.getNumRows(), b, N);
+//         done = true;
+//         for (int i = 0; i < samp.n_rows; i++) {
+//             DataSet subset(data, samp.row(i));
+//             if (checkForVariance(subset, data) != -1) {
+//                 done = false;
+//                 break;
+//             }
+//         }
+//         attempts--;
+//         if (attempts == 0) {
+//             // Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+//             throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least two samples for each category of every discrete variable. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
+//         }
+//     }
+//     return samp;
+// }
+
 arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, int N, int b) {
-    arma::umat samp; // = subSampleNoReplacement(data.getNumRows(), b, N);
-    int attempts = 5000;
-    bool done = false;
-    while(!done) {
-        // Rcpp::Rcout << "Attempt " << 5000 - attempts;
-        samp = subSampleNoReplacement(data.getNumRows(), b, N);
-        done = true;
-        for (int i = 0; i < samp.n_rows; i++) {
-            DataSet subset(data, samp.row(i));
-            if (checkForVariance(subset, data) != -1) {
-                done = false;
-                break;
-            }
-        }
-        attempts--;
-        if (attempts == 0) {
-            // Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
-            throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least two samples for each category of every discrete variable. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
-        }
-    }
+    arma::umat samp = subSampleNoReplacement(data, b, N);
+    // int attempts = 5000;
+    // bool done = false;
+    // while(!done) {
+    //     // Rcpp::Rcout << "Attempt " << 5000 - attempts;
+    //     samp = subSampleNoReplacement(data.getNumRows(), b, N);
+    //     done = true;
+    //     for (int i = 0; i < samp.n_rows; i++) {
+    //         DataSet subset(data, samp.row(i));
+    //         if (checkForVariance(subset, data) != -1) {
+    //             done = false;
+    //             break;
+    //         }
+    //     }
+    //     attempts--;
+    //     if (attempts == 0) {
+    //         // Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+    //         throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least two samples for each category of every discrete variable. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
+    //     }
+    // }
     // Rcpp::Rcout << std::endl;
 
     return stabilitySearchPar(data, lambda, num_threads, samp);
@@ -334,7 +436,7 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
 }
 
 arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, arma::umat& subs) {
-    BlockingQueue<int> taskQueue(subs.n_rows / 2);
+    BlockingQueue<int> taskQueue(subs.n_rows);
     if (num_threads <= 0) num_threads = std::thread::hardware_concurrency();
     if (num_threads == 0) {
         num_threads = 4;
@@ -344,55 +446,89 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
     int numVars = data.getNumColumns();
     arma::mat thetaMat(numVars, numVars, arma::fill::zeros);
     std::mutex matMutex; // For protecting thetaMat
+    RcppThread::ThreadPool pool(num_threads);
+    std::vector<MGM> mgmList;
 
-    auto producer = [&]() {
-        for (int i = 0; i < subs.n_rows; i++) {
-            taskQueue.push(i);
-
-	    if (RcppThread::isInterrupted()) {
-	      break;
-	    }
-        }
-
-        // Poison pills
-        for (int i = 0; i < num_threads; i++) {
-            taskQueue.push(-1);
-        }
-    };
-
-    auto consumer = [&]() {
-        while (true) {
-            int sample = taskQueue.pop();
-
-            if (sample < 0) break; // Poison pill
-
-	    if (RcppThread::isInterrupted()) {
-	      break;
-	    }
-
-            DataSet dataSubSamp(data, subs.row(sample));
-            MGM mgm(dataSubSamp, lambda);
-            EdgeListGraph g = mgm.search();
-            arma::mat curAdj = skeletonToMatrix(g, dataSubSamp);
-
-	    {
-            std::lock_guard<std::mutex> matLock(matMutex);
-            thetaMat += curAdj;
-	    }
-        }
-    };
-
-    std::vector<RcppThread::Thread> threads;
-
-    threads.push_back(RcppThread::Thread( producer ));
-
-    for (int i = 0; i < num_threads; i++) {
-        threads.push_back(RcppThread::Thread( consumer ));
+    for (int i = 0; i < subs.n_rows; i++) {
+    	DataSet dataSubSamp(data, subs.row(i));
+    	mgmList.push_back(MGM(dataSubSamp));
     }
 
-    for (int i = 0; i < threads.size(); i++) {
-        threads[i].join();
-    }
+
+    pool.parallelForEach(mgmList,
+			 [&] (MGM& m) {
+			     m.setLambda(lambda);
+			     EdgeListGraph g = m.search();
+			     arma::mat curAdj = skeletonToMatrix(g, data);
+				 
+			     {
+				 std::lock_guard<std::mutex> matLock(matMutex);
+				 thetaMat += curAdj;
+			     }
+			 });
+
+    pool.join();
+
+    
+    // auto producer = [&]() {
+    //     for (int i = 0; i < subs.n_rows; i++) {
+    //         taskQueue.push(i);
+
+    // 	    if (RcppThread::isInterrupted()) {
+    // 	      break;
+    // 	    }
+    //     }
+
+    //     // Poison pills
+    //     for (int i = 0; i < num_threads; i++) {
+    //         taskQueue.push(-1);
+    //     }
+    // };
+
+    // auto consumer = [&]() {
+    //     while (true) {
+    //         int sample = taskQueue.pop();
+
+    //         if (sample < 0) break; // Poison pill
+
+    // 	    if (RcppThread::isInterrupted()) {
+    // 	      break;
+    // 	    }
+
+    //         DataSet dataSubSamp(data, subs.row(sample));
+    //         MGM mgm(dataSubSamp, lambda);
+    //         EdgeListGraph g = mgm.search();
+    //         arma::mat curAdj = skeletonToMatrix(g, dataSubSamp);
+
+    // 	    {
+    //         std::lock_guard<std::mutex> matLock(matMutex);
+    //         thetaMat += curAdj;
+    // 	    }
+    //     }
+    // };
+
+
+    // RcppThread::ThreadPool pool(num_threads);
+
+    // pool.push(producer);
+
+    // for (int i = 0; i < num_threads; i++) {
+    //     pool.push(consumer);
+    // }
+
+    // pool.join();
+    
+    // std::vector<RcppThread::Thread> threads;
+
+    // threads.push_back(RcppThread::Thread( producer ));
+
+    // for (int i = 0; i < num_threads; i++) {
+    //     threads.push_back(RcppThread::Thread( consumer ));
+    // }
+
+    // for (int i = 0; i < threads.size(); i++) {
+    //     threads[i].join();
+    // }
 
     return thetaMat / subs.n_rows;
 }
@@ -405,30 +541,30 @@ double StabilityUtils::stabilitySearchStars(DataSet& data,
 					    bool adjacency,
 					    int N,
 					    int b) {
-    arma::umat samp; // = subSampleNoReplacement(data.getNumRows(), b, N);
+    arma::umat samp = subSampleNoReplacement(data, b, N);
     // if (alg != "mgm") {
     // 	b = std::min(4*data.getNumRows()/5, (int) std::floor(20*std::sqrt(data.getNumRows())));
     // 	Rcpp::Rcout << "Subsample size = " << b << std::endl;
     // }
-    int attempts = 5000;
-    bool done = false;
-    while(!done) {
-        // Rcpp::Rcout << "Attempt " << 5000 - attempts;
-        samp = subSampleNoReplacement(data.getNumRows(), b, N);
-        done = true;
-        for (int i = 0; i < samp.n_rows; i++) {
-            DataSet subset(data, samp.row(i));
-            if (checkForVariance(subset, data) != -1) {
-                done = false;
-                break;
-            }
-        }
-        attempts--;
-        if (attempts == 0) {
-            Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
-            throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least one category of every discrete variable");
-        }
-    }
+    // int attempts = 5000;
+    // bool done = false;
+    // while(!done) {
+    //     // Rcpp::Rcout << "Attempt " << 5000 - attempts;
+    //     samp = subSampleNoReplacement(data.getNumRows(), b, N);
+    //     done = true;
+    //     for (int i = 0; i < samp.n_rows; i++) {
+    //         DataSet subset(data, samp.row(i));
+    //         if (checkForVariance(subset, data) != -1) {
+    //             done = false;
+    //             break;
+    //         }
+    //     }
+    //     attempts--;
+    //     if (attempts == 0) {
+    //         Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+    //         throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least one category of every discrete variable");
+    //     }
+    // }
     // Rcpp::Rcout << std::endl;
 
     return stabilitySearchStars(data, alg, param, initialGraph, num_threads, adjacency, samp);

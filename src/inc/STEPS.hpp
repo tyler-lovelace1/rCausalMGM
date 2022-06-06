@@ -47,6 +47,8 @@ public:
 
     EdgeListGraph runStepsPar();
 
+    EdgeListGraph runStepsPath();
+
     void setComputeStabs(bool cs) { computeStabs = cs; }
     bool getComputeStabs() { return computeStabs; }
 

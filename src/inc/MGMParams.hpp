@@ -18,7 +18,7 @@ private:
 public:
     MGMParams() {}
     MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::mat& theta, const arma::mat& phi, const arma::vec& alpha1, const arma::vec& alpha2);
-    MGMParams(MGMParams& parIn);
+    // MGMParams(MGMParams& parIn);
     MGMParams(arma::vec& vec, int p, int ltot);  //copy params from flattened vector
 
     /**

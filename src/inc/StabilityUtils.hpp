@@ -32,9 +32,13 @@ public:
 
     static double stabilitySearchStars(DataSet& data, std::string& alg, double param, EdgeListGraph* initialGraph, int num_threads, bool adjcacency, arma::umat& subs);
 
-    static arma::umat subSampleNoReplacement(int sampSize, int subSize, int numSub);
+    static arma::umat subSampleNoReplacement(DataSet& data, int subSize, int numSub);
 
-    static arma::urowvec subSampleIndices(int N, int subSize);
+    static arma::umat subSampleWithReplacement(DataSet& data, int subSize, int numSub);
+
+    static arma::umat subSampleLOO(DataSet& data);
+
+    // static arma::urowvec subSampleIndices(int N, int subSize);
 
     static int getSubSize(int samplesize);
 

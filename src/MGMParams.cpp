@@ -9,15 +9,15 @@ MGMParams::MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::
     this->alpha2 = alpha2;
 }
 
-// Copy constructor
-MGMParams::MGMParams(MGMParams& parIn) {
-    this->beta = arma::mat(parIn.beta);
-    this->betad = arma::vec(parIn.betad);
-    this->theta = arma::mat(parIn.theta);
-    this->phi = arma::mat(parIn.phi);
-    this->alpha1 = arma::vec(parIn.alpha1);
-    this->alpha2 = arma::vec(parIn.alpha2);
-}
+// // Copy constructor
+// MGMParams::MGMParams(MGMParams& parIn) {
+//     this->beta = arma::mat(parIn.beta);
+//     this->betad = arma::vec(parIn.betad);
+//     this->theta = arma::mat(parIn.theta);
+//     this->phi = arma::mat(parIn.phi);
+//     this->alpha1 = arma::vec(parIn.alpha1);
+//     this->alpha2 = arma::vec(parIn.alpha2);
+// }
 
 MGMParams::MGMParams(arma::vec& vec, int p, int ltot) {
     std::vector<int> lens{p*p, p, p*ltot, ltot*ltot, p, ltot};

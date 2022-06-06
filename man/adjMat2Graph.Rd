@@ -4,7 +4,7 @@
 \alias{adjMat2Graph}
 \title{Convert an adjacency matrix into a graph}
 \usage{
-adjMat2Graph(adj, nodes, directed = as.logical(c(0)))
+adjMat2Graph(adj, nodes, directed = FALSE)
 }
 \arguments{
 \item{adj}{The adjacency matrix, NxN}

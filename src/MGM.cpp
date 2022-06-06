@@ -30,6 +30,69 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
 
 }
 
+
+MGM::MGM(DataSet& ds) {
+
+    bool mixed = true;
+
+    if (ds.isContinuous()) {
+	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
+	ds.addVariable(dummyVar);
+	arma::uword j = ds.getColumn(dummyVar);
+	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	    ds.set(i, j, std::floor(R::runif(0,2)));
+	}
+	mixed = false;
+	qDummy = 1;
+    }
+
+    if (ds.isDiscrete()) {
+	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
+	ds.addVariable(dummyVar);
+	arma::uword j = ds.getColumn(dummyVar);
+	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	    ds.set(i, j, std::floor(R::rnorm(0,1)));
+	}
+	mixed = false;
+	pDummy = 1;
+    }
+    
+    this->xDat = ds.getContinuousData();
+    this->yDat = ds.getDiscreteData();
+    this->l = ds.getDiscLevels();
+    this->p = xDat.n_cols;
+    this->q = yDat.n_cols;
+    this->n = xDat.n_rows;
+
+    //the variables are now ordered continuous first then discrete
+    std::vector<Node> cVar = ds.getContinuousVariables();
+    std::vector<Node> dVar = ds.getDiscreteVariables();
+    this->variables = std::vector<Node>();
+    this->variables.reserve(p+q);
+    this->variables.insert(this->variables.end(), cVar.begin(), cVar.end());
+    this->variables.insert(this->variables.end(), dVar.begin(), dVar.end());
+    
+    this->initVariables = ds.getVariables();
+    this->lambda = 5 * std::sqrt(std::log10(p+q)/((double)n)) * arma::vec(3, arma::fill::ones);
+
+    // if (!mixed) {
+    // 	variables.erase(std::find(variables.begin(), variables.end(), dummyVar));
+    // 	initVariables.erase(std::find(initVariables.begin(), initVariables.end(), dummyVar));
+    // }
+    //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
+    fixData();
+
+    //Initialize all parameters to zeros
+    initParameters();
+
+    //Sets continuous variable weights to standard deviation and discrete variable weights to p*(1-p) for each category
+    calcWeights();
+
+    //Creates dummy variables for each category of discrete variables (stored in dDat)
+    makeDummy();
+}
+
+
 MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
 
     bool mixed = true;
@@ -74,10 +137,10 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     this->initVariables = ds.getVariables();
     this->lambda = arma::vec(lambda);
 
-    if (!mixed) {
-	variables.erase(std::find(variables.begin(), variables.end(), dummyVar));
-	initVariables.erase(std::find(initVariables.begin(), initVariables.end(), dummyVar));
-    }
+    // if (!mixed) {
+    // 	variables.erase(std::find(variables.begin(), variables.end(), dummyVar));
+    // 	initVariables.erase(std::find(initVariables.begin(), initVariables.end(), dummyVar));
+    // }
     //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
     fixData();
 
@@ -167,6 +230,90 @@ void MGM::fixData() {
 
     // z-score of columns of x
     xDat.each_col( [](arma::vec& c) {c = (c - arma::mean(c)) / arma::stddev(c); } );
+}
+
+double MGM::calcLambdaMax() {
+    lcumsum = std::vector<int>(l.size()+1);
+    lcumsum[0] = 0;
+    for(int i = 0; i < l.size(); i++){
+        lcumsum[i+1] = lcumsum[i] + l[i];
+    }
+    lsum = lcumsum[l.size()];
+
+    arma::mat beta((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros);
+
+    MGMParams nullParams(
+        arma::mat((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros),  // beta
+        arma::vec((int) xDat.n_cols,                    arma::fill::ones),   // betad
+        arma::mat(lsum,              (int) xDat.n_cols, arma::fill::zeros),  // theta
+        arma::mat(lsum,              lsum,              arma::fill::zeros),  // phi
+        arma::vec((int) xDat.n_cols,                    arma::fill::zeros),  // alpha1
+        arma::vec(lsum,                                 arma::fill::zeros)   // alpha2
+    );
+
+    arma::vec nullParams1D = nullParams.toMatrix1D();
+    arma::vec nullGrad1D = smoothGradient(nullParams1D);
+
+    MGMParams nullGrad(nullGrad1D, p, lsum);
+
+    // double lambdaMax = 0.0;
+
+    arma::mat weightMat = weights * weights.t();
+
+    //weight beta
+    //betaw = (wv(1:p)'*wv(1:p)).*abs(beta);
+    //betanorms=sum(betaw(:));
+    arma::mat betaNorms = arma::abs(nullGrad.beta) / arma::mat(weightMat.submat(0, 0, p-1, p-1));
+    double lambdaMax = betaNorms.max();
+
+    // Rcpp::Rcout << "lambdaMax after beta = " << lambdaMax << std::endl;
+
+    // Rcpp::Rcout << "NSV betaNorms = " << betaNorms << std::endl;
+
+    /*
+    thetanorms=0;
+    for s=1:p
+        for j=1:q
+            tempvec=theta(Lsums(j)+1:Lsums(j+1),s);
+            thetanorms=thetanorms+(wv(s)*wv(p+j))*norm(tempvec);
+        end
+    end
+    */
+    for (arma::uword i = 0; i < p; i++) {
+        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+            arma::vec tempVec = nullGrad.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+	    // Rcpp::Rcout << "mean theta(" << i << ", " << j << ") = " << arma::mean(tempVec) << std::endl;
+            lambdaMax = std::max(lambdaMax, arma::norm(tempVec, 2) / weightMat(i, p+j));
+        }
+    }
+    // Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
+
+    // Rcpp::Rcout << "lambdaMax after theta = " << lambdaMax << std::endl;
+
+    /*
+    for r=1:q
+        for j=1:q
+            if r<j
+                tempmat=phi(Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1));
+                tempmat=max(0,1-t(3)*(wv(p+r)*wv(p+j))/norm(tempmat))*tempmat; % Lj by 2*Lr
+                phinorms=phinorms+(wv(p+r)*wv(p+j))*norm(tempmat,'fro');
+                phi( Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1) )=tempmat;
+            end
+        end
+    end
+    */
+    for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+        for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+            arma::mat tempMat = nullGrad.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+	    // Rcpp::Rcout << "mean phi(" << i << ", " << j << ") = " << arma::mean(arma::mean(tempMat)) << std::endl;
+            lambdaMax = std::max(lambdaMax, arma::norm(tempMat, "fro") / weightMat(p+i, p+j));
+        }
+    }
+
+    // Rcpp::Rcout << "lambdaMax after phi = " << lambdaMax << std::endl;
+
+    return lambdaMax;
+
 }
 
 /**
@@ -293,16 +440,40 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //gradphi=D'*wxprod;
     gradOut.phi = dDat.t() * wxProd;
 
-    //zero out gradphi diagonal
+    //gradphi=tril(gradphi)'+triu(gradphi);
+    gradOut.phi = arma::trimatl(gradOut.phi, 0).t() + arma::trimatu(gradOut.phi, 0);
+
+    //zero out gradphi diagonal and ensure each group in theta and phi sum to 0 
     //for r=1:q
     //gradphi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
     //end
     for (arma::uword i = 0; i < q; i++) {
         gradOut.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+        // for (arma::uword j = 0; j < p; i++) {
+        //     arma::subview<double> tempVec = gradOut.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1);
+        //     gradOut.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1) -= arma::mean(tempVec);
+        // }
+	// for (arma::uword j = i+1; j < q; j++) {
+        //     arma::subview<double> tempMat = gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+        //     gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
+        // }
     }
 
-    //gradphi=tril(gradphi)'+triu(gradphi);
-    gradOut.phi = arma::trimatl(gradOut.phi, 0).t() + arma::trimatu(gradOut.phi, 0);
+    // for (arma::uword i = 0; i < p; i++) {
+    //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+    //         const arma::vec& tempVec = gradOut.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+    //         gradOut.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) -= arma::mean(tempVec);
+    //     }
+    // }
+
+    // for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+    //     for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+    //         const arma::mat& tempMat = gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+    //         // Use the tempMat subview again to set the values (doesn't work with const)
+    //         gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
+    //     }
+    // }
+
 
     /*
     for s=1:p
@@ -521,7 +692,7 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
         for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
             arma::subview<double> tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-            double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, 2));
+            double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, "fro"));
             // Use the tempMat subview again to set the values (doesn't work with const)
             par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
             phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
@@ -709,11 +880,44 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     //for r=1:q
     //gradphi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
     //end
-    for (arma::uword i = 0; i < q; i++) {
-        grad.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
-    }
+    // for (arma::uword i = 0; i < q; i++) {
+    //     grad.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+    // }
+    
     //gradphi=tril(gradphi)'+triu(gradphi);
     grad.phi = arma::trimatl(grad.phi, 0).t() + arma::trimatu(grad.phi, 0);
+
+
+    //zero out gradphi diagonal and ensure each group in gradtheta and gradphi sum to 0 
+    //for r=1:q
+    //gradphi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
+    //end
+    for (arma::uword i = 0; i < q; i++) {
+        grad.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+        // for (arma::uword j = 0; j < p; i++) {
+        //     arma::subview<double> tempVec = grad.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1);
+        //     tempVec -= arma::mean(tempVec);
+        // }
+	// for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+        //     arma::subview<double> tempMat = grad.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+        //     tempMat -= arma::mean(arma::mean(tempMat));
+        // }
+    }
+
+    // for (arma::uword i = 0; i < p; i++) {
+    //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+    //         const arma::vec& tempVec = grad.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+    //         grad.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) -= arma::mean(tempVec);
+    //     }
+    // }
+
+    // for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+    //     for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+    //         const arma::mat& tempMat = grad.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+    //         // Use the tempMat subview again to set the values (doesn't work with const)
+    //         grad.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
+    //     }
+    // }
 
     /*
     for s=1:p
@@ -821,7 +1025,7 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
         for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
             const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-            double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, 2));
+            double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, "fro"));
             // Use the tempMat subview again to set the values (doesn't work with const)
             par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
         }
@@ -909,8 +1113,8 @@ arma::mat MGM::adjMatFromMGM() {
     }
 
     //order the adjmat to be the same as the original DataSet variable ordering
-    arma::uvec varMap(p+q);
-    for(arma::uword i = 0; i < p+q; i++){
+    arma::uvec varMap(p+q-pDummy-qDummy);
+    for(arma::uword i = 0; i < p+q-pDummy-qDummy; i++){
         varMap(i) = std::distance(variables.begin(), std::find(variables.begin(), variables.end(), initVariables[i]));
     }
     outMat = outMat.submat(varMap, varMap);
@@ -925,7 +1129,12 @@ arma::mat MGM::adjMatFromMGM() {
  * @return
  */
 EdgeListGraph MGM::graphFromMGM() {
-    EdgeListGraph g(initVariables);
+    std::vector<Node> initVars(initVariables);
+    if (!dummyVar.isNull()) {
+    	initVars.erase(std::find(initVars.begin(), initVars.end(), dummyVar));
+    }
+    
+    EdgeListGraph g(initVars);
 
     for (arma::uword i = 0; i < p; i++) {
         for (arma::uword j = i+1; j < p; j++) {
@@ -978,7 +1187,7 @@ EdgeListGraph MGM::graphFromMGM() {
     // Rcpp::NumericVector rLambda(lambda.begin(), lambda.end());
     // for (double l : lambda) rLambda.push_back(l);
     
-    g.setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
+    // g.setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
 
     // g.setHyperParam("lambda", Rcpp::NumericVector::create(lambda(0), lambda(1), lambda(2)));
 
@@ -995,4 +1204,44 @@ EdgeListGraph MGM::search() {
     learnEdges(500);
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     return graphFromMGM();
+}
+
+
+std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
+					  arma::vec& loglik,
+					  arma::vec& nParams) {
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<EdgeListGraph> pathGraphs;
+    std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
+    for (int i = 0; i < lambdas.size(); i++) {
+	if (verbose) RcppThread::Rcout << "  Learning MGM for lambda = " << lambdas[i] << "\r";
+	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i] };
+	setLambda(lambda);
+	learnEdges(500);
+	pathGraphs.push_back(graphFromMGM());
+	pathGraphs[i].setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
+	arma::vec par(params.toMatrix1D());
+	loglik(i) = -n * smoothValue(par);
+	nParams(i) = arma::accu(par!=0);
+    }
+    if (verbose) RcppThread::Rcout << std::endl;;
+    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    return pathGraphs;
+}
+
+
+std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas) {
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<EdgeListGraph> pathGraphs;
+    std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
+    for (int i = 0; i < lambdas.size(); i++) {
+	// RcppThread::Rcout << "Learning MGM for lambda = " << lambdas[i] << std::endl;
+	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i] };
+	setLambda(lambda);
+	learnEdges(500);
+	pathGraphs.push_back(graphFromMGM());
+	// pathGraphs[i].setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
+    }
+    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    return pathGraphs;
 }

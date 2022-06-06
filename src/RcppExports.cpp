@@ -71,15 +71,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mgmPath
+Rcpp::List mgmPath(const Rcpp::DataFrame& df, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, const int maxDiscrete, const bool verbose);
+RcppExport SEXP _rCausalMGM_mgmPath(SEXP dfSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP maxDiscreteSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambdas(lambdasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nLambda(nLambdaSEXP);
+    Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(mgmPath(df, lambdas, nLambda, maxDiscrete, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // steps
-Rcpp::List steps(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::NumericVector> lambda, const double g, const int numSub, const int subSize, const bool leaveOneOut, const bool computeStabs, const int threads, const bool verbose);
-RcppExport SEXP _rCausalMGM_steps(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP lambdaSEXP, SEXP gSEXP, SEXP numSubSEXP, SEXP subSizeSEXP, SEXP leaveOneOutSEXP, SEXP computeStabsSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::List steps(const Rcpp::DataFrame& df, const int maxDiscrete, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, const double g, const int numSub, const int subSize, const bool leaveOneOut, const bool computeStabs, const int threads, const bool verbose);
+RcppExport SEXP _rCausalMGM_steps(SEXP dfSEXP, SEXP maxDiscreteSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP gSEXP, SEXP numSubSEXP, SEXP subSizeSEXP, SEXP leaveOneOutSEXP, SEXP computeStabsSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
     Rcpp::traits::input_parameter< const int >::type maxDiscrete(maxDiscreteSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambdas(lambdasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nLambda(nLambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type g(gSEXP);
     Rcpp::traits::input_parameter< const int >::type numSub(numSubSEXP);
     Rcpp::traits::input_parameter< const int >::type subSize(subSizeSEXP);
@@ -87,7 +103,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type computeStabs(computeStabsSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(steps(df, maxDiscrete, lambda, g, numSub, subSize, leaveOneOut, computeStabs, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(steps(df, maxDiscrete, lambdas, nLambda, g, numSub, subSize, leaveOneOut, computeStabs, threads, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -253,7 +269,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
     {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 1},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
-    {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 10},
+    {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
+    {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 11},
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 7},
     {"_rCausalMGM_cpcStable", (DL_FUNC) &_rCausalMGM_cpcStable, 7},
     {"_rCausalMGM_pcMax", (DL_FUNC) &_rCausalMGM_pcMax, 7},

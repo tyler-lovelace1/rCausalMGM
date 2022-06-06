@@ -48,7 +48,7 @@ arma::umat Bootstrap::getBootstrapSamples() {
 EdgeListGraph Bootstrap::runBootstrap() {
     auto startTime = std::chrono::high_resolution_clock::now();
     
-    arma::umat subs = getBootstrapSamples();
+    arma::umat subs = StabilityUtils::subSampleWithReplacement(d, N, B);
 
     if (verbose) Rcpp::Rcout << "  Bootstrapping..." << std::endl;
 

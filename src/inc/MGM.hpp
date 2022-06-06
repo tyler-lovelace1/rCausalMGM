@@ -74,20 +74,24 @@ public:
 
     MGM() {}
     MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
+    MGM(DataSet& ds);
     MGM(DataSet& ds, std::vector<double>& lambda);
 
-    MGM(MGM& other) = default;
-    MGM& operator=(MGM& other) = default;
-    MGM(MGM&& other) = default;
-    MGM& operator=(MGM&& other) = default;
-    ~MGM() = default;
+    // MGM(MGM& other) = default;
+    // MGM& operator=(MGM& other) = default;
+    // MGM(MGM&& other) = default;
+    // MGM& operator=(MGM&& other) = default;
+    // ~MGM() = default;
 
     MGMParams getParams() {return params;}
-    void setParams(MGMParams& newParams) {params = newParams;}
+    void setParams(MGMParams newParams) { params = newParams; }
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
 
     void setVerbose(bool v) { verbose = v; }
+    void setLambda(std::vector<double> lambda) { this->lambda = arma::vec(lambda); }
+
+    double calcLambdaMax();
 
     /**
      * Calculate value of g(X) and gradient of g(X) at the same time for efficiency reasons.
@@ -190,6 +194,12 @@ public:
      */
     EdgeListGraph search();
 
+    std::vector<EdgeListGraph> searchPath(std::vector<double> lambdas,
+					  arma::vec& loglik,
+					  arma::vec& nParams);
+
+    std::vector<EdgeListGraph> searchPath(std::vector<double> lambdas);
+    
     friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 
 };
