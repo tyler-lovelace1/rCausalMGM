@@ -150,7 +150,7 @@ Rcpp::List mgmPath(
 
     Rcpp::List graphList;
     
-    for (int i = 0; i < nLambda; i++) {
+    for (int i = 0; i < l.size(); i++) {
         graphList.push_back(mgmGraphs[i].toList());
     }
     
