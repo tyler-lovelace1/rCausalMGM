@@ -2,7 +2,7 @@
 #'
 #' @param x The graph object
 #' @export
-print.graph <- function(x) {
+print.graph <- function(x, ...) {
     cat("Algorithm: ", x[["algorithm"]], "\n")
     cat("Nodes: ", length(x[["nodes"]]), "\n")
     cat("Edges: ", length(x[["edges"]]), "\n")

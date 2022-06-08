@@ -123,11 +123,16 @@ Rcpp::List mgmPath(
 						      ((double) ds.getNumRows()))));
 
     if (lambdas.isNotNull()) {
-        Rcpp::NumericVector _lambda(lambdas); 
+        _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
-	arma::vec _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
-	l = std::vector<double>(_lambda.begin(), _lambda.end());
+	if (ds.getNumRows() > ds.getNumColumns()) {
+	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	} else {
+	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	}
     }
 
     // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
@@ -155,7 +160,7 @@ Rcpp::List mgmPath(
     }
     
     Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
-					   Rcpp::_["lambdas"]=arma::reverse(_lambda),
+					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
 					   Rcpp::_["loglik"] = loglik,
 					   Rcpp::_["AIC"] = 2*nParams - 2*loglik,
 					   Rcpp::_["BIC"] = std::log(n)*nParams - 2*loglik);
@@ -200,6 +205,7 @@ Rcpp::List steps(
 ) {
 
     std::vector<double> l;
+    arma::vec _lambda;
     
     DataSet ds(df, maxDiscrete);
 
@@ -210,13 +216,18 @@ Rcpp::List steps(
     logLambdaMax = std::min(logLambdaMax,
     			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
 						      ((double) ds.getNumRows()))));
-
+    
     if (lambdas.isNotNull()) {
         Rcpp::NumericVector _lambda(lambdas); 
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
-	arma::vec _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
-	l = std::vector<double>(_lambda.begin(), _lambda.end());
+	if (ds.getNumRows() > ds.getNumColumns()) {
+	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	} else {
+	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	}
     }
 
     STEPS steps;
