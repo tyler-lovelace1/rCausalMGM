@@ -30,7 +30,7 @@ private:
     int noEdgeChangeTol = 3; //number of iterations in a row with no edge changes before we break
 
     int printIter = 100;
-    double backtrackTol = 1e-10;
+    double backtrackTol = 1e-5;
 
 public:
 

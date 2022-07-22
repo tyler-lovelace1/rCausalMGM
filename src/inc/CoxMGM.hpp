@@ -1,24 +1,24 @@
-#ifndef MGM_HPP_
-#define MGM_HPP_
+#ifndef COXMGM_HPP_
+#define COXMGM_HPP_
+
+// [[Rcpp::depends(RcppThread)]]
 
 #include "armaLapack.hpp"
-
-#include "Node.hpp"
+#include "RcppThread.h"
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"
-#include "MGMParams.hpp"
+#include "CoxMGMParams.hpp"
 #include "ProximalGradient.hpp"
 #include "EdgeListGraph.hpp"
 #include <math.h>
 #include <chrono>
 
 /**
- * Implementation of Lee and Hastie's (2012) pseudolikelihood method for learning
- * Mixed Gaussian-Categorical Graphical Models
- * Created by ajsedgewick on 7/15/15.
- * Converted to C++ by Max Dudek on 5/5/20.
+ * Implementation of CoxMGM pseudolikelihood method for learning
+ * Mixed Cox-Gaussian-Categorical Graphical Models
+ * Created by Tyler Lovelace on 4/19/22.
  */
-class MGM : public ConvexProximal {
+class CoxMGM : public ConvexProximal {
 
 private:
 
@@ -30,6 +30,21 @@ private:
 
     //Discrete Data coded as dummy variables
     arma::mat dDat;
+
+    //Cox Data from z = eta - grad_eta / hess_eta
+    arma::mat cDat;
+
+    //Cox Data from z = eta - grad_eta / hess_eta
+    arma::mat zDat;
+
+    //Cox variables failure time order
+    arma::umat orderMat;
+
+    //Cox variables censoring indicator
+    arma::umat censMat;
+
+    //Cox variables tied times counts
+    std::vector<arma::uvec> HList;
 
     std::vector<Node> variables;
     std::vector<Node> initVariables;
@@ -48,48 +63,65 @@ private:
     int pDummy = 0;
     int q;
     int qDummy = 0;
+    int r;
     int n;
     long timeout = -1;
 
-    MGMParams params;
+    CoxMGMParams params;
 
     //parameter weights
     arma::vec weights;
+    // arma::mat weightMat;
+
+    arma::vec nullCoxloss;
+    arma::vec oldCoxloss;
+
+    arma::mat resid;
+    arma::mat catResid;
+
+    //Cox weights
+    arma::mat coxWeights;
+    arma::mat coxgrad;
+    arma::mat diagHess;
+    arma::rowvec fitWeight;
 
     bool verbose = false;
 
     double logsumexp(const arma::vec& x);
 
     void initParameters();  // init all parameters to zeros except for betad which is set to 1s
-    void calcWeights();     // calculate parameter weights as in Lee and Hastie 
+    void calcWeights();     // calculate parameter weights as in Lee and Hastie
+    // void calcZWeights();    // calculate parameter weights for Cox features 
     void makeDummy();       // convert discrete data (in yDat) to a matrix of dummy variables (stored in dDat)
     void fixData();         // checks if yDat is zero indexed and converts to 1 index. zscores x
+    arma::vec coxGradHess(arma::mat& eta, arma::mat& grad, arma::mat& diagHess);
 
-    // friend class Tests;
+    friend class Tests;
 
 public:
 
     double timePerIter = 0;
     int iterCount = 0;
 
-    MGM() {}
-    MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
-    MGM(DataSet& ds);
-    MGM(DataSet& ds, std::vector<double>& lambda);
+    CoxMGM() {}
+    // CoxMGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
+    CoxMGM(DataSet& ds);
+    CoxMGM(DataSet& ds, std::vector<double>& lambda);
 
-    // MGM(MGM& other) = default;
-    // MGM& operator=(MGM& other) = default;
-    // MGM(MGM&& other) = default;
-    // MGM& operator=(MGM&& other) = default;
-    // ~MGM() = default;
+    // CoxMGM(CoxMGM& other) = default;
+    // CoxMGM& operator=(CoxMGM& other) = default;
+    // CoxMGM(CoxMGM&& other) = default;
+    // CoxMGM& operator=(CoxMGM&& other) = default;
+    // ~CoxMGM() = default;
 
-    MGMParams getParams() {return params;}
-    void setParams(MGMParams newParams) { params = newParams; }
+
+    CoxMGMParams getParams() {return params;}
+    void setParams(CoxMGMParams& newParams) {params = newParams;}
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
 
     void setVerbose(bool v) { verbose = v; }
-    void setLambda(std::vector<double> lambda) { this->lambda = arma::vec(lambda); }
+    void setLambda(std::vector<double> lambda) { this->lambda = arma::pow(4/3.0 * arma::vec(lambda), 1.5);; }
 
     double calcLambdaMax();
 
@@ -147,10 +179,10 @@ public:
     arma::vec proximalOperator(double t, arma::vec& X);
 
 
-    void iterUpdate(arma::vec& X) {}
+    void iterUpdate(arma::vec& parIn);
 
     /**
-     *  Learn MGM traditional way with objective function tolerance. Recommended for inference applications that need
+     *  Learn CoxMGM traditional way with objective function tolerance. Recommended for inference applications that need
      *  accurate pseudolikelihood
      *
      * @param epsilon tolerance in change of objective function
@@ -159,7 +191,7 @@ public:
     void learn(double epsilon, int iterLimit);
 
     /**
-     *  Learn MGM using edge convergence using default 3 iterations of no edge changes. Recommended when we only care about
+     *  Learn CoxMGM using edge convergence using default 3 iterations of no edge changes. Recommended when we only care about
      *  edge existence.
      *
      * @param iterLimit
@@ -167,7 +199,7 @@ public:
     void learnEdges(int iterlimit);
 
     /**
-     *  Learn MGM using edge convergence using edgeChangeTol (see ProximalGradient for documentation). Recommended when we only care about
+     *  Learn CoxMGM using edge convergence using edgeChangeTol (see ProximalGradient for documentation). Recommended when we only care about
      *  edge existence.
      *
      * @param iterLimit
@@ -176,19 +208,19 @@ public:
     void learnEdges(int iterlimit, int edgeChangeTol);
 
     /**
-     * Converts MGM object to EdgeListGraph object with edges if edge parameters are non-zero. Loses all edge param information
+     * Converts CoxMGM object to EdgeListGraph object with edges if edge parameters are non-zero. Loses all edge param information
      *
      * @return
      */
-    EdgeListGraph graphFromMGM();
+    EdgeListGraph graphFromCoxMGM();
 
     /**
-     * Converts MGM to matrix of doubles. uses 2-norm to combine c-d edge parameters into single value and f-norm for
+     * Converts CoxMGM to matrix of doubles. uses 2-norm to combine c-d edge parameters into single value and f-norm for
      * d-d edge parameters.
      *
      * @return
      */
-    arma::mat adjMatFromMGM();
+    arma::mat adjMatFromCoxMGM();
 
     /**
      * Simple search command for GraphSearch implementation. Uses default edge convergence, 1000 iter limit.
@@ -202,9 +234,9 @@ public:
 					  arma::vec& nParams);
 
     std::vector<EdgeListGraph> searchPath(std::vector<double> lambdas);
-    
-    friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+
+    friend void CoxMGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 
 };
 
-#endif /* MGM_HPP_ */
+#endif /* COXMGM_HPP_ */

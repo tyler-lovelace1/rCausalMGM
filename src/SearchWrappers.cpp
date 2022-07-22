@@ -1,4 +1,5 @@
 #include "MGM.hpp"
+#include "CoxMGM.hpp"
 #include "PcStable.hpp"
 #include "CpcStable.hpp"
 #include "PcMax.hpp"
@@ -29,12 +30,19 @@
 Rcpp::List mgm(
     const Rcpp::DataFrame &df, 
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
-    const int maxDiscrete = 5,
+    const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
 
-    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+    
+    // bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
 
     std::vector<double> l(lambda.begin(), lambda.end());
 
@@ -60,6 +68,84 @@ Rcpp::List mgm(
     }
 
     MGM mgm(ds, l);
+    mgm.setVerbose(verbose);
+    // mgm.calcLambdaMax();
+    EdgeListGraph mgmGraph = mgm.search();
+    
+    mgmGraph.setHyperParam("lambda", Rcpp::NumericVector(l.begin(), l.end()));
+
+    RcppThread::checkUserInterrupt();
+
+    auto elapsedTime = mgm.getElapsedTime();
+
+    if (verbose) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "MGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
+
+    Rcpp::List result = mgmGraph.toList();
+
+    return result;
+}
+
+
+//' Calculate the CoxMGM graph on a dataset
+//'
+//' @param df The dataframe
+//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::coxmgm(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List coxmgm(
+    const Rcpp::DataFrame &df, 
+    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+    
+    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+
+    std::vector<double> l(lambda.begin(), lambda.end());
+
+    int lamLength = 5;
+
+    // if (ds.isMixed()) {
+    // 	// if (ds.isCensored()) {
+    // 	//     lamLength = 5;
+    // 	// } else {
+    // 	//     lamLength = 3;
+    // 	// }
+    // 	lamLength = 3;
+    // } // else {
+    // // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
+    // // }
+
+    if (l.size() == 1) {
+	for (int i = 1; i < lamLength; i++) {
+	    l.push_back(l[0]);
+	}
+    } else if (l.size() != lamLength) {
+	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+    }
+
+    CoxMGM mgm(ds, l);
     mgm.setVerbose(v);
     // mgm.calcLambdaMax();
     EdgeListGraph mgmGraph = mgm.search();
@@ -76,13 +162,14 @@ Rcpp::List mgm(
 	} else {
 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
 	}
-        Rcpp::Rcout << "MGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+        Rcpp::Rcout << "CoxMGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     Rcpp::List result = mgmGraph.toList();
 
     return result;
 }
+
 
 
 //' Calculate the solution path for an MGM graph on a dataset
@@ -95,16 +182,23 @@ Rcpp::List mgm(
 //' @export
 //' @examples
 //' data("data.n100.p25")
-//' g <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::mgmPath(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List mgmPath(
     const Rcpp::DataFrame &df,
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 30,
-    const int maxDiscrete = 5,
+    const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
     bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
 
@@ -150,7 +244,7 @@ Rcpp::List mgmPath(
 	} else {
 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
 	}
-        Rcpp::Rcout << "MGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+        Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
 
     Rcpp::List graphList;
@@ -170,6 +264,102 @@ Rcpp::List mgmPath(
     return result;
 }
 
+
+//' Calculate the solution path for a CoxMGM graph on a dataset
+//'
+//' @param df The dataframe
+//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::coxmgmPath(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List coxmgmPath(
+    const Rcpp::DataFrame &df,
+    Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
+    const int nLambda = 30,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+
+    arma::vec _lambda;
+    std::vector<double> l; // = {0.2, 0.2, 0.2};
+
+    int n = ds.getNumRows();
+
+    CoxMGM mgm(ds);
+    mgm.setVerbose(v);
+
+    double logLambdaMax = std::log10(mgm.calcLambdaMax());
+
+    Rcpp::Rcout << "LambdaMax: " << std::pow(10, logLambdaMax) << std::endl;
+
+    // return Rcpp::List::create();
+
+    // logLambdaMax = std::min(logLambdaMax,
+    // 			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
+    // 						      ((double) ds.getNumRows()))));
+
+    if (lambdas.isNotNull()) {
+        _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
+	l = std::vector<double>(_lambda.begin(), _lambda.end());
+    } else {
+	if (ds.getNumRows() > ds.getNumColumns()) {
+	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	} else {
+	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	}
+    }
+
+    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
+    arma::vec loglik(l.size(), arma::fill::zeros);
+    arma::vec nParams(l.size(), arma::fill::zeros);
+    std::vector<EdgeListGraph> mgmGraphs = mgm.searchPath(l, loglik, nParams);
+
+    RcppThread::checkUserInterrupt();
+
+    auto elapsedTime = mgm.getElapsedTime();
+
+    if (v) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "CoxMGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
+
+    Rcpp::List graphList;
+    
+    for (int i = 0; i < l.size(); i++) {
+        graphList.push_back(mgmGraphs[i].toList());
+    }
+    
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
+					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+					   Rcpp::_["loglik"] = loglik,
+					   Rcpp::_["AIC"] = 2*nParams - 2*loglik,
+					   Rcpp::_["BIC"] = std::log(n)*nParams - 2*loglik);
+
+    
+
+    return result;
+}
 
 
 //' Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed
@@ -191,8 +381,7 @@ Rcpp::List mgmPath(
 //' g <- rCausalMGM::steps(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List steps(
-    const Rcpp::DataFrame &df, 
-    const int maxDiscrete = 5,
+    const Rcpp::DataFrame& df, 
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 20,
     const double g = 0.05,
@@ -201,28 +390,36 @@ Rcpp::List steps(
     const bool leaveOneOut = false,
     const bool computeStabs = false,
     const int threads = -1,
+    const bool rank = false,
     const bool verbose = false
 ) {
 
     std::vector<double> l;
     arma::vec _lambda;
-    
-    DataSet ds(df, maxDiscrete);
+
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
     MGM mgm(ds);
 
     double logLambdaMax = std::log10(mgm.calcLambdaMax());
 
-    logLambdaMax = std::min(logLambdaMax,
-    			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
-						      ((double) ds.getNumRows()))));
+    // logLambdaMax = std::min(logLambdaMax,
+    // 			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
+    // 						      ((double) ds.getNumRows()))));
     
     if (lambdas.isNotNull()) {
         Rcpp::NumericVector _lambda(lambdas); 
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -273,14 +470,21 @@ Rcpp::List steps(
 // [[Rcpp::export]]
 Rcpp::List pcStable(
     const Rcpp::DataFrame &df, 
-    const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
     const bool fdr = true,
+    const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
@@ -323,15 +527,21 @@ Rcpp::List pcStable(
 // [[Rcpp::export]]
 Rcpp::List cpcStable(
     const Rcpp::DataFrame &df, 
-    const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
     const bool fdr = true,
+    const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
 
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
@@ -372,14 +582,21 @@ Rcpp::List cpcStable(
 // [[Rcpp::export]]
 Rcpp::List pcMax(
     const Rcpp::DataFrame &df, 
-    const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
     const bool fdr = true,
+    const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
     IndTestMulti itm(ds, alpha);
 
@@ -417,14 +634,21 @@ Rcpp::List pcMax(
 // [[Rcpp::export]]
 Rcpp::List pc50(
     const Rcpp::DataFrame &df, 
-    const int maxDiscrete = 5,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
     const double alpha = 0.1, 
     const int threads = -1,
     const bool fdr = true,
+    const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
@@ -468,14 +692,21 @@ Rcpp::List pc50(
 // [[Rcpp::export]]
 Rcpp::List fciStable(
         const Rcpp::DataFrame &df,
-        const int maxDiscrete = 5,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
         const int threads = -1,
 	const bool fdr = true,
+	const bool rank = false,
         const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
     
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
@@ -519,14 +750,21 @@ Rcpp::List fciStable(
 // [[Rcpp::export]]
 Rcpp::List cfci(
         const Rcpp::DataFrame &df,
-        const int maxDiscrete = 5,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
         const int threads = -1,
 	const bool fdr = true,
+	const bool rank = false,
         const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
     
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
@@ -570,14 +808,21 @@ Rcpp::List cfci(
 // [[Rcpp::export]]
 Rcpp::List fciMax(
         const Rcpp::DataFrame &df,
-        const int maxDiscrete = 5,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
         const int threads = -1,
 	const bool fdr = true,
+	const bool rank = false,
         const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
     
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
@@ -624,15 +869,21 @@ Rcpp::List fciMax(
 // [[Rcpp::export]]
 Rcpp::List fci50(
         const Rcpp::DataFrame &df,
-        const int maxDiscrete = 5,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
         const int threads = -1,
 	const bool fdr = true,
+	const bool rank = false,
         const bool verbose = false
 ) {
-    DataSet ds(df, maxDiscrete);
-    
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
@@ -781,8 +1032,8 @@ Rcpp::List bootstrap(
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const double alpha = 0.05,
     const int numBoots = 20,
-    const int maxDiscrete = 5,
     const int threads = -1,
+    const bool rank = false,
     const bool verbose = false
     ) {
 
@@ -871,7 +1122,14 @@ Rcpp::List bootstrap(
 	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
     }
     
-    DataSet ds(df, maxDiscrete);
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
     Bootstrap boot(ds, alg, _ensemble, numBoots);
     if (threads > 0) boot.setThreads(threads);

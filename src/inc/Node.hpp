@@ -19,6 +19,7 @@
 #include "Variable.hpp"
 #include "ContinuousVariable.hpp"
 #include "DiscreteVariable.hpp"
+#include "CensoredVariable.hpp"
 #include <string>
 // #include <memory>
 #include <exception>
@@ -55,6 +56,14 @@ public:
 	var(var) {
     	// RcppThread::Rcout << "new\n";
     }
+
+    Node(CensoredVariable* var) :
+	name(var->getName()),
+	type(var->getType()),
+	var(var) {
+    	// RcppThread::Rcout << "new\n";
+    }
+
     
     ~Node() {
 	// RcppThread::Rcout << "delete\n";
@@ -68,6 +77,8 @@ public:
 	    var = (Variable*) new ContinuousVariable(other.var);
 	} else if (type==DISCRETE) {
 	    var = (Variable*) new DiscreteVariable(other.var);
+	} else if (type==CENSORED) {
+	    var = (Variable*) new CensoredVariable(other.var);
 	} else if (other.isNull()) {
 	    // RcppThread::Rcout << "copying null node\n";
 	    var = nullptr;
@@ -86,7 +97,10 @@ public:
 		var = (Variable*) new ContinuousVariable(other.var);
 	    } else if (type==DISCRETE) {
 		var = (Variable*) new DiscreteVariable(other.var);
-	    } else if (other.isNull()) {
+	    } else if (type==CENSORED) {
+		var = (Variable*) new CensoredVariable(other.var);
+	    }
+	    else if (other.isNull()) {
 		// RcppThread::Rcout << "copying null node\n";
 		var = nullptr;
 	    }else {
@@ -129,6 +143,8 @@ public:
     bool isContinuous() const { return type==CONTINUOUS; }
 
     bool isDiscrete() const { return type==DISCRETE; }
+
+    bool isCensored() const { return type==CENSORED; }
   
     bool isMissingValue(const std::string& val) const {
         switch (type) {
@@ -137,6 +153,8 @@ public:
 	    return ((ContinuousVariable*)var)->isMissingValue(val);
     	case DISCRETE:
 	    return ((DiscreteVariable*)var)->isMissingValue(val);
+    	case CENSORED:
+	    return ((CensoredVariable*)var)->isMissingValue(val);
     	default:
 	    throw std::runtime_error("Invalid variable type detected for Node " + name);
 	      
@@ -151,6 +169,8 @@ public:
 	    return ((ContinuousVariable*)var)->checkValue(val);
     	case DISCRETE:
 	    return ((DiscreteVariable*)var)->checkValue(val);
+    	case CENSORED:
+	    return ((CensoredVariable*)var)->checkValue(val);
     	default:
 	    throw std::runtime_error("Invalid variable type detected for Node " + name);
 	      
@@ -174,6 +194,72 @@ public:
     	if (type!=DISCRETE)
     	    throw std::runtime_error("Node " + name + " is not discrete");
     	return ((DiscreteVariable*)var)->getCategories();
+    }
+
+    bool setCensor(arma::vec& values, arma::uvec& censor) {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->setCensor(values, censor);
+    }
+  
+    bool setCensor(arma::vec&& values, arma::uvec&& censor) {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->setCensor(values, censor);
+    }
+
+    arma::uvec getOrder() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getOrder();
+    }
+
+    arma::uword getOrder(int i) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getOrder(i);
+    }
+
+    arma::uvec getCensor() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getCensor();
+    }
+
+    arma::uword getCensor(int i) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getCensor(i);
+    }
+
+    arma::uvec getH() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getH();
+    }
+
+    arma::uword getH(int i) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getH(i);
+    }
+
+    arma::uvec getCC() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getCC();
+    }
+
+    arma::uword getCC(int i) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getCC(i);
+    }
+
+    arma::uword getNEvents() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getNEvents();
     }
     
     friend struct std::hash<Node>;

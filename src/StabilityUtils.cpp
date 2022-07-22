@@ -168,11 +168,15 @@ arma::mat StabilityUtils::skeletonToMatrix(EdgeListGraph& graph, DataSet& d) {
     int n = graph.getNumNodes();
     arma::mat matrix(n, n, arma::fill::zeros);
 
+    // RcppThread::Rcout << "Generating skeleton\n";
+
     // map nodes in order of appearance
-    std::unordered_map<Node, int> map;
+    std::unordered_map<Node, int> nodeMap;
     for (Node node : graph.getNodes()) {
-        map[node] = d.getColumn(node);
+        nodeMap[node] = d.getColumn(node);
     }
+
+    // RcppThread::Rcout << "nodeMap filled\n";
 
     // mark edges
     for (Edge edge : graph.getEdges()) {
@@ -180,9 +184,11 @@ arma::mat StabilityUtils::skeletonToMatrix(EdgeListGraph& graph, DataSet& d) {
         Node node1 = edge.getNode1();
         Node node2 = edge.getNode2();
 
-        matrix(map[node1], map[node2]) = 1.0;
-        matrix(map[node2], map[node1]) = 1.0;
+        matrix(nodeMap[node1], nodeMap[node2]) = 1.0;
+        matrix(nodeMap[node2], nodeMap[node1]) = 1.0;
     }
+
+    // RcppThread::Rcout << "adjacency matrix complete\n";
 
     return matrix;
 }
@@ -318,7 +324,7 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
                 return i;
             }
 
-        } else {
+        } else if (d.getVariable(i).isDiscrete()) {
             std::unordered_map<int, int> cats;
             for (arma::uword j = 0; j < full.getNumRows(); j++) {
                 cats[full.getInt(j, i)] = 0;
@@ -343,7 +349,16 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
                     return i;
                 }
             }
-        }
+        } else if (d.getVariable(i).isCensored()) {
+	    if (d.getVariable(i).getNEvents() < 2) {
+		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  "
+			    << d.getVariable(i).getNEvents()
+			    << " events" << std::endl;
+		return i;
+	    }
+	} else {
+	    throw std::runtime_error("Invalid variable type for node " + d.getVariable(i).getName());
+	}
     }
     return -1;
 }
@@ -448,88 +463,49 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
     std::mutex matMutex; // For protecting thetaMat
     RcppThread::ThreadPool pool(num_threads);
     std::vector<MGM> mgmList;
+    std::vector<CoxMGM> coxmgmList;
 
-    for (int i = 0; i < subs.n_rows; i++) {
-    	DataSet dataSubSamp(data, subs.row(i));
-    	mgmList.push_back(MGM(dataSubSamp));
+    if (data.isCensored()) {
+	for (int i = 0; i < subs.n_rows; i++) {
+	    DataSet dataSubSamp(data, subs.row(i));
+	    coxmgmList.push_back(CoxMGM(dataSubSamp));
+	}
+    } else {
+	for (int i = 0; i < subs.n_rows; i++) {
+	    DataSet dataSubSamp(data, subs.row(i));
+	    mgmList.push_back(MGM(dataSubSamp));
+	}
     }
 
 
-    pool.parallelForEach(mgmList,
-			 [&] (MGM& m) {
-			     m.setLambda(lambda);
-			     EdgeListGraph g = m.search();
-			     arma::mat curAdj = skeletonToMatrix(g, data);
+    if (data.isCensored()) {
+	pool.parallelForEach(coxmgmList,
+			     [&] (CoxMGM& m) {
+				 m.setLambda(lambda);
+				 EdgeListGraph g = m.search();
+				 arma::mat curAdj = skeletonToMatrix(g, data);
 				 
-			     {
-				 std::lock_guard<std::mutex> matLock(matMutex);
-				 thetaMat += curAdj;
-			     }
-			 });
+				 {
+				     std::lock_guard<std::mutex> matLock(matMutex);
+				     thetaMat += curAdj;
+				 }
+			     });
+    } else {
+	pool.parallelForEach(mgmList,
+			     [&] (MGM& m) {
+				 m.setLambda(lambda);
+				 EdgeListGraph g = m.search();
+				 arma::mat curAdj = skeletonToMatrix(g, data);
+				 
+				 {
+				     std::lock_guard<std::mutex> matLock(matMutex);
+				     thetaMat += curAdj;
+				 }
+			     });
+    }
 
     pool.join();
-
     
-    // auto producer = [&]() {
-    //     for (int i = 0; i < subs.n_rows; i++) {
-    //         taskQueue.push(i);
-
-    // 	    if (RcppThread::isInterrupted()) {
-    // 	      break;
-    // 	    }
-    //     }
-
-    //     // Poison pills
-    //     for (int i = 0; i < num_threads; i++) {
-    //         taskQueue.push(-1);
-    //     }
-    // };
-
-    // auto consumer = [&]() {
-    //     while (true) {
-    //         int sample = taskQueue.pop();
-
-    //         if (sample < 0) break; // Poison pill
-
-    // 	    if (RcppThread::isInterrupted()) {
-    // 	      break;
-    // 	    }
-
-    //         DataSet dataSubSamp(data, subs.row(sample));
-    //         MGM mgm(dataSubSamp, lambda);
-    //         EdgeListGraph g = mgm.search();
-    //         arma::mat curAdj = skeletonToMatrix(g, dataSubSamp);
-
-    // 	    {
-    //         std::lock_guard<std::mutex> matLock(matMutex);
-    //         thetaMat += curAdj;
-    // 	    }
-    //     }
-    // };
-
-
-    // RcppThread::ThreadPool pool(num_threads);
-
-    // pool.push(producer);
-
-    // for (int i = 0; i < num_threads; i++) {
-    //     pool.push(consumer);
-    // }
-
-    // pool.join();
-    
-    // std::vector<RcppThread::Thread> threads;
-
-    // threads.push_back(RcppThread::Thread( producer ));
-
-    // for (int i = 0; i < num_threads; i++) {
-    //     threads.push_back(RcppThread::Thread( consumer ));
-    // }
-
-    // for (int i = 0; i < threads.size(); i++) {
-    //     threads[i].join();
-    // }
-
     return thetaMat / subs.n_rows;
 }
 

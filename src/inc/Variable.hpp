@@ -17,7 +17,7 @@
 #include "armaLapack.hpp"
 #include <string>
 
-enum DataType { NONE, CONTINUOUS, DISCRETE };
+enum DataType { NONE, CONTINUOUS, DISCRETE, CENSORED };
 
 class Variable {
     
@@ -39,6 +39,8 @@ public:
     bool isContinuous() { return type==CONTINUOUS; }
 
     bool isDiscrete() { return type==DISCRETE; }
+
+    bool isCensored() { return type==CENSORED; }
   
     // template <typename T>
     // T getMissingValueMarker();

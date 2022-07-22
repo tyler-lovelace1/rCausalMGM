@@ -4,6 +4,7 @@
 // [[Rcpp::depends(RcppThread)]]
 
 #include "MGM.hpp"
+#include "CoxMGM.hpp"
 // #include "PcStable.hpp"
 // #include "CpcStable.hpp"
 // #include "PcMax.hpp"

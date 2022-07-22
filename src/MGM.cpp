@@ -1107,8 +1107,8 @@ arma::mat MGM::adjMatFromMGM() {
     for (arma::uword i = 0; i < q-qDummy; i++) {
         for (arma::uword j = i+1; j < q-qDummy; j++) {
             double val = arma::norm(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j])), "fro");
-            outMat(p+i, p+j) = val;
-            outMat(p+j, p+i) = val;
+            outMat(p-pDummy+i, p-pDummy+j) = val;
+            outMat(p-pDummy+j, p-pDummy+i) = val;
         }
     }
 

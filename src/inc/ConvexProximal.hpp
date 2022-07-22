@@ -22,7 +22,7 @@ public:
     // ConvexProximal& operator=(const ConvexProximal& other) = default;
     // ConvexProximal(ConvexProximal&& other) = default;
     // ConvexProximal& operator=(ConvexProximal&& other) = default;
-    // virtual ~ConvexProximal() = 0;
+    virtual ~ConvexProximal() {}
   
     /**
      * Calculate value of smooth function g(X)
@@ -82,6 +82,8 @@ public:
         Xout = proximalOperator(t,X);
         return nonSmoothValue(X);
     }
+
+    virtual void iterUpdate(arma::vec& X) = 0;
 
 };
 
