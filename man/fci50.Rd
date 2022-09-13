@@ -6,18 +6,16 @@
 \usage{
 fci50(
   df,
-  maxDiscrete = 5L,
   initialGraph = NULL,
-  alpha = 0.1,
+  alpha = 0.05,
   threads = -1L,
-  fdr = TRUE,
+  fdr = FALSE,
+  rank = FALSE,
   verbose = FALSE
 )
 }
 \arguments{
 \item{df}{The dataframe}
-
-\item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
 
 \item{initialGraph}{An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.}
 
@@ -26,6 +24,8 @@ fci50(
 \item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
 
 \item{fdr}{Whether or not to run with FDR correction for the adjacencies.}
+
+\item{rank}{Whether or not to use rank-based associations as opposed to linear}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }

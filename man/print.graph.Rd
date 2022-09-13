@@ -4,7 +4,7 @@
 \alias{print.graph}
 \title{A print override function for the graph}
 \usage{
-\method{print}{graph}(x)
+\method{print}{graph}(x, ...)
 }
 \arguments{
 \item{x}{The graph object}

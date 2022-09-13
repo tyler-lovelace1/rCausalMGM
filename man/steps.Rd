@@ -6,7 +6,6 @@
 \usage{
 steps(
   df,
-  maxDiscrete = 5L,
   lambdas = NULL,
   nLambda = 20L,
   g = 0.05,
@@ -15,13 +14,12 @@ steps(
   leaveOneOut = FALSE,
   computeStabs = FALSE,
   threads = -1L,
+  rank = FALSE,
   verbose = FALSE
 )
 }
 \arguments{
 \item{df}{The dataframe}
-
-\item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
 
 \item{lambdas}{A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.}
 
@@ -36,6 +34,8 @@ steps(
 \item{computeStabs}{If TRUE, stability values are calculated. Defaults to FALSE.}
 
 \item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
+
+\item{rank}{Whether or not to use rank-based associations as opposed to linear}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }

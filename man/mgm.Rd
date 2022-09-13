@@ -4,19 +4,14 @@
 \alias{mgm}
 \title{Calculate the MGM graph on a dataset}
 \usage{
-mgm(
-  df,
-  lambda = as.numeric(c(0.2, 0.2, 0.2)),
-  maxDiscrete = 5L,
-  verbose = FALSE
-)
+mgm(df, lambda = as.numeric(c(0.2, 0.2, 0.2)), rank = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{df}{The dataframe}
 
 \item{lambda}{A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.}
 
-\item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
+\item{rank}{Whether or not to use rank-based associations as opposed to linear}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }

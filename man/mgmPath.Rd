@@ -4,14 +4,14 @@
 \alias{mgmPath}
 \title{Calculate the solution path for an MGM graph on a dataset}
 \usage{
-mgmPath(df, lambdas = NULL, nLambda = 30L, maxDiscrete = 5L, verbose = FALSE)
+mgmPath(df, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{df}{The dataframe}
 
 \item{lambdas}{A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.}
 
-\item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
+\item{rank}{Whether or not to use rank-based associations as opposed to linear}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }
@@ -23,5 +23,5 @@ Calculate the solution path for an MGM graph on a dataset
 }
 \examples{
 data("data.n100.p25")
-g <- rCausalMGM::mgm(data.n100.p25)
+g <- rCausalMGM::mgmPath(data.n100.p25)
 }

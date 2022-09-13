@@ -13,8 +13,8 @@ bootstrap(
   lambda = as.numeric(c(0.2, 0.2, 0.2)),
   alpha = 0.05,
   numBoots = 20L,
-  maxDiscrete = 5L,
   threads = -1L,
+  rank = FALSE,
   verbose = FALSE
 )
 }
@@ -31,9 +31,9 @@ bootstrap(
 
 \item{numBoots}{The number of bootstrap samples to run. Defaults to 20.}
 
-\item{maxDiscrete}{The maximum number of unique values a variable can have before being considered continuous. Defaults to 5}
-
 \item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
+
+\item{rank}{Whether or not to use rank-based associations as opposed to linear}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
 }

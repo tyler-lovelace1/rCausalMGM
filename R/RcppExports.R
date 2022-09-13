@@ -96,7 +96,6 @@ mgmPath <- function(df, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = F
 #' Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param lambdas A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
 #' @param g The gamma parameter for STEPS. Defaults to 0.05
 #' @param numSub The number of subsets to split the data into. Defaults to 20
@@ -104,6 +103,7 @@ mgmPath <- function(df, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = F
 #' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
 #' @param computeStabs If TRUE, stability values are calculated. Defaults to FALSE.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated MGM graph
 #' @export
@@ -117,11 +117,11 @@ steps <- function(df, lambdas = NULL, nLambda = 20L, g = 0.05, numSub = 20L, sub
 #' Runs the causal algorithm PC-Stable on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -136,11 +136,11 @@ pcStable <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr =
 #' Runs the causal algorithm CPC-Stable on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -155,11 +155,11 @@ cpcStable <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr 
 #' Runs the causal algorithm PC-Max on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -174,11 +174,11 @@ pcMax <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr = FA
 #' Runs the causal algorithm PC50 on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -193,11 +193,11 @@ pc50 <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr = FAL
 #' Runs the causal algorithm FCI-Stable on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -212,11 +212,11 @@ fciStable <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr 
 #' Runs the causal algorithm CFCI-Stable on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -231,11 +231,11 @@ cfci <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr = FAL
 #' Runs the causal algorithm FCI-Max on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -250,11 +250,11 @@ fciMax <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr = F
 #' Runs the causal algorithm FCI50 Stable on a dataset
 #'
 #' @param df The dataframe
-#' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 #' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 #' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph
 #' @export
@@ -275,6 +275,7 @@ fci50 <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr = FA
 #' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 #' @param numBoots The number of bootstrap samples to run. Defaults to 20.
 #' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated search graph with a table of edge stabilities
 #' @export

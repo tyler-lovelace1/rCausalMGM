@@ -267,11 +267,11 @@ Rcpp::List steps(
 //' Runs the causal algorithm PC-Stable on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -324,11 +324,11 @@ Rcpp::List pcStable(
 //' Runs the causal algorithm CPC-Stable on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -379,11 +379,11 @@ Rcpp::List cpcStable(
 //' Runs the causal algorithm PC-Max on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -431,11 +431,11 @@ Rcpp::List pcMax(
 //' Runs the causal algorithm PC50 on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -489,11 +489,11 @@ Rcpp::List pc50(
 //' Runs the causal algorithm FCI-Stable on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -547,11 +547,11 @@ Rcpp::List fciStable(
 //' Runs the causal algorithm CFCI-Stable on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -605,11 +605,11 @@ Rcpp::List cfci(
 //' Runs the causal algorithm FCI-Max on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
@@ -666,11 +666,11 @@ Rcpp::List fciMax(
 //' Runs the causal algorithm FCI50 Stable on a dataset
 //'
 //' @param df The dataframe
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
 //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated search graph
 //' @export
