@@ -96,25 +96,40 @@ bool IndTestMulti::isIndependent(const Node& x, const Node& y, std::vector<Node>
     // Rcpp::Rcout << std::endl;
     // bool debug = (x->getName() == "X5" && y->getName() == "X6");
 
-    if (x.isDiscrete())
-    {
-        // if (debug) Rcpp::Rcout << "Path 1" << std::endl;
+    if (x.isDiscrete()) {
+	// if (debug) Rcpp::Rcout << "Path 1" << std::endl;
 	try {
 	    return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
-	}  catch (...) {
+	}  catch (const std::exception &exc) {
 	    if (y.isDiscrete()) {
 		try {
 		    // Rcpp::Rcout << "Trying reverse MultinomialLogisticRegression test" << std::endl;
 		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
-		} catch (...) {
+		} catch (const std::exception &exc) {
+		    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
+		    // for (const Node& n : z)
+		    // 	warn += " " + n.getName();
+		    // warn += " } failed";
+		    // warn += ": ";
+		    // warn += exc.what();
+		
+		    // RcppThread::Rcout << warn << std::endl;
+		    
 		    return false;
 		}
 	    }
+	    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
+	    // for (const Node& n : z)
+	    // 	warn += " " + n.getName();
+	    // warn += " } failed";
+	    // warn += ": ";
+	    // warn += exc.what();
+		
+	    // RcppThread::Rcout << warn << std::endl;
+	    
 	    return false;
 	}
-    }
-    else if (y.isDiscrete())
-    {
+    } else if (y.isDiscrete()) {
 	try {
 	    if (preferLinear) {
 		// if (debug) Rcpp::Rcout << "Path 2" << std::endl;
@@ -124,22 +139,47 @@ bool IndTestMulti::isIndependent(const Node& x, const Node& y, std::vector<Node>
 		// if (debug) Rcpp::Rcout << "Path 3" << std::endl;
 		return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
 	    }
-	} catch (...) {
+	} catch (const std::exception &exc) {
+	    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
+	    // for (const Node& n : z)
+	    // 	warn += " " + n.getName();
+	    // warn += " } failed";
+	    // warn += ": ";
+	    // warn += exc.what();
+		
+	    // RcppThread::Rcout << warn << std::endl;
+	    
 	    return false;
 	}
-    }
-    else
-    {
-        // if (debug) Rcpp::Rcout << "Path 4" << std::endl;
+    } else {
+	// if (debug) Rcpp::Rcout << "Path 4" << std::endl;
 	try {
 	    return isIndependentRegression(x, y, z, pReturn);
-	}  catch (...) {
+	}  catch (const std::exception &exc) {
 	    try {
 		// Rcpp::Rcout << "Trying reverse LinearRegression test" << std::endl;
 		return isIndependentRegression(y, x, z, pReturn);
-	    } catch (...) {
+	    } catch (const std::exception &exc) {
+		// std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
+		// for (const Node& n : z)
+		//     warn += " " + n.getName();
+		// warn += " } failed";
+		// warn += ": ";
+		// warn += exc.what();
+		    
+		// RcppThread::Rcout << warn << std::endl;
+		
 		return false;
 	    }
+	    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
+	    // for (const Node& n : z)
+	    // 	warn += " " + n.getName();
+	    // warn += " } failed";
+	    // warn += ": ";
+	    // warn += exc.what();
+		    
+	    // RcppThread::Rcout << warn << std::endl;
+	    
 	    return false;
 	}
     }
@@ -246,6 +286,7 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(const Node& x, con
         zList.insert(zList.end(), temp.begin(), temp.end());
     }
 
+    LogisticRegressionResult result0, result1;
     // //double[][] coeffsDep = new double[variablesPerNode.get(x).size()][];
     arma::mat coeffsNull = arma::mat(); //zList.size()+1, variablesPerNode.at(x).size());
     arma::mat coeffsDep = arma::mat();  //yzList.size()+1, variablesPerNode.at(x).size());
@@ -257,11 +298,19 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(const Node& x, con
 	// LogisticRegressionResult result0;
 	// LogisticRegressionResult result1;
 	// try {
-	LogisticRegressionResult result0 = logisticRegression.regress(varX, zList, rows_);
-	LogisticRegressionResult result1 = logisticRegression.regress(varX, yzList, rows_);
+	result0 = logisticRegression.regress(varX, zList, rows_);
+	result1 = logisticRegression.regress(varX, yzList, rows_);
 	// } catch (...) {
 	//     return false;
 	// }
+
+	// std::stringstream ss0, ss1;
+
+	// ss0 << result0 << std::endl;
+	// ss1 << result1 << std::endl;
+
+	// RcppThread::Rcout << ss0.str();
+	// RcppThread::Rcout << ss1.str();
 
         coeffsNull.insert_cols(i, result0.getCoefs());
         coeffsDep.insert_cols(i, result1.getCoefs());
@@ -297,10 +346,22 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(const Node& x, con
     // }
     // Rcpp::Rcout << std::endl;
 
-    double ll = multiLL(coeffsDep, x, yzList);
-    double ll0 = multiLL(coeffsNull, x, zList);
-    double chisq = std::max(2*(ll - ll0), 1e-15);
 
+    double ll, ll0, chisq;
+
+    // if (variablesPerNode.at(x).size()==1) {
+    // 	ll = result1.getLogLikelihood();
+    // 	ll0 = result0.getLogLikelihood();
+    // } else {
+    ll = multiLL(coeffsDep, x, yzList);
+    ll0 = multiLL(coeffsNull, x, zList);
+    //}
+    chisq = std::max(2*(ll - ll0), 1e-15);
+    
+    // RcppThread::Rcout << "ll = " << ll << std::endl;
+    // RcppThread::Rcout << "ll0 = " << ll0 << std::endl;
+    // RcppThread::Rcout << "chisq = " << chisq << std::endl;
+    
     // if ((std::isinf(ll) && std::isinf(ll0)) || (ll0 > ll))
     // {
     //     chisq = 1e-10;
@@ -438,37 +499,59 @@ double IndTestMulti::multiLL(arma::mat &coeffs, const Node& dep, std::vector<Nod
     // 	}
     // }
 
-    probs.insert_cols(0, arma::mat(indepData.n_rows, 1, arma::fill::ones));
+    probs.insert_cols(0, arma::mat(indepData.n_rows, 1, arma::fill::zeros)); // reference class
     // probs = arma::exp(probs);
 
+    // probs.each_row([](arma::rowvec& r) {
+    // 		       r -= r.max();
+    // 		       r = arma::exp(r);
+    // 		       r = r / arma::accu(r);
+    // 		   } );
+
     // Rcpp::Rcout << "probs = " << probs << std::endl;
+    // arma::vec sampleLL(N);
     double ll = 0;
     for (int i = 0; i < N; i++)
     {
-        double b = probs.row(i).max();
-        arma::rowvec curRow = probs.row(i) - b;
-        //b = curRow.max();
-        // double p;
-        // for (arma::uword j = 0; j < curRow.n_elem; j++) {
-        //     // p = curRow(j);
-        //     curRow(j) = curRow(j) > -200 ? curRow(j) : -200;
-        // }
+        // double b = probs.row(i).max();
+        arma::rowvec curRow = probs.row(i); // - b;
+        // //b = curRow.max();
+        // // double p;
+        // // for (arma::uword j = 0; j < curRow.n_elem; j++) {
+        // //     // p = curRow(j);
+        // //     curRow(j) = curRow(j) > -200 ? curRow(j) : -200;
+        // // }
         curRow = arma::exp(curRow);
         double sum = arma::sum(curRow);
-        // Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
-        // Rcpp::Rcout << "sum(curRow) " << i << " = " << sum << std::endl;
+        // // Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
+        // // Rcpp::Rcout << "sum(curRow) " << i << " = " << sum << std::endl;
         curRow = curRow / sum;
         // Rcpp::Rcout << "curRow " << i << " = " << curRow << std::endl;
         // Rcpp::Rcout << "loglikelihood " << i << " = " << std::log(curRow.at((int)depData.at(i))) << std::endl;
-        ll += std::log(curRow.at((int)depData.at(i)));
+	// sampleLL(i) = std::log(probs(i, (int) depData.at(i)));
+	// if (std::isnan(sampleLL(i))) {
+	//     RcppThread::Rcout << probs.row(i) << std::endl;
+	//     RcppThread::Rcout << "Class: " << (int) depData.at(i) - 1 << std::endl;
+	//     RcppThread::Rcout << "likelihood: " << probs(i, (int) depData.at(i) - 1) << std::endl;
+	//     RcppThread::Rcout << "loglikelihood: " << std::log(probs(i, (int) depData.at(i) - 1)) << std::endl;
+	// }
+        // ll += std::log(probs(i, (int) depData.at(i) - 1));
+	ll += std::log(curRow((int) depData.at(i)));
     }
-    // Rcpp::Rcout << "multiLL loglikelihood = " << ll << std::endl;
+    
+    // RcppThread::Rcout << "multiLL loglikelihood = " << ll << std::endl;
+    // RcppThread::Rcout << coeffs << std::endl;
+    // RcppThread::Rcout << probs.rows(0,5) << std::endl;
     // logfile << "ll = " << ll << std::endl;
     // if (std::isinf(ll)) {
     // 	ll = std::numeric_limits<double>::lowest();
     // }
-    if (std::isnan(ll))
-    {
+    if (std::isnan(ll)) {
+	// RcppThread::Rcout << "multiLL loglikelihood = " << ll << std::endl;
+	// RcppThread::Rcout << coeffs << std::endl;
+	// RcppThread::Rcout << probs << std::endl;
+	// RcppThread::Rcout << sampleLL << std::endl;
+	// RcppThread::Rcout << depData << std::endl;
         ll = -std::numeric_limits<double>::infinity();
         // logfile << "Full separation found: ll = " << ll << std::endl;
         // for (auto it = indep.begin(); it != indep.end(); it++) {

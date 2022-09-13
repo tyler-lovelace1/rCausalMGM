@@ -16,6 +16,9 @@
 
 class ConvexProximal {
 
+protected:
+    bool verbose = false;
+
 public:
     // ConvexProximal() {}
     // ConvexProximal(const ConvexProximal& other) = default;
@@ -82,6 +85,11 @@ public:
         Xout = proximalOperator(t,X);
         return nonSmoothValue(X);
     }
+
+
+    void setVerbose(bool v) { verbose = v; }
+    
+    bool isVerbose() { return verbose; }
 
 };
 

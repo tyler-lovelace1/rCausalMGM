@@ -78,7 +78,7 @@ void SepsetProducerMaxP::consumer() {
         // Poison Pill
 	if (it.a.isNull() || it.b.isNull() || it.c.isNull()) break;
 	
-        double score;
+        double score = test->getAlpha() + 1e-5;
         bool indep = test->isIndependent(it.a, it.c, it.s, &score);
 
 	{
@@ -134,7 +134,7 @@ std::vector<Node>  SepsetProducerMaxP::getSepset(const Node& a, const Node& b) {
     // if (extraSepsets != null) {
     std::vector<Node> possibleDsep = *extraSepsets.get(a, b);
     if (!possibleDsep.empty()) {
-	double score;
+	double score = test->getAlpha() + 1e-5;
 	bool indep = test->isIndependent(a, b, possibleDsep, &score);
 	pval = score;
 	sepset = possibleDsep;
@@ -148,7 +148,7 @@ std::vector<Node>  SepsetProducerMaxP::getSepset(const Node& a, const Node& b) {
     std::vector<int> *comb2;
     for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
 	std::vector<Node> s = GraphUtils::asList(*comb2, adja);
-	double score;
+	double score = test->getAlpha() + 1e-5;
 	bool indep = test->isIndependent(a, b, s, &score);
 	if (indep && (score > pval)) {
 	    pval = score;
@@ -160,7 +160,7 @@ std::vector<Node>  SepsetProducerMaxP::getSepset(const Node& a, const Node& b) {
     std::vector<int> *comb3;
     for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
 	std::vector<Node> s = GraphUtils::asList(*comb3, adjb);
-	double score;
+	double score = test->getAlpha() + 1e-5;
 	bool indep = test->isIndependent(a, b, s, &score);
 	if (indep && (score > pval)) {
 	    pval = score;

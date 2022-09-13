@@ -14,6 +14,143 @@ std::set<std::string> DataSet::getUnique(const Rcpp::CharacterVector &col)
     return unique;
 }
 
+
+DataSet::DataSet(const Rcpp::DataFrame &df) {
+    this->maxDiscrete = maxDiscrete;
+    const Rcpp::CharacterVector names = df.names();
+    this->m = names.length();
+    this->n = df.nrows();
+    // this->data.set_size(this->n, this->m);
+    this->data = arma::mat(n,m,arma::fill::zeros);
+    this->missing = arma::umat(n,m,arma::fill::zeros);
+    this->name2idx = std::unordered_map<std::string, int>();
+    this->var2idx = std::unordered_map<Node, int>();
+    int numUnique;
+    std::string val, curName;
+
+    for (int i = 0; i < m; i++) {
+	
+	curName = (std::string) names[i];
+
+	// Rcpp::CharacterVector xVec = Rcpp::clone(df[i]);
+	Rcpp::RObject x = df[i];
+
+	// Rcpp::LogicalVector isna = Rcpp::is_na(xVec);
+	
+	// missing.col(i) = Rcpp::as<arma::uvec>(isna);
+
+	if (Rcpp::is<Rcpp::NumericVector>(x)){
+	    if (Rf_isMatrix(x))  {
+		Rcpp::stop(curName + " is a numeric matrix.");
+	    } else {
+		// Rcpp::Rcout << "NumericVector\n";
+		arma::vec values = Rcpp::as<arma::vec>(x);
+		// Rcpp::Rcout << values.t();
+		arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
+		// Rcpp::Rcout << uniqVals.t();
+		if (uniqVals.n_elem < 10) {
+		    Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
+		}
+		variables.push_back(Node(new ContinuousVariable(curName)));
+		data.col(i) = values;
+		// missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::NumericVector>(x)));
+	    }
+	} else if (Rcpp::is<Rcpp::IntegerVector>(x)) {
+	    if(Rf_isFactor(x)) {
+		// Rcpp::Rcout << "Factor " << curName << "\n";
+		std::vector<std::string> tempLevels = Rcpp::as<std::vector<std::string>>(x.attr("levels"));
+		arma::vec values = Rcpp::as<arma::vec>(x);
+
+		arma::vec uniqVals = arma::sort(arma::unique(values(arma::find_finite(values))));
+
+		// Rcpp::Rcout << values.t() << std::endl;
+
+		// Rcpp::Rcout << uniqVals.t() << std::endl;
+
+
+		std::vector<std::string> levels;
+
+		for (double val : uniqVals) {
+		    levels.push_back(tempLevels[(int) (val-1)]);
+		}
+
+		arma::vec mappedValues(n, arma::fill::zeros);
+
+		for (int idx = 0; idx < n; idx++) {
+		    for (int cat = 0; cat < levels.size(); cat++) {
+			if (tempLevels[(int) (values[idx]-1)] == levels[cat]) {
+			    mappedValues[idx] = cat;
+			}
+		    }
+		}
+
+		// for ( std::string val : levels) {
+		//     Rcpp::Rcout << val << "\t";
+		// }
+		// Rcpp::Rcout << std::endl;
+		
+		// Rcpp::Rcout << mappedValues.t() << std::endl;
+
+		if (levels.size() >= 10) {
+		    Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
+		}	    
+	    
+		variables.push_back(Node(new DiscreteVariable(curName, levels)));
+		data.col(i) = mappedValues;
+		// missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::IntegerVector>(x)));
+	    }
+	    else {
+		// Rcpp::Rcout << "IntegerVector\n";
+		arma::vec values = Rcpp::as<arma::vec>(x);
+		arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
+		if (uniqVals.n_elem < 10) {
+		    Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
+		}
+		variables.push_back(Node(new ContinuousVariable(curName)));
+		data.col(i) = values;	
+		// missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::IntegerVector>(x)));
+	    }
+	}
+	else if (Rcpp::is<Rcpp::CharacterVector>(x)) {
+	    // Rcpp::Rcout << "CharacterVector\n";
+	    Rcpp::CharacterVector levels = Rcpp::sort_unique(Rcpp::as<Rcpp::CharacterVector>(x));
+	    Rcpp::CharacterVector values = Rcpp::as<Rcpp::CharacterVector>(x);
+
+	    arma::vec mappedValues(n, arma::fill::zeros);
+
+	    for (int idx = 0; idx < n; idx++) {
+		for (int cat = 0; cat < levels.size(); cat++) {
+		    if (values[idx] == levels[cat]) {
+			mappedValues[idx] = cat;
+		    }
+		}
+	    }
+
+	    if (levels.size() >= 10) {
+	        Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
+	    }
+	    
+	    variables.push_back(Node(new DiscreteVariable(curName, Rcpp::as<std::vector<std::string>>(levels))));
+	    data.col(i) = mappedValues;
+	    
+	    // missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::CharacterVector>(x)));
+	    
+	}
+	variableNames.push_back(curName);
+        name2idx.insert(std::pair<std::string, int>(curName, i));
+        var2idx.insert(std::pair<Node, int>(variables[i], i));
+    }
+
+    // Rcpp::Rcout << data << std::endl;
+
+    missing.elem(arma::find_nonfinite(data)).ones();
+
+    // if (arma::accu(missing) > 0) {
+    // 	Rcpp::warning("Missing values detected. Samples with missing values will be dropped.");
+    // }
+}
+
+
 DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete)
 {
     this->maxDiscrete = maxDiscrete;
@@ -25,6 +162,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete)
     this->var2idx = std::unordered_map<Node, int>();
     int numUnique;
     std::string val, curName;
+    
 
     for (int i = 0; i < m; i++)
     {
@@ -98,6 +236,58 @@ DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete)
         }
     }
 }
+
+
+void DataSet::dropMissing() {
+    if (arma::accu(missing) > 0) {
+	Rcpp::warning("Missing values detected. Samples with missing values will be dropped.");
+
+	arma::uvec missingByRow = arma::sum(missing, 1);
+	arma::uvec completeSamples = arma::find(missingByRow == 0);
+
+	n = completeSamples.n_elem;
+        data = data.rows(completeSamples);
+	
+	// for (int j = 0; j < m; j++) {
+	//     if (variables[j].isCensored()) {
+	// 	arma::uvec censor = variables[j].getCensor();
+	// 	variables[j].setCensor(data.col(j), censor.elem(completeSamples));
+	//     }
+	// }
+    }
+}
+
+
+void DataSet::npnTransform() {
+    for (int j = 0; j < m; j++) {
+	if (variables[j].isContinuous()) {
+	    arma::vec vals(data.col(j));
+	    double mu = arma::mean(vals);
+	    double sd = arma::stddev(vals);
+	    
+	    arma::uvec indices = arma::sort_index(vals);
+	    int marker = 0;
+
+	    for (int i = 0; i < n; i++) {
+		if (vals(indices(i)) > vals(indices(marker))) {
+		    vals(indices.subvec(marker, i-1)).fill(i);
+		    marker = i;
+		}
+	    }
+	    vals(indices.subvec(marker, n-1)).fill(n);
+	    vals /= ((double) (n+1));
+	    // Rcpp::Rcout << vals(indices).t() << std::endl;
+	    // Rcpp::Rcout << vals.t() << std::endl;
+	    // Rcpp::Rcout << data.col(j).t() << std::endl;
+
+	    vals = Rcpp::qnorm(Rcpp::NumericVector(vals.begin(), vals.end()), mu, sd);
+	    data.col(j) = vals;
+	    
+	    // Rcpp::Rcout << vals.t() << std::endl;
+	}
+    }
+}
+
 
 void DataSet::addVariable(Node v)
 {

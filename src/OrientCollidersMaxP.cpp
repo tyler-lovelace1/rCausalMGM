@@ -86,7 +86,7 @@ void OrientCollidersMaxP::consumer() {
         // Poison Pill
         if (it.a.isNull() && it.b.isNull() && it.c.isNull()) break;
 
-        double score;
+        double score = independenceTest->getAlpha() + 1e-5;
         bool indep = independenceTest->isIndependent(it.a, it.c, it.s, &score);
 
 

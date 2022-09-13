@@ -32,6 +32,7 @@ private:
     std::unordered_map<std::string, int> name2idx;
     std::unordered_map<Node, int> var2idx;
     arma::mat data;
+    arma::umat missing;
     int maxDiscrete;
     int m, n;
 
@@ -40,6 +41,7 @@ private:
 public:
     DataSet() {}
     DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
+    DataSet(const Rcpp::DataFrame& df);
     DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
     DataSet(const DataSet& ds, const arma::urowvec& rows); // subset rows
     
@@ -48,6 +50,9 @@ public:
     DataSet(DataSet&& ds) = default;
     DataSet& operator=(DataSet&& ds) = default;
     ~DataSet() = default;
+
+    void dropMissing();
+    void npnTransform();
 
     int getNumRows() { return n; }
     int getNumColumns() { return m; }

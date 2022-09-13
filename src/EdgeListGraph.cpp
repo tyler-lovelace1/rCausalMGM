@@ -822,7 +822,7 @@ Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
         for (std::string child : partialChildren[target]) {
             partialSpouses.insert(parents[child].begin(), parents[child].end());
 	    partialSpouses.insert(partialParents[child].begin(),
-				      partialParents[child].end());
+				  partialParents[child].end());
         }
 
         std::unordered_set<std::string> rule2; // (confoundingNeighbors[target]);
@@ -875,6 +875,7 @@ Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
 	blankets[target].insert(confoundingNeighbors[target].begin(),
 				confoundingNeighbors[target].end());
 	blankets[target].insert(nondirected[target].begin(), nondirected[target].end());
+	
         blankets[target].insert(rule2.begin(), rule2.end());
         blankets[target].insert(rule3.begin(), rule3.end());
         blankets[target].insert(rule4.begin(), rule4.end());
@@ -965,9 +966,9 @@ Rcpp::List markovBlanketMEC(const Rcpp::List& graph) {
         }
 
         std::unordered_set<std::string> rule4(undirectedNeighbors[target]);
-        for (std::string Y : undirectedNeighbors[target]) {
-            rule4.insert(parents[Y].begin(), parents[Y].end());
-        }
+        // for (std::string Y : undirectedNeighbors[target]) {
+        //     rule4.insert(parents[Y].begin(), parents[Y].end());
+        // }
 
         // std::unordered_set<std::string> rule6;
         // for (std::string Y : children[target]) {

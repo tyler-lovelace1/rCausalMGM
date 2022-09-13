@@ -180,11 +180,14 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
     double thetaOld = theta;
     double L = 1.0;
     double Lold = L;
+    double LocalL;
 
     bool backtrackSwitch = true;
     double dx;
     double Fx = std::numeric_limits<double>::infinity();
     double Gx = std::numeric_limits<double>::infinity();
+    double Gxold;
+    double Fxold;
     double Fy;
     double obj;
 
@@ -192,9 +195,11 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
         Lold = L;
         L = L*alpha;
         thetaOld = theta;
+	Gxold = Gx;
+	Fxold = Fx;
         arma::vec Xold = arma::vec(X);
         obj = Fx + Gx;
-
+	
         while(true) {
             theta = 2.0 / (1.0 + std::sqrt(1.0+(4.0*L)/(Lold*std::pow(thetaOld,2))));
 
@@ -225,8 +230,8 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
                 break;
 
             double Qx;
-            double LocalL;
-
+            // double LocalL;
+	    
             if (backtrackSwitch) {
                 Qx = Fy + arma::as_scalar(XmY.t() * GrY) + (L / 2.0) * normXY;
                 LocalL = L + 2*std::max(Fx - Qx, 0.0)/normXY;
@@ -235,17 +240,24 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
                 LocalL = 2 * arma::as_scalar(XmY.t() * (GrX - GrY)) / normXY;
             }
 
-            // Rcpp::Rcout << "LocalL: " << LocalL << " L: " << L << std::endl;
+            // Rcpp::Rcout << "   LocalL: " << LocalL << " L: " << L << std::endl;
+	    // Rcpp::Rcout << "Qx: " << Qx << " Fx: " << Fx << std::endl;
             if (LocalL <= L) {
-                break;
+		break;
             } else if (LocalL != std::numeric_limits<double>::infinity()) {
                 L = LocalL;
             } else {
                 LocalL = L;
             }
 
+	    // if (Qx - Fx <= backtrackTol * Fx) {
+	    // 	break;
+	    // }
+
             L = std::max(LocalL, L/beta);
         }
+
+	// L = std::min(10*LocalL, L);
 
         int diffEdges = 0;
         for (int i = 0; i < X.n_elem; i++) {
@@ -258,56 +270,95 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
         dx = arma::norm((X - Xold) / std::max(1.0, arma::norm(X, 2)), 2);
 
+	// dx = (Fx+Gx - obj) / std::min(Fx+Gx, obj);
+
+	// if (dx > 0) {
+	//     Rcpp::Rcout << "Objective function increase at Iter: " << iterCount << 
+	// 	    " |dx|/|x|: " << dx << 
+	// 	    " Fx: " << Fx << 
+	// 	    " Gx: " << Gx <<
+	// 	    " loss: " << Fx + Gx <<
+	// 	    " DiffEdges: " << diffEdges << 
+	// 	    " L: " << L << 
+	// 	    " theta: " << theta << std::endl;
+	// }
+
         //sometimes there are more edge changes after initial 0, so may want to do two zeros in a row...
-        if (diffEdges == 0 && edgeConverge) {
-            noEdgeChangeCount++;
-            if (noEdgeChangeCount >= noEdgeChangeTol) {
-                break;
-            } 
-        } else if (noEdgeChangeTol < 0 && diffEdges <= std::abs(noEdgeChangeTol)) {
-            break;
-        } else {
-            noEdgeChangeCount = 0;
-        }
+	if (edgeConverge) {
+	    if (diffEdges == 0) {
+		noEdgeChangeCount++;
+		if (noEdgeChangeCount >= noEdgeChangeTol) {
+		    break;
+		} 
+	    } else if (noEdgeChangeTol < 0 && diffEdges <= std::abs(noEdgeChangeTol)) {
+		break;
+	    } else {
+		noEdgeChangeCount = 0;
+	    }
+	} else {
+	    if (diffEdges == 0) {
+		noEdgeChangeCount++;
+	    } else {
+		noEdgeChangeCount = 0;
+	    }
+	}
 
         //edge converge should happen before params converge, unless epsilon is big
-        if (dx < epsilon && !edgeConverge) {
+        if (dx < epsilon && L < 1/epsilon && !edgeConverge && noEdgeChangeCount >= noEdgeChangeTol) {
             break;
         }
 
+	// Rcpp::Rcout << "restart if "
+	// 	    << arma::as_scalar((X-Xold).t() * GrY) + Gx - Gxold
+	// 	    << " > 0\n";
         //restart acceleration if objective got worse
-        if (Fx + Gx > obj) {
+	// if (arma::as_scalar((X-Xold).t() * GrY) + Gx - Gxold > 0) {
+	if (Fx + Gx > obj) {
+	    // Rcpp::Rcout << "      restarting acceleration: "
+	    // 		<< Fx + Gx << " > " << obj << "\n";
             theta = std::numeric_limits<double>::infinity();
             Y = X;
             Z = X;
+	    // Y = Xold;
+	    // Z = X * (1.0/theta);
+            // Z += Xold * (1 - (1.0 / theta));
         } else if (theta == 1) {
             Z = X;
         } else {
-            Z = X * (1/theta);
+            Z = X * (1.0/theta);
             Z += Xold * (1 - (1.0 / theta));
         }
 
-        printIter = 5;
+	// if (arma::as_scalar((X-Xold).t() * GrY) + Gx - Gxold > 0) {
+	//     theta = std::numeric_limits<double>::infinity();
+	// }
+
+        printIter = 10;
         if (iterCount % printIter == 0) {
 	    if (RcppThread::isInterrupted()) {
 		break;
 	    }
-            // Rcpp::Rcout << "Iter: " << iterCount << 
-            //     " |dx|/|x|: " << dx << 
-            //     " normX: " << arma::norm(X, 2) << 
-            //     " Fx: " << Fx << 
-            //     " Fy: " << Fy <<
-            //     " Gx: " << Gx << 
-            //     " DiffEdges: " << diffEdges << 
-            //     " L: " << L << 
-            //     " theta: " << theta << std::endl;
-            // Rcpp::Rcout << "X = \n" << X.t() << std::endl;
+	    if (cp->isVerbose()) {
+		RcppThread::Rcout << "    Iter: " << iterCount << 
+		    " |dx|/|x|: " << dx << 
+		    " loss: " << Fx + Gx << "\r";
+		// Rcpp::Rcout << "X = \n" << X.t() << std::endl;
+	    }
         }
+
+	L = (L > 1/epsilon || L/LocalL > 100) ? std::max(LocalL/alpha, std::sqrt(L)) : L;
 
         iterCount++;
         if (iterCount >= iterLimit) {
             break;
         }
+    }
+
+    if (cp->isVerbose()) {
+	RcppThread::Rcout << "    Iter: " << iterCount << 
+	    " |dx|/|x|: " << dx << 
+	    " loss: " << Fx + Gx << "\n";
+	// Rcpp::Rcout << "X = \n" << X.t() << std::endl;
     }
 
     // MGMParams XP(X, 5, 20);

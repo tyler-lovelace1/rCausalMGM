@@ -56,8 +56,6 @@ private:
     //parameter weights
     arma::vec weights;
 
-    bool verbose = false;
-
     double logsumexp(const arma::vec& x);
 
     void initParameters();  // init all parameters to zeros except for betad which is set to 1s
@@ -88,7 +86,7 @@ public:
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
 
-    void setVerbose(bool v) { verbose = v; }
+    // void setVerbose(bool v) { verbose = v; }
     void setLambda(std::vector<double> lambda) { this->lambda = arma::vec(lambda); }
 
     double calcLambdaMax();

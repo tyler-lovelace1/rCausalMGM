@@ -60,8 +60,6 @@ EdgeListGraph FasStableProducerConsumer::search() {
         adjacencies[node] = {};
     }
 
-    int maxDepth;
-
     for (int d = 0; d <= _depth; d++) {
         bool more;
 
@@ -73,121 +71,19 @@ EdgeListGraph FasStableProducerConsumer::search() {
             more = searchAtDepth(d);
         }
 
-	maxDepth = d;
-	
+	// int edgeCount = 0;
+
+	// for (const Node& node : nodes) {
+	//     edgeCount += adjacencies[node].size();
+	// }
+
+	// if (verbose) Rcpp::Rcout << "        " << edgeCount/2 << " edges remaining..." << std::endl;
+
         if (!more) break;
     }
 
     graph = EdgeListGraph(nodes);
 
-    // int numEdges = nodes.size() * (nodes.size() - 1) / 2;
-    // if (initialGraph != NULL) {
-    // 	numEdges = initialGraph->getNumEdges();
-    // }
-
-    // if (true) {
-    // 	std::vector<NodePair> edgeVec;
-    // 	std::unordered_set<NodePair,
-    // 			   boost::hash<NodePair>> edgeSet;
-
-    // 	for (int i = 0; i < nodes.size(); i++) {
-    // 	    const Node& x = nodes[i];
-	    
-    // 	    for (int j = i+1; j < nodes.size(); j++) {
-    // 		const Node& y = nodes[j];
-
-    // 		if (initialGraph != NULL) {
-    // 		    const Node& x2 = initialGraph->getNode(x.getName());
-    // 		    const Node& y2 = initialGraph->getNode(y.getName());
-
-    // 		    if (!initialGraph->isAdjacentTo(x2, y2))
-    // 			continue;
-    // 		}
-
-    // 		edgeSet.insert(std::minmax(x,y));
-    // 	    }
-    // 	}
-
-    // 	edgeVec = std::vector<NodePair>(edgeSet.begin(), edgeSet.end());
-
-	
-    // 	std::sort(edgeVec.begin(), edgeVec.end(),
-    // 		  [&](const NodePair& e1,
-    // 		      const NodePair& e2) {
-    // 		      return edgePvals[e1] < edgePvals[e2];
-    // 		  });
-
-    // 	// Rcpp::Function qvalue("qvalue");
-
-    // 	// arma::rowvec pvals(numEdges, arma::fill::ones);
-
-    // 	// for (arma::uword i = 0; i < numEdges; i++) {
-    // 	//     pvals(i) = edgePvals[edgeVec[i]];
-    // 	// }
-
-    // 	// pvals.transform( [](double val) { return (val < 1e-16) ? 1e-16 : val; } );
-	
-    // 	// Rcpp::Rcout << "\np-vals:\n" << pvals << std::endl;
-
-    // 	// arma::vec lambda = arma::linspace(0.01, 0.99, 99);
-
-    // 	// // lambda = nodes.size() * lambda / (2 *  numEdges);
-    // 	// // lambda = 1 - lambda;
-
-    // 	// // Rcpp::Rcout << "lambda: " << lambda.t() << std::endl;
-
-    // 	// Rcpp::List qobj = qvalue(pvals,
-    // 	// 			 Rcpp::_["pfdr"]=true,
-    // 	// 			 Rcpp::_["lambda"]=lambda,
-    // 	// 			 Rcpp::_["pi0.method"]="smoother",
-    // 	// 			 Rcpp::_["smooth.log.pi0"]=true);
-
-    // 	// arma::rowvec qvals = Rcpp::as<arma::rowvec>(qobj["qvalues"]);
-
-    // 	// double pi0 = Rcpp::as<double>(qobj["pi0"]);
-
-    // 	// Rcpp::Rcout << "pi0:\n" << pi0 << std::endl;
-
-    // 	// Rcpp::Rcout << "q-vals:\n" << qvals << std::endl;
-
-    // 	// numEdges = edgeVec.size();
-	
-    // 	// double harmonicSum = 0;
-    // 	// if (initialGraph != NULL) {
-    // 	//     for (int i = 1; i <= numEdges; i++) harmonicSum += (1 / (double) i);
-    // 	// }
-
-    // 	// // Rcpp::Rcout << "Number of edges: " << numEdges << std::endl;
-    // 	// // if (initialGraph != NULL) {
-    // 	// //     Rcpp::Rcout << "Multiplier = " << harmonicSum << std::endl;
-    // 	// // }
-	
-    // 	// double maxFdrpval = 0;
-    // 	// for (int i = 0; i < edgeVec.size(); i++) {
-    // 	//     NodePair edgePair = edgeVec.at(i);
-    // 	//     double pval = edgePvals[edgeVec.at(i)];
-    // 	//     double fdrpval = numEdges / ((double) i+1) * pval;
-	    
-    // 	//     if (initialGraph != NULL) {
-    // 	// 	fdrpval *= harmonicSum;
-    // 	//     }
-
-    // 	//     maxFdrpval = std::max(maxFdrpval, fdrpval);
-
-
-    // 	//     if (pval <= test->getAlpha()) {
-    // 	// 	Rcpp::Rcout << "  Edge " << i << ": " << edgePair.first << " --- "
-    // 	// 		    << edgePair.second << "\n    p = " << pval
-    // 	// 		    << "\n    FDR p = " << maxFdrpval << std::endl;
-	    
-    // 	// 	if (maxFdrpval > test->getAlpha()) {
-    // 	// 	    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
-    // 	// 	    adjacencies[edgePair.first].erase(edgePair.second);
-    // 	// 	    adjacencies[edgePair.second].erase(edgePair.first);
-    // 	// 	}
-    // 	//     }
-    // 	// }
-    // }
     
     // Should be more efficient than the above code
     for (const Node& x : nodes) {
@@ -248,13 +144,13 @@ std::unordered_map<Node, std::unordered_set<Node>> FasStableProducerConsumer::se
             more = searchAtDepth(d);
         }
 
-	int edgeCount = 0;
+	// int edgeCount = 0;
 
-	for (const Node& node : nodes) {
-	    edgeCount += adjacencies[node].size();
-	}
+	// for (const Node& node : nodes) {
+	//     edgeCount += adjacencies[node].size();
+	// }
 
-	if (verbose) Rcpp::Rcout << "\t" << edgeCount/2 << " edges remaining..." << std::endl;
+	// if (verbose) Rcpp::Rcout << "\t" << edgeCount/2 << " edges remaining..." << std::endl;
 
         if (!more) break;
     }
@@ -330,7 +226,10 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	//     Rcpp::Rcout << "Multiplier = " << harmonicSum << std::endl;
 	// }
 
-	// harmonicSum = 1;
+	if (numEdges * harmonicSum > nodes.size() * (nodes.size() - 1) / 2) {
+	    numEdges = nodes.size() * (nodes.size() - 1) / 2;
+	    harmonicSum = 1;
+	}
 	
 	double maxFdrpval = 0;
 	for (int i = 0; i < edgeVec.size(); i++) {
@@ -414,7 +313,7 @@ void FasStableProducerConsumer::consumerDepth0() {
         if (task.x.isNull() && task.y.isNull())  return;
 
         numIndependenceTests++;
-	double pval;
+	double pval = test->getAlpha() + 1e-5;
         bool independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
 	if (independent) {
@@ -427,11 +326,13 @@ void FasStableProducerConsumer::consumerDepth0() {
         bool noEdgeRequired = true;
         bool forbiddenEdge = false;
 	
-	if (true) {
+	if (fdr) {
 	    std::lock_guard<std::mutex> pvalLock(pvalMutex);
 	    NodePair edgePair = std::minmax(task.x, task.y);
-	    if (edgePvals.find(edgePair) == edgePvals.end() ||
-		(edgePvals[edgePair] < pval && edgePvals[edgePair] < test->getAlpha())) {
+	    if (edgePvals.find(edgePair) == edgePvals.end()) {
+		edgePvals[edgePair] = pval;
+		edgeMaxPSet[edgePair] = task.z;
+	    } else if (edgePvals[edgePair] < pval) {
 		edgePvals[edgePair] = pval;
 		edgeMaxPSet[edgePair] = task.z;
 	    }
@@ -468,7 +369,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
-	double pval;
+	double pval = test->getAlpha() + 1e-5;
         bool independent;
         independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
@@ -481,11 +382,13 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         // Knowledge
         bool noEdgeRequired = true;
 
-	if (true) {
+	if (fdr) {
 	    std::lock_guard<std::mutex> pvalLock(pvalMutex);
 	    NodePair edgePair = std::minmax(task.x, task.y);
-	    if (edgePvals.find(edgePair) == edgePvals.end() ||
-		(edgePvals[edgePair] < pval && edgePvals[edgePair] < test->getAlpha())) {
+	    if (edgePvals.find(edgePair) == edgePvals.end()) {
+		edgePvals[edgePair] = pval;
+		edgeMaxPSet[edgePair] = task.z;
+	    } else if (edgePvals[edgePair] < pval) {
 		edgePvals[edgePair] = pval;
 		edgeMaxPSet[edgePair] = task.z;
 	    }
@@ -641,8 +544,6 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
 	    numEdges = nodes.size() * (nodes.size() - 1) / 2;
 	    harmonicSum = 1;
 	}
-
-	// harmonicSum = 1;
 	
 	double maxFdrpval = 0;
 	for (int i = 0; i < edgeVec.size(); i++) {

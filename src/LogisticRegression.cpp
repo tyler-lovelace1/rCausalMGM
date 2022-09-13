@@ -194,13 +194,15 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
         y1[i] = 0;
     }
 
+    // RcppThread::Rcout << "target: " << target.subvec(0,5).t();
+    
     int ny0 = 0;
     int ny1 = 0;
     int nc = 0;
 
     for (arma::uword i = 0; i < numCases; i++)
     {
-        if (target[i] == 0.0)
+        if (target[i] == 0)
         {
             y0[i] = 1;
             ny0++;
@@ -249,7 +251,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     double llP = 2e+10;
     double ll = 1e+10;
     double llN = 0.0;
-    // double lam = 1;
+    double lam = 0.888;
     double chiSq;
 
     // auto start = std::chrono::high_resolution_clock::now();
@@ -270,10 +272,11 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     while (std::abs(llP - ll) > 1e-7) {
 	double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
 	iter++;
-	if (curr > 5 || iter > 100) {
-	    // RcppThread::Rcout << "Logistic Regression not converging" << std::endl
-	    // 		      << "Loglikelihood: " << ll << std::endl;
-	    throw std::runtime_error("Logistic Regression not converging");
+	if (curr > 5 || iter > 500 || std::isnan(par[0])) {
+	    // RcppThread::Rcout << "Time out : Logistic Regression not converging" << std::endl
+	    //  		      << "Loglikelihood: " << ll << std::endl;
+	    // throw std::runtime_error("Logistic Regression not converging");
+	    break;
 	}
 
 	llP = ll;
@@ -324,13 +327,11 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	    }
 	}
 
-	// for (arma::uword j = 1; j <= numRegressors; j++) {
-	//     // double nextPar = (par[j] + arr(j, numRegressors + 1));
-	//     double nextPar = par[j];
-	//     ll += lam / 2 * std::pow(nextPar, 2);
-	//     arr(j, numRegressors + 1) -= lam * nextPar;
-	//     arr(j, j) -= lam * ((nextPar > 0) - (nextPar < 0));
-	// }
+	for (arma::uword j = 1; j <= numRegressors; j++) {
+	    ll += lam / 2 * std::pow(par[j], 2);
+	    arr(j, numRegressors + 1) -= lam * par[j];
+	    arr(j, j) -= lam;
+	}
 
 	if (llP == 1e+10) {
 	    llN = ll;
@@ -365,15 +366,17 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	}
     }
 
+    if (ll > llN) ll = llN;
+    
     chiSq = llN - ll;
     
-    // if (chiSq <= 0) {
-    // 	RcppThread::Rcout << "Logistic Regression not converging" << std::endl
-    // 			  << "Loglikelihood: " << ll << std::endl
-    // 			  << "ChiSq: " << chiSq << std::endl;
-    // 	throw std::runtime_error("Logistic Regression did not converge");
-    // }
-
+    if (chiSq < 0 || std::isnan(chiSq)) {
+    	// RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+    	// 		  << "Loglikelihood: " << ll << std::endl
+    	// 		  << "ChiSq: " << chiSq << std::endl;
+    	// throw std::runtime_error("Logistic Regression did not converge");
+    }
+    
     double zScore;
 
     for (arma::uword j = 1; j <= numRegressors; j++) {
@@ -384,8 +387,9 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
 	if (std::isnan(zScore)) {
 	    // RcppThread::Rcout << "Logistic Regression not converging" << std::endl
-	    // 		      << "Loglikelihood: " << ll << std::endl;
-	    throw std::runtime_error("Logistic Regression not converging");
+	    // 		      << "Loglikelihood: " << ll << std::endl
+	    // 		      << "NaN zScore" << std::endl;
+	    throw std::runtime_error("Logistic Regression not converging, NaN coefficient");
 	}
 
 	// double prob = norm(std::abs(zScore));
@@ -397,9 +401,10 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     zScore = par[0] / parStdErr[0];
 
     if (std::isnan(zScore)) {
-	// RcppThread::Rcout << "Logistic Regression not converging" << std::endl
-	// 		  << "Loglikelihood: " << ll << std::endl;
-	throw std::runtime_error("Logistic Regression not converging");
+    	// RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+    	// 		  << "Loglikelihood: " << ll << std::endl
+    	// 		  << "NaN zScore" << std::endl;;
+    	throw std::runtime_error("Logistic Regression not converging, NaN intercept");
     }
 
     pValues[0] = norm(zScore);

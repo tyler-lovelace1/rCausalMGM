@@ -367,7 +367,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < xDat.n_cols; j++) {
-            tempLoss(i, j) = xDat(i,j) - par.alpha1(j) - xBeta(i,j) - dTheta(i,j);
+	    tempLoss(i, j) = xDat(i,j) - par.alpha1(j) / par.betad(j) - xBeta(i,j) - dTheta(i,j);
         }
         for (arma::uword j = 0; j < dDat.n_cols; j++) {
             wxProd(i,j) = wxProd(i,j) + par.alpha2(j);
@@ -377,7 +377,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //sqloss=-n/2*sum(log(betad))+...
     //.5*norm((X-e*alpha1'-Xbeta-Dtheta)*diag(sqrt(betad)),'fro')^2;
     double sqloss = -n/2.0*arma::sum(arma::log(arma::vec(par.betad))) +
-                    0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(arma::vec(par.betad))), "fro"), 2);
+                    0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(par.betad)), "fro"), 2);
 
     //ok now tempLoss = res
     tempLoss *= -1;
@@ -390,7 +390,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.beta = arma::trimatl(gradOut.beta, -1).t() + arma::trimatu(gradOut.beta, 1);
 
     //gradalpha1=diag(betad)*sum(res,0)';
-    gradOut.alpha1 = arma::diagmat(par.betad) * arma::sum(tempLoss, 0).t();
+    gradOut.alpha1 = arma::sum(tempLoss, 0).t();
 
     //gradtheta=D'*(res);
     gradOut.theta = dDat.t() * tempLoss;
@@ -556,7 +556,7 @@ double MGM::smoothValue(arma::vec& parIn) {
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < xDat.n_cols; j++) {
-            tempLoss(i, j) = xDat(i,j) - par.alpha1(j) - xBeta(i,j) - dTheta(i,j);
+            tempLoss(i, j) = xDat(i,j) - par.alpha1(j)/par.betad(j) - xBeta(i,j) - dTheta(i,j);
         }
         for (arma::uword j = 0; j < dDat.n_cols; j++) {
             wxProd(i,j) = wxProd(i,j) + par.alpha2(j);
@@ -815,7 +815,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < p; j++) {
-            negLoss(i,j) = xBeta(i,j) - xDat(i,j) + par.alpha1(j) + dTheta(i,j);
+            negLoss(i,j) = xBeta(i,j) - xDat(i,j) + par.alpha1(j)/par.betad(j) + dTheta(i,j);
         }
         for (arma::uword j = 0; j < dDat.n_cols; j++) {
             wxProd(i, j) += par.alpha2(j);
@@ -837,7 +837,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     // Rcpp::Rcout << "negLoss: \n" << negLoss << std::endl;
 
     //gradalpha1=diag(betad)*sum(res,0)';
-    grad.alpha1 = arma::diagmat(par.betad) * arma::sum(negLoss, 0).t();
+    grad.alpha1 = arma::sum(negLoss, 0).t();
 
     // Rcpp::Rcout << "grad.alpha1: \n" << grad.alpha1 << std::endl;
 
@@ -1201,7 +1201,7 @@ EdgeListGraph MGM::graphFromMGM() {
  */
 EdgeListGraph MGM::search() {
     auto start = std::chrono::high_resolution_clock::now();
-    learnEdges(500);
+    learn(1e-5, 500);
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     return graphFromMGM();
 }
@@ -1214,13 +1214,16 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
     std::vector<EdgeListGraph> pathGraphs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
     for (int i = 0; i < lambdas.size(); i++) {
-	if (verbose) RcppThread::Rcout << "  Learning MGM for lambda = " << lambdas[i] << "\r";
+	if (verbose) RcppThread::Rcout << "  Learning MGM for lambda = " << lambdas[i] << "\n";
 	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i] };
 	setLambda(lambda);
-	learnEdges(500);
+	learn(1e-5, 500);
 	pathGraphs.push_back(graphFromMGM());
-	pathGraphs[i].setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
-	// Rcpp::Rcout << params << std::endl;
+
+	Rcpp::NumericVector lambdaVec = { lambdas[i], lambdas[i], lambdas[i] };
+	
+	pathGraphs[i].setHyperParam("lambda", lambdaVec);
+	// Rcpp::Rcout << Rcpp::as<arma::rowvec>(pathGraphs[i].getHyperParam("lambda")) << std::endl;
 	arma::vec par(params.toMatrix1D());
 	loglik(i) = -n * smoothValue(par);
 	nParams(i) = arma::accu(par!=0);
