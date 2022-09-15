@@ -272,9 +272,20 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     while (std::abs(llP - ll) > 1e-7) {
 	double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
 	iter++;
-	if (curr > 5 || iter > 500 || std::isnan(par[0])) {
+	if (curr > 5 || iter > 100 || !par.is_finite()) {
 	    // RcppThread::Rcout << "Time out : Logistic Regression not converging" << std::endl
 	    //  		      << "Loglikelihood: " << ll << std::endl;
+	    if (!par.is_finite()) {
+		// RcppThread::Rcout << "Logistic Regression not converging: Non-finite values in coefficient vector" << std::endl
+		// 		  << "   Iter: " << iter << std::endl
+		// 		  << "   Loglikelihood: " << ll << std::endl
+		// 		  << "   Null Loglikelihood: " << llN << std::endl;
+		throw std::runtime_error("Logistic Regression not converging: Non-finite values in coefficient vector");
+	    }
+	    // RcppThread::Rcout << "Time out : Logistic Regression not converging" << std::endl
+	    // 		      << "   Iter: " << iter << std::endl
+	    // 		      << "   Loglikelihood: " << ll << std::endl
+	    // 		      << "   Null Loglikelihood: " << llN << std::endl;
 	    // throw std::runtime_error("Logistic Regression not converging");
 	    break;
 	}
@@ -327,11 +338,11 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	    }
 	}
 
-	for (arma::uword j = 1; j <= numRegressors; j++) {
-	    ll += lam / 2 * std::pow(par[j], 2);
-	    arr(j, numRegressors + 1) -= lam * par[j];
-	    arr(j, j) -= lam;
-	}
+	// for (arma::uword j = 1; j <= numRegressors; j++) {
+	//     ll += lam / 2 * std::pow(par[j], 2);
+	//     arr(j, numRegressors + 1) += lam * par[j];
+	//     arr(j, j) += lam;
+	// }
 
 	if (llP == 1e+10) {
 	    llN = ll;
@@ -406,6 +417,11 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     	// 		  << "NaN zScore" << std::endl;;
     	throw std::runtime_error("Logistic Regression not converging, NaN intercept");
     }
+
+    // RcppThread::Rcout << "Logistic Regression converged" << std::endl
+    // 		      << "   Iter: " << iter << std::endl
+    // 		      << "   Loglikelihood: " << ll << std::endl
+    // 		      << "   Null Loglikelihood: " << llN << std::endl;
 
     pValues[0] = norm(zScore);
     zScores[0] = zScore;
