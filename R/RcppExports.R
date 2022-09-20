@@ -63,6 +63,72 @@ printGraph <- function(graph) {
     invisible(.Call(`_rCausalMGM_printGraph`, graph))
 }
 
+#' Create the completed partially directed acyclic graph (CPDAG) for the input directed acyclic graph (DAG). The CPDAG represents the Markov equivalence class of the true cauasl DAG. The PC algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the CPDAG rather than the causal DAG.
+#'
+#' @param graph The graph object used to generate the CPDAG. Should be the ground-truth causal DAG
+#' @return The CPDAG corresponding to the input DAG
+#' @export
+#' @examples
+#' data(dag_n10000_p10)
+#' cpdag <- rCausalMGM::createCPDAG(dag_n10000_p10)
+createCPDAG <- function(graph) {
+    .Call(`_rCausalMGM_createCPDAG`, graph)
+}
+
+#' Create the moral graph for the input directed acyclic graph (DAG). The moral graph is the equivalent undirected representation corresponding to the input DAG. The MGM algorithm learns the undirected moral graph for a corresponding causal DAG, so assessments of structure recovery should be compared to the moral graph rather than the causal DAG.
+#'
+#' @param graph The graph object used to generate the moral graph. Should be the ground-truth causal DAG
+#' @return The moral graph corresponding to the input DAG
+#' @export
+#' @examples
+#' data(dag_n10000_p10)
+#' moral <- rCausalMGM::createMoral(dag_n10000_p10)
+createMoral <- function(graph) {
+    .Call(`_rCausalMGM_createMoral`, graph)
+}
+
+#' Calculate the skeleton Structural Hamming Distance (SHD) between two graphs. This only counts the missing and added edges, and does not consider edge orientation
+#'
+#' @param graph1 A graph object
+#' @param graph2 A graph object
+#' @return The skeleton SHD btween the two graph objects
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::mgm(data.n100.p25)
+#' rCausalMGM::printGraph(g)
+skeletonSHD <- function(graph1, graph2) {
+    .Call(`_rCausalMGM_skeletonSHD`, graph1, graph2)
+}
+
+#' Calculate the orientation Structural Hamming Distance (SHD) between two graphs. This only counts the incorrect edge endpoints for edges present in both graphs, and does not consider differences in the graph skeleton. Each different endpoint adds 0.5 to the orientation SHD (i.e. A o-> B vs. A --> B). Thus, a completely misoriented edge adds 1 to the orientation SHD (i.e. A o-o B vs. A <-- B).
+#'
+#' @param graph1 A graph object
+#' @param graph2 A graph object
+#' @return The skeleton SHD btween the two graph objects
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::mgm(data.n100.p25)
+#' rCausalMGM::printGraph(g)
+orientationSHD <- function(graph1, graph2) {
+    .Call(`_rCausalMGM_orientationSHD`, graph1, graph2)
+}
+
+#' Calculate the Structural Hamming Distance (SHD) between two graphs. This is the sum of the skeleton SHD and the orientation SHD.
+#'
+#' @param graph1 A graph object
+#' @param graph2 A graph object
+#' @return The SHD btween the two graph objects
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::mgm(data.n100.p25)
+#' rCausalMGM::printGraph(g)
+SHD <- function(graph1, graph2) {
+    .Call(`_rCausalMGM_SHD`, graph1, graph2)
+}
+
 #' Calculate the MGM graph on a dataset
 #'
 #' @param df The dataframe
@@ -82,6 +148,7 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), rank = FALSE, verbos
 #'
 #' @param df The dataframe
 #' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+#' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 #' @param rank Whether or not to use rank-based associations as opposed to linear
 #' @param verbose Whether or not to output additional information. Defaults to FALSE.
 #' @return The calculated MGM graph
@@ -97,6 +164,7 @@ mgmPath <- function(df, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = F
 #'
 #' @param df The dataframe
 #' @param lambdas A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+#' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 #' @param g The gamma parameter for STEPS. Defaults to 0.05
 #' @param numSub The number of subsets to split the data into. Defaults to 20
 #' @param subSize The size of the subsamples used for STEPS. If the value is -1, the size of the subsamples is set to floor(10*sqrt(n)). If the value is in the range (0,1), the size of the subsamples is set to floor(subSize * n). Otherwise, if subSize is in the range [1,n), the size of the subsamples is set to subSize. Defaults to -1.

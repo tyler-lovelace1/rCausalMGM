@@ -11,6 +11,8 @@ mgmPath(df, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE)
 
 \item{lambdas}{A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.}
 
+\item{nLambda}{The number of lambda values to fit an MGM for when lambdas is NULL}
+
 \item{rank}{Whether or not to use rank-based associations as opposed to linear}
 
 \item{verbose}{Whether or not to output additional information. Defaults to FALSE.}

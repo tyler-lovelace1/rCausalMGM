@@ -166,6 +166,50 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     
 }
 
+
+EdgeListGraph::EdgeListGraph(const Rcpp::List& list)  {
+    if (!validateGraphList(list)) {
+        throw std::invalid_argument("ERROR: list is not in the form of a graph");
+    }
+
+    // Nodes
+    std::vector<std::string> nodeNames = list["nodes"];
+    for (std::string nodeName : nodeNames) {
+        try {
+	  if(!addNode(Node(new ContinuousVariable(nodeName))))
+                throw std::invalid_argument("Issue adding variable to graph");
+        } catch (const std::exception& ex) {
+            throw std::invalid_argument("ERROR: Could not find node " + nodeName + " in the provided data set");
+        }
+    }
+    initNamesHash();
+
+    // Edges
+    std::vector<std::string> edgeStrings = list["edges"];
+    for (std::string edgeString : edgeStrings) {
+        if (!addEdge(edgeString))
+            throw std::invalid_argument("Error parsing edge: " + edgeString);
+    }
+
+    //Triples
+    std::vector<std::string> tripleStrings = list["ambiguous_triples"];
+    for (std::string tripleString : tripleStrings) {
+        ambiguousTriples.insert(tripleFromString(tripleString));
+    }
+
+    std::vector<std::string> a = list["algorithm"];
+    algorithm = a[0];
+
+    std::vector<std::string> t = list["type"];
+    graph_type = t[0];
+
+    hyperparamHash["lambda"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["lambda"]));
+    hyperparamHash["alpha"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["alpha"]));
+    // hyperparamHash["penalty"] = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["penalty"]);
+    
+}
+
+
 /**
  * Transfers nodes and edges from one graph to another.  One way this is
  * used is to change graph types.  One constructs a new graph based on the
@@ -1586,4 +1630,299 @@ Rcpp::List adjMat2Graph(arma::mat adj,
 // [[Rcpp::export]]
 void printGraph(const Rcpp::List& graph) {
     streamGraph(graph, Rcpp::Rcout);
+}
+
+
+//' Create the completed partially directed acyclic graph (CPDAG) for the input directed acyclic graph (DAG). The CPDAG represents the Markov equivalence class of the true cauasl DAG. The PC algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the CPDAG rather than the causal DAG.
+//'
+//' @param graph The graph object used to generate the CPDAG. Should be the ground-truth causal DAG
+//' @return The CPDAG corresponding to the input DAG
+//' @export
+//' @examples
+//' data(dag_n10000_p10)
+//' cpdag <- rCausalMGM::createCPDAG(dag_n10000_p10)
+// [[Rcpp::export]]
+Rcpp::List createCPDAG(const Rcpp::List& graph) {
+    EdgeListGraph dag(graph);
+    EdgeListGraph cpdag(dag);
+
+    cpdag.reorientAllWith(ENDPOINT_TAIL);
+
+    for (const Node& b: cpdag.getNodes()) {
+	
+	std::vector<Node> adjacentNodes = cpdag.getAdjacentNodes(b);
+
+        if (adjacentNodes.size() < 2) {
+            continue;
+        }
+
+	std::sort(adjacentNodes.begin(), adjacentNodes.end());
+
+        ChoiceGenerator cg(adjacentNodes.size(), 2);
+        std::vector<int> *choice;
+
+        for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+	    const Node& a = adjacentNodes[(*choice)[0]];
+            const Node& c = adjacentNodes[(*choice)[1]];
+
+            // Skip triples that are shielded.
+            if (cpdag.isAdjacentTo(a, c)) {
+                continue;
+            }
+
+	    if (dag.isDefCollider(a, b, c)) {
+		cpdag.removeEdge(a, b);
+		cpdag.removeEdge(c, b);
+		cpdag.addDirectedEdge(a, b);
+		cpdag.addDirectedEdge(c, b);
+	    }
+        }
+    }
+
+    MeekRules rules;
+    rules.setAggressivelyPreventCycles(true);
+    rules.orientImplied(cpdag);
+
+    Rcpp::List result = cpdag.toList();
+
+    return result;
+}
+
+
+//' Create the moral graph for the input directed acyclic graph (DAG). The moral graph is the equivalent undirected representation corresponding to the input DAG. The MGM algorithm learns the undirected moral graph for a corresponding causal DAG, so assessments of structure recovery should be compared to the moral graph rather than the causal DAG.
+//'
+//' @param graph The graph object used to generate the moral graph. Should be the ground-truth causal DAG
+//' @return The moral graph corresponding to the input DAG
+//' @export
+//' @examples
+//' data(dag_n10000_p10)
+//' moral <- rCausalMGM::createMoral(dag_n10000_p10)
+// [[Rcpp::export]]
+Rcpp::List createMoral(const Rcpp::List& graph) {
+    EdgeListGraph dag(graph);
+    EdgeListGraph moral(dag);
+
+    moral.reorientAllWith(ENDPOINT_TAIL);
+
+    for (const Node& b: moral.getNodes()) {
+	
+	std::vector<Node> adjacentNodes = moral.getAdjacentNodes(b);
+
+        if (adjacentNodes.size() < 2) {
+            continue;
+        }
+
+	std::sort(adjacentNodes.begin(), adjacentNodes.end());
+
+        ChoiceGenerator cg(adjacentNodes.size(), 2);
+        std::vector<int> *choice;
+
+        for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+	    const Node& a = adjacentNodes[(*choice)[0]];
+            const Node& c = adjacentNodes[(*choice)[1]];
+
+            // Skip triples that are shielded.
+            if (moral.isAdjacentTo(a, c)) {
+                continue;
+            }
+
+	    if (dag.isDefCollider(a, b, c)) {
+		moral.addUndirectedEdge(a, c);
+	    }
+        }
+    }
+
+    Rcpp::List result = moral.toList();
+
+    return result;
+}
+
+
+// //' Create the partial ancestral graph (PAG) for the input directed acyclic graph (DAG) and latent nodes. The PAG represents the Markov equivalence class of the true cauasl maximal ancestral graph (MAG), which represents confounded associations with bidirected edges. The FCI algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the PAG rather than the causal MAG.
+// //'
+// //' @param graph The graph object used to generate the PAG. Should be the ground-truth causal DAG
+// //' @param latents Vector of the names of nodes in the causal DAG that should be treated as latent. 
+// //' @return The CPDAG corresponding to the input DAG
+// //' @export
+// //' @examples
+// //' data(dag_n10000_p10)
+// //' cpdag <- rCausalMGM::createCPDAG(dag_n10000_p10)
+// // [[Rcpp::export]]
+// Rcpp::List createPAG(const Rcpp::List& graph,
+// 		     Rcpp::Nullable<Rcpp::StringVector> latents = R_NilValue) {
+//     EdgeListGraph dag(graph);
+    
+//     std::vector<Node> nodesDag = dag.getNodes();
+//     std::vector<Node> nodesPag, latentNodes;
+//     std::vector<std::string> _latents;
+
+//     if (latents.isNotNull()) {
+// 	_latents = std::vector<std::string>(Rcpp::as<std::vector<std::string>>(latents));
+//     }
+
+//     for (const Node& n : nodesDag) {
+// 	if (std::find(_latents.begin(), _latents.end(), n.getName()) == _latents.end()) {
+// 	    nodesPag.push_back(n);
+// 	} else {
+// 	    latentNodes.push_back(n);
+// 	}
+//     }
+    
+//     EdgeListGraph mag(nodesPag);
+
+//     for (const Node& n : latentNodes) {
+// 	std::vector<Node> children = dag.getChildren(n);
+// 	std::vector<Node> parents = dag.getParents(n);
+	
+// 	if (children.size() < 2) {
+//             continue;
+//         }
+
+// 	ChoiceGenerator cg(adjacentNodes.size(), 2);
+//         std::vector<int> *choice;
+
+//         for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+// 	    const Node& a = adjacentNodes[(*choice)[0]];
+//             const Node& c = adjacentNodes[(*choice)[1]];
+
+	    
+// 	}
+//     }
+
+//     for (const Node& b: mag.getNodes()) {
+// 	std::vector<Node> adjacentNodes = dag.getAdjacentNodes(b);
+
+// 	if(std::find(latentsNodes.begin(), latentsNodes.end(), b) == latentsNodes.end()) {
+	    
+// 	}
+//     }
+    
+    
+//     EdgeListGraph pag(mag);
+
+//     pag.reorientAllWith(ENDPOINT_TAIL);
+
+//     for (const Node& b: cpdag.getNodes()) {
+	
+// 	std::vector<Node> adjacentNodes = cpdag.getAdjacentNodes(b);
+
+//         if (adjacentNodes.size() < 2) {
+//             continue;
+//         }
+
+// 	std::sort(adjacentNodes.begin(), adjacentNodes.end());
+
+//         ChoiceGenerator cg(adjacentNodes.size(), 2);
+//         std::vector<int> *choice;
+
+//         for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+// 	    const Node& a = adjacentNodes[(*choice)[0]];
+//             const Node& c = adjacentNodes[(*choice)[1]];
+
+//             // Skip triples that are shielded.
+//             if (cpdag.isAdjacentTo(a, c)) {
+//                 continue;
+//             }
+
+// 	    if (dag.isDefCollider(a, b, c)) {
+// 		cpdag.removeEdge(a, b);
+// 		cpdag.removeEdge(c, b);
+// 		cpdag.addDirectedEdge(a, b);
+// 		cpdag.addDirectedEdge(c, b);
+// 	    }
+//         }
+//     }
+
+//     MeekRules rules;
+//     rules.setAggressivelyPreventCycles(true);
+//     rules.orientImplied(cpdag);
+
+//     Rcpp::List result = cpdag.toList();
+
+//     return result;
+// }
+
+//' Calculate the skeleton Structural Hamming Distance (SHD) between two graphs. This only counts the missing and added edges, and does not consider edge orientation
+//'
+//' @param graph1 A graph object
+//' @param graph2 A graph object
+//' @return The skeleton SHD btween the two graph objects
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm(data.n100.p25)
+//' rCausalMGM::printGraph(g)
+// [[Rcpp::export]]
+double skeletonSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
+    double shd = 0.0;
+
+    EdgeListGraph g1(graph1);
+    EdgeListGraph g2(graph2);
+
+    for (const Edge& edge : g1.getEdges()) {
+	if (!g2.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+	    shd++;
+	}
+    }
+
+    for (const Edge& edge : g2.getEdges()) {
+	if (!g1.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+	    shd++;
+	}
+    }
+    
+    return shd;
+}
+
+
+//' Calculate the orientation Structural Hamming Distance (SHD) between two graphs. This only counts the incorrect edge endpoints for edges present in both graphs, and does not consider differences in the graph skeleton. Each different endpoint adds 0.5 to the orientation SHD (i.e. A o-> B vs. A --> B). Thus, a completely misoriented edge adds 1 to the orientation SHD (i.e. A o-o B vs. A <-- B).
+//'
+//' @param graph1 A graph object
+//' @param graph2 A graph object
+//' @return The skeleton SHD btween the two graph objects
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm(data.n100.p25)
+//' rCausalMGM::printGraph(g)
+// [[Rcpp::export]]
+double orientationSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
+    double shd = 0.0;
+
+    EdgeListGraph g1(graph1);
+    EdgeListGraph g2(graph2);
+
+    for (Edge edge1 : g1.getEdges()) {
+	if (g2.isAdjacentTo(edge1.getNode1(), edge1.getNode2())) {
+	    Edge edge2 = g2.getEdges(edge1.getNode1(), edge1.getNode2())[0];
+	    
+	    if (edge1.getDistalEndpoint(edge1.getNode1()) !=
+		edge2.getDistalEndpoint(edge1.getNode1())) {
+		shd += 0.5;
+	    }
+
+	    if (edge1.getProximalEndpoint(edge1.getNode1()) !=
+		edge2.getProximalEndpoint(edge1.getNode1())) {
+		shd += 0.5;
+	    }
+	}
+    }
+    
+    return shd;
+}
+
+
+//' Calculate the Structural Hamming Distance (SHD) between two graphs. This is the sum of the skeleton SHD and the orientation SHD.
+//'
+//' @param graph1 A graph object
+//' @param graph2 A graph object
+//' @return The SHD btween the two graph objects
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgm(data.n100.p25)
+//' rCausalMGM::printGraph(g)
+// [[Rcpp::export]]
+double SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
+    return skeletonSHD(graph1, graph2) + orientationSHD(graph1, graph2);
 }

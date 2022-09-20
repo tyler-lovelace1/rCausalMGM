@@ -83,6 +83,7 @@ Rcpp::List mgm(
 //'
 //' @param df The dataframe
 //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 //' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated MGM graph
@@ -178,6 +179,7 @@ Rcpp::List mgmPath(
 //'
 //' @param df The dataframe
 //' @param lambdas A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 //' @param g The gamma parameter for STEPS. Defaults to 0.05
 //' @param numSub The number of subsets to split the data into. Defaults to 20
 //' @param subSize The size of the subsamples used for STEPS. If the value is -1, the size of the subsamples is set to floor(10*sqrt(n)). If the value is in the range (0,1), the size of the subsamples is set to floor(subSize * n). Otherwise, if subSize is in the range [1,n), the size of the subsamples is set to subSize. Defaults to -1.

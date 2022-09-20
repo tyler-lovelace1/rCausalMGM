@@ -57,6 +57,64 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// createCPDAG
+Rcpp::List createCPDAG(const Rcpp::List& graph);
+RcppExport SEXP _rCausalMGM_createCPDAG(SEXP graphSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
+    rcpp_result_gen = Rcpp::wrap(createCPDAG(graph));
+    return rcpp_result_gen;
+END_RCPP
+}
+// createMoral
+Rcpp::List createMoral(const Rcpp::List& graph);
+RcppExport SEXP _rCausalMGM_createMoral(SEXP graphSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
+    rcpp_result_gen = Rcpp::wrap(createMoral(graph));
+    return rcpp_result_gen;
+END_RCPP
+}
+// skeletonSHD
+double skeletonSHD(const Rcpp::List& graph1, const Rcpp::List& graph2);
+RcppExport SEXP _rCausalMGM_skeletonSHD(SEXP graph1SEXP, SEXP graph2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph1(graph1SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph2(graph2SEXP);
+    rcpp_result_gen = Rcpp::wrap(skeletonSHD(graph1, graph2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// orientationSHD
+double orientationSHD(const Rcpp::List& graph1, const Rcpp::List& graph2);
+RcppExport SEXP _rCausalMGM_orientationSHD(SEXP graph1SEXP, SEXP graph2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph1(graph1SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph2(graph2SEXP);
+    rcpp_result_gen = Rcpp::wrap(orientationSHD(graph1, graph2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// SHD
+double SHD(const Rcpp::List& graph1, const Rcpp::List& graph2);
+RcppExport SEXP _rCausalMGM_SHD(SEXP graph1SEXP, SEXP graph2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph1(graph1SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph2(graph2SEXP);
+    rcpp_result_gen = Rcpp::wrap(SHD(graph1, graph2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mgm
 Rcpp::List mgm(const Rcpp::DataFrame& df, Rcpp::NumericVector lambda, const bool rank, const bool verbose);
 RcppExport SEXP _rCausalMGM_mgm(SEXP dfSEXP, SEXP lambdaSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
@@ -268,6 +326,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
     {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
     {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 1},
+    {"_rCausalMGM_createCPDAG", (DL_FUNC) &_rCausalMGM_createCPDAG, 1},
+    {"_rCausalMGM_createMoral", (DL_FUNC) &_rCausalMGM_createMoral, 1},
+    {"_rCausalMGM_skeletonSHD", (DL_FUNC) &_rCausalMGM_skeletonSHD, 2},
+    {"_rCausalMGM_orientationSHD", (DL_FUNC) &_rCausalMGM_orientationSHD, 2},
+    {"_rCausalMGM_SHD", (DL_FUNC) &_rCausalMGM_SHD, 2},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 11},

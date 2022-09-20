@@ -23,6 +23,8 @@ steps(
 
 \item{lambdas}{A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.}
 
+\item{nLambda}{The number of lambda values to fit an MGM for when lambdas is NULL}
+
 \item{g}{The gamma parameter for STEPS. Defaults to 0.05}
 
 \item{numSub}{The number of subsets to split the data into. Defaults to 20}

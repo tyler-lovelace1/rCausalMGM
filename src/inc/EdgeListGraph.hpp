@@ -8,6 +8,8 @@
 #include "Triple.hpp"
 #include "DataSet.hpp"
 #include "GraphUtils.hpp"
+#include "ChoiceGenerator.hpp"
+#include "MeekRules.hpp"
 #include <string.h>
 #include <fstream>
 #include <stdlib.h>
@@ -155,6 +157,11 @@ public:
      * names.
      */
     EdgeListGraph(const std::vector<Node>& nodes);
+
+    /**
+     * Constructs an EdgeListGraph from an R list without an accompanying dataset
+     */
+    EdgeListGraph(const Rcpp::List& list);
 
     /**
      * Makes a graph from an R list
