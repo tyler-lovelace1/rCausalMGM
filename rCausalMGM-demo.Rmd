@@ -1,0 +1,424 @@
+---
+title: "rCausalMGM-demo"
+author: "Tyler Lovelace"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installing the rCausalMGM package
+
+The rCausalMGM package can be installed directly from its GitHub repository by executing the following code:
+
+```{r install, echo=TRUE}
+if (!require(devtools, quietly = TRUE))
+    install.packages("devtools")
+
+devtools::install_github("tyler-lovelace1/rCausalMGM")
+
+```
+
+## Loading the rCausalMGM package and sample datasets
+
+We begin by loading a toy synthetic dataset. This synthetic dataset, `train_n10000_p10`, contains 10,000 samples from 10 features (5 continuous and 5 categorical). This dataset has a large enough sample size for a small graph to enable perfect recovery of the Markov equivalence class of the corresponding causal DAG, `dag_n10000_p10`.
+
+```{r load, echo=TRUE}
+library(rCausalMGM)
+
+data(train_n10000_p10)
+data(dag_n10000_p10)
+
+print(head(train_n10000_p10))
+print(dag_n10000_p10)
+
+```
+
+## Recovering the Completed Partially Directed Acyclic Graph (CPDAG) with CPC-Stable
+
+In the causally sufficient case and with asymptotically large sample sizes, the PC algorithms can identify the Markov equivalence class of the causal DAG. On this toy dataset, we can perfectly recover this Markov equivalence class, also known as the CPDAG. Here, we run the conservative PC-Stable (CPC-Stable) algorithm to learn the causal graph. The conservative in CPC-Stable refers to the conservative rule for orienting colliders, which requires all conditional independence tests performed for a given unshielded triple to agree that it is a collider for it to be oriented as such.
+
+```{r cpcstable, echo=TRUE}
+
+g <- cpcStable(train_n10000_p10, alpha = 0.05, verbose=T)
+
+print(g)
+
+```
+
+Since we know the ground truth for this synthetic dataset, we can compare the learned graph `g` with its CPDAG. We do this using the Structural Hamming Distance (SHD), which is a measure for the distance between two graphs. For this package, we define the SHD as the sum of two components: the SHD of the skeleton, and the SHD of the orientations. The SHD of the skeleton measures the number of differences in the adjacencies of two graphs (*i.e.* the number of adjacencies that are in one graph but not another). The SHD of the orientations measures the number of differently oriented endpoints for edges that appear in both graphs. Each different endpoint adds 0.5 to the SHD, meaning that the difference between A --- B and A --> B contributes 0.5 to the SHD, while the difference between A <-- B and A --> B contributes 1 to the SHD. As this is a distance metric, lower is better, with an SHD of zero indicating that the two graphs are identical.
+
+```{r cpdag, echo=TRUE}
+
+cpdag_n10000_p10 <- createCPDAG(dag_n10000_p10)
+
+print(cpdag_n10000_p10)
+
+paste0('SHD: ', SHD(cpdag_n10000_p10, g))
+
+```
+
+## Saving the learned graph as a `.sif` file for visualization in Cytoscape
+
+For the purpose of visualization, we can save the learned graph as `.sif` file using the following command.
+
+```{r save, echo=TRUE}
+
+saveGraph(g, 'cpc_graph.sif')
+
+```
+
+```{r cpc_graph, fig.show = "hold", out.width = "50%", fig.align = "center"}
+knitr::include_graphics(c('cpc_graph.png'))
+```
+
+**Figure 1:** The causal graph learned by CPC-Stable after being visualized in Cytoscape. The blue nodes are continuous, while the purple nodes are categorical.
+
+## Learning causal graphs on finite sample sizes
+
+In practice, most real datasets have much lower sample sizes. This leads to less accurate recovery of the causal graph, and makes the selection of the orientation rule and the significance threshold `alpha` more important. For a given value of `alpha`, all PC algorithms will learn the same skeleton, and will only differ in their orientations.
+
+```{r orientation, echo=TRUE}
+
+train_n300_p10 <- train_n10000_p10[1:300,]
+
+g1 <- cpcStable(train_n300_p10, alpha=0.05, verbose = F)
+print(g1)
+g2 <- pc50(train_n300_p10, alpha=0.05, verbose = F)
+print(g2)
+g3 <- pcMax(train_n300_p10, alpha=0.05, verbose = F)
+print(g3)
+
+cpdag_n300_p10 <- createCPDAG(dag_n10000_p10)
+
+graphList <- list(g1, g2, g3)
+
+paste0('Skeleton SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, skeletonSHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+paste0('Orientation SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, orientationSHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+paste0('Total SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, SHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+```
+
+Different values of `alpha` will affect both the sparsity of the learned graph, and the orientation of the edges. For example, we run the PC-Max algorithm at `alpha = 0.01`, `alpha = 0.05`, and `alpha = 0.15`.
+
+```{r alpha}
+
+g1 <- pcMax(train_n300_p10, alpha=0.01, verbose = F)
+print(g1)
+g2 <- pcMax(train_n300_p10, alpha=0.05, verbose = F)
+print(g2)
+g3 <- pcMax(train_n300_p10, alpha=0.15, verbose = F)
+print(g3)
+
+cpdag_n300_p10 <- createCPDAG(dag_n10000_p10)
+
+graphList <- list(g1, g2, g3)
+
+paste0('Skeleton SHD: ', 
+       paste(sapply(graphList, function(x) paste0('alpha = ', x[['alpha']])), 
+             sapply(graphList, skeletonSHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+paste0('Orientation SHD: ', 
+       paste(sapply(graphList, function(x) paste0('alpha = ', x[['alpha']])), 
+             sapply(graphList, orientationSHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+paste0('Total SHD: ', 
+       paste(sapply(graphList, function(x) paste0('alpha = ', x[['alpha']])), 
+             sapply(graphList, SHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+
+```
+
+## Bootstrapping causal discovery algorithms to quantify edge stability
+
+While it is not possible to analytically assign a certainty or p-value to a causal graph, we can use bootstrapping to get an idea of how stable a graph and its edges are. With bootstrapping, we resample the dataset with replacement many times, and run our causal algorithm on those resampled
+datasets. We then calculate the frequency with which each edge appears across these bootstrap samples, which we can use as an estimate of the probability that a given edge appears in the causal graph given our dataset. The `bootstrap` function returns an ensemble graph based on these edge stabilities, returning a graph consisting of the most likely orientation for each edge according to the bootstrap. 
+
+```{r bootstrap, echo=TRUE}
+
+g.boot <- bootstrap(train_n300_p10, algorithm = 'pc-max', alpha=0.15, 
+                    numBoots = 100, verbose = F)
+
+print(g.boot)
+
+print(head(g.boot$stabilities))
+
+graphList <- list(g3, g.boot)
+
+paste0('Skeleton SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, skeletonSHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+paste0('Orientation SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, orientationSHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+paste0('Total SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, SHD, graph2=cpdag_n300_p10), 
+             sep=': ', collapse = ', '))
+
+```
+
+Alternatively, these stabilities can be combined with the original causal graph learned on the full dataset to assess the likelihood of the adjacencies and/or orientations in that graph. First, we define a function to extract the adjacency and orientation frequencies for a given graph based on its bootstrap stabilites, and format this information as a table that can be fed to Cytoscape. 
+
+```{r graphTable, echo=TRUE}
+
+graphTable <- function(graph, stabilities) {
+  graph.table <- data.frame(source=c(),
+                            target=c(),
+                            interaction=c(),            
+                            adjacency.freq=c(),
+                            orientation.freq=c())
+  idx <- 1
+  for (edge in graph$edges) {
+    edge <- strsplit(edge, ' ')[[1]]
+    
+    for (i in 1:nrow(stabilities)) {
+      if (edge[1] == stabilities[i,1] & edge[3] == stabilities[i,3]) {
+        adj.freq <- 1-stabilities[i,'none']
+        if (edge[2] == '---') {
+          orient.freq <- stabilities[i,'undir']
+          inter <- 'undir'
+        } else if (edge[2] == '-->') {
+          orient.freq <- stabilities[i,'right.dir']
+          inter <- 'dir'
+        } else if (edge[2] == 'o->') {
+          orient.freq <- stabilities[i,'right.partdir']
+          inter <- 'ca'
+        } else if (edge[2] == '<->') {
+          orient.freq <- stabilities[i,'bidir']
+          inter <- 'bidir'
+        } else if (edge[2] == 'o-o') {
+          orient.freq <- stabilities[i,'nondir']
+          inter <- 'cc'
+        }
+        
+        tempRow <- data.frame(source=c(edge[1]),
+                              target=c(edge[3]),
+                              interaction=c(inter),
+                              adjacency.freq=c(adj.freq),
+                              orientation.freq=c(orient.freq))
+        
+        graph.table <- rbind(graph.table, tempRow)
+        
+      } else if(edge[1] == stabilities[i,3] & edge[3] == stabilities[i,1]) {
+        adj.freq <- 1-stabilities[i,'none']
+        if (edge[2] == '---') {
+          orient.freq <- stabilities[i,'undir']
+          inter <- 'undir'
+        } else if (edge[2] == '-->') {
+          orient.freq <- stabilities[i,'left.dir']
+          inter <- 'dir'
+        } else if (edge[2] == 'o->') {
+          orient.freq <- stabilities[i,'left.partdir']
+          inter <- 'ca'
+        } else if (edge[2] == '<->') {
+          orient.freq <- stabilities[i,'bidir']
+          inter <- 'bidir'
+        } else if (edge[2] == 'o-o') {
+          orient.freq <- stabilities[i,'nondir']
+          inter <- 'cc'
+        }
+        
+        tempRow <- data.frame(source=c(edge[1]),
+                              target=c(edge[3]),
+                              interaction=c(inter),
+                              adjacency.freq=c(adj.freq),
+                              orientation.freq=c(orient.freq))
+        
+        graph.table <- rbind(graph.table, tempRow)
+      }
+    }
+  }
+  
+  return(graph.table)
+  
+}
+
+```
+
+Here, we output both the ensemble and original graph as a `.csv` file for visualization in Cytoscape with our bootstrapped adjacency and orientation stability information.
+
+```{r bootstrap_out, echo=TRUE}
+
+stabs <- g.boot$stabilities
+
+g3.table <- graphTable(g3, stabs)
+
+write.csv(g3.table, 'pcmax_graph_stabs.csv', quote=FALSE)
+
+print(head(g3.table))
+
+g.boot.table <- graphTable(g.boot, stabs)
+
+write.csv(g.boot.table, 'pcmax_ensemble_graph_stabs.csv', quote=FALSE)
+
+print(head(g.boot.table))
+
+```
+
+
+```{r pcmax_graph_stabs, fig.show = "hold", out.width = "50%", fig.align = "default"}
+knitr::include_graphics(c('pcmax_graph_stabs_adj.png', 'pcmax_graph_stabs_orient.png'))
+```
+
+**Figure 2:** A pair of representations of the original causal graph learned by PC-Max on the full `train_n300_p10` dataset. Edge thickness represents adjacency frequency from 0 to 1 (left), and orientation frequency from 0 to 1 (right).
+
+```{r pcmax_ensemble_graph_stabs, fig.show = "hold", out.width = "50%", fig.align = "default"}
+knitr::include_graphics(c('pcmax_ensemble_graph_stabs_adj.png', 'pcmax_ensemble_graph_stabs_orient.png'))
+```
+
+**Figure 3:** A pair of representations of the ensemble causal graph learned by bootstrapping PC-Max on the `train_n300_p10` dataset. Edge thickness represents adjacency frequency from 0 to 1 (left), and orientation frequency from 0 to 1 (right). 
+
+While the adjacencies for the original and ensemble graph are mostly the same (only Y2 --- Y5 differs), the orientations differ for multiple edges, with fewer low probability orientations in the ensemble. However, these are edgewise frequencies, and the ensemble graph output by bootstrapping is not guaranteed to be a valid CPDAG.
+
+## Scalable learning of high-dimensional causal graphs
+
+Many biomedical datasets involve large numbers of features and relatively small sample sizes. Typically, implementations of constraint-based causal discovery algorithms scale poorly to high-dimensional datasets. Efficient parallelization and a `C++` backend for the `rCausalMGM` package make it faster than most, but it still slows down significantly as the number of features increases when sample size is held constant. Using a new synthetic dataset (`train_n250_p500`) with 250 samples and 500 features (250 continuous and 250 categorical), we can explore the performance of `rCausalMGM` in the high-dimensional setting.
+
+```{r high_dim_graph}
+
+data(train_n250_p500)
+data(dag_n250_p500)
+
+system.time(g <- cpcStable(train_n10000_p10[1:250,], alpha=0.05))
+
+system.time(g <- cpcStable(train_n250_p500, alpha=0.05))
+
+print(g)
+```
+
+### Learning an initial skeleton with Mixed Graphical Models (MGM) can accelerate causal discovery in high-dimensional settings
+
+Utilizing the `mgm` function, we can learn an initial skeleton to use as the starting point for our causal discovery algorithms. This accelerates constraint-based causal discovery methods by eliminating most possible edges from consideration, reducing the number of conditional independence tests that are necessary to learn the causal graph. 
+
+```{r mgm_cpc}
+
+system.time(ig <- mgm(train_n250_p500, lambda=0.27))
+
+system.time(g.mgmcpc <- cpcStable(train_n250_p500, initialGraph = ig, alpha = 0.05))
+
+print(g.mgmcpc)
+```
+
+This reduction in conditional independence tests has the added benefit of reducing the number of Type I and Type II errors resulting from hypothesis testing, which can lead to improvements in the accuracy of graph recovery.
+
+```{r mgm_cpc_performance}
+
+cpdag_n250_p500 <- createCPDAG(dag_n250_p500)
+
+graphList <- list(g, g.mgmcpc)
+
+paste0('Skeleton SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, skeletonSHD, graph2=cpdag_n250_p500), 
+             sep=': ', collapse = ', '))
+
+paste0('Orientation SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, orientationSHD, graph2=cpdag_n250_p500), 
+             sep=': ', collapse = ', '))
+
+paste0('Total SHD: ', 
+       paste(sapply(graphList, function(x) x[['algorithm']]), 
+             sapply(graphList, SHD, graph2=cpdag_n250_p500), 
+             sep=': ', collapse = ', '))
+
+```
+
+### Efficient selection of the regularization parameter `lambda` for MGM
+
+A key difficulty with using MGM is efficiently selecting the right regularization parameter. The `rCausalMGM` package offers three options to pick a suitable value for `lambda`: the Bayesian Information Criterion (BIC), Akaike Information Criterion (AIC), and Stable Edge-specific Penalty Selection (StEPS).
+
+First, we demonstrate the information criteria-based selection methods, BIC and AIC. These methods simply involve solving a solution path for MGM over a range of lambda values, and can be computed together using the `mgmPath` function.
+
+```{r mgmpath}
+
+ig.path <- mgmPath(train_n250_p500, nLambda = 30)
+
+```
+
+We can select the regularization parameter `lambda` by finding the minima of the information criteria.
+
+```{r bic_aic_figures, fig.width=5, fig.height=6, fig.align="center"}
+
+par(mfrow=c(2,1))
+
+plot(x=log10(ig.path$lambdas), 
+     y=ig.path$BIC, 
+     type = 'l',
+     main = 'BIC score',
+     xlab = 'log10(lambda)',
+     ylab = 'BIC')
+points(x=log10(ig.path$lambdas)[which.min(ig.path$BIC)], 
+       y=ig.path$BIC[which.min(ig.path$BIC)],
+       col='red', pch=19)
+
+plot(x=log10(ig.path$lambdas), 
+     y=ig.path$AIC,
+     type = 'l',
+     main = 'AIC score',
+     xlab = 'log10(lambda)',
+     ylab = 'AIC')
+points(x=log10(ig.path$lambdas)[which.min(ig.path$AIC)], 
+       y=ig.path$AIC[which.min(ig.path$AIC)],
+       col='red', pch=19)
+
+```
+**Figure 4:** The BIC (top) and AIC (bottom) scores versus the log-scaled regularization parameter, `log10(lambda)`. The minima in each graph are marked by a red point, and correspond to the MGM model selected by the BIC and AIC respectively.
+
+Finally, we select the MGM graphs that minimize the BIC and AIC scores, and use them as initial skeletons for learning the causal graph for the dataset `train_n250_p500`. Although the `alpha` parameter is the same across all runs of CPC-Stable, the different initial skeletons lead to large differences in graph sparsity and the accuracy of graph recovery.
+
+```{r bic_aic_graphs}
+
+ig.bic <- ig.path$graphs[[which.min(ig.path$BIC)]]
+print(ig.bic)
+
+ig.aic <- ig.path$graphs[[which.min(ig.path$AIC)]]
+print(ig.aic)
+
+g.bic <- cpcStable(train_n250_p500, initialGraph = ig.bic, alpha = 0.05)
+print(g.bic)
+
+g.aic <- cpcStable(train_n250_p500, initialGraph = ig.aic, alpha = 0.05)
+print(g.aic)
+
+graphList <- list(g, g.aic, g.bic)
+
+paste0('Skeleton SHD: ', 
+       paste(c('No MGM', 'MGM (AIC)', 'MGM (BIC)'), 
+             sapply(graphList, skeletonSHD, graph2=cpdag_n250_p500), 
+             sep=': ', collapse = ', '))
+
+paste0('Orientation SHD: ', 
+       paste(c('No MGM', 'MGM (AIC)', 'MGM (BIC)'), 
+             sapply(graphList, orientationSHD, graph2=cpdag_n250_p500), 
+             sep=': ', collapse = ', '))
+
+paste0('Total SHD: ', 
+       paste(c('No MGM', 'MGM (AIC)', 'MGM (BIC)'), 
+             sapply(graphList, SHD, graph2=cpdag_n250_p500), 
+             sep=': ', collapse = ', '))
+
+
+```
+
