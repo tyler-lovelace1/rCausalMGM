@@ -1,3 +1,0 @@
-library(RcppArmadillo)
-Rcpp::compileAttributes(".")
-
