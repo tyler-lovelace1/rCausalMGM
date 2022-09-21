@@ -1189,7 +1189,7 @@ EdgeListGraph MGM::graphFromMGM() {
     
     // g.setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
 
-    // g.setHyperParam("lambda", Rcpp::NumericVector::create(lambda(0), lambda(1), lambda(2)));
+    g.setHyperParam("lambda", Rcpp::NumericVector::create(lambda(0), lambda(1), lambda(2)));
 
     return g;
 }
@@ -1220,9 +1220,9 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
 	learn(1e-5, 500);
 	pathGraphs.push_back(graphFromMGM());
 
-	Rcpp::NumericVector lambdaVec { lambdas[i], lambdas[i], lambdas[i] };
+	// Rcpp::NumericVector lambdaVec { lambdas[i], lambdas[i], lambdas[i] };
 	
-	pathGraphs[i].setHyperParam("lambda", lambdaVec);
+	// pathGraphs[i].setHyperParam("lambda", lambdaVec);
 	
 	// RcppThread::Rcout << Rcpp::as<arma::rowvec>(pathGraphs[i].getHyperParam("lambda")) << std::endl;
 	arma::vec par(params.toMatrix1D());

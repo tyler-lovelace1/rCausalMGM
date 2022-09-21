@@ -667,7 +667,7 @@ public:
     std::string getGraphType() { return graph_type; }
 
     void setHyperParam(std::string param, Rcpp::Nullable<Rcpp::NumericVector> v)
-	{ hyperparamHash[param] = v; }
+  { hyperparamHash[param] = Rcpp::clone(v); }
     
     Rcpp::Nullable<Rcpp::NumericVector> getHyperParam(std::string param)
 	{ return hyperparamHash[param]; }
