@@ -2,7 +2,9 @@
 title: "rCausalMGM-demo"
 author: "Tyler Lovelace"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -48,6 +50,8 @@ print(g)
 
 ```
 
+### Structural Hamming Distance (SHD) as a measure of causal structure recovery
+
 Since we know the ground truth for this synthetic dataset, we can compare the learned graph `g` with its CPDAG. We do this using the Structural Hamming Distance (SHD), which is a measure for the distance between two graphs. For this package, we define the SHD as the sum of two components: the SHD of the skeleton, and the SHD of the orientations. The SHD of the skeleton measures the number of differences in the adjacencies of two graphs (*i.e.* the number of adjacencies that are in one graph but not another). The SHD of the orientations measures the number of differently oriented endpoints for edges that appear in both graphs. Each different endpoint adds 0.5 to the SHD, meaning that the difference between A --- B and A --> B contributes 0.5 to the SHD, while the difference between A <-- B and A --> B contributes 1 to the SHD. As this is a distance metric, lower is better, with an SHD of zero indicating that the two graphs are identical.
 
 ```{r cpdag, echo=TRUE}
@@ -56,11 +60,11 @@ cpdag_n10000_p10 <- createCPDAG(dag_n10000_p10)
 
 print(cpdag_n10000_p10)
 
-paste0('SHD: ', SHD(cpdag_n10000_p10, g))
+print(paste0('SHD: ', SHD(cpdag_n10000_p10, g)))
 
 ```
 
-## Saving the learned graph as a `.sif` file for visualization in Cytoscape
+### Saving the learned graph as a `.sif` file for visualization in Cytoscape
 
 For the purpose of visualization, we can save the learned graph as `.sif` file using the following command.
 
@@ -255,6 +259,8 @@ graphTable <- function(graph, stabilities) {
 }
 
 ```
+
+### Visualizing causal structures with bootstrap adjacency and orientation frequencies
 
 Here, we output both the ensemble and original graph as a `.csv` file for visualization in Cytoscape with our bootstrapped adjacency and orientation stability information.
 
