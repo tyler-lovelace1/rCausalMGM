@@ -69,10 +69,10 @@ private:
     std::unordered_map<std::string, Node> namesHash;
 
     std::unordered_map<std::string,
-		       Rcpp::Nullable<Rcpp::NumericVector>> hyperparamHash = {
-	{"lambda", R_NilValue},
-	{"alpha", R_NilValue},
-	{"penalty", R_NilValue}
+		       arma::vec> hyperparamHash = {
+	{"lambda", arma::vec()},
+	{"alpha", arma::vec()},
+	{"penalty", arma::vec()}
     };
 
     // std::unordered_map<Node, std::unordered_set<Node>> ancestors;
@@ -666,10 +666,10 @@ public:
     void setGraphType(std::string t) { graph_type = t; }
     std::string getGraphType() { return graph_type; }
 
-    void setHyperParam(std::string param, Rcpp::Nullable<Rcpp::NumericVector> v)
-  { hyperparamHash[param] = Rcpp::clone(v); }
+    void setHyperParam(std::string param, arma::vec v)
+	{ hyperparamHash[param] = v; }
     
-    Rcpp::Nullable<Rcpp::NumericVector> getHyperParam(std::string param)
+    arma::vec getHyperParam(std::string param)
 	{ return hyperparamHash[param]; }
 
     /**

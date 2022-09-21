@@ -160,8 +160,19 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list, DataSet& ds)  {
     std::vector<std::string> t = list["type"];
     graph_type = t[0];
 
-    hyperparamHash["lambda"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["lambda"]));
-    hyperparamHash["alpha"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["alpha"]));
+    arma::vec lambda;
+    arma::vec alpha;
+
+    if (!Rf_isNull(list["lambda"])) {
+	lambda = Rcpp::as<arma::vec>(list["lambda"]);
+    }
+
+    if (!Rf_isNull(list["alpha"])) {
+	alpha = Rcpp::as<arma::vec>(list["alpha"]);
+    }
+
+    hyperparamHash["lambda"] = lambda;
+    hyperparamHash["alpha"] = alpha;
     // hyperparamHash["penalty"] = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["penalty"]);
     
 }
@@ -203,8 +214,20 @@ EdgeListGraph::EdgeListGraph(const Rcpp::List& list)  {
     std::vector<std::string> t = list["type"];
     graph_type = t[0];
 
-    hyperparamHash["lambda"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["lambda"]));
-    hyperparamHash["alpha"] = Rcpp::clone(Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["alpha"]));
+    arma::vec lambda;
+    arma::vec alpha;
+
+    if (!Rf_isNull(list["lambda"])) {
+	lambda = Rcpp::as<arma::vec>(list["lambda"]);
+    }
+
+    if (!Rf_isNull(list["alpha"])) {
+	alpha = Rcpp::as<arma::vec>(list["alpha"]);
+    }
+
+    hyperparamHash["lambda"] = lambda;
+    hyperparamHash["alpha"] = alpha;
+    
     // hyperparamHash["penalty"] = Rcpp::as<Rcpp::Nullable<Rcpp::NumericVector>>(list["penalty"]);
     
 }
@@ -1188,8 +1211,8 @@ Rcpp::List EdgeListGraph::toList() {
         Rcpp::_["edges"] = edgeStrings,
         Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
         Rcpp::_["algorithm"] = algorithm,
-	Rcpp::_["lambda"] = hyperparamHash["lambda"],
-	Rcpp::_["alpha"] = hyperparamHash["alpha"],
+	Rcpp::_["lambda"] = hyperparamHash["lambda"].is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash["lambda"]),
+	Rcpp::_["alpha"] = hyperparamHash["alpha"].is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash["alpha"]),
 	// Rcpp::_["penalty"] = hyperparamHash["penalty"],
         Rcpp::_["type"] = graph_type,
         Rcpp::_["markov.blankets"] = R_NilValue,

@@ -1189,7 +1189,7 @@ EdgeListGraph MGM::graphFromMGM() {
     
     // g.setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
 
-    g.setHyperParam("lambda", Rcpp::NumericVector::create(lambda(0), lambda(1), lambda(2)));
+    g.setHyperParam("lambda", lambda);
 
     return g;
 }

@@ -58,7 +58,7 @@ Rcpp::List mgm(
     // mgm.calcLambdaMax();
     EdgeListGraph mgmGraph = mgm.search();
     
-    mgmGraph.setHyperParam("lambda", Rcpp::NumericVector(l.begin(), l.end()));
+    // mgmGraph.setHyperParam("lambda", Rcpp::NumericVector(l.begin(), l.end()));
 
     RcppThread::checkUserInterrupt();
 

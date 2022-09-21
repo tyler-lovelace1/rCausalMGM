@@ -254,10 +254,10 @@ EdgeListGraph Bootstrap::runBootstrap() {
     ensGraph.setGraphType(graphType);
 
     if (mgmInit) {
-	ensGraph.setHyperParam("lambda", Rcpp::wrap(lambda));
+	ensGraph.setHyperParam("lambda", lambda);
     } else if (alg != "mgm") {
 	
-	ensGraph.setHyperParam("alpha", Rcpp::NumericVector::create(alpha));
+	ensGraph.setHyperParam("alpha", { alpha });
     }
 
     return ensGraph;

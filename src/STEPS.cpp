@@ -160,7 +160,7 @@ EdgeListGraph STEPS::runStepsPar() {
     lastLambda = lambda;
 
     EdgeListGraph g = m.graphFromMGM();
-    g.setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
+    g.setHyperParam("lambda", arma::vec(lambda));
     
     return g;
 }
@@ -517,7 +517,7 @@ EdgeListGraph STEPS::runStepsPath() {
     lastLambda = lambda;
     
     EdgeListGraph g = m.graphFromMGM();
-    g.setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
+    g.setHyperParam("lambda", arma::vec(lambda));
     
     return g;
 }
