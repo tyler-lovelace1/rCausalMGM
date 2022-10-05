@@ -114,7 +114,7 @@ print(g)
 plot(g)
 ```
 
-![](rCausalMGM-demo_files/figure-gfm/cpcstable-1.png)<!-- -->
+![](plots/rCausalMGM-demo_files/figure-gfm/cpcstable-1.png)<!-- -->
 
 ### Structural Hamming Distance (SHD) as a measure of causal structure recovery
 
@@ -150,7 +150,7 @@ print(cpdag_n10000_p10)
 plot(cpdag_n10000_p10)
 ```
 
-![](rCausalMGM-demo_files/figure-gfm/cpdag-1.png)<!-- -->
+![](plots/plots/rCausalMGM-demo_files/figure-gfm/cpdag-1.png)<!-- -->
 
 ``` r
 print(paste0('SHD: ', SHD(cpdag_n10000_p10, g)))
@@ -171,7 +171,7 @@ saveGraph(g, 'cpc_graph.sif')
 knitr::include_graphics(c('cpc_graph.png'))
 ```
 
-<img src="cpc_graph.png" width="50%" style="display: block; margin: auto;" />
+<img src="plots/cpc_graph.png" width="50%" style="display: block; margin: auto;" />
 
 **Figure 1:** The causal graph learned by CPC-Stable after being
 visualized in Cytoscape. The blue nodes are continuous, while the purple
@@ -197,7 +197,7 @@ g3 <- pcMax(train_n300_p10, alpha=0.05, verbose = F)
 plot(g3)
 ```
 
-![](rCausalMGM-demo_files/figure-gfm/orientation-1.png)<!-- -->
+![](plots/rCausalMGM-demo_files/figure-gfm/orientation-1.png)<!-- -->
 
 ``` r
 cpdag_n300_p10 <- createCPDAG(dag_n10000_p10)
@@ -245,7 +245,7 @@ g3 <- pcMax(train_n300_p10, alpha=0.15, verbose = F)
 plot(g3)
 ```
 
-![](rCausalMGM-demo_files/figure-gfm/alpha-1.png)<!-- -->
+![](plots/rCausalMGM-demo_files/figure-gfm/alpha-1.png)<!-- -->
 
 ``` r
 cpdag_n300_p10 <- createCPDAG(dag_n10000_p10)
@@ -298,7 +298,7 @@ g.boot <- bootstrap(train_n300_p10, algorithm = 'pc-max', alpha=0.15,
 plot(g.boot)
 ```
 
-![](rCausalMGM-demo_files/figure-gfm/bootstrap-1.png)<!-- -->
+![](plots/rCausalMGM-demo_files/figure-gfm/bootstrap-1.png)<!-- -->
 
 ``` r
 print(head(g.boot$stabilities))
@@ -400,7 +400,7 @@ print(head(g.boot.table))
 knitr::include_graphics(c('pcmax_graph_stabs_adj.png', 'pcmax_graph_stabs_orient.png'))
 ```
 
-<img src="pcmax_graph_stabs_adj.png" width="50%" /><img src="pcmax_graph_stabs_orient.png" width="50%" />
+<img src="plots/pcmax_graph_stabs_adj.png" width="50%" /><img src="plots/pcmax_graph_stabs_orient.png" width="50%" />
 
 **Figure 2:** A pair of representations of the original causal graph
 learned by PC-Max on the full `train_n300_p10` dataset. Edge thickness
@@ -411,7 +411,7 @@ frequency from 0 to 1 (right).
 knitr::include_graphics(c('pcmax_ensemble_graph_stabs_adj.png', 'pcmax_ensemble_graph_stabs_orient.png'))
 ```
 
-<img src="pcmax_ensemble_graph_stabs_adj.png" width="50%" /><img src="pcmax_ensemble_graph_stabs_orient.png" width="50%" />
+<img src="plots/pcmax_ensemble_graph_stabs_adj.png" width="50%" /><img src="plots/pcmax_ensemble_graph_stabs_orient.png" width="50%" />
 
 **Figure 3:** A pair of representations of the ensemble causal graph
 learned by bootstrapping PC-Max on the `train_n300_p10` dataset. Edge
@@ -581,7 +581,7 @@ points(x=log10(ig.path$lambdas)[which.min(ig.path$AIC)],
        col='red', pch=19)
 ```
 
-<img src="rCausalMGM-demo_files/figure-gfm/bic_aic_figures-1.png" style="display: block; margin: auto;" />
+<img src="plots/rCausalMGM-demo_files/figure-gfm/bic_aic_figures-1.png" style="display: block; margin: auto;" />
 **Figure 4:** The BIC (top) and AIC (bottom) scores versus the
 log-scaled regularization parameter, `log10(lambda)`. The minima in each
 graph are marked by a red point, and correspond to the MGM model
