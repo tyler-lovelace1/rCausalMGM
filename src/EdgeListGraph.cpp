@@ -1706,6 +1706,8 @@ Rcpp::List createCPDAG(const Rcpp::List& graph) {
     rules.setAggressivelyPreventCycles(true);
     rules.orientImplied(cpdag);
 
+    cpdag.setGraphType("completed partially directed acyclic graph");
+
     Rcpp::List result = cpdag.toList();
 
     return result;
@@ -1756,6 +1758,8 @@ Rcpp::List createMoral(const Rcpp::List& graph) {
     }
 
     Rcpp::List result = moral.toList();
+
+    moral.setGraphType("undirected");
 
     return result;
 }

@@ -248,7 +248,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
     } else if (alg.find("fci") != std::string::npos) {
 	graphType = "partial ancestral graph";
     } else if (alg == "mgm") {
-	graphType = "mgm";
+	graphType = "undirected";
     }
     
     ensGraph.setGraphType(graphType);
