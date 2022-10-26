@@ -78,7 +78,7 @@ void SepsetProducerMaxP::consumer() {
         // Poison Pill
 	if (it.a.isNull() || it.b.isNull() || it.c.isNull()) break;
 	
-        double score;
+        double score = 0.0;
         bool indep = test->isIndependent(it.a, it.c, it.s, &score);
 
 	{

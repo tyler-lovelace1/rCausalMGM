@@ -56,6 +56,8 @@ void Pc50::orientUnshieldedTriples() {
     auto producer = [&]() {
         std::vector<Node> nodes = graph.getNodes();
 
+	int maxDepth;
+
         for (const Node& y : nodes) {
             std::vector<Node> adjacentNodes = graph.getAdjacentNodes(y);
 
@@ -81,7 +83,11 @@ void Pc50::orientUnshieldedTriples() {
 
 		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
 
-                for (int d = 1; d <= std::max(adjx.size(), adjz.size()); d++) {
+		maxDepth = std::max(adjx.size(), adjz.size());
+
+		if (depth != -1) maxDepth = std::min(depth, maxDepth);
+
+                for (int d = 1; d <= maxDepth; d++) {
                     if (adjx.size() >= 2 && d <= adjx.size()) {
                         ChoiceGenerator gen(adjx.size(), d);
 

@@ -48,6 +48,24 @@ Fci50::Fci50(IndependenceTest* test, std::vector<Node> searchVars) {
 
 //========================PUBLIC METHODS==========================//
 
+/**
+ * Sets the depth of the search--that is, the maximum number of conditioning nodes for any conditional independence
+ * checked.
+ *
+ * @param depth The depth of the search. The default is 1000. A value of -1 may be used to indicate that the depth
+ *              should be high (1000). A value of Integer.MAX_VALUE may not be used, due to a bug on multi-core
+ *              machines.
+ */
+void Fci50::setDepth(int depth) {
+    if (depth < -1)
+        throw std::invalid_argument("Depth must be -1 (unlimited) or >= 0.");
+
+    if (depth > 1000)
+        throw std::invalid_argument("Depth must be <= 1000.");
+
+    this->depth = depth;
+}
+
 EdgeListGraph Fci50::search() {
     return search(test->getVariables());
 }

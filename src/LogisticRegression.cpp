@@ -270,10 +270,11 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     while (std::abs(llP - ll) > 1e-7) {
 	double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
 	iter++;
-	if (curr > 5 || iter > 100) {
-	    // RcppThread::Rcout << "Logistic Regression not converging" << std::endl
-	    // 		      << "Loglikelihood: " << ll << std::endl;
-	    throw std::runtime_error("Logistic Regression not converging");
+	if (curr > 5 || iter > 100 || !par.is_finite()) {
+	    if (!par.is_finite()) {
+		throw std::runtime_error("Logistic Regression not converging: Non-finite values in coefficient vector");
+	    }
+	    break;
 	}
 
 	llP = ll;

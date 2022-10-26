@@ -254,11 +254,21 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             }
 
             // RcppThread::Rcout << "   LocalL: " << LocalL << " L: " << L << std::endl;
-            if (LocalL <= L) {
-		// RcppThread::Rcout << "   L/LocalL ratio: " << L/LocalL << std::endl;
-		if (L/LocalL > 5) L = std::min(LocalL/beta, L);
-                break;
-            } else if (LocalL == std::numeric_limits<double>::infinity()) {
+            // if (LocalL <= L) {
+	    // 	// RcppThread::Rcout << "   L/LocalL ratio: " << L/LocalL << std::endl;
+	    // 	if (L/LocalL > 5) L = std::min(LocalL/beta, L);
+            //     break;
+            // } else if (LocalL == std::numeric_limits<double>::infinity()) {
+            //     LocalL = L;
+            // }
+
+	    if (LocalL <= L) {
+	        // L = std::min(LocalL/beta, L);
+		L = (LocalL/alpha < 1) ? LocalL/alpha : L;
+		break;
+            } else if (LocalL != std::numeric_limits<double>::infinity()) {
+                L = LocalL;
+            } else {
                 LocalL = L;
             }
 
@@ -306,11 +316,16 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             Z += Xold * (1 - (1.0 / theta));
         }
 
-        printIter = 5;
+        printIter = 10;
         if (iterCount % printIter == 0) {
 	    if (RcppThread::isInterrupted()) {
 		break;
 	    }
+
+	    RcppThread::Rcout << "    Iter: " << iterCount << 
+		" |dx|/|x|: " << dx << 
+		" loss: " << Fx + Gx << "\n";
+		
 
 	    // RcppThread::Rcout << "  Iter: " << iterCount << 
             //     "\n    obj: " << obj <<
@@ -328,7 +343,13 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
         if (iterCount >= iterLimit) {
             break;
         }
+
     }
+
+    RcppThread::Rcout << "    Iter: " << iterCount << 
+	" |dx|/|x|: " << dx << 
+	" loss: " << Fx + Gx << "\n";
+	
 
     // MGMParams XP(X, 5, 20);
     // Rcpp::Rcout << "XP: \n" << XP << std::endl;

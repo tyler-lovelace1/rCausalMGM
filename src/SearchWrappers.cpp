@@ -12,14 +12,14 @@
 // #include "STARS.hpp"
 #include "Bootstrap.hpp"
 // #include "Tests.hpp"
-// #include "IndTestMulti.hpp"
+#include "IndTestMultiScaledZ.hpp"
 
 
 //' Calculate the MGM graph on a dataset
 //'
 //' @param df The dataframe
 //' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The calculated MGM graph
 //' @export
@@ -471,7 +471,8 @@ Rcpp::List steps(
 Rcpp::List pcStable(
     const Rcpp::DataFrame &df, 
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
-    const double alpha = 0.1, 
+    const double alpha = 0.1,
+    const int depth = -1,
     const int threads = -1,
     const bool fdr = true,
     const bool rank = false,
@@ -489,12 +490,13 @@ Rcpp::List pcStable(
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
 
     PcStable pcs((IndependenceTest*) &itm);
     if (threads > 0) pcs.setThreads(threads);
     pcs.setVerbose(verbose);
     pcs.setFDR(fdr);
+    pcs.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -528,7 +530,8 @@ Rcpp::List pcStable(
 Rcpp::List cpcStable(
     const Rcpp::DataFrame &df, 
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
-    const double alpha = 0.1, 
+    const double alpha = 0.1,
+    const int depth = -1,
     const int threads = -1,
     const bool fdr = true,
     const bool rank = false,
@@ -545,12 +548,13 @@ Rcpp::List cpcStable(
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
 
     CpcStable cpc((IndependenceTest*) &itm);
     if (threads > 0) cpc.setThreads(threads);
     cpc.setVerbose(verbose);
     cpc.setFDR(fdr);
+    cpc.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -583,7 +587,8 @@ Rcpp::List cpcStable(
 Rcpp::List pcMax(
     const Rcpp::DataFrame &df, 
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
-    const double alpha = 0.1, 
+    const double alpha = 0.1,
+    const int depth = -1,
     const int threads = -1,
     const bool fdr = true,
     const bool rank = false,
@@ -598,12 +603,13 @@ Rcpp::List pcMax(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
 
     PcMax pcm((IndependenceTest*) &itm);
     if (threads > 0) pcm.setThreads(threads);
     pcm.setVerbose(verbose);
     pcm.setFDR(fdr);
+    pcm.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -635,7 +641,8 @@ Rcpp::List pcMax(
 Rcpp::List pc50(
     const Rcpp::DataFrame &df, 
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue, 
-    const double alpha = 0.1, 
+    const double alpha = 0.1,
+    const int depth = -1,
     const int threads = -1,
     const bool fdr = true,
     const bool rank = false,
@@ -653,12 +660,13 @@ Rcpp::List pc50(
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
 
     Pc50 pc50((IndependenceTest*) &itm);
     if (threads > 0) pc50.setThreads(threads);
     pc50.setVerbose(verbose);
     pc50.setFDR(fdr);
+    pc50.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -694,6 +702,7 @@ Rcpp::List fciStable(
         const Rcpp::DataFrame &df,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
+	const int depth = -1,
         const int threads = -1,
 	const bool fdr = true,
 	const bool rank = false,
@@ -711,12 +720,13 @@ Rcpp::List fciStable(
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
     
     Fci fci((IndependenceTest*) &itm);
     if (threads > 0) fci.setThreads(threads);
     fci.setVerbose(verbose);
     fci.setFDR(fdr);
+    fci.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -752,6 +762,7 @@ Rcpp::List cfci(
         const Rcpp::DataFrame &df,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
+	const int depth = -1,
         const int threads = -1,
 	const bool fdr = true,
 	const bool rank = false,
@@ -769,12 +780,13 @@ Rcpp::List cfci(
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
     
     Cfci cfci((IndependenceTest*) &itm);
     if (threads > 0) cfci.setThreads(threads);
     cfci.setVerbose(verbose);
     cfci.setFDR(fdr);
+    cfci.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -810,6 +822,7 @@ Rcpp::List fciMax(
         const Rcpp::DataFrame &df,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
+	const int depth = -1,
         const int threads = -1,
 	const bool fdr = true,
 	const bool rank = false,
@@ -827,12 +840,13 @@ Rcpp::List fciMax(
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
     
     FciMax fcimax((IndependenceTest*) &itm);
     if (threads > 0) fcimax.setThreads(threads);
     fcimax.setVerbose(verbose);
     fcimax.setFDR(fdr);
+    fcimax.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
@@ -871,6 +885,7 @@ Rcpp::List fci50(
         const Rcpp::DataFrame &df,
         Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
         const double alpha = 0.1,
+	const int depth = -1,
         const int threads = -1,
 	const bool fdr = true,
 	const bool rank = false,
@@ -887,12 +902,13 @@ Rcpp::List fci50(
     // bool v = Rcpp::is_true(Rcpp::all(verbose));
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiScaledZ itm(ds, alpha);
     
     Fci50 fci50((IndependenceTest*) &itm);
     if (threads > 0) fci50.setThreads(threads);
     fci50.setVerbose(verbose);
     fci50.setFDR(fdr);
+    fci50.setDepth(depth);
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);

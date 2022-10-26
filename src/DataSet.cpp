@@ -89,17 +89,46 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 	    }
 	} else if (Rcpp::is<Rcpp::IntegerVector>(x)) {
 	    if(Rf_isFactor(x)) {
-		// Rcpp::Rcout << "Factor\n";
-		std::vector<std::string> levels = Rcpp::as<std::vector<std::string>>(x.attr("levels"));
+		// Rcpp::Rcout << "Factor " << curName << "\n";
+		std::vector<std::string> tempLevels = Rcpp::as<std::vector<std::string>>(x.attr("levels"));
 		arma::vec values = Rcpp::as<arma::vec>(x);
 
-		if (levels.size() >= 10) {
-		    Rcpp::Rcout << "Warning: Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.\n";
+		arma::vec uniqVals = arma::sort(arma::unique(values(arma::find_finite(values))));
+
+		// Rcpp::Rcout << values.t() << std::endl;
+
+		// Rcpp::Rcout << uniqVals.t() << std::endl;
+
+
+		std::vector<std::string> levels;
+
+		for (double val : uniqVals) {
+		    levels.push_back(tempLevels[(int) (val-1)]);
 		}
-	    
+
+		arma::vec mappedValues(n, arma::fill::zeros);
+
+		for (int idx = 0; idx < n; idx++) {
+		    for (int cat = 0; cat < levels.size(); cat++) {
+			if (tempLevels[(int) (values[idx]-1)] == levels[cat]) {
+			    mappedValues[idx] = cat;
+			}
+		    }
+		}
+
+		// for ( std::string val : levels) {
+		//     Rcpp::Rcout << val << "\t";
+		// }
+		// Rcpp::Rcout << std::endl;
+		
+		// Rcpp::Rcout << mappedValues.t() << std::endl;
+
+		if (levels.size() >= 10) {
+		    Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
+		}	    
 	    
 		variables.push_back(Node(new DiscreteVariable(curName, levels)));
-		data.col(i) = values;
+		data.col(i) = mappedValues;
 		// missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::IntegerVector>(x)));
 	    }
 	    else {
@@ -107,7 +136,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 		arma::vec values = Rcpp::as<arma::vec>(x);
 		arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
 		if (uniqVals.n_elem < 10) {
-		    Rcpp::Rcout << "Warning: Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.\n";
+		    Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
 		}
 		variables.push_back(Node(new ContinuousVariable(curName)));
 		data.col(i) = values;	
@@ -117,15 +146,24 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 	else if (Rcpp::is<Rcpp::CharacterVector>(x)) {
 	    // Rcpp::Rcout << "CharacterVector\n";
 	    Rcpp::CharacterVector levels = Rcpp::sort_unique(Rcpp::as<Rcpp::CharacterVector>(x));
-	    Rcpp::IntegerVector values = Rcpp::match(Rcpp::as<Rcpp::CharacterVector>(x),
-						     levels);
+	    Rcpp::CharacterVector values = Rcpp::as<Rcpp::CharacterVector>(x);
+
+	    arma::vec mappedValues(n, arma::fill::zeros);
+
+	    for (int idx = 0; idx < n; idx++) {
+		for (int cat = 0; cat < levels.size(); cat++) {
+		    if (values[idx] == levels[cat]) {
+			mappedValues[idx] = cat;
+		    }
+		}
+	    }
 
 	    if (levels.size() >= 10) {
-		Rcpp::Rcout << "Warning: Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.\n";
+	        Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
 	    }
 	    
 	    variables.push_back(Node(new DiscreteVariable(curName, Rcpp::as<std::vector<std::string>>(levels))));
-	    data.col(i) = Rcpp::as<arma::vec>(values);
+	    data.col(i) = mappedValues;
 	    
 	    // missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::CharacterVector>(x)));
 	    

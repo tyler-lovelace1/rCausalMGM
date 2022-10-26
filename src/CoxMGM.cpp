@@ -311,19 +311,43 @@ void CoxMGM::calcWeights() {
 
 // void CoxMGM::calcZWeights() {
 
-//     // arma::mat eta = xDat * par.gamma + dDat * par.psi;
-//     // eta.each_col( [](arma::vec& c) { c -= arma::mean(c); } );
+//     arma::mat eta = xDat * par.gamma + dDat * par.psi;
+//     eta.each_col( [](arma::vec& c) { c -= arma::mean(c); } );
     
-//     // arma::mat coxgrad(arma::size(eta), arma::fill::zeros);
-//     // arma::mat diagHess(arma::size(eta), arma::fill::zeros);
+//     arma::mat coxgrad(arma::size(eta), arma::fill::zeros);
+//     arma::mat diagHess(arma::size(eta), arma::fill::zeros);
 
-//     // arma::vec oldCoxloss = coxGradHess(eta, coxgrad, diagHess);
+//     arma::vec oldCoxloss = coxGradHess(eta, coxgrad, diagHess);
 
-//     // coxWeights = -diagHess;
-//     // diagHess.replace(0, -1e-10);
-//     // zDat = eta - coxgrad / diagHess;
+//     coxWeights = -diagHess;
+//     diagHess.replace(0, -1e-10);
+//     zDat = eta - coxgrad / diagHess;
 
 //     weights.subvec(p+q, p+q+r-1) = arma::stddev(coxWeights % zDat, 0, 0);
+
+
+//     for (int m = 0; m < r; m++) {
+// 	censWeights = arma::vec(p+q+r, arma::fill::ones);
+
+// 	//Continuous variable weights are standard deviations
+// 	for (arma::uword i = 0; i < p; i++) {
+// 	    censWeights(i) = arma::stddev(xDat.col(i).elem(arma::find(censMat.col(m) == 1)));
+// 	}
+
+// 	//Discrete variable weights for each variable-category pair are p(1-p) where p is the percentage of times that category appears
+// 	for (arma::uword j = 0; j < q; j++) {
+// 	    double curWeight = 0;
+// 	    for (int k = 0; k < l[j]; k++) {
+// 		arma::vec equalityVec = arma::vec(yDat.col(j)).transform( [k](double val) { return val == k+1 ? 1 : 0; } );
+// 		double curp = arma::mean(equalityVec.elem(arma::find(censMat.col(m) == 1)));
+// 		curWeight += curp * (1-curp);
+// 	    }
+// 	    censWeights(p+j) = std::sqrt(curWeight);
+// 	}
+
+	
+
+//     }
 
 //     // arma::vec w2;
 //     // double wsum, wZmu, wZvar, normConstant, eventRate;
@@ -753,8 +777,8 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.gamma = ((coxWeights % zDat).t() * tempLoss).t();
     // gradOut.gamma = (5/2.0) * ((coxWeights % zDat).t() * (tempLoss / (4 + arma::square(resid)))).t();
     
-    gradOut.gamma.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
-    // gradOut.gamma.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
+    // gradOut.gamma.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
+    gradOut.gamma.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
 
     // gradOut.gamma = arma::mat(p, r, arma::fill::zeros);
 
@@ -810,8 +834,8 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     // gradOut.psi = arma::mat(lsum, r, arma::fill::zeros);
 
     // gradOut.psi.each_row( [this] (arma::rowvec& r) { r /= wzSd; } );
-    gradOut.psi.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
-    // gradOut.psi.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
+    // gradOut.psi.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
+    gradOut.psi.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
 
     // Rcpp::Rcout << "Psi grad 1: \n" << gradOut.psi / (double) n;
 
@@ -845,8 +869,21 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 	coxloss -= arma::as_scalar(-0.5 * coxresid.col(i).t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i));
 	coxloss += 0.5 * arma::sum(arma::square(coxgrad.col(i)) / diagHess.col(i));
 	coxloss -= oldCoxloss(i);
-        gradOut.gamma.col(i) += (1 / (1 + fitWeight(i))) * xDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
-	gradOut.psi.col(i) += (1 / (1 + fitWeight(i))) * dDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+        // gradOut.gamma.col(i) += (1 / (1 + fitWeight(i))) * xDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+	// gradOut.psi.col(i) += (1 / (1 + fitWeight(i))) * dDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+	gradOut.gamma.col(i) += xDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+
+	// arma::mat psiGradTemp = arma::diagmat(coxWeights.col(i) % coxresid.col(i)) * dDat;
+
+	// for (arma::uword j = 0; j < q; j++) {
+	//     arma::subview<double> wxTemp = psiGradTemp.submat(0, lcumsum[j], n-1, lcumsum[j+1]-1);
+	//     wxTemp.each_row( [this] (arma::rowvec& r) { r -= arma::mean(r); } );
+	// }
+	
+        // gradOut.psi.col(i) += arma::mean(psiGradTemp,0);
+	
+	gradOut.psi.col(i) += dDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+
 
 	// gradOut.gamma.col(i) /= arma::sum(coxWeights.col(i));
 	// gradOut.psi.col(i) /= arma::sum(coxWeights.col(i));
@@ -878,9 +915,9 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.alpha2 /= (double) n;
     gradOut.alpha3 /= (double) n; // arma::sum(coxWeights,0).t();
     gradOut.betad /= (double) n;
-    gradOut.beta /= (double) (2*n);
-    gradOut.theta /= (double) (2*n);
-    gradOut.phi /= (double) (2*n);
+    gradOut.beta /= (double) n;
+    gradOut.theta /= (double) n;
+    gradOut.phi /= (double) n;
     gradOut.gamma /= (double) n;
     gradOut.psi /= (double) n;
 
@@ -1137,8 +1174,12 @@ double CoxMGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
 
     // Rcpp::Rcout << "NS phiNorms = \n" << phiNorms << std::endl;
 
+    arma::rowvec zWeight = weights.subvec(p+q, p+q+r-1).t();
+
     arma::mat gammaWeight = arma::mat(weightMat.submat(0, p+q, p-1, p+q+r-1));
-    // gammaWeight.each_row( [this] (arma::rowvec& r) { r = weights.subvec(p+q, p+q+r-1) + fitWeight % r; } )
+    gammaWeight.each_row( [this,&zWeight] (arma::rowvec& r) {
+			    r = zWeight + fitWeight % r;
+			  } );
     arma::mat gammaScale = gammaWeight * -tlam(3);
     arma::mat absGamma = arma::abs(par.gamma); 
     
@@ -1168,7 +1209,7 @@ double CoxMGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     for (arma::uword i = 0; i < r; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
             arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-            double psiScale = std::max(0.0, 1 - tlam(4)*weightMat(p+j, p+q+i)/arma::norm(tempVec, 2));
+            double psiScale = std::max(0.0, 1 - tlam(4)*(weights(p+q+i) + fitWeight(i) * weightMat(p+j, p+q+i))/arma::norm(tempVec, 2));
             par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * psiScale;
             psiNorms += weightMat(p+j, p+q+i) * arma::norm(tempVec, 2);
         }
@@ -2318,8 +2359,8 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
 
     grad.gamma = ((coxWeights % zDat).t() * negLoss).t();
     // grad.gamma = (5/2.0) * ((coxWeights % zDat).t() * (negLoss / (4 + arma::square(resid)))).t();
-    grad.gamma.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
-    // grad.gamma.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
+    // grad.gamma.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
+    grad.gamma.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
     // grad.gamma = arma::mat(p, r, arma::fill::zeros);
 
     for (arma::uword i = 0; i < yDat.n_cols; i++) {
@@ -2355,8 +2396,8 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
 
     grad.psi = ((coxWeights % zDat).t() * wxProd).t();
     // grad.psi = (5/2.0) * ((coxWeights % zDat).t() * (wxProd / (4 + arma::square(catResid)))).t();
-    grad.psi.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
-    // grad.psi.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
+    // grad.psi.each_row( [this] (arma::rowvec& r) { r %= (fitWeight / (1 + fitWeight)); } );
+    grad.psi.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
     // grad.psi = arma::mat(lsum, r, arma::fill::zeros);
 
     //zero out gradphi diagonal
@@ -2369,39 +2410,79 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     //gradphi=tril(gradphi)'+triu(gradphi);
     grad.phi = arma::trimatl(grad.phi, 0).t() + arma::trimatu(grad.phi, 0);
 
+    arma::mat expGamma2(p,r,arma::fill::zeros);
+    arma::mat expPsi2(q,r,arma::fill::zeros);
+
     arma::mat coxresid = eta - zDat;
     for (arma::uword i = 0; i < zDat.n_cols; i++) {
 	// coxresid.col(i) += par.alpha3(i);
-	grad.gamma.col(i) += (1 / (1+fitWeight(i))) * xDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
-        grad.psi.col(i) += (1 / (1+fitWeight(i))) * dDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+	// grad.gamma.col(i) += (1 / (1+fitWeight(i))) * xDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+        // grad.psi.col(i) += (1 / (1+fitWeight(i))) * dDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
 
+	grad.gamma.col(i) += xDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+
+	// arma::mat psiGradTemp = arma::diagmat(coxWeights.col(i) % coxresid.col(i)) * dDat;
+
+	// for (arma::uword j = 0; j < q; j++) {
+	//     arma::subview<double> wxTemp = psiGradTemp.submat(0, lcumsum[j], n-1, lcumsum[j+1]-1);
+	//     wxTemp.each_row( [this] (arma::rowvec& r) { r -= arma::mean(r); } );
+	// }
+	
+        // grad.psi.col(i) += arma::mean(psiGradTemp,0);
+	grad.psi.col(i) += dDat.t() * arma::diagmat(coxWeights.col(i)) * coxresid.col(i);
+	
 	// grad.gamma.col(i) /= arma::sum(coxWeights.col(i));
 	// grad.psi.col(i) /= arma::sum(coxWeights.col(i));
 
 	// if (i == 0) {
-	//     arma::mat gamma2 = arma::square(arma::diagmat(coxWeights.col(i) % coxresid.col(i)) * xDat);
+	// arma::mat gamma2 = arma::square(arma::diagmat(coxWeights.col(i) % coxresid.col(i)) * xDat + fitWeight(i) * arma::diagmat(coxWeights.col(i) % zDat.col(i)) * negLoss);
 	//     // Rcpp::Rcout << "Gamma^2:\n" << gamma2 << std::endl;
 
-	//     Rcpp::Rcout << "E[Gamma^2]:\n" << arma::mean(gamma2,0) << std::endl;
+	// Rcpp::Rcout << "cont->surv("<< i << ") gamma grad:\n"
+	// 	    << arma::diagmat(coxWeights.col(i) % coxresid.col(i)) * xDat;
+	
+	// Rcpp::Rcout << "surv("<< i << ")->cont gamma grad:\n"
+	// 	    << arma::diagmat(coxWeights.col(i) % zDat.col(i)) * negLoss;
 
-	//     Rcpp::Rcout << "sqrt(E[Gamma^2]):\n" << arma::sqrt(arma::mean(gamma2,0)) << std::endl;
+	// expGamma2.col(i) = arma::mean(gamma2,0);
 
-	//     arma::mat temp = arma::diagmat(coxWeights.col(i) % coxresid.col(i)) * dDat;
-	//     arma::mat psi2(n, q, arma::fill::zeros);
+	// Rcpp::Rcout << "E[Gamma^2]:\n" << arma::mean(gamma2,0) << std::endl;
 
-	//     for (arma::uword j = 0; j < yDat.n_cols; j++) {
-	// 	arma::mat wxTemp = temp.submat(0, lcumsum[j], n-1, lcumsum[j+1]-1);
-	// 	psi2.col(j) = arma::sum(arma::square(wxTemp), 1);
-	//     }
-	//     // Rcpp::Rcout << "Psi^2:\n" << psi2 << std::endl;
+	// Rcpp::Rcout << "sqrt(E[Gamma^2]):\n" << arma::sqrt(arma::mean(gamma2,0)) << std::endl;
 
-	//     Rcpp::Rcout << "E[Psi^2]:\n" << arma::mean(psi2,0) << std::endl;
-	    
-	//     Rcpp::Rcout << "sqrt(E[Psi^2]):\n" << arma::sqrt(arma::mean(psi2,0)) << std::endl;
+	// arma::mat temp = arma::square(psiGradTemp + fitWeight(i) * arma::diagmat(coxWeights.col(i) % zDat.col(i)) * wxProd);
+	// arma::mat psi2(n, q, arma::fill::zeros);
+
+	// Rcpp::Rcout << "disc->surv("<< i << ") psi grad:\n"
+	// 	    << 2 * (1-fitWeight(i)) * psiGradTemp;
+	
+	// Rcpp::Rcout << "surv("<< i << ")->disc psi grad:\n"
+	// 	    << 2 * fitWeight(i) * arma::diagmat(coxWeights.col(i) % zDat.col(i)) * wxProd;
+
+
+	// for (arma::uword j = 0; j < q; j++) {
+	//     arma::mat wxTemp = temp.submat(0, lcumsum[j], n-1, lcumsum[j+1]-1);
+	//     psi2.col(j) = arma::sum(wxTemp, 1);
+	//     // if (j == 0) {
+	//     // 	Rcpp::Rcout << wxTemp << std::endl;
+	//     // 	Rcpp::Rcout << arma::sum(wxTemp, 1) << std::endl;
+	//     // }
+	// }
+	// // Rcpp::Rcout << "Psi^2:\n" << psi2 << std::endl;
+
+	// expPsi2.col(i) = arma::mean(psi2,0);
+	
+	// Rcpp::Rcout << "E[Psi^2]:\n" << arma::mean(psi2,0) << std::endl;
+	
+	// Rcpp::Rcout << "sqrt(E[Psi^2]):\n" << arma::sqrt(arma::mean(psi2,0)) << std::endl;
 	// }
     }
 
     grad.alpha3 = arma::sum(coxWeights % coxresid, 0).t();
+
+    // Rcpp::Rcout << "sqrt(E[Gamma^2]):\n" << arma::sqrt(expGamma2)/2 << std::endl;
+
+    // Rcpp::Rcout << "sqrt(E[Psi^2]):\n" << arma::sqrt(expPsi2)/2 << std::endl;
 
     // for (arma::uword j = 0; j < q; j++) {
     // 	grad.psi.row(lcumsum[j]).fill(0);
@@ -2424,9 +2505,9 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     grad.alpha2 /= (double) n;
     grad.alpha3 /= (double) n; // arma::sum(coxWeights,0).t();
     grad.betad /= (double) n;
-    grad.beta /= (double) (2*n);
-    grad.theta /= (double) (2*n);
-    grad.phi /= (double) (2*n);
+    grad.beta /= (double) n;
+    grad.theta /= (double) n;
+    grad.phi /= (double) n;
     grad.gamma /= (double) n;
     grad.psi /= (double) n;
 
@@ -2704,6 +2785,8 @@ void CoxMGM::iterUpdate(arma::vec& parIn) {
 
     fitWeight = ((nullCoxloss-oldCoxloss) / nullCoxloss).t();
 
+    // fitWeight = arma::rowvec(r, arma::fill::ones);
+
     // Rcpp::Rcout << "Fit weight: " << fitWeight << std::endl;
 
     // par.beta = arma::symmatu(par.beta);
@@ -2776,9 +2859,33 @@ void CoxMGM::iterUpdate(arma::vec& parIn) {
 
     // weights.subvec(p+q, p+q+r-1) = arma::stddev(coxWeights % zDat, 0, 0);
 
-    weights.subvec(p+q, p+q+r-1) = arma::stddev(coxWeights % zDat, 0, 0); // arma::vec(r, arma::fill::ones);
+    weights.subvec(p+q, p+q+r-1) = arma::stddev(coxWeights % zDat, 0, 0) / 2; // arma::vec(r, arma::fill::ones);
 
-    // Rcpp::Rcout << "Z weights: " << weights.subvec(p+q, p+q+r-1).t() << std::endl;
+    // arma::rowvec zWeights = weights.subvec(p+q, p+q+r-1).t();
+
+    // Rcpp::Rcout << "Z weights:\n" << weights.subvec(p+q, p+q+r-1).t() << std::endl;
+
+    // arma::mat weightMat = weights * weights.t();
+
+    // arma::mat gammaWeights = arma::mat(weightMat.submat(0, p+q, p-1, p+q+r-1));
+
+    // gammaWeights.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
+    // gammaWeights.each_row( [&zWeights] (arma::rowvec& r) { r += zWeights; } );
+
+    // Rcpp::Rcout << "Gamma weights:\n"
+    // 		<< gammaWeights << std::endl;
+
+    // arma::mat psiWeights = arma::mat(weightMat.submat(p, p+q, p+q-1, p+q+r-1));
+
+    // psiWeights.each_row( [this] (arma::rowvec& r) { r %= fitWeight; } );
+    // psiWeights.each_row( [&zWeights] (arma::rowvec& r) { r += zWeights; } );
+
+    // Rcpp::Rcout << "Psi weights:\n"
+    // 		<< psiWeights << std::endl;
+
+    // arma::vec curParams = params.toMatrix1D();
+
+    // smoothGradient(curParams);
 
     // calcZWeights();
 
@@ -2979,7 +3086,10 @@ EdgeListGraph CoxMGM::graphFromCoxMGM() {
  */
 EdgeListGraph CoxMGM::search() {
     auto start = std::chrono::high_resolution_clock::now();
-    learn(5e-4, 500);
+    // fitWeight = arma::rowvec(r, arma::fill::zeros);
+    // learn(1e-5, 500);
+    // fitWeight = arma::rowvec(r, arma::fill::ones);
+    learn(1e-5, 500);
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     return graphFromCoxMGM();
 }
@@ -2992,11 +3102,17 @@ std::vector<EdgeListGraph> CoxMGM::searchPath(std::vector<double> lambdas,
     std::vector<EdgeListGraph> pathGraphs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
     for (int i = 0; i < lambdas.size(); i++) {
-	if (verbose) RcppThread::Rcout << "  Learning CoxMGM for lambda = " << lambdas[i] << "\r";
+	if (verbose) RcppThread::Rcout << "  Learning CoxMGM for lambda = " << lambdas[i] << "\n";
 	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i],
 				       lambdas[i], lambdas[i] };
 	setLambda(lambda);
-        learn(5e-4, 500);
+	// if (verbose) RcppThread::Rcout << "    Fitting first step...";
+        // fitWeight = arma::rowvec(r, arma::fill::zeros);
+	learn(1e-5, 500);
+	// if (verbose) RcppThread::Rcout << "done.\n    Fitting second step...";
+	// fitWeight = arma::rowvec(r, arma::fill::ones);
+	// learn(1e-5, 500);
+	// if (verbose) RcppThread::Rcout << "done.\n";
 	pathGraphs.push_back(graphFromCoxMGM());
 
 	Rcpp::NumericVector lambdaVec = { lambdas[i], lambdas[i], lambdas[i],

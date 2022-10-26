@@ -98,18 +98,19 @@ CoxRegressionResult CoxIRLSRegression::regress(Node target,
     arma::vec pval = arma::vec((k > 0) ? k : 1);
     arma::vec res(X.n_rows, arma::fill::zeros);
 
+    arma::vec diagHess(X.n_rows);
+    arma::vec grad(X.n_rows);
+    arma::vec eta(X.n_rows, arma::fill::zeros);
+
     if (regressors.size() == 0) {
-	new_l = loss(beta, X, Y);
+	new_l = gradHess(eta, grad, diagHess, Y);
 	b[0] = 0.0;
 	z[0] = 0.0;
 	pval[0] = 1.0;
 	se[0] = 1.0;
-	return CoxRegressionResult({""}, n, b, z, pval, se, res, this->alpha, new_l);
+	return CoxRegressionResult({""}, n, b, z, pval, se, grad, this->alpha, new_l);
     }
 
-    arma::vec diagHess(X.n_rows);
-    arma::vec grad(X.n_rows);
-    arma::vec eta(X.n_rows);
     arma::vec Z(X.n_rows);
     arma::vec w(X.n_rows);
 
@@ -302,19 +303,19 @@ CoxRegressionResult CoxIRLSRegression::regress(Node target,
     arma::vec z = arma::vec((k > 0) ? k : 1);
     arma::vec pval = arma::vec((k > 0) ? k : 1);
     arma::vec res(X.n_rows, arma::fill::zeros);
+    arma::vec diagHess(X.n_rows);
+    arma::vec grad(X.n_rows);
+    arma::vec eta(X.n_rows, arma::fill::zeros);
 
     if (regressors.size() == 0) {
-	new_l = loss(beta, X, Y);
+	new_l = gradHess(eta, grad, diagHess, Y);
 	b[0] = 0.0;
 	z[0] = 0.0;
 	pval[0] = 1.0;
 	se[0] = 1.0;
-	return CoxRegressionResult({""}, n, b, z, pval, se, res, this->alpha, new_l);
+	return CoxRegressionResult({""}, n, b, z, pval, se, grad, this->alpha, new_l);
     }
 
-    arma::vec diagHess(X.n_rows);
-    arma::vec grad(X.n_rows);
-    arma::vec eta(X.n_rows);
     arma::vec Z(X.n_rows);
     arma::vec w(X.n_rows);
 

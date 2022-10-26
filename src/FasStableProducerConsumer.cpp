@@ -1,4 +1,5 @@
 #include "FasStableProducerConsumer.hpp"
+#include "IndTestMultiScaledZ.hpp"
 
 #include "ChoiceGenerator.hpp"
 #include "GraphUtils.hpp"
@@ -70,6 +71,17 @@ EdgeListGraph FasStableProducerConsumer::search() {
         if (d == 0) {
             more = searchAtDepth0();
         } else {
+
+	    // for (Node n : nodes) {
+	    // 	if (n.isCensored()) {
+	    // 	    std::vector<Node> adjVars(adjacencies[n].begin(), adjacencies[n].end());
+	    // 	    if (adjVars.size() == 0)
+	    // 		continue;
+	    // 	    // RcppThread::Rcout << "Calling scaledZ..." << std::endl;
+	    // 	    ((IndTestMultiScaledZ*)test)->scaledZ(n, adjVars);
+	    // 	}
+	    // }
+	    
             more = searchAtDepth(d);
         }
 
@@ -245,6 +257,15 @@ std::unordered_map<Node, std::unordered_set<Node>> FasStableProducerConsumer::se
         if (d == 0) {
             more = searchAtDepth0();
         } else {
+	    // for (Node n : nodes) {
+	    // 	if (n.isCensored()) {
+	    // 	    std::vector<Node> adjVars(adjacencies[n].begin(), adjacencies[n].end());
+	    // 	    if (adjVars.size() == 0)
+	    // 		continue;
+	    // 	    // RcppThread::Rcout << "Calling scaledZ..." << std::endl;
+	    // 	    ((IndTestMultiScaledZ*)test)->scaledZ(n, adjVars);
+	    // 	}
+	    // }
             more = searchAtDepth(d);
         }
 
@@ -414,7 +435,7 @@ void FasStableProducerConsumer::consumerDepth0() {
         if (task.x.isNull() && task.y.isNull())  return;
 
         numIndependenceTests++;
-	double pval;
+	double pval = 0.0;
         bool independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
 	if (independent) {
@@ -468,7 +489,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
-	double pval;
+	double pval = 0.0;
         bool independent;
         independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
