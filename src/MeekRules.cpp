@@ -82,7 +82,7 @@ void MeekRules::r1Helper(Node a, Node b, Node c, EdgeListGraph& graph) {
             return;
         }
 
-        if (isArrowpointAllowed(b, c)) {
+        if (isArrowpointAllowed(b, c) && doesNotCreateCycle(b, c, graph)) {
             direct(b, c, graph);
             Edge edge = graph.getEdge(b, c);
             // Rcpp::Rcout << "Meek R1 edge: " << edge << std::endl;
@@ -118,7 +118,7 @@ void MeekRules::meekR2(Node c, EdgeListGraph& graph) {
 
 void MeekRules::r2Helper(Node a, Node b, Node c, EdgeListGraph& graph) {
     if (graph.isDirectedFromTo(a, b) && graph.isDirectedFromTo(b, c) && graph.isUndirectedFromTo(a, c)) {
-        if (isArrowpointAllowed(a, c)) {
+        if (isArrowpointAllowed(a, c) && doesNotCreateCycle(a, c, graph)) {
             direct(a, c, graph);
             Edge edge = graph.getEdge(a, c);
             // Rcpp::Rcout << "Meek R2 Edge: " << edge << std::endl;
@@ -150,7 +150,7 @@ void MeekRules::meekR3(Node a, EdgeListGraph& graph) {
                 Node c = nodes[1];
 
                 if (isKite(a, d, b, c, graph)) {
-                    if (isArrowpointAllowed(d, a)) {
+                    if (isArrowpointAllowed(d, a) && doesNotCreateCycle(d, a, graph)) {
                         if (!isUnshieldedNoncollider(c, d, b, graph)) {
                             continue;
                         }
@@ -223,6 +223,14 @@ bool MeekRules::isUnshieldedNoncollider(Node a, Node b, Node c, EdgeListGraph& g
 bool MeekRules::isArrowpointAllowed(Node from, Node to) {
     // Knowledge
     return true;
+}
+
+bool MeekRules::doesNotCreateCycle(Node from, Node to, EdgeListGraph& graph) {
+    if (aggressivelyPreventCycles) {
+	return !graph.isAncestorOf(to, from);
+    } else {
+	return true;
+    }
 }
 
 void MeekRules::undirectUnforcedEdges(Node y, EdgeListGraph& graph) {

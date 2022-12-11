@@ -72,6 +72,7 @@ public:
 
     MGM() {}
     MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
+    MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<int> l, std::vector<double> lambda);
     MGM(DataSet& ds);
     MGM(DataSet& ds, std::vector<double>& lambda);
 
@@ -81,10 +82,11 @@ public:
     // MGM& operator=(MGM&& other) = default;
     // ~MGM() = default;
 
-    MGMParams getParams() {return params;}
+    MGMParams getParams() { return params; }
     void setParams(MGMParams newParams) { params = newParams; }
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
+    arma::vec getLambda() { return lambda; }
 
     // void setVerbose(bool v) { verbose = v; }
     void setLambda(std::vector<double> lambda) { this->lambda = arma::vec(lambda); }
@@ -196,7 +198,12 @@ public:
 					  arma::vec& loglik,
 					  arma::vec& nParams);
 
-    std::vector<EdgeListGraph> searchPath(std::vector<double> lambdas);
+    std::vector<EdgeListGraph> searchPathCV(std::vector<double> lambdas,
+					    int nfolds,
+					    arma::uvec& foldid,
+					    arma::mat& loglik);
+    
+    //  std::vector<EdgeListGraph> searchPath(std::vector<double> lambdas);
     
     friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 

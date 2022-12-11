@@ -68,7 +68,7 @@ private:
      * True if cycles are to be aggressively prevented. May be expensive for large graphs (but also useful for large
      * graphs).
      */
-    bool aggressivelyPreventCycles = false;
+    bool aggressivelyPreventCycles = true;
 
     /**
      * The logger for this class. The config needs to be set.
@@ -82,6 +82,10 @@ private:
     // First int in pair = # sepsets containing y
     // Second int in pair = # sepsets without y
     std::unordered_map<Triple, std::pair<int, int>> sepsetCount;
+
+    std::unordered_map<Triple, int> score;
+
+    std::unordered_map<Triple, bool> colliders;
 
     struct ColliderTask {
         Triple t;
@@ -103,6 +107,10 @@ private:
     bool isCollider(Triple& t);
 
     bool isNonCollider(Triple& t);
+
+    void orientCollider(const Node& a, const Node& b, const Node& c);
+
+    bool wouldCreateBadCollider(const Node& x, const Node& y);
 
 public:
 

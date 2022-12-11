@@ -20,12 +20,11 @@
  * @author Jack Fiore, September 2020
  */
 
-
- #include "EdgeListGraph.hpp"
- #include "IndependenceTest.hpp"
- #include "SepsetMap.hpp"
- #include "ChoiceGenerator.hpp"
- #include "SepsetProducer.hpp"
+#include "EdgeListGraph.hpp"
+#include "IndependenceTest.hpp"
+#include "SepsetMap.hpp"
+#include "ChoiceGenerator.hpp"
+#include "SepsetProducer.hpp"
 
 class FciOrient {
 
@@ -252,13 +251,15 @@ private:
     //============================CONSTRUCTORS============================//
 
 public:
+
+    FciOrient() {}
     /**
      * Constructs a new FCI search for the given independence test and
      * background knowledge.
      */
     FciOrient(SepsetProducer* sepsets);
 
-    FciOrient(SepsetProducer* sepsets,std::unordered_map<std::string,std::string> whyOrient);
+    FciOrient(SepsetProducer* sepsets, std::unordered_map<std::string,std::string> whyOrient);
 
 
     //========================PUBLIC METHODS==========================//

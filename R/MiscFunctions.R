@@ -10,11 +10,14 @@ print.graph <- function(x, ...) {
         if (x[["type"]] == "partial ancestral graph") {
             cat("  Unoriented: ", sum(grepl("o-o", x[["edges"]], fixed=TRUE)), "\n")
             cat("  Partially Oriented: ", sum(grepl("o->", x[["edges"]], fixed=TRUE)), "\n")
+            cat("  Directed: ", sum(grepl("-->", x[["edges"]], fixed=TRUE)), "\n")
+            cat("  Bidirected: ", sum(grepl("<->", x[["edges"]], fixed=TRUE)), "\n")
         } else {
+            cat("  Directed: ", sum(grepl("-->", x[["edges"]], fixed=TRUE)), "\n")
             cat("  Undirected: ", sum(grepl("---", x[["edges"]], fixed=TRUE)), "\n")
         }
-        cat("  Directed: ", sum(grepl("-->", x[["edges"]], fixed=TRUE)), "\n")
-        cat("  Bidirected: ", sum(grepl("<->", x[["edges"]], fixed=TRUE)), "\n")
+        ## cat("  Directed: ", sum(grepl("-->", x[["edges"]], fixed=TRUE)), "\n")
+        ## cat("  Bidirected: ", sum(grepl("<->", x[["edges"]], fixed=TRUE)), "\n")
     }
 
     if (!is.null(x[["lambda"]])) {
@@ -35,6 +38,51 @@ print.graph <- function(x, ...) {
     invisible(x)
 }
 
+#' A print override function for the graphCV class
+#'
+#' @param x The graphCV object
+#' @export
+print.graphCV <- function(x, ...) {
+    mgmFlag <- !is.null(x$lambdas)
+    cat("Minimum cross-validation log(pseudo-likelihood) graph:\n")
+    cat("  Index: ")
+    cat(ifelse(mgmFlag,
+               which(x$lambdas %in% x$lambda.min),
+               which(x$alphas %in% x$alpha.min)))
+    cat("\n\n")
+    print(x$graph.min)
+    cat("\n")
+    cat("One standard error above the minimum cross-validation log(pseudo-likelihood) graph:\n")
+    cat("  Index: ")
+    cat(ifelse(mgmFlag,
+               which(x$lambdas %in% x$lambda.1se),
+               which(x$alphas %in% x$alpha.1se)))
+    cat("\n\n")
+    print(x$graph.1se)
+    invisible(x)
+}
+
+
+#' A print override function for the graphPath class
+#'
+#' @param x The graphPath object
+#' @export
+print.graphPath <- function(x, ...) {
+    mgmFlag <- !is.null(x$lambdas)
+    cat("Minimum BIC graph:\n")
+    cat("  Index: ")
+    cat(which.min(x$BIC))
+    cat("\n\n")
+    print(x$graph.bic)
+    cat("\n")
+    cat("Minimum AIC graph:\n")
+    cat("  Index: ")
+    cat(which.min(x$AIC))
+    cat("\n\n")
+    print(x$graph.aic)
+    invisible(x)
+}
+
 
 #' A plot override function for the graph class
 #'
@@ -42,7 +90,7 @@ print.graph <- function(x, ...) {
 #' @export
 plot.graph <- function(x,
                        nodes = c(),
-                       nodeAttr = list(shape = "ellipse"),
+                       nodeAttr = list(),
                        edgeAttr = list(),
                        ...) {
     ## require("Rgraphviz")
@@ -105,8 +153,10 @@ plot.graph <- function(x,
             edgeorient[["arrowtail"]][graph::edgeNames(rgraph)]
     }
 
-    graph::nodeRenderInfo(rgraph) <- nodeAttr
-
+    if (length(nodeAttr) > 0) {
+        graph::nodeRenderInfo(rgraph) <- nodeAttr
+    }
+    
     edgeAttr[["arrowhead"]] <- edgeorient[["arrowhead"]]
     edgeAttr[["arrowtail"]] <- edgeorient[["arrowtail"]]
     
@@ -132,6 +182,78 @@ plot.graph <- function(x,
     Rgraphviz::renderGraph(rgraph)
     
     ## Rgraphviz::plot(rgraph)
+}
+
+#' A plot override function for the graphCV class
+#'
+#' @param x The graph object
+#' @export
+plot.graphCV <- function(x) {
+    mgmFlag <- !is.null(x$lambdas)
+    
+    if (mgmFlag) {
+        log10params <- log10(x$lambdas)
+    } else {
+        log10params <- log10(x$alphas)
+    }
+    
+    llMeans <- rowMeans(x$loglik)
+    llSe <- apply(x$loglik, 1, sd)
+
+    ll.range <- (max(llMeans + llSe) - min(llMeans - llSe))
+    ll.lims <- c(min(llMeans - llSe) - 0.025 * ll.range,
+                 max(llMeans + llSe) + 0.025 * ll.range)
+
+    plot(x=log10params, y=llMeans, col='red', pch=19,
+         xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
+         ylab="-log(Pseudo-Likelihood)", ylim=ll.lims)
+    
+    arrows(x0=log10params, x1=log10params, y0=llMeans-llSe, code=3, angle=90,
+           length=0.1, y1=llMeans+llSe, col='darkgray')
+    
+    abline(v=ifelse(mgmFlag, log10(x$lambda.min[1]), log10(x$alpha.min[1])),
+           col='black', lty=3, lw=2)
+    
+    abline(v=ifelse(mgmFlag, log10(x$lambda.1se[1]), log10(x$alpha.1se[1])),
+           col='black', lty=3, lw=2)
+}
+
+#' A plot override function for the graphCV class
+#'
+#' @param x The graph object
+#' @export
+plot.graphPath <- function(x) {
+    mgmFlag <- !is.null(x$lambdas)
+
+    if (mgmFlag) {
+        log10params <- log10(x$lambdas)
+    } else {
+        log10params <- log10(x$alphas)
+    }
+    
+    score.range <- (max(x$BIC) - min(x$AIC)) / (2 * x$n)
+    score.lims <- c(min(x$AIC) / (2 * x$n) - 0.025 * score.range,
+                    max(x$BIC) / (2 * x$n) + 0.025 * score.range)
+
+    plot(x=log10params, y=x$BIC / (2 * x$n), col='red', pch=19,
+         xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
+         ylab="Sample Averaged Score", ylim=score.lims)
+
+    points(x=log10params, y=x$AIC / (2 * x$n), col='blue', pch=19)
+
+    legend(x = "bottomright", title="Scores", 
+           legend=c("AIC", "BIC"), 
+           fill = c("blue","red"))
+
+    abline(v=ifelse(mgmFlag,
+                    log10(x$lambdas[which.min(x$AIC)]),
+                    log10(x$alphas[which.min(x$AIC)])),
+           col='blue', lty=3, lw=2)
+    
+    abline(v=ifelse(mgmFlag,
+                    log10(x$lambdas[which.min(x$BIC)]),
+                    log10(x$alphas[which.min(x$BIC)])),
+           col='red', lty=3, lw=2)
 }
 
 #' A table to generate a data.frame for objects from graph class. It incorporates

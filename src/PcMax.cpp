@@ -87,6 +87,7 @@ EdgeListGraph PcMax::search(const std::vector<Node>& nodes) {
     orientCollidersMaxP.orient();
 
     MeekRules meekRules;
+    meekRules.setAggressivelyPreventCycles(true);
     meekRules.orientImplied(graph);
 
     // Set algorithm and type

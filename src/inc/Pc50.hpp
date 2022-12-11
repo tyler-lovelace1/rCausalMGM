@@ -62,7 +62,7 @@ private:
      * True if cycles are to be aggressively prevented. May be expensive for large graphs (but also useful for large
      * graphs).
      */
-    bool aggressivelyPreventCycles = false;
+    bool aggressivelyPreventCycles = true;
 
     /**
      * The logger for this class. The config needs to be set.

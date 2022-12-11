@@ -120,8 +120,8 @@ void OrientCollidersMaxP::testColliderMaxP(const Node& a, const Node& b, const N
     
     std::vector<Node> adja = graph->getAdjacentNodes(a);
     std::vector<Node> adjc = graph->getAdjacentNodes(c);
-
-    DepthChoiceGenerator cg1(adja.size(), -1);
+    
+    DepthChoiceGenerator cg1(adja.size(), depth);
     std::vector<int> *comb2;
     for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
         std::vector<Node> s = GraphUtils::asList(*comb2, adja);
@@ -130,7 +130,7 @@ void OrientCollidersMaxP::testColliderMaxP(const Node& a, const Node& b, const N
         taskQueue.push(IndependenceTask(a, b, c, s));
     }
 
-    DepthChoiceGenerator cg2(adjc.size(), -1);
+    DepthChoiceGenerator cg2(adjc.size(), depth);
     std::vector<int> *comb3;
     for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
         std::vector<Node> s = GraphUtils::asList(*comb3, adjc);

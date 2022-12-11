@@ -23,8 +23,8 @@ NULL
 #' data("data.n100.p25")
 #' g <- rCausalMGM::mgm(data.n100.p25)
 #' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
-saveGraph <- function(list, filename) {
-    invisible(.Call(`_rCausalMGM_saveGraph`, list, filename))
+saveGraph <- function(graph, filename) {
+    invisible(.Call(`_rCausalMGM_saveGraph`, graph, filename))
 }
 
 #' Load a graph from a file
@@ -45,6 +45,7 @@ loadGraph <- function(filename) {
 #' @export
 #' @examples
 #' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
+#' mat[upper.tri(mat)] <- 0
 #' nodes <- c("X1", "X2", "X3", "X4")
 #' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
 adjMat2Graph <- function(adj, nodes, directed = FALSE) {
@@ -70,21 +71,46 @@ printGraph <- function(graph) {
 #' @export
 #' @examples
 #' data(dag_n10000_p10)
-#' cpdag <- rCausalMGM::createCPDAG(dag_n10000_p10)
-createCPDAG <- function(graph) {
-    .Call(`_rCausalMGM_createCPDAG`, graph)
+#' cpdag <- rCausalMGM::cpdag(dag_n10000_p10)
+cpdag <- function(graph) {
+    .Call(`_rCausalMGM_cpdag`, graph)
 }
 
-#' Create the moral graph for the input directed acyclic graph (DAG). The moral graph is the equivalent undirected representation corresponding to the input DAG. The MGM algorithm learns the undirected moral graph for a corresponding causal DAG, so assessments of structure recovery should be compared to the moral graph rather than the causal DAG.
+#' Create the moral graph for the input directed acyclic graph (DAG). The moral graph is the equivalent undirected representation corresponding to the input DAG.
 #'
 #' @param graph The graph object used to generate the moral graph. Should be the ground-truth causal DAG
 #' @return The moral graph corresponding to the input DAG
 #' @export
 #' @examples
 #' data(dag_n10000_p10)
-#' moral <- rCausalMGM::createMoral(dag_n10000_p10)
-createMoral <- function(graph) {
-    .Call(`_rCausalMGM_createMoral`, graph)
+#' moral <- rCausalMGM::moral(dag_n10000_p10)
+moral <- function(graph) {
+    .Call(`_rCausalMGM_moral`, graph)
+}
+
+#' Create the skeleton graph for the input directed acyclic graph (DAG). The skeleton graph is the undirected graph that contains the same adjacencies as the input DAG.
+#'
+#' @param graph The graph object used to generate the skeleton graph. Should be the ground-truth causal DAG
+#' @return The skeleton graph corresponding to the input DAG
+#' @export
+#' @examples
+#' data(dag_n10000_p10)
+#' moral <- rCausalMGM::skeleton(dag_n10000_p10)
+skeleton <- function(graph) {
+    .Call(`_rCausalMGM_skeleton`, graph)
+}
+
+#' Create the partial ancestral graph (PAG) for the input directed acyclic graph (DAG). The PAG represents the Markov equivalence class of the true cauasl MAG. The FCI algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the PAG rather than the causal MAG.
+#'
+#' @param graph The graph object used to generate the PAG. Should be the ground-truth causal DAG
+#' @param latent The names of latent (unobserved) variables in the causal DAG. The default is NULL.
+#' @return The PAG corresponding to the input DAG
+#' @export
+#' @examples
+#' data(dag_n10000_p10)
+#' cpdag <- rCausalMGM::pag(dag_n10000_p10)
+pag <- function(graph, latent = NULL) {
+    .Call(`_rCausalMGM_pag`, graph, latent)
 }
 
 #' Calculate the skeleton Structural Hamming Distance (SHD) between two graphs. This only counts the missing and added edges, and does not consider edge orientation
@@ -129,6 +155,67 @@ SHD <- function(graph1, graph2) {
     .Call(`_rCausalMGM_SHD`, graph1, graph2)
 }
 
+#' Calculate the skeleton precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
+#'
+#' @param estimate An estimated graph object
+#' @param groundTruth A ground truth graph object
+#' @return The skeleton precision, recall, F1, and MCC, between the two graph objects
+#' @export
+#' @examples
+#' data("train_n10000_p10")
+#' data("dag_n10000_p10")
+#' g <- rCausalMGM::cpcStable(train_n10000_p10, rCausalMGM::cpdag(dag_n10000_p10))
+#' rCausalMGM::prMetricsSkeleton(g)
+prMetricsSkeleton <- function(estimate, groundTruth) {
+    .Call(`_rCausalMGM_prMetricsSkeleton`, estimate, groundTruth)
+}
+
+#' Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
+#'
+#' @param estimate An estimated graph object
+#' @param groundTruth A ground truth graph object of the same type as the estimated graph object
+#' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
+#' @return The orientation precision, recall, F1, and MCC, between the two graph objects
+#' @export
+#' @examples
+#' data("train_n10000_p10")
+#' data("dag_n10000_p10")
+#' g <- rCausalMGM::cpcStable(train_n10000_p10)
+#' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
+prMetricsOrientation <- function(estimate, groundTruth, groundTruthDAG = NULL) {
+    .Call(`_rCausalMGM_prMetricsOrientation`, estimate, groundTruth, groundTruthDAG)
+}
+
+#' Calculate the precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the skeleton and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the skeleton PR metrics and the orientation PR metrics.
+#' @param estimate An estimated graph object
+#' @param groundTruth A ground truth graph object of the same type as the estimated graph object
+#' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
+#' @return The orientation precision, recall, F1, and MCC, between the two graph objects
+#' @export
+#' @examples
+#' data("train_n10000_p10")
+#' data("dag_n10000_p10")
+#' g <- rCausalMGM::cpcStable(train_n10000_p10)
+#' rCausalMGM::prMetrics(g, rCausalMGM::cpdag(dag_n10000_p10))
+prMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
+    .Call(`_rCausalMGM_prMetrics`, estimate, groundTruth, groundTruthDAG)
+}
+
+#' Calculate the SHD, precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the skeleton and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the skeleton PR metrics and the orientation PR metrics.
+#' @param estimate An estimated graph object
+#' @param groundTruth A ground truth graph object of the same type as the estimated graph object
+#' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
+#' @return The orientation precision, recall, F1, and MCC, between the two graph objects
+#' @export
+#' @examples
+#' data("train_n10000_p10")
+#' data("dag_n10000_p10")
+#' g <- rCausalMGM::cpcStable(train_n10000_p10)
+#' rCausalMGM::allMetrics(g, rCausalMGM::cpdag(dag_n10000_p10))
+allMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
+    .Call(`_rCausalMGM_allMetrics`, estimate, groundTruth, groundTruthDAG)
+}
+
 #' Calculate the MGM graph on a dataset
 #'
 #' @param df The dataframe
@@ -158,6 +245,22 @@ mgm <- function(df, lambda = as.numeric( c(0.2, 0.2, 0.2)), rank = FALSE, verbos
 #' g <- rCausalMGM::mgmPath(data.n100.p25)
 mgmPath <- function(df, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmPath`, df, lambdas, nLambda, rank, verbose)
+}
+
+#' Calculate the solution path for an MGM graph on a dataset
+#'
+#' @param df The dataframe
+#' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+#' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated MGM graph
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::mgmCV(data.n100.p25)
+mgmCV <- function(df, lambdas = NULL, nLambda = 30L, nfolds = 10L, foldid = NULL, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_mgmCV`, df, lambdas, nLambda, nfolds, foldid, rank, verbose)
 }
 
 #' Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed
@@ -352,5 +455,33 @@ fci50 <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr = FA
 #' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
 bootstrap <- function(df, algorithm = as.character( c("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50")), ensemble = as.character( c("highest", "majority")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, numBoots = 20L, threads = -1L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_bootstrap`, df, algorithm, ensemble, lambda, alpha, numBoots, threads, rank, verbose)
+}
+
+#' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
+#'
+#' @param df The dataframe
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The list of features in the Markov Blanket and the BIC score
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::growShrinkMB(data.n100.p25)
+growShrinkMB <- function(df, target, penalty = 1, rank = FALSE, threads = -1L, verbose = FALSE) {
+    .Call(`_rCausalMGM_growShrinkMB`, df, target, penalty, rank, threads, verbose)
+}
+
+#' Runs the GRaSP causal discovery algorithm on the dataset 
+#'
+#' @param df The dataframe
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The list of features in the Markov Blanket and the BIC score
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::markovBlanket(data.n100.p25)
+grasp <- function(df, initialGraph = NULL, depth = 2L, numStarts = 3L, penalty = 1, rank = FALSE, threads = -1L, verbose = FALSE) {
+    .Call(`_rCausalMGM_grasp`, df, initialGraph, depth, numStarts, penalty, rank, threads, verbose)
 }
 

@@ -6,6 +6,7 @@
 class MGMParams {
 
 private:
+    // std::vector<std::string> names;
     arma::mat beta;   //continuous-continuous
     arma::vec betad;  //cont squared node pot
     arma::mat theta;  //continuous-discrete
@@ -17,7 +18,11 @@ private:
 
 public:
     MGMParams() {}
-    MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::mat& theta, const arma::mat& phi, const arma::vec& alpha1, const arma::vec& alpha2);
+    MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::mat& theta,
+	      const arma::mat& phi, const arma::vec& alpha1, const arma::vec& alpha2);
+    // MGMParams(const std::vector<std::string>& names, const arma::mat& beta,
+    // 	      const arma::vec& betad, const arma::mat& theta, const arma::mat& phi,
+    // 	      const arma::vec& alpha1, const arma::vec& alpha2);
     // MGMParams(MGMParams& parIn);
     MGMParams(arma::vec& vec, int p, int ltot);  //copy params from flattened vector
 
@@ -38,6 +43,8 @@ public:
     void setPhi(arma::mat& phi) { this->phi = phi; }
     void setAlpha1(arma::vec& alpha1) { this->alpha1 = alpha1; }
     void setAlpha2(arma::vec& alpha2) { this->alpha2 = alpha2; }
+
+    Rcpp::List toList(std::vector<std::string>& names);
 
     friend std::ostream& operator<<(std::ostream& os, MGMParams& params);
 };

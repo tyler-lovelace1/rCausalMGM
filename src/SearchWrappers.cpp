@@ -12,6 +12,8 @@
 #include "Bootstrap.hpp"
 // #include "Tests.hpp"
 #include "IndTestMulti.hpp"
+#include "GrowShrink.hpp"
+#include "Grasp.hpp"
 
 
 //' Calculate the MGM graph on a dataset
@@ -130,7 +132,7 @@ Rcpp::List mgmPath(
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -161,14 +163,144 @@ Rcpp::List mgmPath(
     for (int i = 0; i < l.size(); i++) {
         graphList.push_back(mgmGraphs[i].toList());
     }
-    
-    Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
-					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
-					   Rcpp::_["loglik"] = loglik,
-					   Rcpp::_["AIC"] = 2 * nParams - 2*loglik,
-					   Rcpp::_["BIC"] = std::log(n)*nParams - 2*loglik);
 
+    arma::vec aic = 2*nParams - 2*loglik;
+    arma::vec bic = std::log(n)*nParams - 2*loglik;
+
+    arma::uword aicIdx = arma::index_min(aic);
+    arma::uword bicIdx = arma::index_min(bic);
     
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=mgmGraphs[bicIdx].toList(),
+					   Rcpp::_["graph.aic"]=mgmGraphs[aicIdx].toList(),
+					   Rcpp::_["graphs"]=graphList,
+					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+					   Rcpp::_["alphas"]=R_NilValue,
+					   Rcpp::_["AIC"] = aic,
+					   Rcpp::_["BIC"] = bic,
+					   Rcpp::_["loglik"] = loglik,
+					   Rcpp::_["nParams"] = nParams,
+					   Rcpp::_["n"] = n);
+
+    result.attr("class") = "graphPath";
+
+    return result;
+}
+
+
+
+//' Calculate the solution path for an MGM graph on a dataset
+//'
+//' @param df The dataframe
+//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::mgmCV(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List mgmCV(
+    const Rcpp::DataFrame &df,
+    Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
+    const int nLambda = 30,
+    const int nfolds = 10,
+    Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+
+    arma::vec _lambda;
+    std::vector<double> l; // = {0.2, 0.2, 0.2};
+
+    int n = ds.getNumRows();
+    int p = ds.getNumColumns();
+
+    MGM mgm(ds);
+    mgm.setVerbose(v);
+
+    double logLambdaMax = std::log10(mgm.calcLambdaMax());
+
+    logLambdaMax = std::min(logLambdaMax,
+    			    std::log10(10 * std::sqrt(std::log10(p) / ((double) n))));
+
+    if (lambdas.isNotNull()) {
+        _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
+	l = std::vector<double>(_lambda.begin(), _lambda.end());
+    } else {
+	if (n > p) {
+	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	} else {
+	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	}
+    }
+
+    arma::uvec _foldid;
+    
+    if (foldid.isNull()) {
+	// Rcpp::NumericVector folds = Rcpp::as<Rcpp::NumericVector>(arma::linspace(1, nfolds));
+	// folds = Rcpp::rep_len(folds, n);
+	arma::vec folds = arma::linspace(1, nfolds, nfolds);
+	folds = arma::repmat(folds, 1, std::ceil(n/((double)nfolds)));
+	_foldid = arma::conv_to<arma::uvec>::from(folds(Rcpp::as<arma::uvec>(Rcpp::sample(n,n))-1));
+    } else {
+	_foldid = Rcpp::as<arma::uvec>(foldid);
+    }
+
+    if (_foldid.n_elem != n) {
+	throw std::invalid_argument("foldid has a length that does not equal number of samples in the dataset.");
+    }
+
+    // Rcpp::Rcout << "Fold ids: " << _foldid.t() << std::endl;
+    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
+    arma::mat loglik(l.size(), nfolds, arma::fill::zeros);
+    // arma::vec nParams(l.size(), arma::fill::zeros);
+    std::vector<EdgeListGraph> cvGraphs = mgm.searchPathCV(l, nfolds, _foldid, loglik);
+
+    RcppThread::checkUserInterrupt();
+
+    auto elapsedTime = mgm.getElapsedTime();
+
+    if (v) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "MGM Cross-Validation Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
+
+    // Rcpp::List graphList;
+    
+    // for (int i = 0; i < l.size(); i++) {
+    //     graphList.push_back(mgmGraphs[i].toList());
+    // }
+
+    // Rcpp::List result;
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[1].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[0].toList(),
+    					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+					   Rcpp::_["lambda.min"]=cvGraphs[1].getHyperParam("lambda"),
+					   Rcpp::_["lambda.1se"]=cvGraphs[0].getHyperParam("lambda"),
+					   Rcpp::_["alphas"]=R_NilValue,
+					   Rcpp::_["alpha.min"]=R_NilValue,
+					   Rcpp::_["alpha.1se"]=R_NilValue,
+    					   Rcpp::_["loglik"] = loglik);
+
+    result.attr("class") = "graphCV";
 
     return result;
 }
@@ -959,4 +1091,115 @@ Rcpp::List bootstrap(
 
     return result;
 
+}
+
+
+//' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
+//'
+//' @param df The dataframe
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The list of features in the Markov Blanket and the BIC score
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::growShrinkMB(data.n100.p25)
+// [[Rcpp::export]]
+ Rcpp::StringVector growShrinkMB(
+    const Rcpp::DataFrame& df,
+    const std::string& target,
+    const double penalty = 1,
+    const bool rank = false,
+    const int threads = -1,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+    
+    GrowShrink gs(ds, threads);
+    gs.setVerbose(verbose);
+    gs.setPenalty(penalty);
+    // mgm.calcLambdaMax();
+    Node targetNode = ds.getVariable(target);
+
+    std::vector<Node> regressors(ds.getVariables());
+    auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
+
+    regressors.erase(it, regressors.end());
+    
+    double bic = 0;
+    
+    std::list<Node> mb = gs.search(targetNode, regressors, &bic);
+    
+    RcppThread::checkUserInterrupt();
+
+    Rcpp::StringVector _mb;
+
+    for (Node n : mb) {
+	_mb.push_back(n.getName());
+    }
+
+    // Rcpp::List result = Rcpp::List::create(Rcpp::_["markov.blanket"]=_mb,
+    // 					   Rcpp::_["BIC"]=bic);
+
+    _mb.attr("BIC") = Rcpp::wrap(bic);
+    
+    return _mb;
+}
+
+
+//' Runs the GRaSP causal discovery algorithm on the dataset 
+//'
+//' @param df The dataframe
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The list of features in the Markov Blanket and the BIC score
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::markovBlanket(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List grasp(
+    const Rcpp::DataFrame& df,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    const int depth = 2,
+    const int numStarts = 3,
+    const double penalty = 1,
+    const bool rank = false,
+    const int threads = -1,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    Grasp grasp(ds, threads);
+    grasp.setVerbose(verbose);
+    grasp.setDepth(depth);
+    grasp.setNumStarts(numStarts);
+    grasp.setPenalty(penalty);
+
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        grasp.setInitialGraph(&ig);
+    }
+
+    RcppThread::checkUserInterrupt();
+
+    Rcpp::List result = grasp.search().toList();
+
+    return result;
 }

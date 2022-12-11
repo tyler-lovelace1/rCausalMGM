@@ -15,12 +15,55 @@ bool CpcStable::isNonCollider(Triple& t) {
     return (count.first > 0) && (count.second == 0);
 }
 
+void CpcStable::orientCollider(const Node& a, const Node& b, const Node& c) {
+    if (wouldCreateBadCollider(a, b)) return;
+    if (wouldCreateBadCollider(c, b)) return;
+    if (graph.getEdges(a, b).size() > 1) return;
+    if (graph.getEdges(b, c).size() > 1) return;
+    graph.removeEdge(a, b);
+    graph.removeEdge(c, b);
+    graph.addDirectedEdge(a, b);
+    graph.addDirectedEdge(c, b);
+    // Rcpp::Rcout << "ORIENTED SUCCESSFULLY" << std::endl;
+}
+
+bool CpcStable::wouldCreateBadCollider(const Node& x, const Node& y) {
+    std::unordered_set<Node> empty = {};
+    std::unordered_set<Node> ySet = {y};
+
+    for (const Node& z : graph.getAdjacentNodes(y)) {
+        if (x == z) continue;
+
+        // if (!graph.isAdjacentTo(x, z) &&
+	//     graph.getEndpoint(z, y) == ENDPOINT_ARROW &&
+	//     !sepset(x, z, empty, ySet)) {
+	//     return true;
+	// }
+
+	Triple t(x, y, z);
+	
+	if (!graph.isAdjacentTo(x, z) &&
+	    graph.getEndpoint(z, y) == ENDPOINT_ARROW &&
+	    isNonCollider(t)) {
+	    return true;
+	}
+    }
+
+    return false;
+}
+
 void CpcStable::orientUnshieldedTriples() {
+
+    sepsetCount.clear();
+    score.clear();
+    colliders.clear();
 
     BlockingQueue<ColliderTask> taskQueue(100);
 
     auto producer = [&]() {
         std::vector<Node> nodes = graph.getNodes();
+
+	int maxDepth;
 
         for (const Node& y : nodes) {
             std::vector<Node> adjacentNodes = graph.getAdjacentNodes(y);
@@ -47,7 +90,11 @@ void CpcStable::orientUnshieldedTriples() {
 
 		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
 
-                for (int d = 1; d <= std::max(adjx.size(), adjz.size()); d++) {
+		maxDepth = std::max(adjx.size(), adjz.size());
+
+		if (depth != -1) maxDepth = std::min(depth, maxDepth);
+
+                for (int d = 1; d <= maxDepth; d++) {
                     if (adjx.size() >= 2 && d <= adjx.size()) {
                         ChoiceGenerator gen(adjx.size(), d);
 
@@ -132,22 +179,49 @@ void CpcStable::orientUnshieldedTriples() {
     for (int i = 0; i < threads.size(); i++) {
         threads[i].join();
     }
-;
-    for (auto element : sepsetCount) {
-        Triple t = element.first;
 
+    std::vector<Triple> colliderList;
+    
+    for (auto element : sepsetCount) {
+	Triple t = element.first;
+	std::pair<int, int> count = element.second;
+	colliders[t] = false;
+
+	score[t] = count.second;
         
         if (isCollider(t)) {
             // colliderAllowed (knowledge)
             if (true) {
-                graph.setEndpoint(t.x, t.y, ENDPOINT_ARROW);
-                graph.setEndpoint(t.z, t.y, ENDPOINT_ARROW);
+                // graph.setEndpoint(t.x, t.y, ENDPOINT_ARROW);
+                // graph.setEndpoint(t.z, t.y, ENDPOINT_ARROW);
+		colliders[t] = true;
+		colliderList.push_back(t);
             }
         } else if (!isNonCollider(t)) {
             graph.addAmbiguousTriple(t.x, t.y, t.z);
         }
 
         allTriples.insert(t);
+    }
+
+    // Most supported (# of passed independence tests) colliders first.
+    std::sort(colliderList.begin(), colliderList.end(),
+	      [&](const Triple& t1, const Triple& t2) {
+		  if (score[t1] == score[t2])
+		      return t1 < t2;
+		  return score[t1] > score[t2];
+	      });
+
+    for (Triple triple : colliderList) {
+        Node a = triple.getX();
+        Node b = triple.getY();
+        Node c = triple.getZ();
+
+        if (!(graph.getEndpoint(b, a) == ENDPOINT_ARROW
+	      || graph.getEndpoint(b, c) == ENDPOINT_ARROW)) {
+	    // Rcpp::Rcout << "orienting collider " << triple << "  :  " << score[triple] << std::endl;
+            orientCollider(a, b, c);
+        }
     }
 }
 
@@ -237,6 +311,8 @@ EdgeListGraph CpcStable::search(FasStableProducerConsumer& fas, const std::vecto
     if (verbose) Rcpp::Rcout << "  Orienting edges..." << std::endl;
 
     orientUnshieldedTriples();
+
+    // Rcpp::Rcout << graph << std::endl;
 
     MeekRules meekRules;
     meekRules.orientImplied(graph);

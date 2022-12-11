@@ -29,6 +29,7 @@ class Node {
     DataType type = NONE;
     // std::unique_ptr<Variable> var{};
     Variable* var = nullptr;
+    bool observed = true;
 
 public:
     Node() {
@@ -64,6 +65,7 @@ public:
     Node(const Node& other) {
 	name = other.name;
 	type = other.type;
+	observed = other.observed;
 	if (type==CONTINUOUS) {
 	    var = (Variable*) new ContinuousVariable(other.var);
 	} else if (type==DISCRETE) {
@@ -82,6 +84,7 @@ public:
 	    delete var;
 	    name = other.name;
 	    type = other.type;
+	    observed = other.observed;
 	    if (type==CONTINUOUS) {
 		var = (Variable*) new ContinuousVariable(other.var);
 	    } else if (type==DISCRETE) {
@@ -97,28 +100,33 @@ public:
 	return *this;
     }
     
-    Node(Node&& other) : name(std::move(other.name)),
-			 type(std::exchange(other.type, NONE)),
-			 var(std::exchange(other.var, nullptr)) {
+    Node(Node&& other) : Node() {
 	// if (other.isNull()) RcppThread::Rcout << "moving null node\n";
 	// else                RcppThread::Rcout << "moving " << *this << "\n";
 	// RcppThread::Rcout << "move\n";
+	std::swap(name, other.name);
+	std::swap(type, other.type);
+	std::swap(observed, other.observed);
+	std::swap(var, other.var);
     }
 
     Node& operator=(Node&& other) {
 	if (this != &other) {
 	    // if (other.isNull()) RcppThread::Rcout << "moving null node\n";
 	    // else                RcppThread::Rcout << "moving " << other << "\n";
-	    delete var;
-	    name = std::move(other.name);
-	    type = std::exchange(other.type, NONE);
-	    var = std::exchange(other.var, nullptr);
+	    // delete var;
+	    std::swap(name, other.name);
+	    std::swap(type, other.type);
+	    std::swap(observed, other.observed);
+	    std::swap(var, other.var);
 	}
 	// RcppThread::Rcout << "move\n";
 	return *this;
     }
     
     void setName(const std::string& name) { this->name = name; }
+
+    void setObserved(bool observed) { this->observed = observed; }
   
     std::string getName() const { return name; }
   
@@ -129,6 +137,8 @@ public:
     bool isContinuous() const { return type==CONTINUOUS; }
 
     bool isDiscrete() const { return type==DISCRETE; }
+
+    bool isObserved() const { return observed; }
   
     bool isMissingValue(const std::string& val) const {
         switch (type) {

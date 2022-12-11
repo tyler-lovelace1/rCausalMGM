@@ -3,7 +3,7 @@
 
 #include <mutex>
 #include <condition_variable>
-#include <list>
+#include <memory>
 #include <fstream>
 
 /**
@@ -25,28 +25,59 @@ private:
     unsigned long tail;
     unsigned long head;
 
-    T *queue;
+    std::unique_ptr<T[]> queue;
 
 public:
-    BlockingQueue(int _capacity)
-    {
+    BlockingQueue(int _capacity) {
         capacity = _capacity;
         head = 0;
         tail = 0;
-        queue = new T[capacity];
+        queue = std::make_unique<T[]>(capacity);
     }
 
-    ~BlockingQueue()
-    {
-        delete[] queue;
+    BlockingQueue(const BlockingQueue& other) : BlockingQueue(other.capacity) {
+	head = other.head;
+	tail = other.tail;
+	std::copy_n(other.queue.get(), other.capacity, queue.get());
     }
+
+    BlockingQueue& operator=(const BlockingQueue& other) {
+	capacity = other.capacity;
+	head = other.head;
+	tail = other.tail;
+	queue = std::make_unique<T[]>(capacity);
+        std::copy_n(other.queue.get(), other.capacity, queue.get());
+	return *this;
+    }
+
+    BlockingQueue(BlockingQueue&& other) : BlockingQueue(0) {
+	std::swap(capacity, other.capacity);
+	std::swap(head, other.head);
+	std::swap(tail, other.tail);
+	std::swap(queue, other.queue);
+	// other.queue = NULL;
+    }
+
+    BlockingQueue& operator=(BlockingQueue&& other) {
+        std::swap(capacity, other.capacity);
+	std::swap(head, other.head);
+	std::swap(tail, other.tail);
+	std::swap(queue, other.queue);
+	// other.queue = NULL;
+	return *this;
+    }
+
+    ~BlockingQueue() = default;
+	// {
+    // 	if (queue != NULL) delete[] queue;
+    // }
 
     void push(T const &value)
     {
         std::unique_lock<std::mutex> lock(mtx);
         c_tail.wait(lock, [=] { return (tail - head) != capacity; });
 
-        queue[tail % capacity] = value;
+        queue.get()[tail % capacity] = value;
         tail++;
         c_head.notify_one();
     }
@@ -56,7 +87,7 @@ public:
         std::unique_lock<std::mutex> lock(mtx);
         c_head.wait(lock, [=] { return head != tail; });
 	
-        T ret(std::move(queue[head % capacity]));
+        T ret(std::move(queue.get()[head % capacity]));
         head++;
         c_tail.notify_one();
 	

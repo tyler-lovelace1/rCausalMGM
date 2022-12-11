@@ -1,6 +1,8 @@
 #include "MGMParams.hpp"
 
-MGMParams::MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::mat& theta, const arma::mat& phi, const arma::vec& alpha1, const arma::vec& alpha2) {
+MGMParams::MGMParams(const arma::mat& beta, const arma::vec& betad,
+		     const arma::mat& theta, const arma::mat& phi,
+		     const arma::vec& alpha1, const arma::vec& alpha2) {
     this->beta = beta;
     this->betad = betad;
     this->theta = theta;
@@ -8,6 +10,19 @@ MGMParams::MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::
     this->alpha1 = alpha1;
     this->alpha2 = alpha2;
 }
+
+// MGMParams::MGMParams(const std::vector<std::string>& names, const arma::mat& beta,
+// 		     const arma::vec& betad, const arma::mat& theta,
+// 		     const arma::mat& phi, const arma::vec& alpha1,
+// 		     const arma::vec& alpha2) {
+//     this->names = names;
+//     this->beta = beta;
+//     this->betad = betad;
+//     this->theta = theta;
+//     this->phi = phi;
+//     this->alpha1 = alpha1;
+//     this->alpha2 = alpha2;
+// }
 
 // // Copy constructor
 // MGMParams::MGMParams(MGMParams& parIn) {
@@ -64,6 +79,48 @@ arma::vec MGMParams::toMatrix1D() {
     return outVec;
 }
 
+Rcpp::List MGMParams::toList(std::vector<std::string>& names) {
+    int p = beta.n_cols;
+    int ltot = phi.n_cols;
+    std::vector<std::string> contNames(names.begin(), names.begin()+p);
+    std::vector<std::string> discNames(names.begin()+p, names.end());
+
+    Rcpp::CharacterVector _contNames = Rcpp::wrap(contNames);
+    Rcpp::CharacterVector _discNames = Rcpp::wrap(discNames);
+    
+    Rcpp::NumericMatrix _beta = Rcpp::wrap(beta);
+    rownames(_beta) = _contNames;
+    colnames(_beta) = _contNames;
+
+    Rcpp::NumericVector _betad = Rcpp::wrap(betad);
+    _betad.names() = _contNames;
+    _betad.attr("dim") = R_NilValue;
+
+    Rcpp::NumericMatrix _theta = Rcpp::wrap(theta);
+    rownames(_theta) = _discNames;
+    colnames(_theta) = _contNames;
+
+    Rcpp::NumericMatrix _phi = Rcpp::wrap(phi);
+    rownames(_phi) = _discNames;
+    colnames(_phi) = _discNames;
+
+    Rcpp::NumericVector _alpha1 = Rcpp::wrap(alpha1);
+    _alpha1.names() = _contNames;
+    _alpha1.attr("dim") = R_NilValue;
+
+    Rcpp::NumericVector _alpha2 = Rcpp::wrap(alpha2);
+    _alpha2.names() = _discNames;
+    _alpha2.attr("dim") = R_NilValue;
+    
+    return Rcpp::List::create(Rcpp::_["beta"]=_beta,
+			      Rcpp::_["betad"]=_betad,
+			      Rcpp::_["theta"]=_theta,
+			      Rcpp::_["phi"]=_phi,
+			      Rcpp::_["alpha1"]=_alpha1,
+			      Rcpp::_["alpha2"]=_alpha2
+	);
+}
+
 std::ostream& operator<<(std::ostream& os, MGMParams& params) {
     os << "alpha1:\n" << params.alpha1.t() << "\n";
     os << "alpha2:\n" << params.alpha2.t() << "\n";
@@ -73,3 +130,5 @@ std::ostream& operator<<(std::ostream& os, MGMParams& params) {
     os << "phi:\n"    << params.phi;
     return os;
 }
+
+

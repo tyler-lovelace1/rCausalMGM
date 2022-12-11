@@ -80,6 +80,8 @@ public:
 
     virtual std::vector<DataSet*> getDataSets() = 0;
 
+    virtual DataSet getData() = 0;
+
     virtual int getSampleSize() = 0;
 
     /**

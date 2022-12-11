@@ -9,13 +9,16 @@
 #include "DataSet.hpp"
 #include "GraphUtils.hpp"
 #include "ChoiceGenerator.hpp"
-#include "MeekRules.hpp"
+// #include "MGMParams.hpp"
 #include <string.h>
 #include <fstream>
 #include <stdlib.h>
 #include <iostream>
 #include <cctype>
 
+Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph);
+
+void streamGraph(const Rcpp::List& list, std::ostream& os, std::string ext = "txt");
 
 class EdgeListGraph {
 
@@ -53,14 +56,15 @@ private:
     std::string algorithm;
 
     /**
-     * undirected, true, or markov_equivalence_class
+     * undirected, completed partially directed acyclic graph, or partial ancestral graph
      */
     std::string graph_type;
 
     /**
-     * True iff nodes were removed since the last call to an accessor for ambiguous, underline, or dotted underline
-     * triples. If there are triples in the lists involving removed nodes, these need to be removed from the lists
-     * first, so as not to cause confusion.
+     * True iff nodes were removed since the last call to an accessor
+     * for ambiguous, underline, or dotted underline triples. If there
+     * are triples in the lists involving removed nodes, these need to
+     * be removed from the lists first, so as not to cause confusion.
      */
     // bool stuffRemovedSinceLastTripleAccess = false;
 
@@ -74,6 +78,9 @@ private:
 	{"alpha", arma::vec()},
 	{"penalty", arma::vec()}
     };
+
+    Rcpp::List modelParams;
+    // CausalMGMParams causalParams;
 
     // std::unordered_map<Node, std::unordered_set<Node>> ancestors;
 
@@ -161,12 +168,12 @@ public:
     /**
      * Constructs an EdgeListGraph from an R list without an accompanying dataset
      */
-    EdgeListGraph(const Rcpp::List& list);
+    EdgeListGraph(const Rcpp::List& graph);
 
     /**
      * Makes a graph from an R list
      */
-    EdgeListGraph(const Rcpp::List& list, DataSet& ds);
+    EdgeListGraph(const Rcpp::List& graph, DataSet& ds);
 
     // Shallow copy isn't possible because Edges aren't stored by reference (is it neccesary?)
 
@@ -628,6 +635,11 @@ public:
     bool removeNode(const Node& node);
 
     /**
+     * Removes a node from the graph.
+     */
+    bool updateNode(const Node& node);
+
+    /**
      * Removes any relevant node objects found in this collection.
      *
      * @param newNodes the collection of nodes to remove.
@@ -635,8 +647,14 @@ public:
      */
     bool removeNodes(std::vector<Node>& newNodes);
 
-    EdgeListGraph subgraph(std::vector<Node>& nodes);
+    EdgeListGraph subgraph(std::vector<Node> nodes);
 
+    EdgeListGraph getCPDAG();
+
+    EdgeListGraph getMoral();
+
+    EdgeListGraph getPAG(std::vector<Node>& latent);
+    
     /**
      * @return the edges connecting node1 and node2.
      */
@@ -658,7 +676,7 @@ public:
     Rcpp::List toList();
 
     // Returns true if an R list object is a valid graph
-    static bool validateGraphList(const Rcpp::List& l);
+    static bool validateGraphList(Rcpp::List& l);
 
     void setAlgorithm(std::string a) { algorithm = a; }
     std::string getAlgorithm() { return algorithm; }
@@ -671,6 +689,16 @@ public:
     
     arma::vec getHyperParam(std::string param)
 	{ return hyperparamHash[param]; }
+
+    void setParams(const Rcpp::List& params)
+	{ modelParams = params; }
+
+    Rcpp::List getParams() { return modelParams; }
+
+    // void setCausalMGMParams(const CausalMGMParams& params)
+    // 	{ causalParams = CausalMGMParams(params); }
+
+    // CausalMGMParams getCausalMGMParams() { return causalParams; }
 
     /**
      * @return true iff the given object is a graph that is equal to this graph,

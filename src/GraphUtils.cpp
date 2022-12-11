@@ -215,3 +215,353 @@ bool GraphUtils::existsSemidirectedPath(Node from, Node to, EdgeListGraph& G) {
     }
     return false;
 }
+
+
+std::vector<Node> GraphUtils::getSepset(const Node& x, const Node& y, EdgeListGraph& graph) {
+    if (!x.isObserved())
+	throw std::runtime_error(x.getName() + " is an unobserved variable");
+    if (!y.isObserved())
+	throw std::runtime_error(y.getName() + " is an unobserved variable");
+    
+    std::vector<Node> sepset = { Node() };
+    if (x == y) return sepset;
+
+    std::vector<Node> z, oldZ;
+    std::set<Node> path;
+    std::set<Triple> colliders;
+    bool first = true;
+
+    while (first || z != oldZ) {
+	first = false;
+	oldZ = z;
+
+	path = { x };
+	colliders = {};
+
+	for (const Node& b : graph.getAdjacentNodes(x)) {
+	    if (sepsetPathFound(x, b, y, path, z, colliders, graph)) {
+		return sepset;
+	    }
+	}
+
+	// Rcpp::Rcout << "z for " << x << " and " << y << ":\n  ";
+	// for (const Node& node : z) {
+	//     Rcpp::Rcout << node.getName() << " ";
+	// }
+	// Rcpp::Rcout << std::endl;
+    }
+
+    // // std::unordered_set<Triple> colliders;
+    // std::list<Node> path;
+    // std::vector<Node> z, oldZ;
+    // std::set<std::pair<std::list<Node>,std::vector<Node>>> visited;
+    // std::stack<Node> nodeStack;
+    // std::stack<std::list<Node>> pathStack;
+    // std::stack<std::vector<Node>> sepsetStack;
+    // // bool first = true;
+
+    // // while (z != oldZ || first) {
+    // // 	oldZ = z;
+    // // 	first = false;
+    // // 	visited.clear();
+
+    // for (Node b : graph.getAdjacentNodes(x)) {
+    // 	path = {x};
+    // 	nodeStack.push(b);
+    // 	pathStack.push(path);
+    // 	sepsetStack.push(z);
+    // 	visited.insert(std::pair<std::list<Node>,std::vector<Node>>(path, z));
+    // }
+    
+    // while (!nodeStack.empty()) {
+    // 	Node b = nodeStack.top();
+    // 	nodeStack.pop();
+    // 	path = pathStack.top();
+    // 	pathStack.pop();
+    // 	z = sepsetStack.top();
+    // 	sepsetStack.pop();
+    // 	Node a = path.back();
+
+    // 	// Rcpp::Rcout << "nodeStack size = " << nodeStack.size()
+    // 	// 	    << "\nNode " << b << std::endl;
+
+    // 	if (std::find(path.begin(), path.end(), b) != path.end()) continue;
+
+    // 	path.push_back(b);
+
+    // 	if (visited.count(std::pair<std::list<Node>,std::vector<Node>>(path, z)) > 0)
+    // 	    continue;
+
+    // 	visited.insert(std::pair<std::list<Node>,std::vector<Node>>(path, z));
+
+    // 	if (b == y) {
+    // 	    Rcpp::Rcout << "Node y reached" << std::endl;
+    // 	    break;
+    // 	}
+
+    // 	std::vector<Node> passNodes = getPassNodes(a, b, z, graph);
+
+    // 	// Rcpp::Rcout << "Pass Nodes from " << x << " to " << y << " with z = [ ";
+    // 	// for (const Node& node : z) {
+    // 	//     Rcpp::Rcout << node.getName() << " ";
+    // 	// }
+    // 	// Rcpp::Rcout << "] :\n  ";
+    // 	// for (const Node& node : passNodes) {
+    // 	//     Rcpp::Rcout << node.getName() << " ";
+    // 	// }
+
+    // 	if (!b.isObserved() || std::find(z.begin(), z.end(), b) != z.end()) {
+    // 	    for (const Node& c : passNodes) {
+    // 		nodeStack.push(c);
+    // 		pathStack.push(path);
+    // 		sepsetStack.push(z);
+    // 	    }
+	    
+    // 	} else {
+    // 	    for (const Node& c : passNodes) {
+    // 		nodeStack.push(c);
+    // 		pathStack.push(path);
+    // 		sepsetStack.push(z);
+    // 	    }
+
+    // 	    path.pop_back();
+    // 	    z.push_back(b);
+
+    // 	    passNodes = getPassNodes(a, b, z, graph);
+
+    // 	    // Rcpp::Rcout << "Pass Nodes from " << x << " to " << y << " with z = [ ";
+    // 	    // for (const Node& node : z) {
+    // 	    // 	Rcpp::Rcout << node.getName() << " ";
+    // 	    // }
+    // 	    // Rcpp::Rcout << "] :\n  ";
+    // 	    // for (const Node& node : passNodes) {
+    // 	    // 	Rcpp::Rcout << node.getName() << " ";
+    // 	    // }
+
+    // 	    for (const Node& c : passNodes) {
+    // 		nodeStack.push(c);
+    // 		pathStack.push(path);
+    // 		sepsetStack.push(z);
+    // 	    }
+    // 	}
+    // }
+	
+    // 	if (path.back() == y)
+    // 	    sepset = z;
+    // }
+
+    // Rcpp::Rcout << "Final z for " << x << " and " << y << ":\n  ";
+    // for (const Node& node : z) {
+    // 	Rcpp::Rcout << node.getName() << " ";
+    // }
+    // Rcpp::Rcout << std::endl;
+
+    // if (path.count(y))
+    // 	sepset = z;
+
+    return z;
+}
+
+bool GraphUtils::sepsetPathFound(const Node& a, const Node& b, const Node& y,
+				 std::set<Node>& path, std::vector<Node>& z,
+				 std::set<Triple>& colliders, EdgeListGraph& graph) {
+
+    if (b==y) return true;
+
+    if (path.count(b)) return false;
+
+    if (path.size() > 10) return false;
+
+    path.insert(b);
+
+    std::vector<Node> passNodes;
+
+    if (!b.isObserved() || std::find(z.begin(), z.end(), b) != z.end()) {
+	passNodes = getPassNodes(a, b, z, graph);
+	for (const Node& c : passNodes) {
+	    if (sepsetPathFound(b, c, y, path, z, colliders, graph)) {
+		path.erase(b);
+		return true;
+	    }
+	}
+
+	path.erase(b);
+	return false;
+    } else {
+	bool found1 = false;
+	std::set<Triple> colliders1;
+
+	passNodes = getPassNodes(a, b, z, graph);
+
+	for (const Node& c : passNodes) {
+	    if (sepsetPathFound(b, c, y, path, z, colliders1, graph)) {
+	        found1 = true;
+		break;
+	    }
+	}
+
+	if (!found1) {
+	    path.erase(b);
+	    colliders.insert(colliders1.begin(), colliders1.end());
+	    return false;
+	}
+
+	z.push_back(b);
+	bool found2 = false;
+	std::set<Triple> colliders2;
+
+	passNodes = getPassNodes(a, b, z, graph);
+
+	for (const Node& c : passNodes) {
+	    if (sepsetPathFound(b, c, y, path, z, colliders2, graph)) {
+	        found2 = true;
+		break;
+	    }
+	}
+
+	if (!found2) {
+	    path.erase(b);
+	    colliders.insert(colliders2.begin(), colliders2.end());
+	    return false;
+	}
+
+	path.erase(b);
+	z.pop_back();
+	return true;
+    }
+}
+
+std::vector<Node> GraphUtils::getPassNodes(const Node& a, const Node& b,
+					   std::vector<Node>& z,
+					   EdgeListGraph& graph) {
+    std::vector<Node> passNodes;
+
+    for (Node c : graph.getAdjacentNodes(b)) {
+	if (a == c) continue;
+
+	if (reachable(a, b, c, z, graph)) {
+	    passNodes.push_back(c);
+	}
+    }
+
+    return passNodes;
+}
+
+bool GraphUtils::reachable(const Node& a, const Node& b, const Node& c,
+			   std::vector<Node>& z,
+			   EdgeListGraph& graph) {
+    bool collider = graph.isDefCollider(a,b,c);
+
+    if (!collider && std::find(z.begin(), z.end(), b) == z.end()) {
+	return true;
+    }
+
+    bool ancestor = isAncestor(b, z, graph);
+
+    // Rcpp::Rcout << "Is " << b << " an ancestor of [ ";
+    // for (const Node& node : z) {
+    // 	Rcpp::Rcout << node.getName() << " ";
+    // }
+    // Rcpp::Rcout << "] : " << ancestor << std::endl;
+
+    return collider && ancestor;
+}
+
+
+bool GraphUtils::isAncestor(const Node& b, std::vector<Node>& z, EdgeListGraph& graph) {
+    if (std::find(z.begin(), z.end(), b) != z.end()) return true;
+
+    std::queue<Node> nodeQueue;
+    std::unordered_set<Node> visited;
+
+    for (const Node& node : z) {
+	nodeQueue.push(node);
+	visited.insert(node);
+    }
+
+    while (!nodeQueue.empty()) {
+	Node t = nodeQueue.front();
+	nodeQueue.pop();
+
+	if (t==b) return true;
+
+	for (Node c : graph.getParents(t)) {
+	    if (visited.count(c) == 0) {
+		nodeQueue.push(c);
+		visited.insert(c);
+	    }
+	}
+    }
+
+    return false;
+}
+
+
+std::vector<Node> GraphUtils::getInducingPath(const Node& x, const Node& y,
+					      EdgeListGraph& graph) {
+    if (!x.isObserved())
+	throw std::runtime_error(x.getName() + " is an unobserved variable");
+    if (!y.isObserved())
+	throw std::runtime_error(y.getName() + " is an unobserved variable");
+
+    std::vector<Node> inducingPath = {};
+    if (x == y) return inducingPath;
+    if (graph.getAdjacentNodes(x).size() == 0) return inducingPath;
+    if (graph.getAdjacentNodes(y).size() == 0) return inducingPath;
+
+    std::list<Node> path;
+    std::set<std::list<Node>> visited;
+    std::stack<Node> nodeStack;
+    std::stack<std::list<Node>> pathStack;
+    
+    for (Node b : graph.getAdjacentNodes(x)) {
+	path = {x};
+	nodeStack.push(b);
+	pathStack.push(path);
+	visited.insert(path);
+    }
+    
+    while (!nodeStack.empty()) {
+	Node b = nodeStack.top();
+	nodeStack.pop();
+	path = pathStack.top();
+	pathStack.pop();
+	Node a = path.back();
+	
+	path.push_back(b);
+
+	if (visited.count(path) > 0) continue;
+	
+	visited.insert(path);
+
+	if (b == y) break;
+
+	for (Node c : graph.getAdjacentNodes(b)) {
+	    if (c == a) continue;
+
+	    if (b.isObserved()) {
+		if (!graph.isDefCollider(a, b, c)) {
+		    continue;
+		}
+	    }
+
+	    if (graph.isDefCollider(a, b, c)) {
+		if (!(graph.isAncestorOf(b, x) || graph.isAncestorOf(b, y))) {
+		    continue;
+		}
+	    }
+
+	    if (std::find(path.begin(), path.end(), c) != path.end()) continue;
+
+	    nodeStack.push(c);
+	    pathStack.push(path);
+	}
+
+	// path.pop_back();
+    }
+
+    if (path.back() == y)
+	inducingPath = std::vector<Node>(path.begin(), path.end());
+
+    return inducingPath;
+}

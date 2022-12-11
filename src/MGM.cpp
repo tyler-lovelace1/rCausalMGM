@@ -12,6 +12,22 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
     //lambda should have 3 values corresponding to cc, cd, and dd
     if (lambda.size() != 3)
         throw std::invalid_argument("Lambda should have three values for cc, cd, and dd edges respectively");
+
+    bool mixed = true;
+
+    Node dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
+
+    if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	mixed = false;
+	qDummy = 1;
+    }
+
+    dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
+
+    if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	mixed = false;
+	pDummy = 1;
+    }
     
     this->xDat = x;
     this->yDat = y;
@@ -23,7 +39,52 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
     this->initVariables = variables;
 
     this->lambda = arma::vec(lambda);
-    fixData();
+    // fixData();
+    initParameters();
+    calcWeights();
+    makeDummy();
+
+}
+
+MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<int> l, std::vector<double> lambda) {
+    
+    if (l.size() != y.n_cols)
+        throw std::invalid_argument("length of l doesn't match number of variables in Y");
+
+    if (y.n_rows != x.n_rows)
+        throw std::invalid_argument("different number of samples for x and y");
+
+    //lambda should have 3 values corresponding to cc, cd, and dd
+    if (lambda.size() != 3)
+        throw std::invalid_argument("Lambda should have three values for cc, cd, and dd edges respectively");
+
+    bool mixed = true;
+
+    Node dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
+
+    if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	mixed = false;
+	qDummy = 1;
+    }
+
+    dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
+
+    if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	mixed = false;
+	pDummy = 1;
+    }
+    
+    this->xDat = x;
+    this->yDat = y;
+    this->l = l;
+    this->p = x.n_cols;
+    this->q = y.n_cols;
+    this->n = x.n_rows;
+    this->variables = variables;
+    this->initVariables = variables;
+
+    this->lambda = arma::vec(lambda);
+    // fixData();
     initParameters();
     calcWeights();
     makeDummy();
@@ -164,7 +225,7 @@ void MGM::initParameters() {
     }
     lsum = lcumsum[l.size()];
 
-    arma::mat beta((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros);
+    // arma::mat beta((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros);
 
     params = MGMParams(
         arma::mat((int) xDat.n_cols, (int) xDat.n_cols, arma::fill::zeros),  // beta
@@ -1191,6 +1252,24 @@ EdgeListGraph MGM::graphFromMGM() {
 
     g.setHyperParam("lambda", lambda);
 
+    std::vector<std::string> names;
+
+    for (int i = 0; i < p; i++) {
+	// Rcpp::Rcout << variables[i].getName() << std::endl;
+	names.push_back(variables[i].getName());
+    }
+
+    for (int i = 0; i < q; i++) {
+	// Rcpp::Rcout << variables[p+i].getName() << std::endl << "  ";
+	for (std::string cat : variables[p+i].getCategories()) {
+	    // Rcpp::Rcout << variables[p+i].getName() + "." + cat << " ";
+	    names.push_back(variables[p+i].getName() + "." + cat);
+	}
+	// Rcpp::Rcout << std::endl;
+    }
+
+    g.setParams(params.toList(names));
+
     return g;
 }
 
@@ -1220,14 +1299,12 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
 	learn(1e-5, 500);
 	pathGraphs.push_back(graphFromMGM());
 
-	// Rcpp::NumericVector lambdaVec { lambdas[i], lambdas[i], lambdas[i] };
-	
-	// pathGraphs[i].setHyperParam("lambda", lambdaVec);
-	
-	// RcppThread::Rcout << Rcpp::as<arma::rowvec>(pathGraphs[i].getHyperParam("lambda")) << std::endl;
 	arma::vec par(params.toMatrix1D());
 	loglik(i) = -n * smoothValue(par);
 	nParams(i) = arma::accu(par!=0);
+
+	RcppThread::checkUserInterrupt();
+		
     }
     if (verbose) RcppThread::Rcout << std::endl;;
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
@@ -1235,18 +1312,102 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
 }
 
 
-std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas) {
+std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
+					     int nfolds,
+					     arma::uvec& foldid,
+					     arma::mat& loglik) {
     auto start = std::chrono::high_resolution_clock::now();
-    std::vector<EdgeListGraph> pathGraphs;
+    std::vector<EdgeListGraph> cvGraphs;
+    // std::vector<MGM> trainMGMs;
+    // std::vector<MGM> testMGMs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
-    for (int i = 0; i < lambdas.size(); i++) {
-	// RcppThread::Rcout << "Learning MGM for lambda = " << lambdas[i] << std::endl;
-	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i] };
-	setLambda(lambda);
-	learnEdges(500);
-	pathGraphs.push_back(graphFromMGM());
-	// pathGraphs[i].setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
+    std::vector<double> lambda = { lambdas[0], lambdas[0], lambdas[0] };
+
+    for (int k = 1; k <= nfolds; k++) {
+	arma::uvec trainIdxs = arma::find(foldid != k);
+	arma::uvec testIdxs = arma::find(foldid == k);
+
+	std::vector<Node> variables(this->variables);
+	std::vector<int> l(this->l);
+
+	lambda = { lambdas[0], lambdas[0], lambdas[0] };
+	
+	MGM trainMGM(arma::mat(xDat.rows(trainIdxs)),
+		     arma::mat(yDat.rows(trainIdxs)),
+		     variables, l, lambda);
+
+	trainMGM.setVerbose(verbose);
+	
+        MGM testMGM(arma::mat(xDat.rows(testIdxs)),
+		    arma::mat(yDat.rows(testIdxs)),
+		    variables, l, lambda);
+	
+	for (int i = 0; i < lambdas.size(); i++) {
+	    if (verbose) {
+		RcppThread::Rcout << "  Fold " << k << ": Learning MGM for lambda = "
+				  << lambdas[i] << "\n";
+	    }
+	    
+	    lambda = { lambdas[i], lambdas[i], lambdas[i] };
+
+	    // Rcpp::Rcout << "Setting Lambda...\n";
+	    
+	    trainMGM.setLambda(lambda);
+	    
+	    // Rcpp::Rcout << "Training...\n";
+	    
+	    trainMGM.learn(1e-5, 500);
+	    // pathGraphs.push_back(graphFromMGM());
+
+	    arma::vec par(trainMGM.getParams().toMatrix1D());
+
+	    // Rcpp::Rcout << "Evaluating on test data...\n";
+	    loglik(i,k-1) = testMGM.smoothValue(par);
+	    // nParams(i) = arma::accu(par!=0);
+
+	    RcppThread::checkUserInterrupt();
+		
+	}
     }
+
+    if (verbose) RcppThread::Rcout << std::endl;
+
+    // Rcpp::Rcout << "Test LogLiks:\n" << loglik << std::endl;
+
+    arma::vec meanLoglik = arma::mean(loglik, 1);
+    arma::vec seLoglik = arma::stddev(loglik, 0, 1);
+
+    // Rcpp::Rcout << "Mean Test LogLiks:\n" << meanLoglik.t() << std::endl;
+    // Rcpp::Rcout << "SE Test LogLiks:\n" << seLoglik.t() << std::endl;
+
+    arma::uword minIdx = arma::index_min(meanLoglik);
+
+    arma::uword seIdx = minIdx;
+    for (arma::uword i = minIdx; i >= 0; i--) {
+	if (meanLoglik(i) == meanLoglik(minIdx)) minIdx = i;
+	else if (meanLoglik(i) > meanLoglik(minIdx) + seLoglik(minIdx)) break;
+	seIdx = i;
+    }
+
+    lambda = { lambdas[seIdx], lambdas[seIdx], lambdas[seIdx] };
+
+    if (verbose) RcppThread::Rcout << "lambda (1 SE) = " << lambdas[seIdx] << "\n";
+
+    setLambda(lambda);
+    learn(1e-5, 500);
+
+    cvGraphs.push_back(graphFromMGM());
+
+    lambda = { lambdas[minIdx], lambdas[minIdx], lambdas[minIdx] };
+
+    if (verbose) RcppThread::Rcout << "lambda (min) = " << lambdas[minIdx] << "\n";
+
+    setLambda(lambda);
+    learn(1e-5, 500);
+
+    cvGraphs.push_back(graphFromMGM());
+    
+    if (verbose) RcppThread::Rcout << std::endl;
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
-    return pathGraphs;
+    return cvGraphs;
 }

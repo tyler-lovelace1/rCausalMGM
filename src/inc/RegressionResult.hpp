@@ -140,6 +140,8 @@ class RegressionResult
 
     double getRSquared() { return this->r2; }
 
+    double getRSS() { return this->rss; }
+
     int getN() { return this->n; }
 
     int getNumRegressors() { return this->regressorNames.size(); }

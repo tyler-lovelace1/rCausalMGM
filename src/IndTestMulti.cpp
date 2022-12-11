@@ -3,6 +3,7 @@
 #include "IndTestMulti.hpp"
 #include "RcppThread.h"
 #include <boost/math/distributions/chi_squared.hpp>
+#include <boost/math/distributions/fisher_f.hpp>
 
 #include <fstream>
 
@@ -33,7 +34,7 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha)
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
-    this->preferLinear = false;
+    this->preferLinear = true;
 
     // Rcpp::Rcout << "regressions created\n";
 }
@@ -87,99 +88,85 @@ bool IndTestMulti::isIndependent(const Node& x, const Node& y, std::vector<Node>
 {
     this->timesCalled++;
 
-    // Rcpp::Rcout << "X: " << x->getName() << std::endl;
-    // Rcpp::Rcout << "Y: " << y->getName() << std::endl;
-
-    // Rcpp::Rcout << "Z: ";
-    // for (const Node& zVar : z)
-    //     Rcpp::Rcout << zVar->getName() << " ";
-    // Rcpp::Rcout << std::endl;
-    // bool debug = (x->getName() == "X5" && y->getName() == "X6");
-
     if (x.isDiscrete()) {
-	// if (debug) Rcpp::Rcout << "Path 1" << std::endl;
-	try {
-	    return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
-	}  catch (const std::exception &exc) {
-	    if (y.isDiscrete()) {
+	// X is discrete
+	if (y.isContinuous()) {
+	    // X is discrete, Y is continuous
+	    try {
+		if (preferLinear) {
+		    return isIndependentRegression(y, x, z, pReturn);
+		} else {
+		    return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
+		}
+	    } catch (const std::exception &exc) {
+		// if regression fails, try the opposite regression by reversing condition
 		try {
-		    // Rcpp::Rcout << "Trying reverse MultinomialLogisticRegression test" << std::endl;
-		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
+		    if (!preferLinear) {
+			return isIndependentRegression(y, x, z, pReturn);
+		    } else {
+			return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
+		    }
 		} catch (const std::exception &exc) {
-		    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
-		    // for (const Node& n : z)
-		    // 	warn += " " + n.getName();
-		    // warn += " } failed";
-		    // warn += ": ";
-		    // warn += exc.what();
-		
-		    // RcppThread::Rcout << warn << std::endl;
-		    
 		    return false;
 		}
+		return false;
 	    }
-	    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
-	    // for (const Node& n : z)
-	    // 	warn += " " + n.getName();
-	    // warn += " } failed";
-	    // warn += ": ";
-	    // warn += exc.what();
-		
-	    // RcppThread::Rcout << warn << std::endl;
-	    
+	} else if (y.isDiscrete()) {
+	    // X and Y are discrete
+	    try {
+		if (variablesPerNode.at(x).size() <= variablesPerNode.at(y).size())
+		    return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
+		else
+		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
+	    } catch (const std::exception &exc) {
+		// if regression fails, try the opposite regression by reversing condition
+		try {
+		    if (variablesPerNode.at(x).size() > variablesPerNode.at(y).size())
+			return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
+		    else
+			return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
+		} catch (const std::exception &exc) {
+		    return false;
+		}
+		return false;
+	    }
+	} else {
 	    return false;
 	}
     } else if (y.isDiscrete()) {
+	// X is continuous, Y is discrete
 	try {
 	    if (preferLinear) {
-		// if (debug) Rcpp::Rcout << "Path 2" << std::endl;
 		return isIndependentRegression(x, y, z, pReturn);
 	    }
 	    else {
-		// if (debug) Rcpp::Rcout << "Path 3" << std::endl;
 		return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
 	    }
 	} catch (const std::exception &exc) {
-	    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
-	    // for (const Node& n : z)
-	    // 	warn += " " + n.getName();
-	    // warn += " } failed";
-	    // warn += ": ";
-	    // warn += exc.what();
-		
-	    // RcppThread::Rcout << warn << std::endl;
-	    
+	    // if regression fails, try the opposite regression by reversing condition
+	    try {
+		if (!preferLinear) {
+		    return isIndependentRegression(x, y, z, pReturn);
+		}
+		else {
+		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
+		}
+	    } catch (const std::exception &exc) {	    
+		return false;
+	    }
 	    return false;
 	}
     } else {
-	// if (debug) Rcpp::Rcout << "Path 4" << std::endl;
+	// X and Y are continuous
 	try {
 	    return isIndependentRegression(x, y, z, pReturn);
 	}  catch (const std::exception &exc) {
+	    // if regression fails, try the opposite regression
 	    try {
-		// Rcpp::Rcout << "Trying reverse LinearRegression test" << std::endl;
 		return isIndependentRegression(y, x, z, pReturn);
-	    } catch (const std::exception &exc) {
-		// std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
-		// for (const Node& n : z)
-		//     warn += " " + n.getName();
-		// warn += " } failed";
-		// warn += ": ";
-		// warn += exc.what();
-		    
-		// RcppThread::Rcout << warn << std::endl;
-		
+	    } catch (const std::exception &exc) {		
 		return false;
 	    }
-	    // std::string warn = "Test for " + x.getName() + " _||_ " + y.getName() + " | {";
-	    // for (const Node& n : z)
-	    // 	warn += " " + n.getName();
-	    // warn += " } failed";
-	    // warn += ": ";
-	    // warn += exc.what();
-		    
-	    // RcppThread::Rcout << warn << std::endl;
-	    
 	    return false;
 	}
     }
@@ -596,46 +583,84 @@ bool IndTestMulti::isIndependentRegression(const Node& x, const Node& y, std::ve
     // logfile.open("itm_debug.log", std::ios_base::app);
 
     std::vector<Node> regressors = variablesPerNode.at(y);
+    std::vector<Node> zRegressors;
 
     // logfile << regressors[0]->getName() << std::endl;
 
-    for (const Node& varZ : z)
-    {
+    for (const Node& varZ : z) {
 	// logfile << varZ->getName() << std::endl;
         std::vector<Node> temp = variablesPerNode.at(varZ);
         regressors.insert(regressors.end(), temp.begin(), temp.end());
+	if (y.isDiscrete()) zRegressors.insert(zRegressors.end(), temp.begin(), temp.end());
     }
 
     // logfile.close();
 
     arma::uvec rows = getNonMissingRows(x, y, z);
-    // LinearRegression regression = this->regression;
-    // regression.setRows(rows); // regression was never declared
 
     double p;
 
-    // try
-    // {
-    RegressionResult result;
+    if (!y.isDiscrete() || (y.isDiscrete() && variablesPerNode.at(y).size()==1)) {
+	RegressionResult result;
 
-    try {
-	result = regression.regress(x, regressors, rows);
-    } catch (...) {
-	return false;
-    }
-
-    // logfile.open("debug.log", std::ios_base::app);
-    // logfile << result << std::endl;
-    // logfile.close();
+	try {
+	    result = regression.regress(x, regressors, rows);
+	} catch (...) {
+	    return false;
+	}
     
-    p = result.getP().at(1); // double check on .at(1)
-        // delete result;
-    // }
-    // catch (std::exception e)
-    // {
-    // 	// Rcpp::Rcout << e.what() << std::endl;
-    //     return false;
-    // }
+	p = result.getP().at(1);
+	
+    } else {
+	RegressionResult result, result0;
+
+	try {
+	    result = regression.regress(x, regressors, rows);
+	    result0 = regression.regress(x, zRegressors, rows);
+	} catch (...) {
+	    return false;
+	}
+
+	// likelihood ratio test
+	// double ll, ll0, chisq;
+	// double n = rows.n_elem;
+
+	// ll = -0.5 * n * std::log(result.getRSS() / n);
+	// ll0 = -0.5 * n * std::log(result0.getRSS() / n);
+    
+	// chisq = std::max(2*(ll - ll0), 1e-15);
+    
+	// RcppThread::Rcout << "ll = " << ll << std::endl;
+	// RcppThread::Rcout << "ll0 = " << ll0 << std::endl;
+	// RcppThread::Rcout << "chisq = " << chisq << std::endl;
+
+	// int df = variablesPerNode.at(y).size();
+	// boost::math::chi_squared dist(df);
+
+	// p = 1.0 - cdf(dist, chisq);
+
+	// F-test
+
+	double F;
+	double n = rows.n_elem;
+	double df1 = variablesPerNode.at(y).size();
+	double df2 = n - (regressors.size()+1);
+
+	F = ((result0.getRSS() - result.getRSS()) / df1) / (result.getRSS() / df2);
+
+	// RcppThread::Rcout << "F    =  " << F << std::endl;
+	// RcppThread::Rcout << "df1  =  " << df1 << std::endl;
+	// RcppThread::Rcout << "df2  =  " << df2 << std::endl;
+
+	F = std::max(F, 1e-15);
+
+	boost::math::fisher_f dist(df1, df2);
+
+	p = 1.0 - cdf(dist, F);
+
+	// RcppThread::Rcout << "p    =  " << p << std::endl;
+
+    }
 
     if (pReturn != NULL)
 	*pReturn = p;

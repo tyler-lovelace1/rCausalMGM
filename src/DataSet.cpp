@@ -27,6 +27,11 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
     this->var2idx = std::unordered_map<Node, int>();
     int numUnique;
     std::string val, curName;
+    std::ostringstream contWarning, catWarning;
+    bool contWarnFlag = false;
+    bool catWarnFlag = false;
+    contWarning << "Continuous Variable(s) { ";
+    catWarning << "Categorical Variable(s) { ";
 
     for (int i = 0; i < m; i++) {
 	
@@ -43,31 +48,23 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 	    if (Rf_isMatrix(x))  {
 		Rcpp::stop(curName + " is a numeric matrix.");
 	    } else {
-		// Rcpp::Rcout << "NumericVector\n";
 		arma::vec values = Rcpp::as<arma::vec>(x);
-		// Rcpp::Rcout << values.t();
 		arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
-		// Rcpp::Rcout << uniqVals.t();
+		// Continuous feature warning
 		if (uniqVals.n_elem < 10) {
-		    Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
+		    contWarnFlag = true;
+		    contWarning << curName << " ";
+		    // Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
 		}
 		variables.push_back(Node(new ContinuousVariable(curName)));
 		data.col(i) = values;
-		// missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::NumericVector>(x)));
 	    }
 	} else if (Rcpp::is<Rcpp::IntegerVector>(x)) {
 	    if(Rf_isFactor(x)) {
-		// Rcpp::Rcout << "Factor " << curName << "\n";
 		std::vector<std::string> tempLevels = Rcpp::as<std::vector<std::string>>(x.attr("levels"));
 		arma::vec values = Rcpp::as<arma::vec>(x);
 
 		arma::vec uniqVals = arma::sort(arma::unique(values(arma::find_finite(values))));
-
-		// Rcpp::Rcout << values.t() << std::endl;
-
-		// Rcpp::Rcout << uniqVals.t() << std::endl;
-
-
 		std::vector<std::string> levels;
 
 		for (double val : uniqVals) {
@@ -84,35 +81,31 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 		    }
 		}
 
-		// for ( std::string val : levels) {
-		//     Rcpp::Rcout << val << "\t";
-		// }
-		// Rcpp::Rcout << std::endl;
-		
-		// Rcpp::Rcout << mappedValues.t() << std::endl;
-
+		// Categorical feature warning
 		if (levels.size() >= 10) {
-		    Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
+		    catWarnFlag = true;
+		    catWarning << curName << " ";
+		    // Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
 		}	    
 	    
 		variables.push_back(Node(new DiscreteVariable(curName, levels)));
 		data.col(i) = mappedValues;
-		// missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::IntegerVector>(x)));
 	    }
 	    else {
-		// Rcpp::Rcout << "IntegerVector\n";
 		arma::vec values = Rcpp::as<arma::vec>(x);
 		arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
+
+		//Continuous feature warning
 		if (uniqVals.n_elem < 10) {
-		    Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
+		    contWarnFlag = true;
+		    contWarning << curName << " ";
+		    // Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
 		}
 		variables.push_back(Node(new ContinuousVariable(curName)));
 		data.col(i) = values;	
-		// missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::as<Rcpp::IntegerVector>(x)));
 	    }
 	}
 	else if (Rcpp::is<Rcpp::CharacterVector>(x)) {
-	    // Rcpp::Rcout << "CharacterVector\n";
 	    Rcpp::CharacterVector levels = Rcpp::sort_unique(Rcpp::as<Rcpp::CharacterVector>(x));
 	    Rcpp::CharacterVector values = Rcpp::as<Rcpp::CharacterVector>(x);
 
@@ -126,8 +119,11 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 		}
 	    }
 
+	    // Categorical feature warning
 	    if (levels.size() >= 10) {
-	        Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
+		catWarnFlag = true;
+		catWarning << curName << " ";
+	        // Rcpp::warning("Categorical variable " + curName + " has 10 or more categories. Fitting models with large numbers of categories is not recommended. If " + curName + " is intended to be a continuous variable, convert it to numeric.");
 	    }
 	    
 	    variables.push_back(Node(new DiscreteVariable(curName, Rcpp::as<std::vector<std::string>>(levels))));
@@ -140,6 +136,14 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
         name2idx.insert(std::pair<std::string, int>(curName, i));
         var2idx.insert(std::pair<Node, int>(variables[i], i));
     }
+
+    contWarning << "} have fewer than 10 unique values. If any variable(s) are intended to be categorical, convert them to factors.";
+
+    catWarning << "} have 10 or more categories. Fitting models with large numbers of categories is not recommended. If any variables(s) are intended to be continuous, convert them to numeric.";
+
+    if (contWarnFlag) Rcpp::warning(contWarning.str());
+
+    if (catWarnFlag) Rcpp::warning(catWarning.str());
 
     // Rcpp::Rcout << data << std::endl;
 

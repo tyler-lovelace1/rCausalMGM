@@ -3,7 +3,7 @@
 
 // [[Rcpp::depends(BH, RcppThread)]]
 
-#include <thread>
+// #include <thread>
 
 class EdgeListGraph; // Forward declaration
 
@@ -12,12 +12,15 @@ class EdgeListGraph; // Forward declaration
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
 #include <queue>
+#include <stack>
+#include <list>
+#include <set>
 
 class GraphUtils {
 
 private:
 
-    static std::vector<Node> getSepsetVisit(Node x, Node y, EdgeListGraph& graph, int bound);
+  // static std::vector<Node> getSepsetVisit(Node x, Node y, EdgeListGraph& graph, int bound);
 
     static bool sepsetPathFound(Node a, Node b, Node y,
 				std::unordered_set<Node>& path,
@@ -46,7 +49,21 @@ public:
     // Breadth first.
     static bool isDConnectedTo(Node x, Node y, std::vector<Node>& z, EdgeListGraph& graph);
 
-    static std::vector<Node> getSepset(Node x, Node y, EdgeListGraph& graph);
+    static std::vector<Node> getSepset(const Node& x, const Node& y, EdgeListGraph& graph);
+
+    static bool sepsetPathFound(const Node& a, const Node& b, const Node& y, std::set<Node>& path, std::vector<Node>& z, std::set<Triple>& colliders, EdgeListGraph& graph);
+
+    static std::vector<Node> getPassNodes(const Node& a, const Node& b,
+					  std::vector<Node>& z,
+					  EdgeListGraph& graph);
+
+    static bool reachable(const Node& a, const Node& b, const Node& c,
+			  std::vector<Node>& z, EdgeListGraph& graph);
+
+    static bool isAncestor(const Node& b, std::vector<Node>& z, EdgeListGraph& graph);
+
+    static std::vector<Node> getInducingPath(const Node& x, const Node& y,
+					     EdgeListGraph& graph);
 
     static std::vector<Node> getCausalOrdering(EdgeListGraph& graph);
 

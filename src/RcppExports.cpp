@@ -13,13 +13,13 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // saveGraph
-void saveGraph(const Rcpp::List& list, const std::string& filename);
-RcppExport SEXP _rCausalMGM_saveGraph(SEXP listSEXP, SEXP filenameSEXP) {
+void saveGraph(const Rcpp::List& graph, const std::string& filename);
+RcppExport SEXP _rCausalMGM_saveGraph(SEXP graphSEXP, SEXP filenameSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::List& >::type list(listSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type filename(filenameSEXP);
-    saveGraph(list, filename);
+    saveGraph(graph, filename);
     return R_NilValue;
 END_RCPP
 }
@@ -57,25 +57,48 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// createCPDAG
-Rcpp::List createCPDAG(const Rcpp::List& graph);
-RcppExport SEXP _rCausalMGM_createCPDAG(SEXP graphSEXP) {
+// cpdag
+Rcpp::List cpdag(const Rcpp::List& graph);
+RcppExport SEXP _rCausalMGM_cpdag(SEXP graphSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
-    rcpp_result_gen = Rcpp::wrap(createCPDAG(graph));
+    rcpp_result_gen = Rcpp::wrap(cpdag(graph));
     return rcpp_result_gen;
 END_RCPP
 }
-// createMoral
-Rcpp::List createMoral(const Rcpp::List& graph);
-RcppExport SEXP _rCausalMGM_createMoral(SEXP graphSEXP) {
+// moral
+Rcpp::List moral(const Rcpp::List& graph);
+RcppExport SEXP _rCausalMGM_moral(SEXP graphSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
-    rcpp_result_gen = Rcpp::wrap(createMoral(graph));
+    rcpp_result_gen = Rcpp::wrap(moral(graph));
+    return rcpp_result_gen;
+END_RCPP
+}
+// skeleton
+Rcpp::List skeleton(const Rcpp::List& graph);
+RcppExport SEXP _rCausalMGM_skeleton(SEXP graphSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
+    rcpp_result_gen = Rcpp::wrap(skeleton(graph));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pag
+Rcpp::List pag(const Rcpp::List& graph, Rcpp::Nullable<Rcpp::StringVector> latent);
+RcppExport SEXP _rCausalMGM_pag(SEXP graphSEXP, SEXP latentSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type graph(graphSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::StringVector> >::type latent(latentSEXP);
+    rcpp_result_gen = Rcpp::wrap(pag(graph, latent));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -104,7 +127,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // SHD
-double SHD(const Rcpp::List& graph1, const Rcpp::List& graph2);
+Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2);
 RcppExport SEXP _rCausalMGM_SHD(SEXP graph1SEXP, SEXP graph2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -112,6 +135,57 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::List& >::type graph1(graph1SEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type graph2(graph2SEXP);
     rcpp_result_gen = Rcpp::wrap(SHD(graph1, graph2));
+    return rcpp_result_gen;
+END_RCPP
+}
+// prMetricsSkeleton
+Rcpp::NumericVector prMetricsSkeleton(const Rcpp::List& estimate, const Rcpp::List& groundTruth);
+RcppExport SEXP _rCausalMGM_prMetricsSkeleton(SEXP estimateSEXP, SEXP groundTruthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type estimate(estimateSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type groundTruth(groundTruthSEXP);
+    rcpp_result_gen = Rcpp::wrap(prMetricsSkeleton(estimate, groundTruth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// prMetricsOrientation
+Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate, const Rcpp::List& groundTruth, const Rcpp::Nullable<Rcpp::List>& groundTruthDAG);
+RcppExport SEXP _rCausalMGM_prMetricsOrientation(SEXP estimateSEXP, SEXP groundTruthSEXP, SEXP groundTruthDAGSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type estimate(estimateSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type groundTruth(groundTruthSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type groundTruthDAG(groundTruthDAGSEXP);
+    rcpp_result_gen = Rcpp::wrap(prMetricsOrientation(estimate, groundTruth, groundTruthDAG));
+    return rcpp_result_gen;
+END_RCPP
+}
+// prMetrics
+Rcpp::NumericVector prMetrics(const Rcpp::List& estimate, const Rcpp::List& groundTruth, const Rcpp::Nullable<Rcpp::List>& groundTruthDAG);
+RcppExport SEXP _rCausalMGM_prMetrics(SEXP estimateSEXP, SEXP groundTruthSEXP, SEXP groundTruthDAGSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type estimate(estimateSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type groundTruth(groundTruthSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type groundTruthDAG(groundTruthDAGSEXP);
+    rcpp_result_gen = Rcpp::wrap(prMetrics(estimate, groundTruth, groundTruthDAG));
+    return rcpp_result_gen;
+END_RCPP
+}
+// allMetrics
+Rcpp::NumericVector allMetrics(const Rcpp::List& estimate, const Rcpp::List& groundTruth, const Rcpp::Nullable<Rcpp::List>& groundTruthDAG);
+RcppExport SEXP _rCausalMGM_allMetrics(SEXP estimateSEXP, SEXP groundTruthSEXP, SEXP groundTruthDAGSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type estimate(estimateSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type groundTruth(groundTruthSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type groundTruthDAG(groundTruthDAGSEXP);
+    rcpp_result_gen = Rcpp::wrap(allMetrics(estimate, groundTruth, groundTruthDAG));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -141,6 +215,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(mgmPath(df, lambdas, nLambda, rank, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mgmCV
+Rcpp::List mgmCV(const Rcpp::DataFrame& df, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, const int nfolds, Rcpp::Nullable<Rcpp::NumericVector> foldid, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_mgmCV(SEXP dfSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP nfoldsSEXP, SEXP foldidSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambdas(lambdasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nLambda(nLambdaSEXP);
+    Rcpp::traits::input_parameter< const int >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type foldid(foldidSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(mgmCV(df, lambdas, nLambda, nfolds, foldid, rank, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -320,19 +411,60 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// growShrinkMB
+Rcpp::StringVector growShrinkMB(const Rcpp::DataFrame& df, const std::string& target, const double penalty, const bool rank, const int threads, const bool verbose);
+RcppExport SEXP _rCausalMGM_growShrinkMB(SEXP dfSEXP, SEXP targetSEXP, SEXP penaltySEXP, SEXP rankSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type target(targetSEXP);
+    Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(growShrinkMB(df, target, penalty, rank, threads, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// grasp
+Rcpp::List grasp(const Rcpp::DataFrame& df, Rcpp::Nullable<Rcpp::List> initialGraph, const int depth, const int numStarts, const double penalty, const bool rank, const int threads, const bool verbose);
+RcppExport SEXP _rCausalMGM_grasp(SEXP dfSEXP, SEXP initialGraphSEXP, SEXP depthSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP rankSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
+    Rcpp::traits::input_parameter< const int >::type depth(depthSEXP);
+    Rcpp::traits::input_parameter< const int >::type numStarts(numStartsSEXP);
+    Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(grasp(df, initialGraph, depth, numStarts, penalty, rank, threads, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
     {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
     {"_rCausalMGM_printGraph", (DL_FUNC) &_rCausalMGM_printGraph, 1},
-    {"_rCausalMGM_createCPDAG", (DL_FUNC) &_rCausalMGM_createCPDAG, 1},
-    {"_rCausalMGM_createMoral", (DL_FUNC) &_rCausalMGM_createMoral, 1},
+    {"_rCausalMGM_cpdag", (DL_FUNC) &_rCausalMGM_cpdag, 1},
+    {"_rCausalMGM_moral", (DL_FUNC) &_rCausalMGM_moral, 1},
+    {"_rCausalMGM_skeleton", (DL_FUNC) &_rCausalMGM_skeleton, 1},
+    {"_rCausalMGM_pag", (DL_FUNC) &_rCausalMGM_pag, 2},
     {"_rCausalMGM_skeletonSHD", (DL_FUNC) &_rCausalMGM_skeletonSHD, 2},
     {"_rCausalMGM_orientationSHD", (DL_FUNC) &_rCausalMGM_orientationSHD, 2},
     {"_rCausalMGM_SHD", (DL_FUNC) &_rCausalMGM_SHD, 2},
+    {"_rCausalMGM_prMetricsSkeleton", (DL_FUNC) &_rCausalMGM_prMetricsSkeleton, 2},
+    {"_rCausalMGM_prMetricsOrientation", (DL_FUNC) &_rCausalMGM_prMetricsOrientation, 3},
+    {"_rCausalMGM_prMetrics", (DL_FUNC) &_rCausalMGM_prMetrics, 3},
+    {"_rCausalMGM_allMetrics", (DL_FUNC) &_rCausalMGM_allMetrics, 3},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
+    {"_rCausalMGM_mgmCV", (DL_FUNC) &_rCausalMGM_mgmCV, 7},
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 11},
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 7},
     {"_rCausalMGM_cpcStable", (DL_FUNC) &_rCausalMGM_cpcStable, 7},
@@ -343,6 +475,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_fciMax", (DL_FUNC) &_rCausalMGM_fciMax, 7},
     {"_rCausalMGM_fci50", (DL_FUNC) &_rCausalMGM_fci50, 7},
     {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 9},
+    {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 6},
+    {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 8},
     {NULL, NULL, 0}
 };
 

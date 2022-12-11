@@ -18,9 +18,9 @@
 class MeekRules {
 
 private:
-    //True if cycles are to be aggressively prevented. May be expensive for large graphs (but also useful for large
-    //graphs).
-    bool aggressivelyPreventCycles = false;
+    // True if cycles are to be aggressively prevented. May be
+    // expensive for large graphs (but also useful for large graphs).
+    bool aggressivelyPreventCycles = true;
 
     // If knowledge is available.
     bool useRule4 = false;
@@ -69,6 +69,8 @@ private:
     static bool isUnshieldedNoncollider(Node a, Node b, Node c, EdgeListGraph& graph);
 
     static bool isArrowpointAllowed(Node from, Node to);
+
+    bool doesNotCreateCycle(Node from, Node to, EdgeListGraph& graph);
 
     void undirectUnforcedEdges(Node y, EdgeListGraph& graph);
 

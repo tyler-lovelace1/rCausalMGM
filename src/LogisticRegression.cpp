@@ -377,16 +377,16 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	}
     }
 
-    if (ll > llN) ll = llN;
+    // if (ll > llN) ll = llN;
     
     chiSq = llN - ll;
     
-    if (chiSq < 0 || std::isnan(chiSq)) {
-    	// RcppThread::Rcout << "Logistic Regression not converging" << std::endl
-    	// 		  << "Loglikelihood: " << ll << std::endl
-    	// 		  << "ChiSq: " << chiSq << std::endl;
-    	// throw std::runtime_error("Logistic Regression did not converge");
-    }
+    // if (chiSq < 0 || std::isnan(chiSq)) {
+    // 	// RcppThread::Rcout << "Logistic Regression not converging" << std::endl
+    // 	// 		  << "Loglikelihood: " << ll << std::endl
+    // 	// 		  << "ChiSq: " << chiSq << std::endl;
+    // 	// throw std::runtime_error("Logistic Regression did not converge");
+    // }
     
     double zScore;
 

@@ -56,6 +56,8 @@ void Pc50::orientUnshieldedTriples() {
     auto producer = [&]() {
         std::vector<Node> nodes = graph.getNodes();
 
+	int maxDepth;
+
         for (const Node& y : nodes) {
             std::vector<Node> adjacentNodes = graph.getAdjacentNodes(y);
 
@@ -81,7 +83,11 @@ void Pc50::orientUnshieldedTriples() {
 
 		taskQueue.push(ColliderTask(Triple(x, y, z), {}));
 
-                for (int d = 1; d <= std::max(adjx.size(), adjz.size()); d++) {
+		maxDepth = std::max(adjx.size(), adjz.size());
+
+		if (depth != -1) maxDepth = std::min(depth, maxDepth);
+
+                for (int d = 1; d <= maxDepth; d++) {
                     if (adjx.size() >= 2 && d <= adjx.size()) {
                         ChoiceGenerator gen(adjx.size(), d);
 
@@ -169,7 +175,7 @@ void Pc50::orientUnshieldedTriples() {
     }
 
     std::vector<Triple> colliderList;
-    colliderList.reserve(sepsetCount.size());
+    // colliderList.reserve(sepsetCount.size());
     
     // std::ofstream logfile;
     // logfile.open("pc50_debug.log", std::ios_base::app);
@@ -210,7 +216,7 @@ void Pc50::orientUnshieldedTriples() {
 
         if (!(graph.getEndpoint(b, a) == ENDPOINT_ARROW
 	      || graph.getEndpoint(b, c) == ENDPOINT_ARROW)) {
-            // Rcpp::Rcout << "orienting collider " << triple << "  :  " << score[triple] << std::endl;
+	    // Rcpp::Rcout << "orienting collider " << triple << "  :  " << score[triple] << std::endl;
             orientCollider(a, b, c);
         }
     }
@@ -303,6 +309,8 @@ EdgeListGraph Pc50::search(FasStableProducerConsumer& fas, const std::vector<Nod
     if (verbose) Rcpp::Rcout << "  Orienting edges..." << std::endl;
 
     orientUnshieldedTriples();
+
+    // Rcpp::Rcout << graph << std::endl;
 
     MeekRules meekRules;
     meekRules.orientImplied(graph);

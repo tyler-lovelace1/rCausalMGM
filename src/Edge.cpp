@@ -25,7 +25,7 @@ void Edge::init(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoi
     }
 
     // Flip edges pointing left the other way.
-    if(pointingLeft(endpoint1, endpoint2)) {
+    if(pointingLeft(endpoint1, endpoint2) || (endpoint1==endpoint2 && node2 < node1)) {
         this->node1 = node2;
         this->node2 = node1;
         this->endpoint1 = endpoint2;
