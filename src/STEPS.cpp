@@ -166,7 +166,7 @@ EdgeListGraph STEPS::runStepsPar() {
 }
 
 
-EdgeListGraph STEPS::runStepsPath() {
+EdgeListGraph STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
 
     // Sort in descending order
     std::sort(lambda.begin(), lambda.end(), std::greater<double>());
@@ -187,14 +187,14 @@ EdgeListGraph STEPS::runStepsPath() {
     double CD = -1;
     double DD = -1;
     double CCMax = 0;
-    double CCMaxI = -1;
+    int CCMaxI = -1;
     double CDMax = 0;
-    double CDMaxI = -1;
+    int CDMaxI = -1;
     double DDMax = 0;
-    double DDMaxI = -1;
+    int DDMaxI = -1;
     double oneLamb = -1;
     double allMax = 0;
-    double allMaxI = -1;
+    int allMaxI = -1;
     int p = 0;
     int q = 0;
 
@@ -212,7 +212,7 @@ EdgeListGraph STEPS::runStepsPath() {
 	}
     }
 
-    arma::umat samps;
+    // arma::umat samps;
     
     if (leaveOneOut) {
       samps = StabilityUtils::subSampleLOO(d);
@@ -220,7 +220,7 @@ EdgeListGraph STEPS::runStepsPath() {
       samps = StabilityUtils::subSampleNoReplacement(d, b, N);
     }
 
-    // Rcpp::Rcout << "Sample indices selected\n";
+    // Rcpp::Rcout << "Sample indices selected:\n" << samps << std::endl;
     
     // BlockingQueue<int> taskQueue(samps.n_rows);
     // Rcpp::Rcout << "taskQue constructed\n";
@@ -232,7 +232,7 @@ EdgeListGraph STEPS::runStepsPath() {
     std::mutex matMutex; // For protecting thetaMat
     // Rcpp::Rcout << "matMutex constructed\n";
     // Rcpp::Rcout << "Number of threads: " << parallelism << std::endl;
-    RcppThread::ThreadPool pool(parallelism);
+    RcppThread::ThreadPool pool(std::max(1, parallelism/2));
     // Rcpp::Rcout << "pool constructed\n";
     std::vector<double> lambdaCurr;
 
@@ -338,6 +338,7 @@ EdgeListGraph STEPS::runStepsPath() {
 
 	pool.parallelForEach(mgmList,
 			     [&] (MGM& m) {
+				 // RcppThread::Rcout << "MGM run started...\n";
 				 m.setLambda(lambdaCurr);
 				 EdgeListGraph g = m.search();
 				 arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
@@ -346,6 +347,7 @@ EdgeListGraph STEPS::runStepsPath() {
 				     std::lock_guard<std::mutex> matLock(matMutex);
 				     thetaMat += curAdj;
 				 }
+				 // RcppThread::Rcout << "MGM run completed\n";
 			     });
 
 	pool.wait();
@@ -360,7 +362,7 @@ EdgeListGraph STEPS::runStepsPath() {
 	// 		    }
 
 	// 		    // Poison pills
-	// 		    for (int i = 0; i < parallelism; i++) {
+	// 		    for (int i = 0; i < std::max(1, parallelism/2); i++) {
 	// 			taskQueue.push(-1);
 	// 		    }
 	// 		};
@@ -375,8 +377,8 @@ EdgeListGraph STEPS::runStepsPath() {
 	// 			    break;
 	// 			}
 
-	// 			mgmList[sample].setLambda(lambdaCurr);
-	// 			EdgeListGraph g = mgmList[sample].search();
+	// 			mgmList.at(sample).setLambda(lambdaCurr);
+	// 			EdgeListGraph g = mgmList.at(sample).search();
 	// 			arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
 
 	// 			{
@@ -393,6 +395,18 @@ EdgeListGraph STEPS::runStepsPath() {
 	// }
 
 	// pool.join();
+
+	// std::vector<RcppThread::Thread> threadList;
+
+	// threadList.push_back(RcppThread::Thread( producer ));
+	
+	// for (int i = 0; i < std::max(1, parallelism/2); i++) {
+	//     threadList.push_back(RcppThread::Thread( consumer ));
+	// }
+
+	// for (int i = 0; i < std::max(1, parallelism/2); i++) {
+	//     threadList[i].join();
+	// }
 
         arma::mat adjMat = thetaMat/samps.n_rows;
 
@@ -447,6 +461,11 @@ EdgeListGraph STEPS::runStepsPath() {
 	if (numDD == 0)
 	    ddDestable = 0.5;
 
+	instabs(currIndex, 0) = std::max(CCMax, ccDestable);
+	instabs(currIndex, 1) = std::max(CDMax, cdDestable);
+	instabs(currIndex, 2) = std::max(DDMax, ddDestable);
+	instabs(currIndex, 3) = std::max(allMax, allDestable);
+
 	if (verbose) Rcpp::Rcout << "    Instabilities for lambda = " << lambda[currIndex]
 				 << ":  {" << ccDestable << ", " << cdDestable << ", "
 				 << ddDestable << "}" << std::endl;
@@ -457,7 +476,7 @@ EdgeListGraph STEPS::runStepsPath() {
 	
         if (allDestable >= allMax) {
             allMax = allDestable;
-            allMaxI = lambda[currIndex];
+            allMaxI = currIndex;
         }
 
         if (ccDestable >= gamma && CC == -1 && currIndex > 0)
@@ -469,32 +488,75 @@ EdgeListGraph STEPS::runStepsPath() {
 	
         if (ccDestable >= CCMax) {
             CCMax = ccDestable;
-            CCMaxI = lambda[currIndex];
+            CCMaxI = currIndex;
         }
         if (cdDestable >= CDMax) {
             CDMax = cdDestable;
-            CDMaxI = lambda[currIndex];
+            CDMaxI = currIndex;
         }
         if (ddDestable >= DDMax) {
             DDMax = ddDestable;
-            DDMaxI = lambda[currIndex];
+            DDMaxI = currIndex;
         }
         if (CC != -1 && CD != -1 && DD != -1 && oneLamb != -1)
-            break;
+	    break;
         // if (currIndex == lambda.size() - 1)
         //     break;
         // currIndex++;
     }
     // EXIT_LOOP:
 
-    if (CC == -1)
-        CC = CCMaxI;
-    if (CD == -1)
-        CD = CDMaxI;
-    if (DD == -1)
-        DD = DDMaxI;
-
     pool.join();
+
+    if (CC == -1)
+        CC = lambda[CCMaxI];
+    if (CD == -1)
+        CD = lambda[CDMaxI];
+    if (DD == -1)
+        DD = lambda[DDMaxI];
+    if (oneLamb == -1)
+        oneLamb = lambda[allMaxI];
+
+    // std::vector<double> lambda = { CC, CD, DD };
+    // if (verbose) Rcpp::Rcout << "Selected lambdas: { " << CC << ", " << CD << ", " << DD
+    // 			     << " }" << std::endl;
+
+    // for (arma::uword i = CCMaxI; i >= 0; i--) {
+    // 	if (instabs(i,0) < gamma || i == 0) {
+    // 	    CC = lambda[i];
+    // 	    break;
+    // 	}
+    // }
+
+    // for (arma::uword i = CDMaxI; i >= 0; i--) {
+    // 	if (instabs(i,1) < gamma || i == 0) {
+    // 	    CD = lambda[i];
+    // 	    break;
+    // 	}
+    // }
+
+    // for (arma::uword i = DDMaxI; i >= 0; i--) {
+    // 	if (instabs(i,2) < gamma || i == 0) {
+    // 	    DD = lambda[i];
+    // 	    break;
+    // 	}
+    // }
+
+    // for (arma::uword i = allMaxI; i >= 0; i--) {
+    // 	if (instabs(i,3) < gamma || i == 0) {
+    // 	    oneLamb = lambda[i];
+    // 	    break;
+    // 	}
+    // }
+
+    // if (CC == -1)
+    //     CC = lambda[0];
+    // if (CD == -1)
+    //     CD = lambda[0];
+    // if (DD == -1)
+    //     DD = lambda[0];
+    // if (oneLamb == -1)
+    //     oneLamb = lambda[0];
 
     std::vector<double> lambda = { CC, CD, DD };
     if (verbose) Rcpp::Rcout << "Selected lambdas: { " << CC << ", " << CD << ", " << DD
@@ -505,7 +567,7 @@ EdgeListGraph STEPS::runStepsPath() {
         origLambda = oneLamb;
 
     MGM m(d, lambda);
-    m.learnEdges(iterLimit);
+    EdgeListGraph g = m.search();
 
     if (computeStabs) {
         if (leaveOneOut) {
@@ -516,7 +578,7 @@ EdgeListGraph STEPS::runStepsPath() {
     }
     lastLambda = lambda;
     
-    EdgeListGraph g = m.graphFromMGM();
+    // EdgeListGraph g = m.graphFromMGM();
     g.setHyperParam("lambda", arma::vec(lambda));
     
     return g;

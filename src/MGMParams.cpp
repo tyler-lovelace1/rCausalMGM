@@ -2,13 +2,14 @@
 
 MGMParams::MGMParams(const arma::mat& beta, const arma::vec& betad,
 		     const arma::mat& theta, const arma::mat& phi,
-		     const arma::vec& alpha1, const arma::vec& alpha2) {
-    this->beta = beta;
-    this->betad = betad;
-    this->theta = theta;
-    this->phi = phi;
-    this->alpha1 = alpha1;
-    this->alpha2 = alpha2;
+		     const arma::vec& alpha1, const arma::vec& alpha2) :
+  beta(beta), betad(betad), theta(theta), phi(phi), alpha1(alpha1), alpha2(alpha2) {
+    // this->beta = beta;
+    // this->betad = betad;
+    // this->theta = theta;
+    // this->phi = phi;
+    // this->alpha1 = alpha1;
+    // this->alpha2 = alpha2;
 }
 
 // MGMParams::MGMParams(const std::vector<std::string>& names, const arma::mat& beta,
@@ -79,7 +80,7 @@ arma::vec MGMParams::toMatrix1D() {
     return outVec;
 }
 
-Rcpp::List MGMParams::toList(std::vector<std::string>& names) {
+Rcpp::List MGMParams::toList() const {
     int p = beta.n_cols;
     int ltot = phi.n_cols;
     std::vector<std::string> contNames(names.begin(), names.begin()+p);

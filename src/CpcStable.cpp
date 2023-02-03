@@ -255,19 +255,19 @@ void CpcStable::setDepth(int depth) {
     this->depth = depth;
 }
 
-std::unordered_set<Edge> CpcStable::getAdjacencies() {
-    return graph.getEdges();
-}
+// std::set<Edge> CpcStable::getAdjacencies() {
+//     return graph.getEdges();
+// }
 
-std::unordered_set<Edge> CpcStable::getNonadjacencies() {
-    EdgeListGraph complete = GraphUtils::completeGraph(graph);
-    std::unordered_set<Edge> nonAdjacencies = complete.getEdges();
-    EdgeListGraph undirected = GraphUtils::undirectedGraph(graph);
-    for (Edge edge : undirected.getEdges()) {
-        nonAdjacencies.erase(edge);
-    }
-    return nonAdjacencies;
-}
+// std::set<Edge> CpcStable::getNonadjacencies() {
+//     EdgeListGraph complete = GraphUtils::completeGraph(graph);
+//     std::set<Edge> nonAdjacencies = complete.getEdges();
+//     EdgeListGraph undirected = GraphUtils::undirectedGraph(graph);
+//     for (Edge edge : undirected.getEdges()) {
+//         nonAdjacencies.erase(edge);
+//     }
+//     return nonAdjacencies;
+// }
 
 /**
  * Runs PC starting with a fully connected graph over all of the variables in the domain of the independence test.

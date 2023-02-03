@@ -1,7 +1,7 @@
 #include "MGM.hpp"
 
 
-MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda) {
+MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda) : xDat(x), yDat(y) {
     
     if (l.size() != y.n_cols)
         throw std::invalid_argument("length of l doesn't match number of variables in Y");
@@ -18,6 +18,7 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
     Node dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	this->dummyVar = dummyVar;
 	mixed = false;
 	qDummy = 1;
     }
@@ -25,12 +26,13 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
     dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	this->dummyVar = dummyVar;
 	mixed = false;
 	pDummy = 1;
     }
     
-    this->xDat = x;
-    this->yDat = y;
+    // this->xDat = x;
+    // this->yDat = y;
     this->l = l;
     this->p = x.n_cols;
     this->q = y.n_cols;
@@ -46,7 +48,7 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
 
 }
 
-MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<int> l, std::vector<double> lambda) {
+MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<int> l, std::vector<double> lambda) : xDat(x), yDat(y) {
     
     if (l.size() != y.n_cols)
         throw std::invalid_argument("length of l doesn't match number of variables in Y");
@@ -63,6 +65,7 @@ MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<
     Node dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	this->dummyVar = dummyVar;
 	mixed = false;
 	qDummy = 1;
     }
@@ -70,12 +73,13 @@ MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<
     dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
+	this->dummyVar = dummyVar;
 	mixed = false;
 	pDummy = 1;
     }
     
-    this->xDat = x;
-    this->yDat = y;
+    // std::swap(this->xDat, x);
+    // std::swap(this->yDat, y);
     this->l = l;
     this->p = x.n_cols;
     this->q = y.n_cols;
@@ -92,12 +96,12 @@ MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<
 }
 
 
-MGM::MGM(DataSet& ds) {
+MGM::MGM(DataSet ds) {
 
     bool mixed = true;
 
     if (ds.isContinuous()) {
-	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
+	this->dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
@@ -108,7 +112,7 @@ MGM::MGM(DataSet& ds) {
     }
 
     if (ds.isDiscrete()) {
-	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
+	this->dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
@@ -154,12 +158,12 @@ MGM::MGM(DataSet& ds) {
 }
 
 
-MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
+MGM::MGM(DataSet ds, std::vector<double>& lambda) {
 
     bool mixed = true;
 
     if (ds.isContinuous()) {
-	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
+	this->dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
@@ -170,7 +174,7 @@ MGM::MGM(DataSet& ds, std::vector<double>& lambda) {
     }
 
     if (ds.isDiscrete()) {
-	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
+	this->dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
@@ -272,8 +276,8 @@ void MGM::makeDummy() {
     for(int i = 0; i < q; i++) {
         for(int j = 0; j < l[i]; j++) {
             arma::vec curCol = arma::vec(yDat.col(i)).transform( [j](double val) { return val == j+1 ? 1 : 0; } );
-            if (arma::sum(curCol) == 0)
-                throw std::invalid_argument("Discrete data is missing a level: variable " + variables[p+i].getName() + " level " + std::to_string(j));
+            // if (arma::sum(curCol) == 0)
+            //     throw std::invalid_argument("Discrete data is missing a level: variable " + variables[p+i].getName() + " level " + std::to_string(j));
             dDat.col(lcumsum[i]+j) = curCol;
         }
     }
@@ -1263,12 +1267,14 @@ EdgeListGraph MGM::graphFromMGM() {
 	// Rcpp::Rcout << variables[p+i].getName() << std::endl << "  ";
 	for (std::string cat : variables[p+i].getCategories()) {
 	    // Rcpp::Rcout << variables[p+i].getName() + "." + cat << " ";
-	    names.push_back(variables[p+i].getName() + "." + cat);
+	    names.push_back(variables[p+i].getName() + ":" + cat);
 	}
 	// Rcpp::Rcout << std::endl;
     }
 
-    g.setParams(params.toList(names));
+    params.setNames(names);
+
+    g.setParams(params);
 
     return g;
 }
@@ -1293,7 +1299,7 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
     std::vector<EdgeListGraph> pathGraphs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
     for (int i = 0; i < lambdas.size(); i++) {
-	if (verbose) RcppThread::Rcout << "  Learning MGM for lambda = " << lambdas[i] << "\n";
+	if (verbose) RcppThread::Rcout << "  Learning MGM for lambda = " << lambdas[i] << "\r";
 	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i] };
 	setLambda(lambda);
 	learn(1e-5, 500);
@@ -1336,7 +1342,7 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
 		     arma::mat(yDat.rows(trainIdxs)),
 		     variables, l, lambda);
 
-	trainMGM.setVerbose(verbose);
+	trainMGM.setVerbose(false);
 	
         MGM testMGM(arma::mat(xDat.rows(testIdxs)),
 		    arma::mat(yDat.rows(testIdxs)),
@@ -1345,7 +1351,7 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
 	for (int i = 0; i < lambdas.size(); i++) {
 	    if (verbose) {
 		RcppThread::Rcout << "  Fold " << k << ": Learning MGM for lambda = "
-				  << lambdas[i] << "\n";
+				  << lambdas[i] << "\r";
 	    }
 	    
 	    lambda = { lambdas[i], lambdas[i], lambdas[i] };
@@ -1367,6 +1373,10 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
 
 	    RcppThread::checkUserInterrupt();
 		
+	}
+
+	if (verbose) {
+	  RcppThread::Rcout << std::endl;
 	}
     }
 

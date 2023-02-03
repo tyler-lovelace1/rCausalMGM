@@ -305,7 +305,7 @@ double GrowShrink::regressBIC(const Node& target, std::vector<Node>& regressors,
 	try {
 	    RegressionResult result;
 	    result = regression.regress(target, regressors);
-	    score = n * std::log(result.getRSS() / n) + penalty * std::log(n) * (regressors.size()+2);	    
+	    score = n * std::log(result.getRSS() / n) + penalty * std::log(n) * (regressors.size()+1);	    
 	} catch (...) {
 	    score = 1e20;
 	}
@@ -336,6 +336,12 @@ double GrowShrink::regressBIC(const Node& target, std::vector<Node>& regressors,
 		ll = multiLL(coeffs, target, regressors);
 		
 	    }
+
+	    // Check if model is saturated
+	    // if (abs(ll) < 1e-5) {
+	    // 	RcppThread::Rcout << "Error: saturated multinomial logistic regression model\n";
+	    // 	throw std::runtime_error("saturated multinomial logistic regression model\n");
+	    // }
 
 	    score = -2 * ll + penalty * std::log(n) * numCats * (regressors.size() + 1);
 		
@@ -495,6 +501,10 @@ void GrowShrink::consumerShrink(std::unordered_map<Node, double>& scoreMap) {
 
 std::list<Node> GrowShrink::search(const Node& target, std::vector<Node>& regressors,
 				   double* bicReturn) {
+
+    if (parallelism == 1) {
+	return searchSingle(target, regressors, bicReturn);
+    }
 
     double score;
     if (verbose) RcppThread::Rcout << "Searching for Markov Boundary of " << target.getName() << "...\n";
@@ -675,6 +685,259 @@ std::list<Node> GrowShrink::shrink(const Node& target, std::list<Node>& active,
     
     return active;
 }
+
+
+std::list<Node> GrowShrink::searchSingle(const Node& target, std::vector<Node>& regressors,
+					 double* bicReturn) {
+
+    double score;
+    if (verbose) RcppThread::Rcout << "Searching for Markov Boundary of " << target.getName() << "...\n";
+    std::list<Node> active = growSingle(target, regressors, &score);
+    active = shrinkSingle(target, active, score, &score);
+    if (verbose) RcppThread::Rcout << "Finished. \n";
+
+    if (scoreHistory.size() > 15000) scoreHistory.clear();
+
+    if (bicReturn != NULL)
+	*bicReturn = score;
+    
+    return active;
+}
+
+
+std::list<Node> GrowShrink::growSingle(const Node& target, std::vector<Node>& regressors,
+				       double* bicReturn) {
+    std::vector<Node> emptySet = {};
+    
+    double oldScore = 1e20;
+    // double curScore = regressBIC(target, emptySet, true);
+
+    double curScore = nullBICmap[target];
+
+    std::list<Node> active;
+    std::list<Node> inactive(regressors.begin(), regressors.end());
+
+    std::unordered_map<Node, double> scoreMap;
+
+    for (Node n : inactive) {
+	scoreMap[n] = 1e20;
+    }
+
+    // RcppThread::ThreadPool pool(parallelism);
+
+    if (verbose) RcppThread::Rcout << "  Growing...\n";
+    if (verbose) RcppThread::Rcout << "    BIC = " << curScore << " : { }\n";
+
+    while (curScore < oldScore) {
+	oldScore = curScore;
+
+	for (const Node& n : inactive) {
+
+	    if (variablesPerNode.count(internalData.getVariable(target.getName())) < 1) {
+		throw std::invalid_argument("Unrecogized variable: " + target.getName());
+	    }
+
+	    if (variablesPerNode.count(internalData.getVariable(n.getName())) < 1) {
+		throw std::invalid_argument("Unrecogized variable: " + n.getName());
+	    }
+
+	    for (const Node& varZ : active) {
+		if (variablesPerNode.count(internalData.getVariable(varZ.getName())) < 1)  {
+		    throw std::invalid_argument("Unrecogized variable: " + varZ.getName());
+		}
+	    }
+
+	    std::vector<Node> regressors(variablesPerNode.at(internalData.getVariable(n.getName())));
+
+	    for (const Node& varZ : active) {
+		std::vector<Node> temp = variablesPerNode.at(internalData.getVariable(varZ.getName()));
+		// if (varZ.isCensored()) {
+		// 	if (!target.isCensored()) {
+		// 	    regressors.insert(regressors.end(), temp.begin()+1, temp.end());
+		// 	}	    
+		// } else {
+		// 	regressors.insert(regressors.end(), temp.begin(), temp.end());
+		// }
+
+		regressors.insert(regressors.end(), temp.begin(), temp.end());
+	    }
+
+	    double score = regressBIC(target, regressors, active.size() < 4);
+
+	    // RcppThread::Rcout << "    Consuming " << n.getName()
+	    // 		  << ", BIC = " << score << std::endl;
+	
+	
+	    scoreMap[n] = score;
+	
+	}
+	
+	Node bestNode;
+
+	for (const Node& n : inactive) {
+	    if (scoreMap[n] < curScore) {
+		curScore = scoreMap[n];
+		bestNode = n;
+	    }
+	}
+
+	if (!bestNode.isNull()) {
+	    auto it = std::remove(inactive.begin(), inactive.end(), bestNode);
+	    inactive.erase(it, inactive.end());
+	    active.push_back(bestNode);
+	}
+
+	if (verbose) {
+	    RcppThread::Rcout << "    BIC = " << curScore << " : { ";
+	    for (const Node& n : active) {
+		RcppThread::Rcout << n.getName() << " ";
+	    }
+	    RcppThread::Rcout << "}\n";
+	}
+	// scoreMap.clear();
+
+	// for (Node n : inactive) {
+	//     scoreMap[n] = 1e20;
+	// }
+    }
+
+    // pool.join();
+    
+    if (verbose) RcppThread::Rcout << "  Finished\n";
+
+    if (bicReturn != NULL)
+	*bicReturn = curScore;
+    
+    return active;
+}
+
+std::list<Node> GrowShrink::shrinkSingle(const Node& target, std::list<Node>& active,
+					 double score, double* bicReturn) {
+    double oldScore = 1e20;
+    double curScore = score;
+
+    std::unordered_map<Node, double> scoreMap;
+
+    for (Node n : active) {
+	scoreMap[n] = 1e20;
+    }
+
+    // RcppThread::ThreadPool pool(parallelism);
+
+    if (verbose) RcppThread::Rcout << "  Shrinking...\n";
+    
+    while (curScore < oldScore) {
+	oldScore = curScore;
+
+	// auto producer = std::bind(&GrowShrink::producerShrink, this);
+	// auto consumer = std::bind(&GrowShrink::consumerShrink, this);
+
+        for (const Node& n : active) {
+
+	    if (variablesPerNode.count(internalData.getVariable(target.getName())) < 1) {
+		throw std::invalid_argument("Unrecogized variable: " + target.getName());
+	    }
+
+	    if (variablesPerNode.count(internalData.getVariable(n.getName())) < 1) {
+		throw std::invalid_argument("Unrecogized variable: " + n.getName());
+	    }
+
+	    for (const Node& varZ : active) {
+		if (variablesPerNode.count(internalData.getVariable(varZ.getName())) < 1)  {
+		    throw std::invalid_argument("Unrecogized variable: " + varZ.getName());
+		}
+	    }
+
+	    std::vector<Node> zList;
+	
+	    for (const Node& varZ : active) {
+		std::vector<Node> temp = variablesPerNode.at(internalData.getVariable(varZ.getName()));
+		// if (varZ.isCensored()) {
+		// 	if (!target.isCensored()) {
+		// 	    zList.insert(zList.end(), temp.begin()+1, temp.end());
+		// 	}	    
+		// } else {
+		// 	zList.insert(zList.end(), temp.begin(), temp.end());
+		// }
+		zList.insert(zList.end(), temp.begin(), temp.end());
+	    }
+
+	    std::vector<Node> yList = variablesPerNode.at(internalData.getVariable(n.getName()));
+	    // std::vector<Node> regressors;
+
+	    // RcppThread::Rcout << "    yList : { ";
+	    // for (const Node& y : yList) {
+	    //     RcppThread::Rcout << y.getName() << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
+
+	    // RcppThread::Rcout << "    zList : { ";
+	    // for (const Node& z : zList) {
+	    //     RcppThread::Rcout << z.getName() << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
+	
+	    // std::set_difference(zList.begin(), zList.end(),
+	    // 		    yList.begin(), yList.end(),
+	    // 		    std::inserter(regressors, regressors.end()));
+
+	    for (const Node& y : yList) {
+		auto it = std::remove(zList.begin(), zList.end(), y);
+		zList.erase(it, zList.end());
+	    }
+
+	    std::vector<Node> regressors(zList);
+
+	    // RcppThread::Rcout << "    " << n.getName() << " : { ";
+	    // for (const Node& n : regressors) {
+	    //     RcppThread::Rcout << n.getName() << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
+
+	    double score = regressBIC(target, regressors, active.size() <= 4);
+
+	    // RcppThread::Rcout << "    Consuming " << n.getName()
+	    // 		  << ", BIC = " << score << std::endl;
+
+	
+	    scoreMap[n] = score;
+	
+	}
+
+	Node bestNode;
+
+	for (const Node& n : active) {
+	    if (scoreMap[n] < curScore) {
+		curScore = scoreMap[n];
+		bestNode = n;
+	    }
+	}
+
+	if (!bestNode.isNull()) {
+	    auto it = std::remove(active.begin(), active.end(), bestNode);
+	    active.erase(it, active.end());
+	}
+
+	if (verbose) {
+	    RcppThread::Rcout << "    BIC = " << curScore << " : { ";
+	    for (const Node& n : active) {
+		RcppThread::Rcout << n.getName() << " ";
+	    }
+	    RcppThread::Rcout << "}\n";
+	}
+	
+    }
+
+    // pool.join();
+    
+    if (verbose) RcppThread::Rcout << "  Finished\n";
+
+    if (bicReturn != NULL)
+	*bicReturn = curScore;
+    
+    return active;
+}
+
 
 
 arma::mat GrowShrink::getSubsetData(DataSet &origData, std::vector<Node>& varSubset) {

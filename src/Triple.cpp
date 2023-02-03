@@ -1,6 +1,6 @@
 #include "Triple.hpp"
 
-std::string Triple::toString() {
+std::string Triple::toString() const {
     std::ostringstream result;
 
     result << *this;

@@ -78,7 +78,7 @@ private:
     BlockingQueue<PossibleDsepTask> taskQueue;
     std::mutex edgeMutex;
 
-    void PossibleDsepProducer(std::unordered_set<Edge> edges);
+    void PossibleDsepProducer(std::set<Edge> edges);
 
     void PossibleDsepConsumer(std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap);
 

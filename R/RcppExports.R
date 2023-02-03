@@ -117,7 +117,7 @@ pag <- function(graph, latent = NULL) {
 #'
 #' @param graph1 A graph object
 #' @param graph2 A graph object
-#' @return The skeleton SHD btween the two graph objects
+#' @return The skeleton SHD between the two graph objects
 #' @export
 #' @examples
 #' data("data.n100.p25")
@@ -281,8 +281,8 @@ mgmCV <- function(df, lambdas = NULL, nLambda = 30L, nfolds = 10L, foldid = NULL
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::steps(data.n100.p25)
-steps <- function(df, lambdas = NULL, nLambda = 20L, g = 0.05, numSub = 20L, subSize = -1L, leaveOneOut = FALSE, computeStabs = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_steps`, df, lambdas, nLambda, g, numSub, subSize, leaveOneOut, computeStabs, threads, rank, verbose)
+steps <- function(df, lambdas = NULL, nLambda = 30L, gamma = 0.05, numSub = 20L, subSize = -1L, leaveOneOut = FALSE, computeStabs = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_steps`, df, lambdas, nLambda, gamma, numSub, subSize, leaveOneOut, computeStabs, threads, rank, verbose)
 }
 
 #' Runs the causal algorithm PC-Stable on a dataset
@@ -302,6 +302,22 @@ steps <- function(df, lambdas = NULL, nLambda = 20L, g = 0.05, numSub = 20L, sub
 #' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
 pcStable <- function(df, initialGraph = NULL, alpha = 0.05, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_pcStable`, df, initialGraph, alpha, threads, fdr, rank, verbose)
+}
+
+#' Calculate the solution path for an PC graph on a dataset
+#'
+#' @param df The dataframe
+#' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+#' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated MGM graph
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::pcPath(data.n100.p25)
+pcPath <- function(df, alphas = as.numeric( c(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1)), orientRule = as.character( c("max", "conservative", "majority", "none")), threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_pcPath`, df, alphas, orientRule, threads, fdr, rank, verbose)
 }
 
 #' Runs the causal algorithm CPC-Stable on a dataset
@@ -483,5 +499,22 @@ growShrinkMB <- function(df, target, penalty = 1, rank = FALSE, threads = -1L, v
 #' g <- rCausalMGM::markovBlanket(data.n100.p25)
 grasp <- function(df, initialGraph = NULL, depth = 2L, numStarts = 3L, penalty = 1, rank = FALSE, threads = -1L, verbose = FALSE) {
     .Call(`_rCausalMGM_grasp`, df, initialGraph, depth, numStarts, penalty, rank, threads, verbose)
+}
+
+#' Parameterize a graph using the MGM framework
+#'
+#' @param df The dataframe
+#' @param graph An graph to parameterize.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' ig <- rCausalMGM::mgm(data.n100.p25)
+#' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+#' g <- parameterize(data.n100.p25, g)
+parameterize <- function(df, graph, lambda = as.numeric( c(0.5, 0.5, 0.5)), rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_parameterize`, df, graph, lambda, rank, verbose)
 }
 

@@ -94,6 +94,34 @@ bool Edge::isDirected() {
 }
 
 /**
+ * @return true just in case this edge is undirected.
+ */
+bool Edge::isUndirected() {
+    return Edge::isUndirectedEdge(*this);
+}
+
+/**
+ * @return true just in case this edge is bidirected.
+ */
+bool Edge::isBidirected() {
+    return Edge::isBidirectionalEdge(*this);
+}
+
+/**
+ * @return true just in case this edge is nondirected.
+ */
+bool Edge::isNondirected() {
+    return Edge::isNondirectedEdge(*this);
+}
+
+/**
+ * @return true just in case this edge is partially oriented.
+ */
+bool Edge::isPartiallyOriented() {
+    return Edge::isPartiallyOrientedEdge(*this);
+}
+
+/**
  * @return true just in case the edge is pointing toward the given node--
  * that is, x --> node or x o--> node.
  */
@@ -297,7 +325,7 @@ const Node& Edge::getDirectedEdgeTail(Edge& edge) {
     throw std::invalid_argument("Not a directed edge: " + ss.str());
 }
 
-std::string Edge::toString() {
+std::string Edge::toString() const {
     std::ostringstream result;
 
     result << *this;

@@ -156,9 +156,9 @@ public:
      */
     std::unordered_set<Triple> getAllTriples() const { return allTriples; }
 
-    std::unordered_set<Edge> getAdjacencies();
+    // std::set<Edge> getAdjacencies();
 
-    std::unordered_set<Edge> getNonadjacencies();
+    // std::set<Edge> getNonadjacencies();
 
     /**
      * Sets the depth of the search--that is, the maximum number of conditioning nodes for any conditional independence

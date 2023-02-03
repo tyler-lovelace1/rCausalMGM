@@ -73,13 +73,13 @@ public:
     MGM() {}
     MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
     MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<int> l, std::vector<double> lambda);
-    MGM(DataSet& ds);
-    MGM(DataSet& ds, std::vector<double>& lambda);
+    MGM(DataSet ds);
+    MGM(DataSet ds, std::vector<double>& lambda);
 
-    // MGM(MGM& other) = default;
-    // MGM& operator=(MGM& other) = default;
-    // MGM(MGM&& other) = default;
-    // MGM& operator=(MGM&& other) = default;
+    // MGM(const MGM& other) = default;
+    // MGM& operator=(const MGM& other) = default;
+    // MGM(const MGM&& other) = default;
+    // MGM& operator=(const MGM&& other) = default;
     // ~MGM() = default;
 
     MGMParams getParams() { return params; }

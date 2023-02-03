@@ -111,7 +111,7 @@ SepsetMap& PossibleDsepFciConsumerProducer::search() {
 }
 
 void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap) {
-    const std::unordered_set<Edge> edges(graph.getEdges());
+    const std::set<Edge> edges(graph.getEdges());
     std::vector<RcppThread::Thread> threads;
 
     threads.push_back(RcppThread::Thread( [&] { PossibleDsepProducer(edges); } ));
@@ -142,7 +142,7 @@ void PossibleDsepFciConsumerProducer::setMaxPathLength(int maxReachablePathLengt
   this->maxReachablePathLength = maxReachablePathLength == std::numeric_limits<int>::max() ? -1 : maxReachablePathLength;
 }
 
-void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::unordered_set<Edge> edges) {
+void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges) {
     // PossibleDsepTask poisonPill(Edge(), std::vector<Node>());
 
     for (const Edge& edge : edges) {

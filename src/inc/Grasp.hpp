@@ -28,6 +28,10 @@ private:
 
     DataSet ds;
 
+    int parallelism;
+
+    std::mutex scoreMutex;
+
     /**
      * The graph that's constructed during the search.
      */
@@ -218,13 +222,13 @@ private:
 	    }
 	}
 
-	EdgeListGraph toGraph() {
+	EdgeListGraph toGraph() const {
 	    std::vector<Node> nodes(order.begin(), order.end());
 
 	    EdgeListGraph graph(nodes);
 
 	    for (const Node& node : nodes) {
-		for (const Node& pa : parentMap[node]) {
+		for (const Node& pa : parentMap.at(node)) {
 		    graph.addDirectedEdge(pa, node);
 		}
 	    }
@@ -241,6 +245,8 @@ private:
     };
 
     OrderGraph pi;
+
+    std::set<OrderGraph> bestGraphs;
 
     double score;
 
@@ -312,7 +318,7 @@ public:
      * however, contain cycles or bidirected edges if this assumption is not born out, either due to the actual presence
      * of latent common causes, or due to statistical errors in conditional independence judgments.
      */
-    EdgeListGraph search();
+    std::map<EdgeListGraph, std::pair<int, double>> search();
 
     /**
      * Runs PC starting with a commplete graph over the given list of nodes, using the given independence test and
@@ -323,7 +329,7 @@ public:
      * <p>
      * All of the given nodes must be in the domain of the given conditional independence test.
      */
-    EdgeListGraph search(const std::vector<Node>& nodes);
+  std::map<EdgeListGraph, std::pair<int,double>> search(const std::vector<Node>& nodes);
 
 };
 

@@ -87,6 +87,26 @@ public:
     bool isDirected();
 
     /**
+     * @return true just in case this edge is undirected.
+     */
+    bool isUndirected();
+
+    /**
+     * @return true just in case this edge is bidirected.
+     */
+    bool isBidirected();
+
+    /**
+     * @return true just in case this edge is nondirected.
+     */
+    bool isNondirected();
+
+    /**
+     * @return true just in case this edge is partially oriented.
+     */
+    bool isPartiallyOriented();
+    
+    /**
      * @return true just in case the edge is pointing toward the given node--
      * that is, x --> node or x o--> node.
      */
@@ -105,7 +125,7 @@ public:
     void removeProperty(EdgeProperty property) { properties.erase(property); }
     std::unordered_set<EdgeProperty> getProperties() { return properties; }
 
-    std::string toString();
+    std::string toString() const;
 
     friend std::ostream& operator<<(std::ostream& os, const Edge& Edge);
     friend bool operator==(const Edge& e1, const Edge& e2);

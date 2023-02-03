@@ -655,8 +655,8 @@ double StabilityUtils::stabilitySearchStars(DataSet& data,
 		}
 	    }
 	    if (numPossEdges == 0) {
-		std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
-		numPossEdges = edgeSet.size();
+		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
+		numPossEdges = initialGraph->getEdges().size();
 	    }
 	}
 	alpha = param;
@@ -682,8 +682,8 @@ double StabilityUtils::stabilitySearchStars(DataSet& data,
 		}
 	    }
 	    if (numPossEdges == 0) {
-		std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
-		numPossEdges = 3.0 * edgeSet.size();
+		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
+		numPossEdges = 3.0 * initialGraph->getEdges().size();
 	    }
 	}
 	alpha = param;
@@ -709,8 +709,8 @@ double StabilityUtils::stabilitySearchStars(DataSet& data,
 		}
 	    }
 	    if (numPossEdges == 0) {
-		std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
-		numPossEdges = 6.0 * edgeSet.size();
+		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
+		numPossEdges = 6.0 * initialGraph->getEdges().size();
 	    }
 	}
 	alpha = param;

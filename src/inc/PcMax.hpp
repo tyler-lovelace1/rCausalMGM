@@ -103,9 +103,9 @@ public:
      */
     long getElapsedTime() const { return elapsedTime; }
 
-    std::unordered_set<Edge> getAdjacencies();
+    // std::unordered_set<Edge> getAdjacencies();
 
-    std::unordered_set<Edge> getNonadjacencies();
+    // std::unordered_set<Edge> getNonadjacencies();
 
     std::vector<Node> getNodes() { return graph.getNodes(); }
 

@@ -34,19 +34,19 @@ void PcMax::setDepth(int depth) {
     this->depth = depth;
 }
 
-std::unordered_set<Edge> PcMax::getAdjacencies() {
-    return graph.getEdges();
-}
+// std::unordered_set<Edge> PcMax::getAdjacencies() {
+//     return graph.getEdges();
+// }
 
-std::unordered_set<Edge> PcMax::getNonadjacencies() {
-    EdgeListGraph complete = GraphUtils::completeGraph(graph);
-    std::unordered_set<Edge> nonAdjacencies = complete.getEdges();
-    EdgeListGraph undirected = GraphUtils::undirectedGraph(graph);
-    for (Edge edge : undirected.getEdges()) {
-        nonAdjacencies.erase(edge);
-    }
-    return nonAdjacencies;
-}
+// std::unordered_set<Edge> PcMax::getNonadjacencies() {
+//     EdgeListGraph complete = GraphUtils::completeGraph(graph);
+//     std::unordered_set<Edge> nonAdjacencies = complete.getEdges();
+//     EdgeListGraph undirected = GraphUtils::undirectedGraph(graph);
+//     for (Edge edge : undirected.getEdges()) {
+//         nonAdjacencies.erase(edge);
+//     }
+//     return nonAdjacencies;
+// }
 
 /**
  * Runs PC search, returning the output pattern.

@@ -8,13 +8,14 @@
 #include "FciMax.hpp"
 #include "Fci50.hpp"
 #include "STEPS.hpp"
+#include "CausalMGMParams.hpp"
 // #include "STARS.hpp"
 #include "Bootstrap.hpp"
 // #include "Tests.hpp"
 #include "IndTestMulti.hpp"
 #include "GrowShrink.hpp"
 #include "Grasp.hpp"
-
+#include "CausalMGM.hpp"
 
 //' Calculate the MGM graph on a dataset
 //'
@@ -298,6 +299,7 @@ Rcpp::List mgmCV(
 					   Rcpp::_["alphas"]=R_NilValue,
 					   Rcpp::_["alpha.min"]=R_NilValue,
 					   Rcpp::_["alpha.1se"]=R_NilValue,
+					   Rcpp::_["foldid"]=_foldid,
     					   Rcpp::_["loglik"] = loglik);
 
     result.attr("class") = "graphCV";
@@ -329,8 +331,8 @@ Rcpp::List mgmCV(
 Rcpp::List steps(
     const Rcpp::DataFrame &df, 
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
-    const int nLambda = 20,
-    const double g = 0.05,
+    const int nLambda = 30,
+    const double gamma = 0.05,
     const int numSub = 20,
     const int subSize = -1,
     const bool leaveOneOut = false,
@@ -365,7 +367,7 @@ Rcpp::List steps(
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -375,22 +377,35 @@ Rcpp::List steps(
 
     STEPS steps;
     if (subSize < 0)
-	steps = STEPS(ds, l, g, numSub, leaveOneOut);
+	steps = STEPS(ds, l, gamma, numSub, leaveOneOut);
     else
-	steps = STEPS(ds, l, g, numSub, subSize, leaveOneOut);
+	steps = STEPS(ds, l, gamma, numSub, subSize, leaveOneOut);
       
     if (threads > 0) steps.setThreads(threads);
     steps.setComputeStabs(computeStabs);
     steps.setVerbose(verbose);
 
-    Rcpp::List result = steps.runStepsPath().toList();
+    arma::mat instabs(l.size(), 4);
+    instabs.fill(arma::datum::nan);
+
+    arma::umat samps;
+
+    Rcpp::List graph = steps.runStepsPath(instabs, samps).toList();
 
     if (computeStabs) {
-        result["stabilities"] = steps.getStabs();
+        graph["stabilities"] = steps.getStabs();
         std::vector<std::string> names = ds.getVariableNames();
-        Rcpp::rownames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-        Rcpp::colnames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-    } 
+        Rcpp::rownames(graph["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+        Rcpp::colnames(graph["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    }
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph"]=graph,
+    					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+					   Rcpp::_["gamma"]=gamma,
+    					   Rcpp::_["instability"] = instabs,
+					   Rcpp::_["subsamples"] = samps);
+
+    result.attr("class") = "graphSTEPS";
 
     // ds.deleteVariables();
 
@@ -454,6 +469,294 @@ Rcpp::List pcStable(
 
     return result;
 }
+
+
+//' Calculate the solution path for an PC graph on a dataset
+//'
+//' @param df The dataframe
+//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::pcPath(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List pcPath(
+    const Rcpp::DataFrame& df,
+    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
+    Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("max", "conservative", "majority", "none"),
+    const int threads = -1,
+    const bool fdr = false,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int n = ds.getNumRows();
+    int p = ds.getNumColumns();
+
+    std::vector<double> a(alphas.begin(), alphas.end());
+
+    arma::vec _alphas(a);
+
+    _alphas = arma::sort(_alphas, "ascend");
+
+    arma::vec loglik(_alphas.size(), arma::fill::zeros);
+    arma::vec nParams(_alphas.size(), arma::fill::zeros);
+    std::vector<EdgeListGraph> pcGraphs;
+    std::vector<CausalMGMParams> pcParams;
+    std::vector<double> l = { 0.5, 0.5, 0.5 };
+
+    for (arma::uword i = 0; i < _alphas.n_elem; i++) {
+
+	IndTestMulti itm(ds, _alphas(i));
+
+	if (orientRule[0]=="none") {
+
+	    PcStable pcs((IndependenceTest*) &itm);
+	    if (threads > 0) pcs.setThreads(threads);
+	    pcs.setVerbose(verbose);
+	    pcs.setFDR(fdr);
+	    pcGraphs.push_back(pcs.search());
+
+	} else if (orientRule[0]=="max") {
+
+	    PcMax pcm((IndependenceTest*) &itm);
+	    if (threads > 0) pcm.setThreads(threads);
+	    pcm.setVerbose(verbose);
+	    pcm.setFDR(fdr);
+	    pcGraphs.push_back(pcm.search());
+
+	} else if (orientRule[0]=="conservative") {
+
+	    CpcStable cpc((IndependenceTest*) &itm);
+	    if (threads > 0) cpc.setThreads(threads);
+	    cpc.setVerbose(verbose);
+	    cpc.setFDR(fdr);
+	    pcGraphs.push_back(cpc.search());
+
+	} else if (orientRule[0]=="majority") {
+
+	    Pc50 pc50((IndependenceTest*) &itm);
+	    if (threads > 0) pc50.setThreads(threads);
+	    pc50.setVerbose(verbose);
+	    pc50.setFDR(fdr);
+	    pcGraphs.push_back(pc50.search());
+
+	}
+
+	CausalMGM causalMGM(ds, pcGraphs.at(i));
+	causalMGM.setVerbose(verbose);
+	causalMGM.setLambda(l);
+	pcParams.push_back(causalMGM.search());
+
+	arma::vec par(pcParams.at(i).toMatrix1D());
+	loglik(i) = -n * causalMGM.smoothValue(par);
+	nParams(i) = causalMGM.getNParams();
+	
+	RcppThread::checkUserInterrupt();
+    }
+
+    // auto elapsedTime = mgm.getElapsedTime();
+
+    // if (v) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
+
+    Rcpp::List graphList;
+    
+    for (int i = 0; i < a.size(); i++) {
+	Rcpp::List pcGraph = pcGraphs[i].toList();
+	pcGraph["parameters"] = pcParams[i].toList();
+        graphList.push_back(pcGraph);
+    }
+
+    arma::vec aic = 2*nParams - 2*loglik;
+    arma::vec bic = std::log(n)*nParams - 2*loglik;
+
+    arma::uword aicIdx = arma::index_min(aic);
+    arma::uword bicIdx = arma::index_min(bic);
+    
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=graphList[bicIdx],
+					   Rcpp::_["graph.aic"]=graphList[aicIdx],
+					   Rcpp::_["graphs"]=graphList,
+					   Rcpp::_["lambdas"]=R_NilValue,
+					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
+					   Rcpp::_["AIC"] = aic,
+					   Rcpp::_["BIC"] = bic,
+					   Rcpp::_["loglik"] = loglik,
+					   Rcpp::_["nParams"] = nParams,
+					   Rcpp::_["n"] = n);
+    
+    result.attr("class") = "graphPath";
+
+    return result;
+}
+
+
+// //' Calculate the solution path for an PC graph on a dataset
+// //'
+// //' @param df The dataframe
+// //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+// //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated MGM graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' g <- rCausalMGM::pcPath(data.n100.p25)
+// // [[Rcpp::export]]
+// Rcpp::List pcCV(
+//     const Rcpp::DataFrame& df,
+//     Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
+//     Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("max", "conservative", "majority", "none"),
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(df);
+//     ds.dropMissing();
+
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
+
+//     int n = ds.getNumRows();
+//     int p = ds.getNumColumns();
+
+//     std::vector<double> a(alphas.begin(), alphas.end());
+
+//     arma::vec _alphas(a);
+
+//     _alphas = arma::sort(_alphas, "ascend");
+
+//     arma::vec loglik(_alphas.size(), arma::fill::zeros);
+//     arma::vec nParams(_alphas.size(), arma::fill::zeros);
+//     std::vector<EdgeListGraph> pcGraphs;
+//     std::vector<CausalMGMParams> pcParams;
+//     std::vector<double> l = { 0.5, 0.5, 0.5 };
+
+//     for (arma::uword i = 0; i < _alphas.n_elem; i++) {
+
+// 	IndTestMulti itm(ds, _alphas(i));
+
+// 	if (orientRule[0]=="none") {
+
+// 	    PcStable pcs((IndependenceTest*) &itm);
+// 	    if (threads > 0) pcs.setThreads(threads);
+// 	    pcs.setVerbose(verbose);
+// 	    pcs.setFDR(fdr);
+// 	    pcGraphs.push_back(pcs.search());
+
+// 	} else if (orientRule[0]=="max") {
+
+// 	    PcMax pcm((IndependenceTest*) &itm);
+// 	    if (threads > 0) pcm.setThreads(threads);
+// 	    pcm.setVerbose(verbose);
+// 	    pcm.setFDR(fdr);
+// 	    pcGraphs.push_back(pcm.search());
+
+// 	} else if (orientRule[0]=="conservative") {
+
+// 	    CpcStable cpc((IndependenceTest*) &itm);
+// 	    if (threads > 0) cpc.setThreads(threads);
+// 	    cpc.setVerbose(verbose);
+// 	    cpc.setFDR(fdr);
+// 	    pcGraphs.push_back(cpc.search());
+
+// 	} else if (orientRule[0]=="majority") {
+
+// 	    Pc50 pc50((IndependenceTest*) &itm);
+// 	    if (threads > 0) pc50.setThreads(threads);
+// 	    pc50.setVerbose(verbose);
+// 	    pc50.setFDR(fdr);
+// 	    pcGraphs.push_back(pc50.search());
+
+// 	}
+
+// 	CausalMGM causalMGM(ds, pcGraphs.at(i));
+// 	causalMGM.setVerbose(verbose);
+// 	causalMGM.setLambda(l);
+// 	pcParams.push_back(causalMGM.search());
+
+// 	arma::vec par(pcParams.at(i).toMatrix1D());
+// 	loglik(i) = -n * causalMGM.smoothValue(par);
+// 	nParams(i) = causalMGM.getNParams();
+	
+// 	RcppThread::checkUserInterrupt();
+//     }
+
+//     // auto elapsedTime = mgm.getElapsedTime();
+
+//     // if (v) {
+//     // 	if (elapsedTime < 100*1000) {
+//     // 	    Rcpp::Rcout.precision(2);
+//     // 	} else {
+//     // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+//     // 	}
+//     //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+//     // }
+
+//     Rcpp::List graphList;
+    
+//     for (int i = 0; i < a.size(); i++) {
+// 	Rcpp::List pcGraph = pcGraphs[i].toList();
+// 	pcGraph["parameters"] = pcParams[i].toList();
+//         graphList.push_back(pcGraph);
+//     }
+
+//     arma::vec aic = 2*nParams - 2*loglik;
+//     arma::vec bic = std::log(n)*nParams - 2*loglik;
+
+//     arma::uword aicIdx = arma::index_min(aic);
+//     arma::uword bicIdx = arma::index_min(bic);
+    
+//     // Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=graphList[bicIdx],
+//     // 					   Rcpp::_["graph.aic"]=graphList[aicIdx],
+//     // 					   Rcpp::_["graphs"]=graphList,
+//     // 					   Rcpp::_["lambdas"]=R_NilValue,
+//     // 					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
+//     // 					   Rcpp::_["AIC"] = aic,
+//     // 					   Rcpp::_["BIC"] = bic,
+//     // 					   Rcpp::_["loglik"] = loglik,
+//     // 					   Rcpp::_["nParams"] = nParams,
+//     // 					   Rcpp::_["n"] = n);
+
+//     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[1].toList(),
+// 					   Rcpp::_["graph.1se"]=cvGraphs[0].toList(),
+//     					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+// 					   Rcpp::_["lambda.min"]=cvGraphs[1].getHyperParam("lambda"),
+// 					   Rcpp::_["lambda.1se"]=cvGraphs[0].getHyperParam("lambda"),
+// 					   Rcpp::_["alphas"]=R_NilValue,
+// 					   Rcpp::_["alpha.min"]=R_NilValue,
+// 					   Rcpp::_["alpha.1se"]=R_NilValue,
+// 					   Rcpp::_["foldid"]=_foldid,
+//     					   Rcpp::_["loglik"] = loglik);
+    
+//     result.attr("class") = "graphCV";
+
+//     return result;
+// }
+
 
 //' Runs the causal algorithm CPC-Stable on a dataset
 //'
@@ -1199,7 +1502,80 @@ Rcpp::List grasp(
 
     RcppThread::checkUserInterrupt();
 
-    Rcpp::List result = grasp.search().toList();
+    std::map<EdgeListGraph, std::pair<int, double>> cpdagMap = grasp.search();
+
+    Rcpp::List graphList;
+    std::vector<int> graphCounts;
+    std::vector<double> graphBICs;
+
+    for(auto it = cpdagMap.begin(); it != cpdagMap.end(); ++it) {
+	graphList.push_back(it->first.toList());
+	graphCounts.push_back(it->second.first);
+	graphBICs.push_back(it->second.second);
+    }
+    
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
+					   Rcpp::_["count"]=graphCounts,
+					   Rcpp::_["BIC"]=graphBICs
+	);
+
+    return result;
+}
+
+
+
+//' Parameterize a graph using the MGM framework
+//'
+//' @param df The dataframe
+//' @param graph An graph to parameterize.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+//' g <- parameterize(data.n100.p25, g)
+// [[Rcpp::export]]
+Rcpp::List parameterize(
+    const Rcpp::DataFrame& df,
+    Rcpp::List graph,
+    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.5, 0.5, 0.5),
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    std::vector<double> l(lambda.begin(), lambda.end());
+
+    int lamLength = 3;
+
+    if (l.size() == 1) {
+	for (int i = 1; i < lamLength; i++) {
+	    l.push_back(l[0]);
+	}
+    } else if (l.size() != lamLength) {
+	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+    }
+
+    EdgeListGraph g(graph, ds);
+    CausalMGM causalMGM(ds, g);
+    causalMGM.setVerbose(verbose);
+    causalMGM.setLambda(l);
+
+    Rcpp::List result = g.toList();
+
+    result["parameters"] = causalMGM.search().toList();
+
+    // ds.deleteVariables();
 
     return result;
 }

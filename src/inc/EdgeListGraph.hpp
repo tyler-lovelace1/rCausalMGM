@@ -9,7 +9,7 @@
 #include "DataSet.hpp"
 #include "GraphUtils.hpp"
 #include "ChoiceGenerator.hpp"
-// #include "MGMParams.hpp"
+#include "MGMParams.hpp"
 #include <string.h>
 #include <fstream>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ private:
     /**
      * The edges in the graph.
      */
-    std::unordered_set<Edge> edgesSet;
+    std::set<Edge> edgesSet;
 
     /**
      * Map from each node to the List of edges connected to that node.
@@ -79,7 +79,7 @@ private:
 	{"penalty", arma::vec()}
     };
 
-    Rcpp::List modelParams;
+    MGMParams modelParams;
     // CausalMGMParams causalParams;
 
     // std::unordered_map<Node, std::unordered_set<Node>> ancestors;
@@ -498,13 +498,13 @@ public:
     /**
      * @return the set of edges in the graph.
      */
-    std::unordered_set<Edge> getEdges() { return edgesSet; }
+    std::set<Edge> getEdges() { return edgesSet; }
 
     /**
      * @return the list of edges in the graph.  No particular ordering of the
      * edges in the list is guaranteed.
      */
-    std::vector<Edge> getEdgeList() { return std::vector<Edge>(edgesSet.begin(), edgesSet.end()); }
+    std::vector<Edge> getEdgeList() const { return std::vector<Edge>(edgesSet.begin(), edgesSet.end()); }
 
     std::unordered_set<Triple> getAmbiguousTriples() { return ambiguousTriples; }
     std::unordered_set<Triple> getUnderLines() { return underLineTriples; }
@@ -673,7 +673,7 @@ public:
     void changeName(std::string name, std::string newName);
 
     // Converts graph to a list in R
-    Rcpp::List toList();
+    Rcpp::List toList() const;
 
     // Returns true if an R list object is a valid graph
     static bool validateGraphList(Rcpp::List& l);
@@ -690,10 +690,9 @@ public:
     arma::vec getHyperParam(std::string param)
 	{ return hyperparamHash[param]; }
 
-    void setParams(const Rcpp::List& params)
-	{ modelParams = params; }
+    void setParams(const MGMParams& params) { this->modelParams = params; }
 
-    Rcpp::List getParams() { return modelParams; }
+    MGMParams getParams() { return modelParams; }
 
     // void setCausalMGMParams(const CausalMGMParams& params)
     // 	{ causalParams = CausalMGMParams(params); }
@@ -706,6 +705,11 @@ public:
      * isomorphic.
      */
     friend bool operator==(const EdgeListGraph& g1, const EdgeListGraph& g2);
+    friend bool operator!=(const EdgeListGraph& g1, const EdgeListGraph& g2);
+    friend bool operator<(const EdgeListGraph& g1, const EdgeListGraph& g2);
+    friend bool operator>=(const EdgeListGraph& g1, const EdgeListGraph& g2);
+    friend bool operator<=(const EdgeListGraph& g1, const EdgeListGraph& g2);
+    friend bool operator>(const EdgeListGraph& g1, const EdgeListGraph& g2);
     friend std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph);
 
 

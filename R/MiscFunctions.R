@@ -84,6 +84,39 @@ print.graphPath <- function(x, ...) {
 }
 
 
+#' A print override function for the graphSTEPS class
+#'
+#' @param x The graphSTEPS object
+#' @export
+print.graphSTEPS <- function(x, gamma = NULL, ...) {
+    mgmFlag <- !is.null(x$lambdas)
+    if (is.null(gamma)) {
+        gamma <- x$gamma
+    }
+    cat("StEPS selected graph:\n")
+    print(x$graph)
+    cat("\n")
+    cat("StEPS selected lambda for gamma = ")
+    cat(gamma)
+    cat(":\n")
+    allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
+    allIdx <- allIdx[length(allIdx)]
+    ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
+    ccIdx <- ccIdx[length(ccIdx)]
+    cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
+    cdIdx <- cdIdx[length(cdIdx)]
+    ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
+    ddIdx <- ddIdx[length(ddIdx)]
+    cat(paste0("lambda = { ", x$lambdas[ccIdx], ", ", x$lambdas[cdIdx], ", ", x$lambdas[ddIdx], " }\n\n"))
+    cat("StARS selected lambda for gamma = ")
+    cat(gamma)
+    cat(":\n")
+    cat(paste0("lambda = ", x$lambdas[allIdx],"\n"))
+    invisible(x)
+}
+
+
+
 #' A plot override function for the graph class
 #'
 #' @param x The graph object
@@ -188,7 +221,7 @@ plot.graph <- function(x,
 #'
 #' @param x The graph object
 #' @export
-plot.graphCV <- function(x) {
+plot.graphCV <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
     
     if (mgmFlag) {
@@ -209,7 +242,7 @@ plot.graphCV <- function(x) {
          ylab="-log(Pseudo-Likelihood)", ylim=ll.lims)
     
     arrows(x0=log10params, x1=log10params, y0=llMeans-llSe, code=3, angle=90,
-           length=0.1, y1=llMeans+llSe, col='darkgray')
+           length=0.05, y1=llMeans+llSe, col='darkgray')
     
     abline(v=ifelse(mgmFlag, log10(x$lambda.min[1]), log10(x$alpha.min[1])),
            col='black', lty=3, lw=2)
@@ -222,7 +255,7 @@ plot.graphCV <- function(x) {
 #'
 #' @param x The graph object
 #' @export
-plot.graphPath <- function(x) {
+plot.graphPath <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
 
     if (mgmFlag) {
@@ -243,7 +276,8 @@ plot.graphPath <- function(x) {
 
     legend(x = "bottomright", title="Scores", 
            legend=c("AIC", "BIC"), 
-           fill = c("blue","red"))
+           col = c("blue","red"),
+           pch=19, cex=0.7)
 
     abline(v=ifelse(mgmFlag,
                     log10(x$lambdas[which.min(x$AIC)]),
@@ -254,6 +288,53 @@ plot.graphPath <- function(x) {
                     log10(x$lambdas[which.min(x$BIC)]),
                     log10(x$alphas[which.min(x$BIC)])),
            col='red', lty=3, lw=2)
+}
+
+#' A plot override function for the graphSTEPS class
+#'
+#' @param x The graph object
+#' @export
+plot.graphSTEPS <- function(x, gamma=NULL, ...) {
+    mgmFlag <- !is.null(x$lambdas)
+
+    if (is.null(gamma)) {
+        gamma <- x$gamma
+    }
+
+    if (mgmFlag) {
+        log10params <- log10(x$lambdas)
+    } else {
+        log10params <- log10(x$alphas)
+    }
+
+    plot(x=log10params, y=x$instability[,4], col='black', pch=19,
+         xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
+         ylab="Edge instability across subsamples", ylim=c(0,0.5))
+
+    points(x=log10params, y=x$instability[,1], col='red', pch=18)
+    points(x=log10params, y=x$instability[,2], col='blue', pch=17)
+    points(x=log10params, y=x$instability[,3], col='purple', pch=15)
+
+    abline(h=gamma, lty=2, col='gray', lw=2)
+
+    allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
+    allIdx <- allIdx[length(allIdx)]
+    ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
+    ccIdx <- ccIdx[length(ccIdx)]
+    cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
+    cdIdx <- cdIdx[length(cdIdx)]
+    ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
+    ddIdx <- ddIdx[length(ddIdx)]
+    
+    abline(v=log10params[allIdx], col='black',  lty=3, lw=2)
+    abline(v=log10params[ccIdx],  col='red',    lty=3, lw=2)
+    abline(v=log10params[cdIdx],  col='blue',   lty=3, lw=2)
+    abline(v=log10params[ddIdx],  col='purple', lty=3, lw=2)
+
+    legend(x = "topleft", title="Edge Type", 
+           legend = c("All", "C-C", "C-D", "D-D"), 
+           col = c("black","red", "blue", "purple"),
+           pch = c(19, 18, 17, 15), cex=0.7)
 }
 
 #' A table to generate a data.frame for objects from graph class. It incorporates

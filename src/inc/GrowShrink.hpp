@@ -145,6 +145,13 @@ public:
 
     std::list<Node> shrink(const Node& target, std::list<Node>& active, double score, double* bicReturn = NULL);
 
+
+    std::list<Node> searchSingle(const Node& target, std::vector<Node>& regressors, double* bicReturn = NULL);
+
+    std::list<Node> growSingle(const Node& target, std::vector<Node>& regressors, double* bicReturn = NULL);
+
+    std::list<Node> shrinkSingle(const Node& target, std::list<Node>& active, double score, double* bicReturn = NULL);
+
     // private synchronized List<Node> expandVariable(DataSet dataSet, const Node& node)
     std::vector<Node> expandVariable(DataSet& dataSet, const Node& var);
 

@@ -175,6 +175,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
     int iterCount = 0;
     int noEdgeChangeCount = 0;
+    int increaseObjCount = 0;
 
     double theta = std::numeric_limits<double>::infinity();
     double thetaOld = theta;
@@ -190,6 +191,8 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
     double Fxold;
     double Fy;
     double obj;
+    // double minObj = std::numeric_limits<double>::infinity();
+    // arma::vec minX = arma::vec(X);
 
     while(true) {
         Lold = L;
@@ -240,7 +243,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
                 LocalL = 2 * arma::as_scalar(XmY.t() * (GrX - GrY)) / normXY;
             }
 
-            // Rcpp::Rcout << "   LocalL: " << LocalL << " L: " << L << std::endl;
+            Rcpp::Rcout << "   LocalL: " << LocalL << " L: " << L << std::endl;
 	    // Rcpp::Rcout << "Qx: " << Qx << " Fx: " << Fx << std::endl;
             if (LocalL <= L) {
 		break;
@@ -283,7 +286,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 	// 	    " theta: " << theta << std::endl;
 	// }
 
-        //sometimes there are more edge changes after initial 0, so may want to do two zeros in a row...
+        // sometimes there are more edge changes after initial 0, so may want to do two zeros in a row...
 	if (edgeConverge) {
 	    if (diffEdges == 0) {
 		noEdgeChangeCount++;
@@ -307,6 +310,10 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
         if (dx < epsilon && L < 1/epsilon && !edgeConverge && noEdgeChangeCount >= noEdgeChangeTol) {
             break;
         }
+
+	// if (increaseObjCount > 10) {
+	//     break;
+	// }
 
 	// Rcpp::Rcout << "restart if "
 	// 	    << arma::as_scalar((X-Xold).t() * GrY) + Gx - Gxold
@@ -340,13 +347,21 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 	    }
 	    if (cp->isVerbose()) {
 		RcppThread::Rcout << "    Iter: " << iterCount << 
-		    " |dx|/|x|: " << dx << 
-		    " loss: " << Fx + Gx << "\r";
+		    " ||dx||/||x||: " << dx << 
+		    " loss: " << Fx + Gx << "\n";
 		// Rcpp::Rcout << "X = \n" << X.t() << std::endl;
 	    }
         }
 
 	L = (L > 1/epsilon || L/LocalL > 100) ? std::max(LocalL/alpha, std::sqrt(L)) : L;
+
+	// if (obj < minObj) {
+	//     increaseObjCount = 0;
+	//     minObj = obj;
+	//     minX = X;
+	// } else {
+	//     increaseObjCount++;
+	// }
 
         iterCount++;
         if (iterCount >= iterLimit) {
@@ -356,7 +371,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
     if (cp->isVerbose()) {
 	RcppThread::Rcout << "    Iter: " << iterCount << 
-	    " |dx|/|x|: " << dx << 
+	    " ||dx||/||x||: " << dx << 
 	    " loss: " << Fx + Gx << "\n";
 	// Rcpp::Rcout << "X = \n" << X.t() << std::endl;
     }

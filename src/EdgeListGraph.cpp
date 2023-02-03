@@ -1226,21 +1226,21 @@ void EdgeListGraph::reorientAllWith(Endpoint endpoint) {
     }
 }
 
-Rcpp::List EdgeListGraph::toList() {
+Rcpp::List EdgeListGraph::toList() const {
     std::vector<std::string> nodeNames;
-    for (Node& node : nodes) {
+    for (const Node& node : nodes) {
         nodeNames.push_back(node.getName());
     }
 
     std::vector<std::string> edgeStrings;
     std::vector<Edge> edges = getEdgeList();
     Edge::sortEdges(edges); //TODO - commented out for testing
-    for (Edge& edge: edges) {
+    for (const Edge& edge: edges) {
         edgeStrings.push_back(edge.toString());
     }
 
     std::vector<std::string> ambiguousTriplesStrings;
-    for (Triple t : ambiguousTriples) {
+    for (const Triple t : ambiguousTriples) {
         ambiguousTriplesStrings.push_back(t.toString());
     }
     std::sort(ambiguousTriplesStrings.begin(),
@@ -1251,13 +1251,13 @@ Rcpp::List EdgeListGraph::toList() {
         Rcpp::_["edges"] = edgeStrings,
         Rcpp::_["ambiguous_triples"] = ambiguousTriplesStrings,
         Rcpp::_["algorithm"] = algorithm,
-	Rcpp::_["lambda"] = hyperparamHash["lambda"].is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash["lambda"]),
-	Rcpp::_["alpha"] = hyperparamHash["alpha"].is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash["alpha"]),
+	Rcpp::_["lambda"] = hyperparamHash.at("lambda").is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash.at("lambda")),
+	Rcpp::_["alpha"] = hyperparamHash.at("alpha").is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash.at("alpha")),
 	// Rcpp::_["penalty"] = hyperparamHash["penalty"],
         Rcpp::_["type"] = graph_type,
         Rcpp::_["markov.blankets"] = R_NilValue,
         Rcpp::_["stabilities"] = R_NilValue,
-	Rcpp::_["parameters"] = modelParams
+	Rcpp::_["parameters"] = modelParams.toList()
     );
 
     result.attr("class") = "graph";
@@ -1266,6 +1266,38 @@ Rcpp::List EdgeListGraph::toList() {
     return result;
 
 }
+
+bool operator==(const EdgeListGraph& g1, const EdgeListGraph& g2) {
+    if (g1.nodes.size() != g2.nodes.size()) return false;
+    std::set<Node> nodeSet1(g1.nodes.begin(), g1.nodes.end());
+    std::set<Node> nodeSet2(g2.nodes.begin(), g2.nodes.end());
+    return nodeSet1 == nodeSet2 && g1.edgesSet == g2.edgesSet;
+}
+
+bool operator!=(const EdgeListGraph& g1, const EdgeListGraph& g2) {
+    return !(g1 == g2);
+}
+
+bool operator<(const EdgeListGraph& g1, const EdgeListGraph& g2) {
+    if (g1.nodes.size() != g2.nodes.size()) return g1.nodes.size() < g2.nodes.size();
+    std::set<Node> nodeSet1(g1.nodes.begin(), g1.nodes.end());
+    std::set<Node> nodeSet2(g2.nodes.begin(), g2.nodes.end());
+    if (nodeSet1 != nodeSet2) return nodeSet1 < nodeSet2;
+    return g1.edgesSet < g2.edgesSet;
+}
+
+bool operator>=(const EdgeListGraph& g1, const EdgeListGraph& g2) {
+    return !(g1 < g2);
+}
+
+bool operator<=(const EdgeListGraph& g1, const EdgeListGraph& g2) {
+    return (g1 < g2) || (g1 == g2);
+}
+
+bool operator>(const EdgeListGraph& g1, const EdgeListGraph& g2) {
+    return !(g1 <= g2);
+}
+
 
 std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
 
@@ -2110,7 +2142,7 @@ Rcpp::List pag(const Rcpp::List& graph,
 //'
 //' @param graph1 A graph object
 //' @param graph2 A graph object
-//' @return The skeleton SHD btween the two graph objects
+//' @return The skeleton SHD between the two graph objects
 //' @export
 //' @examples
 //' data("data.n100.p25")

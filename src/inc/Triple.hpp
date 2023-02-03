@@ -25,7 +25,7 @@ public:
     Node getY() { return y; }
     Node getZ() { return z; }
 
-    std::string toString();
+    std::string toString() const;
 
     friend std::ostream& operator<<(std::ostream& os, const Triple& triple);
     friend bool operator<(const Triple& t1, const Triple& t2);
