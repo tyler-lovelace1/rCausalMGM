@@ -1,7 +1,7 @@
 #include "EdgeListGraph.hpp"
 #include "MeekRules.hpp"
 #include "FciOrient.hpp"
-#include "SepsetsSet.hpp"
+#include "SepsetProducer.hpp"
 
 // Node EdgeListGraph::nullNode = Node();
 
@@ -602,9 +602,9 @@ bool EdgeListGraph::isUndirectedFromTo(const Node& node1, const Node& node2) {
  * up twice in the list of adjacencies for X, for optimality; simply create a list an and array from these to
  * eliminate the duplication.
  */
-std::vector<Node> EdgeListGraph::getAdjacentNodes(const Node& node) {
-    std::vector<Edge> edges = edgeLists[node];
-    std::unordered_set<Node> adj;
+std::vector<Node> EdgeListGraph::getAdjacentNodes(const Node& node) const {
+    std::vector<Edge> edges = edgeLists.at(node);
+    std::set<Node> adj;
 
     for (Edge edge : edges) {
         Node z = edge.getDistalNode(node);
@@ -613,6 +613,181 @@ std::vector<Node> EdgeListGraph::getAdjacentNodes(const Node& node) {
 
     return std::vector<Node>(adj.begin(), adj.end());
 }
+
+// std::vector<Node> EdgeListGraph::getMarkovBlanket(const Node& node) const {
+//     std::vector<Node> mb = getAdjacentNodes(node);
+//     std::set<Node> mbSet(mb.begin(), mb.end());
+    
+//     if (graph_type=="completed partially directed acyclic graph" ||
+// 	graph_type=="directed acyclic graph") {
+
+// 	std::vector<Node> colliderSet = getConnectedColliders(node);
+
+// 	mbSet.insert(colliderSet.begin(), colliderSet.end());
+	
+// 	// for (const Node& n1 : getChildren(node)) {
+// 	//     for (const Node& n2 : getParents(n1)) {
+// 	// 	if (n2 != node) {
+// 	// 	    mbSet.insert(n2);
+// 	// 	}
+// 	//     }
+// 	// }
+//     } if (graph_type == "partial ancestral graph" ||
+// 	  graph_type == "maximal ancestral graph") {
+
+// 	std::vector<Node> colliderSet = getConnectedColliders(node);
+
+// 	mbSet.insert(colliderSet.begin(), colliderSet.end());
+	
+	
+// 	// for (const Node& n1 : getPossibleChildren(node)) {
+// 	//     for (const Node& n2 : getPossibleParents(n1)) {
+// 	// 	if (n2 != node) {
+// 	// 	    mbSet.insert(n2);
+// 	// 	}
+// 	//     }
+// 	// }
+
+// 	// for (const Node& n1 : getBidirectedConnectedComponent(node)) {
+// 	//     if (n1 != node) {
+// 	// 	mbSet.insert(n1);
+// 	//     }
+// 	//     for (const Edge& e : edgeLists.at(n1)) {
+// 	// 	if (e.getProximalEndpoint(n1) == ENDPOINT_ARROW) {
+// 	// 	    Node n2 = e.getDistalNode(n1)
+// 	// 	    if (n2 != node) {
+// 	// 	    	mbSet.insert(n2);
+// 	// 	    }
+// 	// 	}
+// 	//     }
+// 	// }
+//     }
+
+//     mb = std::vector<Node>(mbSet.begin(), mbSet.end());
+
+//     return mb;
+// }
+
+std::vector<Node> EdgeListGraph::getBidirectedConnectedComponent(const Node& node) const {
+
+    std::queue<Node> Q;
+
+    std::set<Node> visited, C;
+
+    Node n1, n2;
+
+    int depth = 0, timeToInc = 1;
+
+    // Rcpp::Rcout << "bidirCC for " << node << ":\n";
+    
+    Q.push(node);
+    visited.insert(node);
+
+    // Rcpp::Rcout << "  depth " << depth << "  :  ";
+
+    while (!Q.empty()) {
+	n1 = Q.front();
+	Q.pop();
+
+	// Rcpp::Rcout << n1 << " ";
+
+	if (depth != 0) C.insert(n1);
+	
+	for (Edge e : edgeLists.at(n1)) {
+	    if (e.isBidirected()) {
+		n2 = e.getDistalNode(n1);
+		if (visited.count(n2)==0) {
+		    
+		    visited.insert(n2);
+		    Q.push(n2);
+
+		}
+	    }
+	}
+
+	timeToInc--;
+
+	if (timeToInc==0) {
+	    depth++;
+
+	    if (depth > 2) break;
+
+	    // Rcpp::Rcout << "\n  depth " << depth << "  :  ";
+
+	    timeToInc = Q.size();
+	}
+    }
+
+    // Rcpp::Rcout << "\n";
+
+    std::vector<Node> bidirC(C.begin(), C.end());
+
+    return bidirC;
+}
+
+std::vector<Node> EdgeListGraph::getMarkovBlanket(const Node& node) const {
+
+    std::queue<Node> Q;
+
+    std::set<Node> visited, mb;
+
+    Node n1, n2;
+
+    int depth = 0, timeToInc = 1;
+
+    // Rcpp::Rcout << "MB for " << node << ":\n";
+    
+    Q.push(node);
+    visited.insert(node);
+
+    // Rcpp::Rcout << "  depth " << depth << "  :  ";
+
+    while (!Q.empty()) {
+	n1 = Q.front();
+	Q.pop();
+
+	// Rcpp::Rcout << "\n    " << n1 << " ";
+	
+	for (Edge e : edgeLists.at(n1)) {
+	    if (n1 == node) {
+		n2 = e.getDistalNode(n1);
+		// Rcpp::Rcout << "\n      " << e << " ";
+		mb.insert(n2);
+		if (e.getDistalEndpoint(n1) == ENDPOINT_ARROW) {
+		    visited.insert(n2);
+		    Q.push(n2);
+		}
+	    } else if (e.getProximalEndpoint(n1) == ENDPOINT_ARROW) {
+		n2 = e.getDistalNode(n1);
+		if (n2 != node) mb.insert(n2);
+		// Rcpp::Rcout << "\n      " << e << " ";
+		if (e.isBidirected() && visited.count(n2)==0) {
+		    visited.insert(n2);
+		    Q.push(n2);
+		}
+	    }
+	}
+
+	timeToInc--;
+
+	if (timeToInc==0) {
+	    depth++;
+
+	    if (depth > 2) break;
+	    
+	    // Rcpp::Rcout << "\n  depth " << depth << "  :  ";
+
+	    timeToInc = Q.size();
+	}
+    }
+
+    // Rcpp::Rcout << "\n";
+
+    std::vector<Node> mbVec(mb.begin(), mb.end());
+
+    return mbVec;
+}
+
 
 /**
  * @return the edge connecting node1 and node2, provided a unique such edge
@@ -671,9 +846,9 @@ Endpoint EdgeListGraph::getEndpoint(const Node& node1, const Node& node2) {
 /**
  * @return the list of parents for a node.
  */
-std::vector<Node> EdgeListGraph::getParents(const Node& node) {
+std::vector<Node> EdgeListGraph::getParents(const Node& node) const {
     std::vector<Node> parents;
-    std::vector<Edge> edges = edgeLists[node];
+    std::vector<Edge> edges = edgeLists.at(node);
 
     for (Edge edge : edges) {
         Endpoint endpoint1 = edge.getDistalEndpoint(node);
@@ -689,11 +864,31 @@ std::vector<Node> EdgeListGraph::getParents(const Node& node) {
 
 
 /**
+ * @return the list of possible parents for a node.
+ */
+std::vector<Node> EdgeListGraph::getPossibleParents(const Node& node) const {
+    std::vector<Node> possParents;
+    std::vector<Edge> edges = edgeLists.at(node);
+
+    for (Edge edge : edges) {
+        Endpoint endpoint1 = edge.getDistalEndpoint(node);
+        Endpoint endpoint2 = edge.getProximalEndpoint(node);
+
+        if (endpoint1 != ENDPOINT_ARROW && endpoint2 == ENDPOINT_ARROW) {
+            possParents.push_back(edge.getDistalNode(node));
+        }
+    }
+
+    return possParents;
+}
+
+
+/**
  * @return the list of children for a node.
  */
-std::vector<Node> EdgeListGraph::getChildren(const Node& node) {
+std::vector<Node> EdgeListGraph::getChildren(const Node& node) const {
     std::vector<Node> children;
-    std::vector<Edge> edges = edgeLists[node];
+    std::vector<Edge> edges = edgeLists.at(node);
 
     for (Edge edge : edges) {
         Endpoint endpoint1 = edge.getDistalEndpoint(node);
@@ -706,6 +901,28 @@ std::vector<Node> EdgeListGraph::getChildren(const Node& node) {
 
     return children;
 }
+
+
+/**
+ * @return the list of possible children for a node.
+ */
+std::vector<Node> EdgeListGraph::getPossibleChildren(const Node& node) const {
+    std::vector<Node> possChildren;
+    std::vector<Edge> edges = edgeLists.at(node);
+
+    for (Edge edge : edges) {
+        Endpoint endpoint1 = edge.getDistalEndpoint(node);
+        Endpoint endpoint2 = edge.getProximalEndpoint(node);
+
+        if (endpoint1 == ENDPOINT_ARROW && endpoint2 != ENDPOINT_ARROW) {
+            possChildren.push_back(edge.getDistalNode(node));
+        }
+    }
+
+    return possChildren;
+}
+
+
 
 /**
  * If there is currently an edge from node1 to node2, sets the endpoint at
@@ -785,18 +1002,19 @@ bool EdgeListGraph::validateGraphList(Rcpp::List& l) {
     if (names.size() < 2)                                                 return false;
     if (std::find(names.begin(), names.end(), "nodes") == names.end())    return false;
     if (std::find(names.begin(), names.end(), "edges") == names.end())    return false;
+    if (std::find(names.begin(), names.end(), "type") == names.end())    return false;
     if (std::find(names.begin(), names.end(), "ambiguous_triples") == names.end())
 	l["ambiguous_triples"] = std::vector<std::string>();
     if (std::find(names.begin(), names.end(), "algorithm") == names.end())
 	l["algorithm"] = "";
-    if (std::find(names.begin(), names.end(), "type") == names.end())
-	l["type"] = "";
     if (std::find(names.begin(), names.end(), "lambda") == names.end())
 	l["lambda"] = R_NilValue;
     if (std::find(names.begin(), names.end(), "alpha") == names.end())
 	l["alpha"] = R_NilValue;
     if (std::find(names.begin(), names.end(), "markov.blankets") == names.end())
-	l["markov.blankets"] = calculateMarkovBlankets(l);
+	l["markov.blankets"] = R_NilValue; // calculateMarkovBlankets(l);
+    if (std::find(names.begin(), names.end(), "neighbors") == names.end())
+	l["neighbors"] = R_NilValue; // calculateMarkovBlankets(l);
     if (std::find(names.begin(), names.end(), "stabilities") == names.end())
 	l["stabilities"] = R_NilValue;
     // if (names[2] != "ambiguous_triples") return false;
@@ -808,326 +1026,327 @@ bool EdgeListGraph::validateGraphList(Rcpp::List& l) {
     return true;
 }
 
-/**
- * Calculate markov blankets for undirected graph
- * For a node x, all neighbors of x are in the Markov Blanket of x
- */
-Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
-    std::vector<std::string> nodes = graph["nodes"];
-    std::vector<std::string> edges = graph["edges"];
+// /**
+//  * Calculate markov blankets for undirected graph
+//  * For a node x, all neighbors of x are in the Markov Blanket of x
+//  */
+// Rcpp::List markovBlanketUndirected(const Rcpp::List& graph) {
+//     std::vector<std::string> nodes = graph["nodes"];
+//     std::vector<std::string> edges = graph["edges"];
 
-    std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
 
-    for (std::string n : nodes) {
-        blankets[n] = std::unordered_set<std::string>();
-    }
+//     for (std::string n : nodes) {
+//         blankets[n] = std::unordered_set<std::string>();
+//     }
 
-    // Get blankets
-    for (std::string edgeString : edges) {
-        std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
+//     // Get blankets
+//     for (std::string edgeString : edges) {
+//         std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
 
-        std::string n1 = e[0];
-        std::string n2 = e[2];
+//         std::string n1 = e[0];
+//         std::string n2 = e[2];
 
-        blankets[n1].insert(n2);
-        blankets[n2].insert(n1);
-    }
+//         blankets[n1].insert(n2);
+//         blankets[n2].insert(n1);
+//     }
 
-    // Convert to list
-    Rcpp::List result = Rcpp::List::create();
+//     // Convert to list
+//     Rcpp::List result = Rcpp::List::create();
 
-    for (std::string n : nodes) {
-        result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
-    }
+//     for (std::string n : nodes) {
+//         result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
-/**
- * Calculate markov blankets for Partial Ancestral graphs
- *
- * Rules:
- * 1. Parents, children, and spouses (linked by fully directed edges) are treated the 
- *    same as in DAGs, and are all included in the Markov blanket.
- * 2. Unoriented, partially oriented, and bidirected edges all have to be treated like 
- *    there is latent confounding, because it hasn't been ruled out. Thus, any node 
- *    connected to the target by unoriented, partially oriented, or 
- *    bidirected edges are included in the Markov blanket.
- * 3. Unoriented, partially oriented, or bidirected edges connected to the children are 
- *    included in the Markov blanket.
- * 4. For the nodes added to the Markov blanket in rule two, add any parents of those
- *    nodes to the Markov blanket.
- * 5. Additionally, add any nodes connected to those added in rule two by unoriented, 
- *    partially oriented, or bidirected edges. We're going to cut off the Markov blanket 
- *    here arbitrarily, but in theory rules 3 and 4 should be applied recursively on 
- *    each new set of nodes connected by unoriented, partially oriented, or bidirected 
- *    edges. However, this could lead to ridiculously large Markov blankets, and it would 
- *    be unlikely the additional nodes would actually improve predictive performance.
- */
-Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
-    std::vector<std::string> nodes = graph["nodes"];
-    std::vector<std::string> edges = graph["edges"];
+// /**
+//  * Calculate markov blankets for Partial Ancestral graphs
+//  *
+//  * Rules:
+//  * 1. Parents, children, and spouses (linked by fully directed edges) are treated the 
+//  *    same as in DAGs, and are all included in the Markov blanket.
+//  * 2. Unoriented, partially oriented, and bidirected edges all have to be treated like 
+//  *    there is latent confounding, because it hasn't been ruled out. Thus, any node 
+//  *    connected to the target by unoriented, partially oriented, or 
+//  *    bidirected edges are included in the Markov blanket.
+//  * 3. Unoriented, partially oriented, or bidirected edges connected to the children are 
+//  *    included in the Markov blanket.
+//  * 4. For the nodes added to the Markov blanket in rule two, add any parents of those
+//  *    nodes to the Markov blanket.
+//  * 5. Additionally, add any nodes connected to those added in rule two by unoriented, 
+//  *    partially oriented, or bidirected edges. We're going to cut off the Markov blanket 
+//  *    here arbitrarily, but in theory rules 3 and 4 should be applied recursively on 
+//  *    each new set of nodes connected by unoriented, partially oriented, or bidirected 
+//  *    edges. However, this could lead to ridiculously large Markov blankets, and it would 
+//  *    be unlikely the additional nodes would actually improve predictive performance.
+//  */
+// Rcpp::List markovBlanketPAG(const Rcpp::List& graph) {
+//     std::vector<std::string> nodes = graph["nodes"];
+//     std::vector<std::string> edges = graph["edges"];
 
-    std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
-    std::unordered_map<std::string, std::unordered_set<std::string>> confoundingNeighbors; // Nodes connected by o->, or <->
-    std::unordered_map<std::string, std::unordered_set<std::string>> parents;
-    std::unordered_map<std::string, std::unordered_set<std::string>> children;
-    std::unordered_map<std::string, std::unordered_set<std::string>> partialParents;
-    std::unordered_map<std::string, std::unordered_set<std::string>> partialChildren;
-    std::unordered_map<std::string, std::unordered_set<std::string>> nondirected;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> confoundingNeighbors; // Nodes connected by o->, or <->
+//     std::unordered_map<std::string, std::unordered_set<std::string>> parents;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> children;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> partialParents;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> partialChildren;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> nondirected;
 
-    for (std::string n : nodes) {
-        blankets[n] = std::unordered_set<std::string>();
-        partialParents[n] = std::unordered_set<std::string>();
-	partialChildren[n] = std::unordered_set<std::string>();
-	confoundingNeighbors[n] = std::unordered_set<std::string>();
-        parents[n] = std::unordered_set<std::string>();
-        children[n] = std::unordered_set<std::string>();
-	nondirected[n] = std::unordered_set<std::string>();
-    }
+//     for (std::string n : nodes) {
+//         blankets[n] = std::unordered_set<std::string>();
+//         partialParents[n] = std::unordered_set<std::string>();
+// 	partialChildren[n] = std::unordered_set<std::string>();
+// 	confoundingNeighbors[n] = std::unordered_set<std::string>();
+//         parents[n] = std::unordered_set<std::string>();
+//         children[n] = std::unordered_set<std::string>();
+// 	nondirected[n] = std::unordered_set<std::string>();
+//     }
 
-    // Get neighbors of every node
-    for (std::string edgeString : edges) {
-        std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
+//     // Get neighbors of every node
+//     for (std::string edgeString : edges) {
+//         std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
 
-        std::string n1 = e[0];
-        std::string n2 = e[2];
-        std::string edge = e[1];
+//         std::string n1 = e[0];
+//         std::string n2 = e[2];
+//         std::string edge = e[1];
 
-        if (edge == "<->") {
-            confoundingNeighbors[n1].insert(n2);
-            confoundingNeighbors[n2].insert(n1);
-	    // confoundingChildren[n1].insert(n2);
-	    // confoundingChildren[n2].insert(n1);
-	} else if (edge == "o->") {
-	    partialChildren[n1].insert(n2);
-            partialParents[n2].insert(n1);
-        } else if (edge == "-->") {
-            children[n1].insert(n2);
-            parents[n2].insert(n1);
-        } else if (edge == "o-o") {
-	    nondirected[n1].insert(n2);
-	    nondirected[n2].insert(n1);
-	}
+//         if (edge == "<->") {
+//             confoundingNeighbors[n1].insert(n2);
+//             confoundingNeighbors[n2].insert(n1);
+// 	    // confoundingChildren[n1].insert(n2);
+// 	    // confoundingChildren[n2].insert(n1);
+// 	} else if (edge == "o->") {
+// 	    partialChildren[n1].insert(n2);
+//             partialParents[n2].insert(n1);
+//         } else if (edge == "-->") {
+//             children[n1].insert(n2);
+//             parents[n2].insert(n1);
+//         } else if (edge == "o-o") {
+// 	    nondirected[n1].insert(n2);
+// 	    nondirected[n2].insert(n1);
+// 	}
 
-    }
+//     }
 
-    // Get blankets of every node
-    for (std::string target : nodes) {
+//     // Get blankets of every node
+//     for (std::string target : nodes) {
 
-        std::unordered_set<std::string> spouses;
-        for (std::string child : children[target]) {
-            spouses.insert(parents[child].begin(), parents[child].end());
-	    spouses.insert(partialParents[child].begin(),
-			   partialParents[child].end());
-        }
+//         std::unordered_set<std::string> spouses;
+//         for (std::string child : children[target]) {
+//             spouses.insert(parents[child].begin(), parents[child].end());
+// 	    spouses.insert(partialParents[child].begin(),
+// 			   partialParents[child].end());
+//         }
 
-	std::unordered_set<std::string> partialSpouses;
-        for (std::string child : partialChildren[target]) {
-            partialSpouses.insert(parents[child].begin(), parents[child].end());
-	    partialSpouses.insert(partialParents[child].begin(),
-				  partialParents[child].end());
-        }
+// 	std::unordered_set<std::string> partialSpouses;
+//         for (std::string child : partialChildren[target]) {
+//             partialSpouses.insert(parents[child].begin(), parents[child].end());
+// 	    partialSpouses.insert(partialParents[child].begin(),
+// 				  partialParents[child].end());
+//         }
 
-        std::unordered_set<std::string> rule2; // (confoundingNeighbors[target]);
-	std::unordered_set<std::string> rule3;
-        for (std::string child : children[target]) {
-            rule2.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
-        }
+//         std::unordered_set<std::string> rule2; // (confoundingNeighbors[target]);
+// 	std::unordered_set<std::string> rule3;
+//         for (std::string child : children[target]) {
+//             rule2.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
+//         }
 	
-	for (std::string child : partialChildren[target]) {
-            rule3.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
-        }
+// 	for (std::string child : partialChildren[target]) {
+//             rule3.insert(confoundingNeighbors[child].begin(), confoundingNeighbors[child].end());
+//         }
 
-        std::unordered_set<std::string> rule4;
-        std::unordered_set<std::string> rule5;
-	std::unordered_set<std::string> rule6;
-        for (std::string Y : confoundingNeighbors[target]) {
-            rule4.insert(parents[Y].begin(), parents[Y].end());
-	    rule5.insert(partialParents[Y].begin(), partialParents[Y].end());
-            rule6.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
-        }
+//         std::unordered_set<std::string> rule4;
+//         std::unordered_set<std::string> rule5;
+// 	std::unordered_set<std::string> rule6;
+//         for (std::string Y : confoundingNeighbors[target]) {
+//             rule4.insert(parents[Y].begin(), parents[Y].end());
+// 	    rule5.insert(partialParents[Y].begin(), partialParents[Y].end());
+//             rule6.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+//         }
 
-	std::unordered_set<std::string> rule7;
-	for (std::string Y : rule2) {
-            rule7.insert(parents[Y].begin(), parents[Y].end());
-	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
-            rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
-        }
+// 	std::unordered_set<std::string> rule7;
+// 	for (std::string Y : rule2) {
+//             rule7.insert(parents[Y].begin(), parents[Y].end());
+// 	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
+//             rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+//         }
 
-	for (std::string Y : rule3) {
-            rule7.insert(parents[Y].begin(), parents[Y].end());
-	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
-            rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
-        }
+// 	for (std::string Y : rule3) {
+//             rule7.insert(parents[Y].begin(), parents[Y].end());
+// 	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
+//             rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+//         }
 
-	for (std::string Y : rule6) {
-            rule7.insert(parents[Y].begin(), parents[Y].end());
-	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
-            rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
-        }
+// 	for (std::string Y : rule6) {
+//             rule7.insert(parents[Y].begin(), parents[Y].end());
+// 	    rule7.insert(partialParents[Y].begin(), partialParents[Y].end());
+//             rule7.insert(confoundingNeighbors[Y].begin(), confoundingNeighbors[Y].end());
+//         }
 
-        blankets[target].insert(parents[target].begin(), parents[target].end());
-        blankets[target].insert(children[target].begin(), children[target].end());
-        blankets[target].insert(spouses.begin(), spouses.end());
-	blankets[target].insert(partialParents[target].begin(),
-				partialParents[target].end());
-        blankets[target].insert(partialChildren[target].begin(),
-				partialChildren[target].end());
-        blankets[target].insert(partialSpouses.begin(),
-				partialSpouses.end());
-	blankets[target].insert(confoundingNeighbors[target].begin(),
-				confoundingNeighbors[target].end());
-	blankets[target].insert(nondirected[target].begin(), nondirected[target].end());
+//         blankets[target].insert(parents[target].begin(), parents[target].end());
+//         blankets[target].insert(children[target].begin(), children[target].end());
+//         blankets[target].insert(spouses.begin(), spouses.end());
+// 	blankets[target].insert(partialParents[target].begin(),
+// 				partialParents[target].end());
+//         blankets[target].insert(partialChildren[target].begin(),
+// 				partialChildren[target].end());
+//         blankets[target].insert(partialSpouses.begin(),
+// 				partialSpouses.end());
+// 	blankets[target].insert(confoundingNeighbors[target].begin(),
+// 				confoundingNeighbors[target].end());
+// 	blankets[target].insert(nondirected[target].begin(), nondirected[target].end());
 	
-        blankets[target].insert(rule2.begin(), rule2.end());
-        blankets[target].insert(rule3.begin(), rule3.end());
-        blankets[target].insert(rule4.begin(), rule4.end());
-	blankets[target].insert(rule5.begin(), rule5.end());
-	blankets[target].insert(rule6.begin(), rule6.end());
-        blankets[target].erase(target);
-    }
+//         blankets[target].insert(rule2.begin(), rule2.end());
+//         blankets[target].insert(rule3.begin(), rule3.end());
+//         blankets[target].insert(rule4.begin(), rule4.end());
+// 	blankets[target].insert(rule5.begin(), rule5.end());
+// 	blankets[target].insert(rule6.begin(), rule6.end());
+//         blankets[target].erase(target);
+//     }
 
-    // Convert to list
-    Rcpp::List result = Rcpp::List::create();
+//     // Convert to list
+//     Rcpp::List result = Rcpp::List::create();
 
-    for (std::string n : nodes) {
-        result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
-    }
+//     for (std::string n : nodes) {
+//         result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
 
-/**
- * Calculate markov blankets for Markov Equivalence Class graphs
- *
- * Updated rules for how to handle Markov blankets in PDAGs (Partially Directed Acyclic Graphs):
- * 1. Parents of target node
- * 2. Children of target node
- * 3. Spouses of target node
- * 4. If the target variable X has an undirected edge to Y, then Y and its directed parents
- *    are in the Markov blanket.
- * 5. If the target variable X has an undirected edge to Y, we do not include any node Z
- *    connected to Y by an undirected edge. This can be explained because in the Markov
- *    equivalence class, two consecutive undirected edges X --- Y --- Z can be either
- *    X --> Y --> Z, X <-- Y <-- Z, or X <-- Y --> Z. In none of these cases is Z a parent of Y.
- * 6. In the case where the target variable X is a parent of node Y that contains an
- *    undirected edge to a node Z, then Y, Z, and any directed parents W of Z are included
- *    in the Markov blanket.
- *    #### Rule 6 commented out, TODO: test whether inclusion improves MB inference
- *
- */
-Rcpp::List markovBlanketMEC(const Rcpp::List& graph) {
-    std::vector<std::string> nodes = graph["nodes"];
-    std::vector<std::string> edges = graph["edges"];
+// /**
+//  * Calculate markov blankets for Markov Equivalence Class graphs
+//  *
+//  * Updated rules for how to handle Markov blankets in PDAGs (Partially Directed Acyclic Graphs):
+//  * 1. Parents of target node
+//  * 2. Children of target node
+//  * 3. Spouses of target node
+//  * 4. If the target variable X has an undirected edge to Y, then Y and its directed parents
+//  *    are in the Markov blanket.
+//  * 5. If the target variable X has an undirected edge to Y, we do not include any node Z
+//  *    connected to Y by an undirected edge. This can be explained because in the Markov
+//  *    equivalence class, two consecutive undirected edges X --- Y --- Z can be either
+//  *    X --> Y --> Z, X <-- Y <-- Z, or X <-- Y --> Z. In none of these cases is Z a parent of Y.
+//  * 6. In the case where the target variable X is a parent of node Y that contains an
+//  *    undirected edge to a node Z, then Y, Z, and any directed parents W of Z are included
+//  *    in the Markov blanket.
+//  *    #### Rule 6 commented out, TODO: test whether inclusion improves MB inference
+//  *
+//  */
+// Rcpp::List markovBlanketMEC(const Rcpp::List& graph) {
+//     std::vector<std::string> nodes = graph["nodes"];
+//     std::vector<std::string> edges = graph["edges"];
 
-    std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
-    std::unordered_map<std::string, std::unordered_set<std::string>> undirectedNeighbors;
-    std::unordered_map<std::string, std::unordered_set<std::string>> parents;
-    std::unordered_map<std::string, std::unordered_set<std::string>> children;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> blankets;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> undirectedNeighbors;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> parents;
+//     std::unordered_map<std::string, std::unordered_set<std::string>> children;
 
-    for (std::string n : nodes) {
-        blankets[n] = std::unordered_set<std::string>();
-        undirectedNeighbors[n] = std::unordered_set<std::string>();
-        parents[n] = std::unordered_set<std::string>();
-        children[n] = std::unordered_set<std::string>();
-    }
+//     for (std::string n : nodes) {
+//         blankets[n] = std::unordered_set<std::string>();
+//         undirectedNeighbors[n] = std::unordered_set<std::string>();
+//         parents[n] = std::unordered_set<std::string>();
+//         children[n] = std::unordered_set<std::string>();
+//     }
 
-    // Get neighbors of every node
-    for (std::string edgeString : edges) {
-        std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
+//     // Get neighbors of every node
+//     for (std::string edgeString : edges) {
+//         std::vector<std::string> e = GraphUtils::splitString(edgeString, " ");
 
-        std::string n1 = e[0];
-        std::string n2 = e[2];
-        std::string edge = e[1];
+//         std::string n1 = e[0];
+//         std::string n2 = e[2];
+//         std::string edge = e[1];
 
-        if (edge == "---") {
-            undirectedNeighbors[n1].insert(n2);
-            undirectedNeighbors[n2].insert(n1);
-        } else if (edge == "-->") {
-            children[n1].insert(n2);
-            parents[n2].insert(n1);
-        } else if (edge == "<->") {
-            children[n1].insert(n2);
-            parents[n2].insert(n1);
+//         if (edge == "---") {
+//             undirectedNeighbors[n1].insert(n2);
+//             undirectedNeighbors[n2].insert(n1);
+//         } else if (edge == "-->") {
+//             children[n1].insert(n2);
+//             parents[n2].insert(n1);
+//         } else if (edge == "<->") {
+//             children[n1].insert(n2);
+//             parents[n2].insert(n1);
 
-            children[n2].insert(n1);
-            parents[n1].insert(n2);
-        }
+//             children[n2].insert(n1);
+//             parents[n1].insert(n2);
+//         }
 
-    }
+//     }
 
-    // Get blankets of every node
-    for (std::string target : nodes) {
-        std::unordered_set<std::string> rule1(parents[target]);
+//     // Get blankets of every node
+//     for (std::string target : nodes) {
+//         std::unordered_set<std::string> rule1(parents[target]);
 
-        std::unordered_set<std::string> rule2(children[target]);
+//         std::unordered_set<std::string> rule2(children[target]);
 
-        std::unordered_set<std::string> rule3;
-        for (std::string child : children[target]) {
-            rule3.insert(parents[child].begin(), parents[child].end());
-        }
+//         std::unordered_set<std::string> rule3;
+//         for (std::string child : children[target]) {
+//             rule3.insert(parents[child].begin(), parents[child].end());
+//         }
 
-        std::unordered_set<std::string> rule4(undirectedNeighbors[target]);
-        // for (std::string Y : undirectedNeighbors[target]) {
-        //     rule4.insert(parents[Y].begin(), parents[Y].end());
-        // }
+//         std::unordered_set<std::string> rule4(undirectedNeighbors[target]);
+//         // for (std::string Y : undirectedNeighbors[target]) {
+//         //     rule4.insert(parents[Y].begin(), parents[Y].end());
+//         // }
 
-        // std::unordered_set<std::string> rule6;
-        // for (std::string Y : children[target]) {
-        //     for (std::string Z : undirectedNeighbors[Y]) {
-        //         rule6.insert(Z);
-        //         rule6.insert(parents[Z].begin(), parents[Z].end()); // W
-        //     }
-        // }
+//         // std::unordered_set<std::string> rule6;
+//         // for (std::string Y : children[target]) {
+//         //     for (std::string Z : undirectedNeighbors[Y]) {
+//         //         rule6.insert(Z);
+//         //         rule6.insert(parents[Z].begin(), parents[Z].end()); // W
+//         //     }
+//         // }
 
-        blankets[target].insert(rule1.begin(), rule1.end());
-        blankets[target].insert(rule2.begin(), rule2.end());
-        blankets[target].insert(rule3.begin(), rule3.end());
-        blankets[target].insert(rule4.begin(), rule4.end());
-        // blankets[target].insert(rule6.begin(), rule6.end());
-        blankets[target].erase(target);
-    }
+//         blankets[target].insert(rule1.begin(), rule1.end());
+//         blankets[target].insert(rule2.begin(), rule2.end());
+//         blankets[target].insert(rule3.begin(), rule3.end());
+//         blankets[target].insert(rule4.begin(), rule4.end());
+//         // blankets[target].insert(rule6.begin(), rule6.end());
+//         blankets[target].erase(target);
+//     }
 
-    // Convert to list
-    Rcpp::List result = Rcpp::List::create();
+//     // Convert to list
+//     Rcpp::List result = Rcpp::List::create();
 
-    for (std::string n : nodes) {
-        result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
-    }
+//     for (std::string n : nodes) {
+//         result[n] = std::vector<std::string>(blankets[n].begin(), blankets[n].end());
+//     }
 
-    return result;
-}
+//     return result;
+// }
 
-// NOTE - This function does not need to be exported (because it is called as a helper automatically every
-// time a graph is returned) but it could be later by adding "//[[Rcpp::export]]" to the bottom
-//' Caclulate the Markov Blanket for every node in the graph.
-//' This is done by default whenever a graph is returned from an algorithm,
-//' but it can also be used for graphs loaded from files or adj. mats.
-//'
-//' @param list The graph object
-//' @export
-//' @examples
-//' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
-//' nodes <- c("X1", "X2", "X3", "X4")
-//' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
-//' g[["markov.blankets"]] <- rCausalMGM::calculateMarkovBlankets(g)
-Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
-    Rcpp::List list(graph);
-    if (!EdgeListGraph::validateGraphList(list)) {
-        throw std::invalid_argument("ERROR: list is not in the form of a graph");
-    }
+// // NOTE - This function does not need to be exported (because it is called as a helper automatically every
+// // time a graph is returned) but it could be later by adding "//[[Rcpp::export]]" to the bottom
+// //' Caclulate the Markov Blanket for every node in the graph.
+// //' This is done by default whenever a graph is returned from an algorithm,
+// //' but it can also be used for graphs loaded from files or adj. mats.
+// //'
+// //' @param list The graph object
+// //' @export
+// //' @examples
+// //' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
+// //' nodes <- c("X1", "X2", "X3", "X4")
+// //' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
+// //' g[["markov.blankets"]] <- rCausalMGM::calculateMarkovBlankets(g)
+// Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
+//     EdgeListGraph g(graph);
+//     Rcpp::List list(graph);
+//     if (!EdgeListGraph::validateGraphList(list)) {
+//         throw std::invalid_argument("ERROR: list is not in the form of a graph");
+//     }
 
-    if (Rcpp::as<std::string>(list["type"])=="completed partially directed acyclic graph" ||
-	Rcpp::as<std::string>(list["type"])=="directed acyclic graph")
-	return markovBlanketMEC(list);
-    if (Rcpp::as<std::string>(list["type"]) == "partial ancestral graph" ||
-	Rcpp::as<std::string>(list["type"]) == "maximal ancestral graph")
-	return markovBlanketPAG(list);
-    else
-	return markovBlanketUndirected(list);
-}
+//     if (Rcpp::as<std::string>(list["type"])=="completed partially directed acyclic graph" ||
+// 	Rcpp::as<std::string>(list["type"])=="directed acyclic graph")
+// 	return markovBlanketMEC(list);
+//     if (Rcpp::as<std::string>(list["type"]) == "partial ancestral graph" ||
+// 	Rcpp::as<std::string>(list["type"]) == "maximal ancestral graph")
+// 	return markovBlanketPAG(list);
+//     else
+// 	return markovBlanketUndirected(list);
+// }
 
 bool EdgeListGraph::isParentOf(const Node& node1, const Node& node2) {
     for (Edge edge : getEdges(node1)) {
@@ -1140,6 +1359,186 @@ bool EdgeListGraph::isParentOf(const Node& node1, const Node& node2) {
 
     return false;
 }
+
+
+// bool EdgeListGraph::existsUndirectedPathVisit(const Node& node1, const Node& node2, std::set<Node>& path);
+
+// bool EdgeListGraph::existsDirectedPathVisit(const Node& node1, const Node& node2,
+// 					    std::set<Node>& path){
+    
+// }
+
+
+bool EdgeListGraph::existsDirectedPathFromTo(const Node& node1, const Node& node2) {
+    std::set<Node> visited;
+
+    // std::list<Edge> path;
+
+    // std::map<Node,Node> parentMap;
+
+    std::stack<Node> S;
+
+    // Rcpp::Rcout << "  Searching for directed path from " << node1 << " to " << node2 << ":\n    ";
+
+    S.push(node1);
+
+    while (!S.empty()) {
+	Node v = S.top();
+	S.pop();
+
+	// Rcpp::Rcout << v << " ";
+	
+	visited.insert(v);
+
+	for (Node ch : getChildren(v)) {
+	    if (ch==node2) {
+		// Rcpp::Rcout << "\n\nDIRECTED PATH FOUND\n\n";
+
+		// parentMap[ch] = v;
+
+		// Node n = ch;
+		// do {
+		//     Edge e = getEdge(n, parentMap[n]);
+		//     n = parentMap[n];
+		//     path.push_front(e);
+		// } while (n!=node1);
+		
+		// Rcpp::Rcout << "  Path:\n    ";
+		// for (Edge e2 : path) {
+		//     Rcpp::Rcout << e2 << " ";
+		// }
+		// Rcpp::Rcout << "\n\n";
+		return true;
+	    }
+	    if (visited.count(ch)==0) {
+		S.push(ch);
+		// parentMap[ch] = v;
+	    }
+	}
+    }
+    // Rcpp::Rcout << "\n";
+    return false;
+}
+
+bool EdgeListGraph::existsSemiDirectedPathFromTo(const Node& node1, const Node& node2) {
+    std::set<Node> visited;
+
+    std::stack<Node> S;
+
+    // Rcpp::Rcout << "  Searching for directed path from " << node1 << " to " << node2 << ":\n    ";
+
+    S.push(node1);
+
+    while (!S.empty()) {
+	Node v = S.top();
+	S.pop();
+
+	// Rcpp::Rcout << v << " ";
+	
+	visited.insert(v);
+
+	for (Node ch : getPossibleChildren(v)) {
+	    if (ch==node2) {
+		// Rcpp::Rcout << ch << "\n\nNODE FOUND\n\n";
+		return true;
+	    }
+	    if (visited.count(ch)==0) {
+		S.push(ch);
+	    }
+	}
+    }
+    // Rcpp::Rcout << "\n";
+    return false;
+}
+
+
+bool EdgeListGraph::existsAlmostDirectedPathFromTo(const Node& node1, const Node& node2) {
+    std::set<Node> visited;
+
+    std::list<Edge> path;
+
+    std::map<Node,Node> parentMap;
+
+    bool almostFlag = false;
+    bool growFlag = false;
+
+    std::stack<Node> S;
+
+    // Rcpp::Rcout << "  Searching for almost directed path from " << node1 << " to " << node2 << ":\n    ";
+
+    S.push(node1);
+
+    while (!S.empty()) {
+	Node v = S.top();
+	S.pop();
+
+	// Rcpp::Rcout << v << " ";
+
+	if (v != node1) {
+	    if (!growFlag) {
+		path.clear();
+		almostFlag = false;
+
+		Node n = v;
+		do {
+		    Edge e = getEdge(n, parentMap[n]);
+		    n = parentMap[n];
+		    path.push_front(e);
+		    almostFlag = almostFlag || !e.isDirected();
+		} while (n!=node1);
+	    } else {
+		Edge e = getEdge(v, parentMap[v]);
+		path.push_back(e);
+		almostFlag = almostFlag || !e.isDirected();
+	    }
+	    // if (e.isDirected()) {
+	    // 	path.push_back(e);
+	    // } else if (!almostFlag) {
+	    // 	path.push_back(e);
+	    // 	almostFlag = true;
+	    // } else {
+	    // 	continue;
+	    // }
+	}
+
+	growFlag = false;
+	
+	visited.insert(v);
+
+	for (Edge e : getEdges(v)) {
+	    if (e.getDistalEndpoint(v)!=ENDPOINT_ARROW) continue;
+	    if (almostFlag && !e.isDirected()) continue;
+
+	    Node n = e.getDistalNode(v);
+	    
+	    if (n==node2) {		
+		// Rcpp::Rcout << "\n\nALMOST DIRECTED PATH FOUND\n\n";
+		// Rcpp::Rcout << "  Path:\n    ";
+		// for (Edge e2 : path) {
+		//     Rcpp::Rcout << e2 << " ";
+		// }
+		// Rcpp::Rcout << e << "\n\n";
+		return true;
+	    }
+	    
+	    if (visited.count(n)==0) {
+		S.push(n);
+		parentMap[n] = v;
+		growFlag = true;
+	    }
+	}
+
+	// if (!growFlag && !path.empty()) {
+	//     if (path.back().isBidirected() || path.back().isPartiallyOriented()) {
+	// 	almostFlag = false;
+	//     }
+	//     path.pop_back();
+	// }
+    }
+    // Rcpp::Rcout << "\n";
+    return false;
+}
+
 
 /**
  * Nodes adjacent to the given node with the given proximal endpoint.
@@ -1177,11 +1576,24 @@ std::vector<Node> EdgeListGraph::getNodesOutTo(const Node& node, Endpoint endpoi
  * Determines whether node1 is an ancestor of node2.
  */
 bool EdgeListGraph::isAncestorOf(const Node& node1, const Node& node2) {
-    std::vector<Node> tempList;
-    tempList.push_back(node2);
-    std::unordered_set<Node> ancestors = getAncestors(tempList);
-    return (std::find(ancestors.begin(), ancestors.end(), node1) != ancestors.end());
+    return existsDirectedPathFromTo(node1, node2);
+    // std::vector<Node> tempList;
+    // tempList.push_back(node2);
+    // std::unordered_set<Node> ancestors = getAncestors(tempList);
+    // return (std::find(ancestors.begin(), ancestors.end(), node1) != ancestors.end());
 }
+
+/**
+ * Determines whether node1 is an ancestor of node2.
+ */
+bool EdgeListGraph::isPossibleAncestorOf(const Node& node1, const Node& node2) {
+    return existsAlmostDirectedPathFromTo(node1, node2);
+    // std::vector<Node> tempList;
+    // tempList.push_back(node2);
+    // std::unordered_set<Node> ancestors = getAncestors(tempList);
+    // return (std::find(ancestors.begin(), ancestors.end(), node1) != ancestors.end());
+}
+
 
 std::unordered_set<Node> EdgeListGraph::getAncestors(std::vector<Node>& nodes) {
     std::unordered_set<Node> ancestors;
@@ -1228,8 +1640,26 @@ void EdgeListGraph::reorientAllWith(Endpoint endpoint) {
 
 Rcpp::List EdgeListGraph::toList() const {
     std::vector<std::string> nodeNames;
+    Rcpp::List mbList = Rcpp::List::create();
+    Rcpp::List nbList = Rcpp::List::create();
+    
     for (const Node& node : nodes) {
         nodeNames.push_back(node.getName());
+	
+	std::vector<Node> mb = getMarkovBlanket(node); // already sorted
+	std::vector<std::string> mbNames;
+	for (const Node& n1 : mb) {
+	    mbNames.push_back(n1.getName());
+	}
+	mbList[node.getName()] = mbNames;
+	
+	std::vector<Node> nb = getAdjacentNodes(node); // sorted
+	// std::sort(nb.begin(), nb.end());
+	std::vector<std::string> nbNames;
+	for (const Node& n1 : nb) {
+	    nbNames.push_back(n1.getName());
+	}
+	nbList[node.getName()] = nbNames;
     }
 
     std::vector<std::string> edgeStrings;
@@ -1255,13 +1685,13 @@ Rcpp::List EdgeListGraph::toList() const {
 	Rcpp::_["alpha"] = hyperparamHash.at("alpha").is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash.at("alpha")),
 	// Rcpp::_["penalty"] = hyperparamHash["penalty"],
         Rcpp::_["type"] = graph_type,
-        Rcpp::_["markov.blankets"] = R_NilValue,
-        Rcpp::_["stabilities"] = R_NilValue,
-	Rcpp::_["parameters"] = modelParams.toList()
+        Rcpp::_["markov.blankets"] = mbList,
+	Rcpp::_["neighbors"] = nbList,
+        Rcpp::_["stabilities"] = R_NilValue
     );
 
     result.attr("class") = "graph";
-    result["markov.blankets"] = calculateMarkovBlankets(result);
+    // result["markov.blankets"] = calculateMarkovBlankets(result);
 
     return result;
 
@@ -1644,13 +2074,16 @@ Rcpp::List loadGraph(const std::string& filename) {
 	Rcpp::_["alpha"] = alpha,
         Rcpp::_["type"] = graph_type,
         Rcpp::_["markov.blankets"] = R_NilValue,
+	Rcpp::_["neighbors"] = R_NilValue,
         Rcpp::_["stabilities"] = R_NilValue
     );
 
     result.attr("class") = "graph";
-    result["markov.blankets"] = calculateMarkovBlankets(result);
+    // result["markov.blankets"] = calculateMarkovBlankets(result);
 
-    return result;
+    EdgeListGraph graph(result);
+
+    return graph.toList();
 }
 
 //' Convert an adjacency matrix into a graph
@@ -1850,7 +2283,7 @@ EdgeListGraph EdgeListGraph::getCPDAG() {
 	    continue;
 	}
 
-	std::sort(adjacentNodes.begin(), adjacentNodes.end());
+	// std::sort(adjacentNodes.begin(), adjacentNodes.end());
 
 	ChoiceGenerator cg(adjacentNodes.size(), 2);
 	std::vector<int> *choice;
@@ -1894,7 +2327,7 @@ EdgeListGraph EdgeListGraph::getMoral() {
             continue;
         }
 
-	std::sort(adjacentNodes.begin(), adjacentNodes.end());
+	// std::sort(adjacentNodes.begin(), adjacentNodes.end());
 
         ChoiceGenerator cg(adjacentNodes.size(), 2);
         std::vector<int> *choice;
@@ -2003,7 +2436,7 @@ EdgeListGraph EdgeListGraph::getPAG(std::vector<Node>& latent) {
 	    continue;
 	}
 
-	std::sort(adjacentNodes.begin(), adjacentNodes.end());
+	// std::sort(adjacentNodes.begin(), adjacentNodes.end());
 
 	ChoiceGenerator cg(adjacentNodes.size(), 2);
 	std::vector<int> *choice;
@@ -2039,9 +2472,10 @@ EdgeListGraph EdgeListGraph::getPAG(std::vector<Node>& latent) {
 	}
     }
     
-    SepsetsSet sepsetsset(sepsets, nullptr);
+    SepsetProducer sepsetsset(sepsets, nullptr);
+    sepsetsset.setOrientRule(ORIENT_SEPSETS);
 
-    FciOrient rules(&sepsetsset);
+    FciOrient rules(sepsetsset);
     rules.setCompleteRuleSetUsed(true);
     rules.ruleR0(pag);
     rules.doFinalOrientation(pag);
@@ -2138,64 +2572,113 @@ Rcpp::List pag(const Rcpp::List& graph,
 }
 
 
-//' Calculate the skeleton Structural Hamming Distance (SHD) between two graphs. This only counts the missing and added edges, and does not consider edge orientation
-//'
-//' @param graph1 A graph object
-//' @param graph2 A graph object
-//' @return The skeleton SHD between the two graph objects
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgm(data.n100.p25)
-//' rCausalMGM::printGraph(g)
-// [[Rcpp::export]]
-double skeletonSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
-    double shd = 0.0;
+// //' Calculate the skeleton Structural Hamming Distance (SHD) between two graphs. This only counts the missing and added edges, and does not consider edge orientation
+// //'
+// //' @param graph1 A graph object
+// //' @param graph2 A graph object
+// //' @return The skeleton SHD between the two graph objects
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' g <- rCausalMGM::mgm(data.n100.p25)
+// //' rCausalMGM::printGraph(g)
+// // [[Rcpp::export]]
+// double skeletonSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
+//     double shd = 0.0;
 
-    EdgeListGraph g1(graph1);
-    EdgeListGraph g2(graph2);
+//     EdgeListGraph g1(graph1);
+//     EdgeListGraph g2(graph2);
 
-    std::vector<Node> nodesG1(g1.getNodes());
-    std::vector<Node> nodesG2(g2.getNodes());
-    std::set<Node> nodeSetG1(nodesG1.begin(), nodesG1.end());
-    std::set<Node> nodeSetG2(nodesG2.begin(), nodesG2.end());
-    if (nodeSetG1 != nodeSetG2) {
-	throw std::invalid_argument("Both graphs must be constructed over the same set of nodes.");
-    }
+//     std::vector<Node> nodesG1(g1.getNodes());
+//     std::vector<Node> nodesG2(g2.getNodes());
+//     std::set<Node> nodeSetG1(nodesG1.begin(), nodesG1.end());
+//     std::set<Node> nodeSetG2(nodesG2.begin(), nodesG2.end());
+//     if (nodeSetG1 != nodeSetG2) {
+// 	throw std::invalid_argument("Both graphs must be constructed over the same set of nodes.");
+//     }
 
-    if (g1.getGraphType() != g2.getGraphType()) {
-	Rcpp::warning("The two graphs are not of the same type (undirected, completed partially directed acyclic graph, or partial ancestral graph).");
-    }
+//     if (g1.getGraphType() != g2.getGraphType()) {
+// 	Rcpp::warning("The two graphs are not of the same type (undirected, completed partially directed acyclic graph, or partial ancestral graph).");
+//     }
 
-    for (const Edge& edge : g1.getEdges()) {
-	if (!g2.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
-	    shd++;
-	}
-    }
+//     for (const Edge& edge : g1.getEdges()) {
+// 	if (!g2.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+// 	    shd++;
+// 	}
+//     }
 
-    for (const Edge& edge : g2.getEdges()) {
-	if (!g1.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
-	    shd++;
-	}
-    }
+//     for (const Edge& edge : g2.getEdges()) {
+// 	if (!g1.isAdjacentTo(edge.getNode1(), edge.getNode2())) {
+// 	    shd++;
+// 	}
+//     }
     
-    return shd;
-}
+//     return shd;
+// }
 
 
-//' Calculate the orientation Structural Hamming Distance (SHD) between two graphs. This only counts the incorrect edge endpoints for edges present in both graphs, and does not consider differences in the graph skeleton. Each different endpoint adds 0.5 to the orientation SHD (i.e. A o-> B vs. A --> B). Thus, a completely misoriented edge adds 1 to the orientation SHD (i.e. A o-o B vs. A <-- B).
+// //' Calculate the orientation Structural Hamming Distance (SHD) between two graphs. This only counts the incorrect edge endpoints for edges present in both graphs, and does not consider differences in the graph skeleton. Each different endpoint adds 0.5 to the orientation SHD (i.e. A o-> B vs. A --> B). Thus, a completely misoriented edge adds 1 to the orientation SHD (i.e. A o-o B vs. A <-- B).
+// //'
+// //' @param graph1 A graph object
+// //' @param graph2 A graph object
+// //' @return The skeleton SHD btween the two graph objects
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' g <- rCausalMGM::mgm(data.n100.p25)
+// //' rCausalMGM::printGraph(g)
+// // [[Rcpp::export]]
+// double orientationSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
+//     double shd = 0.0;
+
+//     EdgeListGraph g1(graph1);
+//     EdgeListGraph g2(graph2);
+
+//     std::vector<Node> nodesG1(g1.getNodes());
+//     std::vector<Node> nodesG2(g2.getNodes());
+//     std::set<Node> nodeSetG1(nodesG1.begin(), nodesG1.end());
+//     std::set<Node> nodeSetG2(nodesG2.begin(), nodesG2.end());
+//     if (nodeSetG1 != nodeSetG2) {
+// 	throw std::invalid_argument("Both graphs must be constructed over the same set of nodes.");
+//     }
+
+//     if (g1.getGraphType() != g2.getGraphType()) {
+// 	throw std::invalid_argument("Both graphs must be of the same type (undirected, completed partially directed acyclic graph, or partial ancestral graph).");
+//     }
+
+//     for (Edge edge1 : g1.getEdges()) {
+// 	if (g2.isAdjacentTo(edge1.getNode1(), edge1.getNode2())) {
+// 	    Edge edge2 = g2.getEdge(edge1.getNode1(), edge1.getNode2());
+	    
+// 	    if (edge1.getDistalEndpoint(edge1.getNode1()) !=
+// 		edge2.getDistalEndpoint(edge1.getNode1())) {
+// 		shd += 0.5;
+// 	    }
+
+// 	    if (edge1.getProximalEndpoint(edge1.getNode1()) !=
+// 		edge2.getProximalEndpoint(edge1.getNode1())) {
+// 		shd += 0.5;
+// 	    }
+// 	}
+//     }
+    
+//     return shd;
+// }
+
+
+//' Calculate the Structural Hamming Distance (SHD) between two graphs. This is the sum of the skeleton SHD and the orientation SHD.
 //'
 //' @param graph1 A graph object
 //' @param graph2 A graph object
-//' @return The skeleton SHD btween the two graph objects
+//' @return The SHD btween the two graph objects
 //' @export
 //' @examples
 //' data("data.n100.p25")
 //' g <- rCausalMGM::mgm(data.n100.p25)
 //' rCausalMGM::printGraph(g)
 // [[Rcpp::export]]
-double orientationSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
-    double shd = 0.0;
+Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
+    double SHD=0.0, orientSHD=0.0, skelSHD=0.0;
 
     EdgeListGraph g1(graph1);
     EdgeListGraph g2(graph2);
@@ -2217,37 +2700,37 @@ double orientationSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
 	    Edge edge2 = g2.getEdge(edge1.getNode1(), edge1.getNode2());
 	    
 	    if (edge1.getDistalEndpoint(edge1.getNode1()) !=
-		edge2.getDistalEndpoint(edge1.getNode1())) {
-		shd += 0.5;
-	    }
-
-	    if (edge1.getProximalEndpoint(edge1.getNode1()) !=
+		edge2.getDistalEndpoint(edge1.getNode1()) ||
+		edge1.getProximalEndpoint(edge1.getNode1()) !=
 		edge2.getProximalEndpoint(edge1.getNode1())) {
-		shd += 0.5;
+		orientSHD += 1;
+	    }
+	    
+	} else {
+	    skelSHD += 1;
+	    if (g1.getGraphType()=="completed partially directed acyclic graph" && !edge1.isUndirected()) {
+		orientSHD += 1;
+	    }
+	    if (g1.getGraphType()=="partial ancestral graph" && !edge1.isNondirected()) {
+		orientSHD += 1;
 	    }
 	}
     }
-    
-    return shd;
-}
 
+    for (Edge edge2 : g2.getEdges()) {
+	if (!g1.isAdjacentTo(edge2.getNode1(), edge2.getNode2())) {
+	    skelSHD += 1;
+	    if (g2.getGraphType()=="completed partially directed acyclic graph" && !edge2.isUndirected()) {
+		orientSHD += 1;
+	    }
+	    if (g2.getGraphType()=="partial ancestral graph" && !edge2.isNondirected()) {
+		orientSHD += 1;
+	    }
+	}
+    }
 
-//' Calculate the Structural Hamming Distance (SHD) between two graphs. This is the sum of the skeleton SHD and the orientation SHD.
-//'
-//' @param graph1 A graph object
-//' @param graph2 A graph object
-//' @return The SHD btween the two graph objects
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgm(data.n100.p25)
-//' rCausalMGM::printGraph(g)
-// [[Rcpp::export]]
-Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
-    double SHD, orientSHD, skelSHD;
-
-    orientSHD = orientationSHD(graph1, graph2);
-    skelSHD = skeletonSHD(graph1, graph2);
+    // orientSHD = orientationSHD(graph1, graph2);
+    // skelSHD = skeletonSHD(graph1, graph2);
     SHD = orientSHD + skelSHD;
     
     return Rcpp::NumericVector::create(

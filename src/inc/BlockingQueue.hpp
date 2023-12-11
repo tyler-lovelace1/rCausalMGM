@@ -28,6 +28,13 @@ private:
     std::unique_ptr<T[]> queue;
 
 public:
+    // BlockingQueue() {
+    //     capacity = 100;
+    //     head = 0;
+    //     tail = 0;
+    //     queue = std::make_unique<T[]>(capacity);
+    // }
+  
     BlockingQueue(int _capacity) {
         capacity = _capacity;
         head = 0;

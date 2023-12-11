@@ -1,57 +1,61 @@
 #ifndef BOOTSTRAP_HPP_
 #define BOOTSTRAP_HPP_
 
+#include "MGM.hpp"
+#include "CoxMGM.hpp"
 #include "StabilityUtils.hpp"
 #include "SepsetMap.hpp"
 #include "IndTestMulti.hpp"
 #include "PcStable.hpp"
-#include "CpcStable.hpp"
-#include "PcMax.hpp"
-#include "Pc50.hpp"
+// #include "CpcStable.hpp"
+// #include "PcMax.hpp"
+// #include "Pc50.hpp"
 #include "Fci.hpp"
-#include "Cfci.hpp"
-#include "FciMax.hpp"
-#include "Fci50.hpp"
-#include "armaLapack.hpp"
+// #include "Cfci.hpp"
+// #include "FciMax.hpp"
+// #include "Fci50.hpp"
+// #include "armaLapack.hpp"
 
 class Bootstrap {
 
 private:
 
     DataSet d;
-    std::string alg, ensemble;
+    std::string alg;
     int B;
     int N;
-    // int subSize;
+    arma::umat samps;
+    // int sampsize;
     std::vector<double> lambda;
     double alpha;
     // double thresh;
     int iterLimit = 500;
     // EdgeListGraph* baseGraph = NULL;
-    bool useNondirected = false;
+    // bool useNondirected = false;
     EdgeListGraph finalGraph;
     Rcpp::DataFrame stabs;
     // arma::cube theta;
-    // arma::umat subs;
+    // arma::umat samps;
     // bool fdr;
+    OrientRule orientRule;
+    bool replace = false;
     bool verbose = false;
     int threads = -1;
 
-    arma::umat getBootstrapSamples();
+    // arma::umat getBootstrapSamples();
 
     EdgeListGraph makeEnsembleGraph(std::vector<EdgeListGraph>& graphVec);
 
 
 public:
-    Bootstrap(DataSet& dat, std::string alg, std::string ensemble, int numBoots) :
+    Bootstrap(DataSet& dat, std::string alg, int numBoots, bool replace) :
         d(dat),
 	alg(alg),
-	ensemble(ensemble),
         B(numBoots),
-	// thresh(thresh),
-        // subSize(std::floor(sampleFrac * dat.getNumRows())),
-	N(dat.getNumRows()),
-	useNondirected(alg.find("fci") != std::string::npos) {}
+	replace(replace) {
+	if (replace)   N = dat.getNumRows();
+	else           N = (int) std::ceil(0.632 * dat.getNumRows());
+    }
 
     EdgeListGraph runBootstrap();
 
@@ -65,6 +69,10 @@ public:
     void setAlpha(double a) { alpha = a; }
     void setLambda(std::vector<double> l) { lambda = l; }
     void setAlgorithm(std::string alg) { this->alg = alg; }
+    void setOrientRule(OrientRule rule) {this->orientRule = rule; }
+
+
+    arma::umat getSubSamps() { return samps; }
     //void setFdr(bool fdr) { this->fdr = fdr; }
     // void setBaseGraph(EdgeListGraph* bg) {
     // 	baseGraph = bg;

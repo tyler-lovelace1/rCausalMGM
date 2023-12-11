@@ -1,13 +1,13 @@
 #include "SepsetMap.hpp"
 
 
-SepsetMap::SepsetMap(SepsetMap& map) { 
-    this->sepsets = map.sepsets; 
-    this->pValues = map.pValues;  
-    this->parents = map.parents;
-    // this->correlations = map.correlations;
-    this->returnEmptyIfNotSet = map.returnEmptyIfNotSet;
-}
+// SepsetMap::SepsetMap(SepsetMap& map) { 
+//     this->sepsets = map.sepsets; 
+//     this->pValues = map.pValues;  
+//     this->parents = map.parents;
+//     // this->correlations = map.correlations;
+//     this->returnEmptyIfNotSet = map.returnEmptyIfNotSet;
+// }
 
 /**
  * Sets the sepset for {x, y} to be z. Note that {x, y} is unordered.
@@ -24,15 +24,15 @@ void SepsetMap::set(const Node& x, const Node& y, std::vector<Node>& z) {
  */
 void SepsetMap::set(const Node& x, const Node& y, std::vector<Node>& z, double p) {
     NodePair pair = std::minmax(x, y);
-    if (sepsets.count(pair) > 0) {
-	if (p > pValues[pair]) {
-	    sepsets[pair] = z;
-	    pValues[pair] = p;
-	}
-    } else {
-	sepsets[pair] = z;
-	pValues[pair] = p;
-    }
+    // if (sepsets.count(pair) > 0) {
+    // 	if (p > pValues[pair]) {
+    // 	    sepsets[pair] = z;
+    // 	    pValues[pair] = p;
+    // 	}
+    // } else {
+    sepsets[pair] = z;
+    pValues[pair] = p;
+    // }
 }
 
 /** 
@@ -52,7 +52,7 @@ void SepsetMap::setPValue(const Node& x, const Node& y, double p) {
 /**
  * Retrieves the sepset previously set for {a, b}, or NULL if no such set was previously set.
  */
-std::vector<Node>* SepsetMap::get(const Node& a, const Node& b) {
+std::vector<Node> SepsetMap::get(const Node& a, const Node& b) {
     NodePair pair = std::minmax(a, b);
 
     // if (correlations != boost::none && correlations.get().count(pair) == 0) {
@@ -61,11 +61,19 @@ std::vector<Node>* SepsetMap::get(const Node& a, const Node& b) {
 
     // If the pair is not set
     if (sepsets.count(pair) == 0) {
-        if (returnEmptyIfNotSet) return &emptyList;
-        else return NULL;
+        if (returnEmptyIfNotSet) return emptyList;
+        else {
+	  std::vector<Node> nullVec = { Node() };
+	  return nullVec;
+	}
     }
 
-    return &sepsets[pair];
+    return sepsets[pair];
+}
+
+bool SepsetMap::isInSepsetMap(const Node& a, const Node& b) {
+    NodePair pair = std::minmax(a, b);
+    return sepsets.count(pair) > 0;
 }
 
 double SepsetMap::getPValue(const Node& x, const Node& y) {

@@ -21,6 +21,7 @@
  */
 
 #include "EdgeListGraph.hpp"
+#include "Knowledge.hpp"
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
@@ -37,9 +38,9 @@ private:
      * Use virtual for classes to be inherited but not implemented
      * use of protected: 'anything it needs to store'
      */
-    SepsetProducer* sepsets;
+    SepsetProducer sepsets;
 
-    // IKnowledge knowledge = new Knowledge2();
+    Knowledge knowledge;
 
     bool changeFlag = true;
 
@@ -55,6 +56,11 @@ private:
     bool possibleDsepSearchDone = true;
 
     /**
+     * True iff the formation of cycles and almost cycles is strictly enforced.
+     */
+    bool aggressivelyPreventCycles = true;
+
+    /**
      * The maximum length for any discriminating path. -1 if unlimited;
      * otherwise, a positive integer.
      */
@@ -67,10 +73,10 @@ private:
 
     EdgeListGraph truePag;
     EdgeListGraph dag;
-    bool skipDiscriminatingPathRule;
+    bool skipDiscriminatingPathRule = false;
 
     //===========================PRIVATE METHODS=========================//
-    std::vector<Node> getSepset(const Node& i, const Node& k) { return sepsets->getSepset(i, k); }
+    std::vector<Node> getSepset(const Node& i, const Node& k) { return sepsets.getSepset(i, k); }
 
     void printWrongColliderMessage(const Node& a, const Node& b, const Node& c, std::string location, EdgeListGraph& graph);
 
@@ -84,7 +90,11 @@ private:
 
     bool isNoncollider(const Node& a,
 		       const Node& b,
-		       const Node& c) { return sepsets->isNoncollider(a, b, c); }
+		       const Node& c) { return sepsets.isNoncollider(a, b, c); }
+
+    bool isCollider(const Node& a,
+		    const Node& b,
+		    const Node& c) { return sepsets.isCollider(a, b, c); }
 
      //if a*-oc and either a-->b*->c or a*->b-->c, then a*->c
      // This is Zhang's rule R2.
@@ -237,7 +247,6 @@ private:
      */
     bool ruleR10(const Node& a, const Node& c, EdgeListGraph& graph);
 
-
     /**
      * Helper method. Appears to check if an arrowpoint is permitted by
      * background knowledge.
@@ -248,6 +257,10 @@ private:
      */
     bool isArrowpointAllowed(const Node& x, const Node& y, EdgeListGraph& graph);
 
+    bool doesNotCreateCycle(Node from, Node to, EdgeListGraph& graph);
+
+    bool doesNotCreateAlmostCycle(Node from, Node to, EdgeListGraph& graph);
+
     //============================CONSTRUCTORS============================//
 
 public:
@@ -257,15 +270,15 @@ public:
      * Constructs a new FCI search for the given independence test and
      * background knowledge.
      */
-    FciOrient(SepsetProducer* sepsets);
+    FciOrient(SepsetProducer& sepsets);
 
-    FciOrient(SepsetProducer* sepsets, std::unordered_map<std::string,std::string> whyOrient);
+    FciOrient(SepsetProducer& sepsets, std::unordered_map<std::string,std::string> whyOrient);
 
 
     //========================PUBLIC METHODS==========================//
     EdgeListGraph orient(EdgeListGraph& graph);
 
-    SepsetProducer* getSepsets() { return sepsets; }
+    SepsetProducer getSepsets() { return sepsets; }
 
     /**
      * @return true if Zhang's complete rule set should be used, false if only
@@ -359,6 +372,9 @@ public:
      */
     void rulesR8R9R10(EdgeListGraph& graph);
 
+    void fciOrientbk(Knowledge& knowledge, EdgeListGraph& graph);
+
+    void setKnowledge(Knowledge& knowledge) { this->knowledge = knowledge; }
 
     bool isPossibleDsepSearchDone() { return possibleDsepSearchDone; }
 

@@ -37,8 +37,13 @@ private:
 public:
 
     SepsetMap() {}
-    SepsetMap(SepsetMap& map);
+    SepsetMap(const SepsetMap& other) = default;
+    SepsetMap(SepsetMap&& other) = default;
+    SepsetMap& operator=(const SepsetMap& other) = default;
+    SepsetMap& operator=(SepsetMap&& other) = default;
+    ~SepsetMap() = default;
 
+    
     // void setCorrelations(boost::optional<std::unordered_set<NodePair, boost::hash<NodePair>>>& pairs) { this->correlations = pairs; }
     bool isReturnEmptyIfNotSet() { return returnEmptyIfNotSet; }
     void setReturnEmptyIfNotSet(bool returnEmptyIfNotSet) { this->returnEmptyIfNotSet = returnEmptyIfNotSet; }
@@ -65,7 +70,9 @@ public:
     /**
      * Retrieves the sepset previously set for {a, b}, or NULL if no such set was previously set.
      */
-    std::vector<Node>* get(const Node& a, const Node& b);
+    std::vector<Node> get(const Node& a, const Node& b);
+
+    bool isInSepsetMap(const Node& a, const Node& b);
 
     double getPValue(const Node& x, const Node& y);
 

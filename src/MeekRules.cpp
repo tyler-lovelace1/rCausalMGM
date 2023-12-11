@@ -51,6 +51,23 @@ void MeekRules::runMeekRules(Node node, EdgeListGraph& graph) {
     meekR4(node, graph);
 }
 
+// void MeekRules::meekR0(EdgeListGraph& graph) {
+//     graph.reorientAllWith(ENDPOINT_TAIL);
+//     SearchGraphUtils::pcOrientbk(knowledge, graph);
+//     std::vector<Triple> orderedColliders = sepsets.getOrderedColliders();
+
+//     for (Triple triple : orderedColliders) {
+//         Node a = triple.getX();
+//         Node b = triple.getY();
+//         Node c = triple.getZ();
+
+//         if (!(graph.getEndpoint(b, a) == ENDPOINT_ARROW
+// 	      || graph.getEndpoint(b, c) == ENDPOINT_ARROW)) {
+//             SearchGraphUtils::orientCollider(sepsets, graph, a, b, c);
+//         }
+//     }
+// }
+
 /**
  * Meek's rule R1: if a-->b, b---c, and a not adj to c, then a-->c
  */
@@ -222,7 +239,9 @@ bool MeekRules::isUnshieldedNoncollider(Node a, Node b, Node c, EdgeListGraph& g
 
 bool MeekRules::isArrowpointAllowed(Node from, Node to) {
     // Knowledge
-    return true;
+    if (knowledge.isEmpty())
+	return true;
+    return !knowledge.isForbidden(from, to) && !knowledge.isRequired(to, from);
 }
 
 bool MeekRules::doesNotCreateCycle(Node from, Node to, EdgeListGraph& graph) {
@@ -254,7 +273,7 @@ void MeekRules::undirectUnforcedEdges(Node y, EdgeListGraph& graph) {
     bool didit = false;
 
     for (Node x : parentsToUndirect) {
-        bool mustOrient = false; // Knowledge
+	bool mustOrient = knowledge.isRequired(x,y) || knowledge.isForbidden(y,x);
 
         if (!oriented.count(graph.getEdge(x, y)) && !mustOrient) {
             graph.removeEdge(x, y);

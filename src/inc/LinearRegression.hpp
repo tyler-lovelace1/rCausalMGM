@@ -5,6 +5,8 @@
 #include "DataSet.hpp"
 #include "Node.hpp"
 #include "RegressionResult.hpp"
+// #include "CoxIRLSRegression.hpp"
+// #include "CoxRegressionResult.hpp"
 #include <list>
 // #include <mutex>
 
@@ -38,6 +40,10 @@ private:
 
     arma::uvec rows;
     // arma::vec res2;
+
+    // CoxIRLSRegression coxRegression;
+
+    std::map<std::pair<Node,Node>, arma::vec> WZmap;
 
     // std::mutex linregMutex;
 
@@ -95,6 +101,10 @@ public:
     arma::uvec getRows() {return rows;}
 
     void setRows(arma::uvec rows) {this->rows = rows;}
+
+    void setWZmap(std::map<std::pair<Node,Node>, arma::vec>& WZmap) { this->WZmap = WZmap; }
+
+    arma::vec getWZ(Node coxNode, Node target);
 
     // arma::vec getResidualsWithoutFirstRegressor() {return res2;}
 

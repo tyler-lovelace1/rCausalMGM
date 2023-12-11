@@ -8,6 +8,7 @@
 #include "SepsetMap.hpp"
 #include "BlockingQueue.hpp"
 #include "RcppThread.h"
+#include "Knowledge.hpp"
 #include <boost/functional/hash.hpp>
 #include <mutex>
 #include <thread>
@@ -42,7 +43,7 @@ private:
     /**
      * Specification of which edges are forbidden or required.
      */
-    // private IKnowledge knowledge = new Knowledge2();
+    Knowledge knowledge;
 
     /**
      * The maximum number of variables conditioned on in any conditional independence test. If the depth is -1, it will
@@ -94,7 +95,7 @@ private:
 
     bool verbose = false;
 
-    bool sepsetsReturnEmptyIfNotFixed = true;
+    bool sepsetsReturnEmptyIfNotFixed = false;
 
     bool fdr = false;
 
@@ -160,6 +161,9 @@ public:
 
     std::unordered_map<Node, std::unordered_set<Node>> searchMapOnly();
 
+    std::vector<Node> possibleParents(const Node& x, std::vector<Node>& adjx, const Node& y);
+    bool possibleParentOf(const Node& x, const Node& z);
+
     int getDepth() { return depth; }
     void setDepth(int depth);
 
@@ -168,8 +172,8 @@ public:
     void setFDR(bool fdr) { this->fdr = fdr; }
 
     // TODO
-    // IKnowledge getKnowledge() { return knowledge; }
-    // void setKnowledge(IKnowledge knowledge);
+    Knowledge getKnowledge() { return knowledge; }
+    void setKnowledge(Knowledge knowledge) { this->knowledge = knowledge; }
 
     int getNumIndependenceTests() { return numIndependenceTests; }
 

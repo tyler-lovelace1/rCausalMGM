@@ -318,7 +318,7 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
                 return i;
             }
 
-        } else {
+        } else if (d.getVariable(i).isDiscrete()) {
             std::unordered_map<int, int> cats;
             for (arma::uword j = 0; j < full.getNumRows(); j++) {
                 cats[full.getInt(j, i)] = 0;
@@ -334,7 +334,7 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
             }
 
             for (std::pair<int, int> element : cats) {
-                if (element.second < 2) {
+                if (element.second < 3) {
 		    Rcpp::Rcout << "    " << d.getVariable(i).getName() << ":  {";
 		    for (std::pair<int, int> item : cats) {
 			Rcpp::Rcout << item.first << " : " << item.second << ", ";
@@ -343,7 +343,68 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
                     return i;
                 }
             }
-        }
+        } else if (d.getVariable(i).isCensored()) {
+	    if (d.getVariable(i).getNEvents() < 5) {
+		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  "
+			    << d.getVariable(i).getNEvents()
+			    << " events" << std::endl;
+		return i;
+	    }
+	} else {
+	    throw std::runtime_error("Invalid variable type for node " + d.getVariable(i).getName());
+	}
+    }
+    return -1;
+}
+
+int StabilityUtils::checkForVariance(DataSet& d) {
+    arma::mat t = d.getData();
+    for (arma::uword i = 0; i < d.getNumColumns(); i++) {
+        if (d.getVariable(i).isContinuous()) {
+            arma::vec curr = standardizeData(t.col(i));
+
+            double var = arma::var(curr);
+
+            if (var <= 0.0001) {
+		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  " << var << std::endl;
+                return i;
+            }
+
+        } else if (d.getVariable(i).isDiscrete()) {
+            std::unordered_map<int, int> cats;
+            for (arma::uword j = 0; j < d.getNumRows(); j++) {
+                cats[d.getInt(j, i)] = 0;
+            }
+
+            for (arma::uword j = 0; j < d.getNumRows(); j++) {
+                int currCat = d.getInt(j, i);
+                if (cats.find(currCat) == cats.end()) {
+                    throw std::invalid_argument("Found an invalid category");
+                } else {
+                    cats[currCat] += 1;
+                }
+            }
+
+            for (std::pair<int, int> element : cats) {
+                if (element.second < 5) {
+		    Rcpp::Rcout << "    " << d.getVariable(i).getName() << ":  {";
+		    for (std::pair<int, int> item : cats) {
+			Rcpp::Rcout << item.first << " : " << item.second << ", ";
+		    }
+		    Rcpp::Rcout << "}\n";
+                    return i;
+                }
+            }
+        } else if (d.getVariable(i).isCensored()) {
+	    if (d.getVariable(i).getNEvents() < 10) {
+		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  "
+			    << d.getVariable(i).getNEvents()
+			    << " events" << std::endl;
+		return i;
+	    }
+	} else {
+	    throw std::runtime_error("Invalid variable type for node " + d.getVariable(i).getName());
+	}
     }
     return -1;
 }
@@ -355,6 +416,7 @@ arma::vec StabilityUtils::standardizeData(const arma::vec& data) {
     data2 -= mean;
 
     double norm = arma::stddev(data2);
+    norm = (norm == 0) ? 1 : norm;
     data2 /= norm;
 
     return data2;

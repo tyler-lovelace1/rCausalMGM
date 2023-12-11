@@ -47,21 +47,22 @@ PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTes
 /**
 * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
 */
-std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(const Node& x, std::vector<Node> nodes /*, IKnowledge knowledge*/) {
+std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(const Node& x, std::vector<Node>& nodes) {
 
     std::vector<Node> possibleParents;
-    std::string x_ = x.getName();
 
     for (const Node& z : nodes) {
-        std::string z_ = z.getName();
 
-        if (possibleParentOf(z_, x_ /* , knowledge*/)) {
+        if (possibleParentOf(z, x)) {
             possibleParents.push_back(z);
         }
     }
     return possibleParents;
 }
 
+bool PossibleDsepFciConsumerProducer::possibleParentOf(const Node& x, const Node& z) {
+    return !knowledge.isForbidden(z, x) && !knowledge.isRequired(x, z);
+}
 
 /**
 * A variable v is in Possible-D-Sep(A,B) iff
@@ -154,14 +155,14 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
 
-        // bool noEdgeRequired = getKnowledge().noEdgeRequired(x.getName(), y.getName());
-        bool noEdgeRequired = true;
+        bool noEdgeRequired = knowledge.noEdgeRequired(x, y);
+        // bool noEdgeRequired = true;
 
         if (!noEdgeRequired)
             continue;
 
         //possible parents is not fully implemented without background knowledge
-        std::vector<Node> possParents = possibleParents(x, possibleDsep /*, getKnowledge() */ );
+        std::vector<Node> possParents = possibleParents(x, possibleDsep);
         int depth_ = getDepth() == -1 ? 1000 : getDepth();
 
         for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
@@ -180,7 +181,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
 
         //possible parents is not fully implemented without background knowledge
-        possParents = possibleParents(y, possibleDsep /*, getKnowledge() */);
+        possParents = possibleParents(y, possibleDsep);
 
         for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
             ChoiceGenerator cg (possParents.size(), d);

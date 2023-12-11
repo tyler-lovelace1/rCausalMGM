@@ -5,6 +5,8 @@
 #include "DataSet.hpp"
 #include "Node.hpp"
 #include "LogisticRegressionResult.hpp"
+// #include "CoxIRLSRegression.hpp"
+// #include "CoxRegressionResult.hpp"
 
 class LogisticRegression
 {
@@ -14,6 +16,10 @@ class LogisticRegression
     // double dataCols[][]; ?
     arma::mat dataCols;
     arma::uvec rows;
+
+    // CoxIRLSRegression coxRegression;
+
+    std::map<std::pair<Node,Node>, arma::vec> WZmap;
 
     bool binary(const Node& x) { return x.getNumCategories()==2; }
 
@@ -47,6 +53,10 @@ class LogisticRegression
 
     void setRows(arma::uvec rows) { this->rows = rows; }
 
+    void setWZmap(std::map<std::pair<Node,Node>, arma::vec>& WZmap) { this->WZmap = WZmap; }
+
+    arma::vec getWZ(Node coxNode, Node target);
+    
     double norm(double z);
 
     friend void LinearRegressionTest(const Rcpp::DataFrame& df);

@@ -216,6 +216,52 @@ bool GraphUtils::existsSemidirectedPath(Node from, Node to, EdgeListGraph& G) {
     return false;
 }
 
+bool GraphUtils::existsPossibleColliderPath(Node from, Node to, std::unordered_set<Node> Z, EdgeListGraph& G) {
+    std::queue<Node> Q;
+
+    if (Z.count(to) > 0) Z.erase(to);
+
+    std::unordered_set<Node> V;
+    Q.push(from);
+    V.insert(from);
+
+    while (!Q.empty()) {
+        Node a = Q.front();
+        Q.pop();
+        if (a == to) {
+            return true;
+        }
+        for (Node b : G.getAdjacentNodes(a)) {
+	    
+	    if (V.count(b) > 0) {
+		continue;
+	    }
+	    
+	    if (Z.count(b) > 0) {
+		for (Node c : G.getAdjacentNodes(b)) {
+		    if (G.isDefCollider(a,b,c)) {
+			if (c == to) {
+			    return true;
+			}
+			Edge edge = G.getEdge(a, b);
+			if (edge.isBidirected()) {
+			    V.insert(b);
+			    Q.push(b);
+			}
+		    }
+		}
+	    } else {
+		Edge edge = G.getEdge(a, b);
+		if (a == from || edge.isBidirected() || Edge::traverseSemiDirected(b, edge) == a) {
+		    if (b == to) {
+			return true;
+		    }
+		}
+	    }
+        }
+    }
+    return false;
+}
 
 std::vector<Node> GraphUtils::getSepset(const Node& x, const Node& y, EdgeListGraph& graph) {
     if (!x.isObserved())

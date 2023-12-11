@@ -103,6 +103,8 @@ public:
 
     static std::unordered_set<Node> possibleDsep(Node x, Node y, EdgeListGraph& graph, int maxPathLength);
 
+    static bool existsPossibleColliderPath(Node from, Node to, std::unordered_set<Node> Z, EdgeListGraph& G);
+
 };
 
 #endif /* GRAPHUTILS_HPP_ */

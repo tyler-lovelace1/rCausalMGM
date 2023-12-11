@@ -24,8 +24,7 @@ class DataSet;
 #include <typeinfo>
 #include <iostream>
 
-class DataSet
-{
+class DataSet {
 private:
     std::vector<Node> variables;
     std::vector<std::string> variableNames;
@@ -37,6 +36,9 @@ private:
     int m, n;
 
     std::set<std::string> getUnique(const Rcpp::CharacterVector &col);
+    // bool checkCensoring(const Rcpp::CharacterVector& col,
+    // 			arma::vec& values,
+    // 			arma::uvec& censor);
 
 public:
     DataSet() {}
@@ -68,6 +70,7 @@ public:
     const std::vector<Node>& getVariables() { return variables; }
     std::vector<Node> getContinuousVariables();
     std::vector<Node> getDiscreteVariables();
+    std::vector<Node> getCensoredVariables();
     // std::vector<Node> copyVariables();
     // std::vector<Node> copyContinuousVariables();
     // std::vector<Node> copyDiscreteVariables();
@@ -75,6 +78,7 @@ public:
     bool isMixed();
     bool isContinuous();
     bool isDiscrete();
+    bool isCensored();
     
     // void deleteVariables();
 
@@ -86,10 +90,16 @@ public:
     
     arma::mat getContinuousData();
     arma::mat getDiscreteData();
+    arma::mat getCensoredData();
 
     std::vector<int> getDiscLevels();
 
     int getColumn(Node v) { return var2idx.at(v); }
+
+    /**
+     * Removes a node from the dataset and replaces it with an updated version.
+     */
+    bool updateNode(const Node& node);
 
     friend void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete);
     friend std::ostream &operator<<(std::ostream &os, DataSet &ds);

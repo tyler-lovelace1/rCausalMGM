@@ -31,12 +31,16 @@ GrowShrink::GrowShrink(DataSet& data, int threads) : taskQueue(MAX_QUEUE_SIZE) {
     // this->coxRegression = CoxIRLSRegression(internalData);
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
+    this->coxRegression = CoxIRLSRegression(internalData);
     this->verbose = false;
 
     std::vector<Node> emptySet = {};
 
     for (const Node& n : variables) {
 	nullBICmap[n] = regressBIC(n, emptySet, true);
+	if (n.isCensored()) {
+	    resetWZ(n, emptySet);
+	}
 	// Rcpp::Rcout << n.getName() << " Null BIC = " << nullBICmap[n] << std::endl;
     }
     
@@ -87,9 +91,9 @@ std::vector<Node> GrowShrink::expandVariable(DataSet &dataSet, const Node& var) 
         return contList;
     }
 
-    // if (var.isCensored()) {
-    //     std::vector<Node> censList;
-    //     censList.push_back(var);
+    if (var.isCensored()) {
+        std::vector<Node> censList;
+        censList.push_back(var);
 	
     // 	std::string temp = var.getName();
     // 	Node newVar = Node(new ContinuousVariable(temp + ".Z"));
@@ -101,9 +105,7 @@ std::vector<Node> GrowShrink::expandVariable(DataSet &dataSet, const Node& var) 
 
     // 	CoxIRLSRegression coxIRLS(dataSet);
 
-    // 	std::vector<Node> regressors = {};
-
-    // 	CoxRegressionResult result = coxIRLS.regress(var, regressors);
+    	// CoxRegressionResult result = coxIRLS.regress(var, regressors);
 
     // 	arma::vec scaledZ = result.getResid();
 
@@ -113,8 +115,8 @@ std::vector<Node> GrowShrink::expandVariable(DataSet &dataSet, const Node& var) 
     //         dataSet.set(i, newVarIndex, scaledZ[i]);
     //     }
 	
-    //     return censList;
-    // }
+        return censList;
+    }
 
     if (var.isDiscrete() && var.getNumCategories() < 3) {
         std::vector<Node> discList;
@@ -219,6 +221,10 @@ double GrowShrink::multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node>
 void GrowShrink::producerGrow(const Node& target, std::list<Node>& active,
 			      std::list<Node>& inactive) {
 
+    std::unordered_set<Node> Z;
+    if (!graph.isEmpty())
+	Z.insert(active.begin(), active.end());
+    
     for (const Node& y : inactive) {
 	// std::vector<Node> regressors(active.begin(), active.end());
 
@@ -235,8 +241,16 @@ void GrowShrink::producerGrow(const Node& target, std::list<Node>& active,
 	//     }
 	//     continue;
 	// }
-	
-	taskQueue.push(RegressionTask(target, y, active));
+
+	if (target.isCensored() && y.isCensored()) continue;
+
+	if (!graph.isEmpty()) {
+	    if (GraphUtils::existsPossibleColliderPath(target, y, Z, graph)) {
+		taskQueue.push(RegressionTask(target, y, active));
+	    }
+	} else {
+	    taskQueue.push(RegressionTask(target, y, active));
+	}
 	if (RcppThread::isInterrupted()) {
 	    break;
 	}
@@ -250,6 +264,12 @@ void GrowShrink::producerGrow(const Node& target, std::list<Node>& active,
 }
 
 void GrowShrink::producerShrink(const Node& target, std::list<Node>& active) {
+
+    // bool validRemoval;
+    // std::unordered_set<Node> Z;
+    std::vector<Node> neighbors;
+    if (!graph.isEmpty())
+	neighbors = graph.getAdjacentNodes(target);
     
     for (const Node& y : active) {
 
@@ -268,8 +288,33 @@ void GrowShrink::producerShrink(const Node& target, std::list<Node>& active) {
 	//     }
 	//     continue;
 	// }
+
+	if (target.isCensored() && y.isCensored()) continue;
+
 	
-	taskQueue.push(RegressionTask(target, y, active));
+	if (!graph.isEmpty()) {
+	    if (std::find(neighbors.begin(), neighbors.end(), y) == neighbors.end()) {
+		bool validRemoval = true;
+		std::unordered_set<Node> Z(active.begin(), active.end());
+		Z.erase(y);
+		for (const Node& n : Z) {
+		    validRemoval = GraphUtils::existsPossibleColliderPath(target, n, Z, graph);
+		    if (!validRemoval) {
+			RcppThread::Rcout << "  " << n << " cannot be reached when " << y << " is removed.\n";
+			break;
+		    }
+		}
+		if (validRemoval)
+		    taskQueue.push(RegressionTask(target, y, active));
+		// else
+		// 	RcppThread::Rcout << y << " cannot be removed\n";
+	    } else {
+	    	RcppThread::Rcout << y << " is a neighbor of " << target << std::endl;
+	    }
+	} else {
+	    taskQueue.push(RegressionTask(target, y, active));
+	}
+	
 	if (RcppThread::isInterrupted()) {
 	    break;
 	}
@@ -292,9 +337,12 @@ double GrowShrink::regressBIC(const Node& target, std::vector<Node>& regressors,
 
     std::pair<Node, std::vector<Node>> key(target, regressors);
 
-    // RcppThread::Rcout << "Regressing " << target.getName() << " on ";
-    // for (const Node& n : regressors) RcppThread::Rcout << n.getName() << " ";
-    // RcppThread::Rcout << std::endl;
+    // if (target.isCensored()) {
+    //     RcppThread::Rcout << "Regressing " << target.getName() << " on ";
+    // 	for (const Node& n : regressors) RcppThread::Rcout << n.getName() << " ";
+    // 	RcppThread::Rcout << std::endl;
+
+    // }
 
     if (history && scoreHistory.count(key)) {
     	// RcppThread::Rcout << "Regression in history\n";
@@ -349,14 +397,15 @@ double GrowShrink::regressBIC(const Node& target, std::vector<Node>& regressors,
 	    score = 1e20;
 	}
 
-    // } else if (target.isCensored()) {
-    // 	try {
-    // 	    CoxRegressionResult result;
-    // 	    result = coxRegression.regress(target, regressors);
-    // 	    score = -2 * result.getLoglikelihood() + penalty * std::log(n) * regressors.size();	    
-    // 	} catch (...) {
-    // 	    score = 1e20;
-    // 	}
+    } else if (target.isCensored()) {
+    	try {
+    	    CoxRegressionResult result;
+    	    result = coxRegression.regress(target, regressors);
+    	    score = -2 * result.getLoglikelihood() + penalty * std::log(n) * regressors.size();
+	    // RcppThread::Rcout << result << std::endl;
+    	} catch (...) {
+    	    score = 1e20;
+    	}
 
     } else {
 	throw std::invalid_argument("Unrecognized variable type");
@@ -379,16 +428,16 @@ void GrowShrink::consumerGrow(std::unordered_map<Node, double>& scoreMap) {
         if (task.x.isNull() && task.y.isNull()) return;
 
 	if (variablesPerNode.count(internalData.getVariable(task.x.getName())) < 1) {
-	    throw std::invalid_argument("Unrecogized variable: " + task.x.getName());
+	    throw std::invalid_argument("Unrecognized variable: " + task.x.getName());
 	}
 
 	if (variablesPerNode.count(internalData.getVariable(task.y.getName())) < 1) {
-	    throw std::invalid_argument("Unrecogized variable: " + task.y.getName());
+	    throw std::invalid_argument("Unrecognized variable: " + task.y.getName());
 	}
 
 	for (const Node& varZ : task.z) {
 	    if (variablesPerNode.count(internalData.getVariable(varZ.getName())) < 1)  {
-		throw std::invalid_argument("Unrecogized variable: " + varZ.getName());
+		throw std::invalid_argument("Unrecognized variable: " + varZ.getName());
 	    }
 	}
 
@@ -427,16 +476,16 @@ void GrowShrink::consumerShrink(std::unordered_map<Node, double>& scoreMap) {
         if (task.x.isNull() && task.y.isNull()) return;
 
 	if (variablesPerNode.count(internalData.getVariable(task.x.getName())) < 1) {
-	    throw std::invalid_argument("Unrecogized variable: " + task.x.getName());
+	    throw std::invalid_argument("Unrecognized variable: " + task.x.getName());
 	}
 
 	if (variablesPerNode.count(internalData.getVariable(task.y.getName())) < 1) {
-	    throw std::invalid_argument("Unrecogized variable: " + task.y.getName());
+	    throw std::invalid_argument("Unrecognized variable: " + task.y.getName());
 	}
 
 	for (const Node& varZ : task.z) {
 	    if (variablesPerNode.count(internalData.getVariable(varZ.getName())) < 1)  {
-		throw std::invalid_argument("Unrecogized variable: " + varZ.getName());
+		throw std::invalid_argument("Unrecognized variable: " + varZ.getName());
 	    }
 	}
 
@@ -508,6 +557,24 @@ std::list<Node> GrowShrink::search(const Node& target, std::vector<Node>& regres
 
     double score;
     if (verbose) RcppThread::Rcout << "Searching for Markov Boundary of " << target.getName() << "...\n";
+    if (graph.isEmpty()) {
+	std::vector<Node> emptySet = {};
+	for (const Node& n : regressors) {
+	    if (n.isCensored()) {
+		resetWZ(n, emptySet);
+	    }
+	    // Rcpp::Rcout << n.getName() << " Null BIC = " << nullBICmap[n] << std::endl;
+	}
+    } else {
+	std::vector<Node> neighbors;
+	for (const Node& n : regressors) {
+	    if (n.isCensored()) {
+		neighbors = graph.getAdjacentNodes(n);
+		resetWZ(n, neighbors);
+	    }
+	    // Rcpp::Rcout << n.getName() << " Null BIC = " << nullBICmap[n] << std::endl;
+	}
+    }
     std::list<Node> active = grow(target, regressors, &score);
     active = shrink(target, active, score, &score);
     if (verbose) RcppThread::Rcout << "Finished. \n";
@@ -534,13 +601,21 @@ std::list<Node> GrowShrink::grow(const Node& target, std::vector<Node>& regresso
 				 double* bicReturn) {
     std::vector<Node> emptySet = {};
     
-    double oldScore = 1e20;
+    double oldScore = 2e20;
     // double curScore = regressBIC(target, emptySet, true);
 
     double curScore = nullBICmap[target];
 
     std::list<Node> active;
     std::list<Node> inactive(regressors.begin(), regressors.end());
+
+    if (!graph.isEmpty()) {
+    	std::vector<Node> neighbors = graph.getAdjacentNodes(target);
+    	active = std::list<Node>(neighbors.begin(), neighbors.end());
+    	for (const Node& n : neighbors) {
+    	    inactive.remove(n);
+    	}
+    }
 
     std::unordered_map<Node, double> scoreMap;
 
@@ -709,7 +784,7 @@ std::list<Node> GrowShrink::growSingle(const Node& target, std::vector<Node>& re
 				       double* bicReturn) {
     std::vector<Node> emptySet = {};
     
-    double oldScore = 1e20;
+    double oldScore = 2e20;
     // double curScore = regressBIC(target, emptySet, true);
 
     double curScore = nullBICmap[target];
@@ -734,16 +809,16 @@ std::list<Node> GrowShrink::growSingle(const Node& target, std::vector<Node>& re
 	for (const Node& n : inactive) {
 
 	    if (variablesPerNode.count(internalData.getVariable(target.getName())) < 1) {
-		throw std::invalid_argument("Unrecogized variable: " + target.getName());
+		throw std::invalid_argument("Unrecognized variable: " + target.getName());
 	    }
 
 	    if (variablesPerNode.count(internalData.getVariable(n.getName())) < 1) {
-		throw std::invalid_argument("Unrecogized variable: " + n.getName());
+		throw std::invalid_argument("Unrecognized variable: " + n.getName());
 	    }
 
 	    for (const Node& varZ : active) {
 		if (variablesPerNode.count(internalData.getVariable(varZ.getName())) < 1)  {
-		    throw std::invalid_argument("Unrecogized variable: " + varZ.getName());
+		    throw std::invalid_argument("Unrecognized variable: " + varZ.getName());
 		}
 	    }
 
@@ -835,16 +910,16 @@ std::list<Node> GrowShrink::shrinkSingle(const Node& target, std::list<Node>& ac
         for (const Node& n : active) {
 
 	    if (variablesPerNode.count(internalData.getVariable(target.getName())) < 1) {
-		throw std::invalid_argument("Unrecogized variable: " + target.getName());
+		throw std::invalid_argument("Unrecognized variable: " + target.getName());
 	    }
 
 	    if (variablesPerNode.count(internalData.getVariable(n.getName())) < 1) {
-		throw std::invalid_argument("Unrecogized variable: " + n.getName());
+		throw std::invalid_argument("Unrecognized variable: " + n.getName());
 	    }
 
 	    for (const Node& varZ : active) {
 		if (variablesPerNode.count(internalData.getVariable(varZ.getName())) < 1)  {
-		    throw std::invalid_argument("Unrecogized variable: " + varZ.getName());
+		    throw std::invalid_argument("Unrecognized variable: " + varZ.getName());
 		}
 	    }
 
@@ -985,4 +1060,79 @@ Node GrowShrink::getVariable(std::string name)
     }
     Node emptyVar;
     return emptyVar;
+}
+
+void GrowShrink::resetWZ(Node target, std::vector<Node>& neighbors) {
+    if (variablesPerNode.count(internalData.getVariable(target.getName())) < 1)
+    {
+        throw std::invalid_argument("Unrecognized node: " + target.getName());
+    }
+
+    for (const Node& var : neighbors)
+    {
+        if (variablesPerNode.count(internalData.getVariable(var.getName())) < 1)
+        {
+            throw std::invalid_argument("Unrecognized node: " + var.getName());
+        }
+    }
+
+    std::vector<Node> temp;
+    std::vector<Node> regressors;
+    std::vector<Node> emptySet = {};
+
+    for (const Node& var : neighbors) {
+        temp = variablesPerNode.at(internalData.getVariable(var.getName()));
+	regressors.insert(regressors.end(), temp.begin(), temp.end());
+    }
+
+    // Rcpp::Rcout << "Reset WZ for " + target.getName() << std::endl;
+
+    CoxRegressionResult result;
+
+    try {
+	result = coxRegression.regress(target, regressors);
+    } catch (...) {
+	result = coxRegression.regress(target, emptySet);
+    }
+    // Rcpp::Rcout << result << std::endl;
+
+    arma::vec WZ(result.getResid());
+
+    std::vector<std::string> _neighbors;
+
+    for (const Node& var : neighbors) {
+	_neighbors.push_back(var.getName());
+    }
+
+    target.setNeighbors(_neighbors);
+    target.setWZ(WZ);
+
+    // std::map<std::pair<Node,Node>, arma::vec> WZmap;
+
+    for (int i = 0; i < neighbors.size(); i++) {
+	regressors.clear();
+	for (const Node& var : neighbors) {
+	    if (var == neighbors[i]) continue;
+	    temp = variablesPerNode.at(internalData.getVariable(var.getName()));
+	    regressors.insert(regressors.end(), temp.begin(), temp.end());
+	}
+
+	try {
+	    result = coxRegression.regress(target, regressors);
+	} catch (...) {
+	    result = coxRegression.regress(target, emptySet);
+	}
+
+	WZmap.insert(std::pair<std::pair<Node,Node>, arma::vec>(std::minmax(target, neighbors[i]), result.getResid()));
+    }
+
+    // Rcpp::Rcout << "WZmap complete for Node " + target.getName() + "\n";
+
+    if (internalData.updateNode(target)) {
+	this->coxRegression = CoxIRLSRegression(internalData);
+	this->logisticRegression = LogisticRegression(internalData);
+	this->logisticRegression.setWZmap(WZmap);
+	this->regression = LinearRegression(internalData);
+	this->regression.setWZmap(WZmap);
+    }
 }

@@ -4,6 +4,7 @@
 // [[Rcpp::depends(RcppThread)]]
 
 #include "MGM.hpp"
+#include "CoxMGM.hpp"
 // #include "PcStable.hpp"
 // #include "CpcStable.hpp"
 // #include "PcMax.hpp"
@@ -47,6 +48,8 @@ public:
     static arma::cube graphToCube(EdgeListGraph& graph, DataSet& d);
     
     static int checkForVariance(DataSet& d, DataSet& full);
+
+    static int checkForVariance(DataSet& d);
 
     static arma::vec standardizeData(const arma::vec& data);
 

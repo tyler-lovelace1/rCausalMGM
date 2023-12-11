@@ -22,6 +22,9 @@ LogisticRegression::LogisticRegression(DataSet &data)
     this->rows = arma::uvec(data.getNumRows());
     for (int i = 0; i < data.getNumRows(); i++)
         rows[i] = i;
+
+    // if (this->data.isCensored()) 
+    // 	coxRegression = CoxIRLSRegression(this->data);
 }
 
 // LogisticRegression::LogisticRegression(LogisticRegression &lr)
@@ -70,8 +73,11 @@ LogisticRegressionResult LogisticRegression::regress(const Node& x,
     }
 
     for (const Node& var : regressors) {
+	// if (var.isCensored()) RcppThread::Rcout << "LogisticRegression::Censored Regressor " + var.getName() + "\n";
+        if (var.isCensored()) continue;
         if (!var.isContinuous() && !binary(var)) {
-            throw std::runtime_error("Regressors must be continuous or binary.");
+	    // RcppThread::Rcout << "LogisticRegression::Regressors must be continuous, binary, or censored.\n";
+            throw std::runtime_error("Regressors must be continuous, binary, or censored.");
         }
     }
 
@@ -86,10 +92,16 @@ LogisticRegressionResult LogisticRegression::regress(const Node& x,
         int col = data.getColumn(regressors[j]);
 	// logfile << col + '\t';
 
-        for (arma::uword i = 0; i < rows.size(); i++)
-        {
+        for (arma::uword i = 0; i < rows.size(); i++) {
             regressors_(j, i) = dataCols(col, rows[i]);
         }
+    }
+
+    for (arma::uword j = 0; j < regressors.size(); j++) {
+	if (regressors[j].isCensored()) {
+	    // RcppThread::Rcout << "LogisticRegression::Censored Regressor " + regressors[j].getName() + "\n";
+	    regressors_.row(j) = getWZ(regressors[j], x).elem(rows).t();
+	}
     }
 
     // logfile << "\n";
@@ -126,8 +138,11 @@ LogisticRegressionResult LogisticRegression::regress(const Node& x,
     }
 
     for (const Node& var : regressors) {
+	// if (var.isCensored()) RcppThread::Rcout << "LogisticRegression::Censored Regressor " + var.getName() + "\n";
+	if (var.isCensored()) continue;
         if (!var.isContinuous() && !binary(var)) {
-            throw std::runtime_error("Regressors must be continuous or binary.");
+	    // RcppThread::Rcout << "LogisticRegression::Regressors must be continuous, binary, or censored.\n";
+            throw std::runtime_error("Regressors must be continuous, binary, or censored.");
         }
     }
 
@@ -141,6 +156,14 @@ LogisticRegressionResult LogisticRegression::regress(const Node& x,
         {
             regressors_(j, i) = dataCols(col, _rows[i]);
         }
+    }
+
+    for (arma::uword j = 0; j < regressors.size(); j++) {
+	// RcppThread::Rcout << (regressors[j].isCensored() ? "Censored: " : "Not Censored: ") + regressors[j].getName() + "\n";
+	if (regressors.at(j).isCensored()) {
+	    // RcppThread::Rcout << "LogisticRegression::Censored Regressor " + regressors[j].getName() + "\n";
+	    regressors_.row(j) = getWZ(regressors[j], x).elem(_rows).t();
+	}
     }
 
     arma::uvec target = arma::uvec(_rows.size());
@@ -461,6 +484,55 @@ double LogisticRegression::norm(double z)
         double p = cdf(dist, q);
         return (p);
     }
+}
+
+arma::vec LogisticRegression::getWZ(Node coxNode, Node target) {
+    if (!coxNode.isCensored())
+	throw std::runtime_error("Node " + coxNode.getName() + " is not censored");
+
+    coxNode = data.getVariable(coxNode.getName());
+    
+    // std::vector<std::string> _neighbors(coxNode.getNeighbors());
+    // std::vector<Node> neighbors;
+
+    // for (const std::string& name : _neighbors) {
+    // 	neighbors.push_back(data.getVariable(name));
+    // }
+
+    // Node targetNode;
+    // auto multinomLoc = target.getName().find("MULTINOM");
+    // if (multinomLoc != std::string::npos) {
+    // 	std::string varName = target.getName().substr(0, multinomLoc);
+    // 	targetNode = data.getVariable(varName);
+    // } else {
+    // 	targetNode = target;
+    // }
+    
+    // auto targetLoc = std::find(neighbors.begin(), neighbors.end(), targetNode);
+    
+    // if (targetLoc != neighbors.end()) {
+    // 	// RcppThread::Rcout << "LogisticRegression::getWZ:: Erasing " + targetLoc->getName() + "\n";
+    // 	// auto multinomLoc = target.getName().find("MULTINOM"); 
+    // 	// if (multinomLoc != std::string::npos) {
+    // 	//     std::string varName = target.getName().substr(0, multinomLoc);
+    // 	//     for (auto it = neighbors.begin(); it != neighbors.end(); it++) {
+    // 	// 	if (it->getName().find(varName) != std::string::npos) {
+    // 	// 	    // RcppThread::Rcout << "LogisticRegression::getWZ:: Erasing " + it->getName() + "\n";
+    // 	// 	    it = neighbors.erase(it);
+    // 	// 	    it--;
+    // 	// 	}
+    // 	//     }
+    // 	// } else {
+    // 	//     // RcppThread::Rcout << "LogisticRegression::getWZ:: Erasing " + targetLoc->getName() + "\n";
+    // 	//     neighbors.erase(targetLoc);
+    // 	// }
+    // 	// CoxRegressionResult result = coxRegression.regress(coxNode, neighbors);
+    // 	// RcppThread::Rcout << "WZ:\n" << result.getResid().t() << std::endl;
+    // 	return WZmap.at(std::minmax(coxNode, targetNode));
+    // }
+    
+    // RcppThread::Rcout << "WZ:\n" << coxNode.getWZ().t() << std::endl;
+    return coxNode.getWZ();
 }
 
 // void LogisticRegressionTest(const Rcpp::DataFrame& df) {

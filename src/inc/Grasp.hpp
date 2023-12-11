@@ -9,6 +9,7 @@
 #include <stack>
 #include "GrowShrink.hpp"
 #include "EdgeListGraph.hpp"
+#include "Knowledge.hpp"
 #include <chrono>
 
 typedef std::pair<Node, Node> NodePair;
@@ -41,6 +42,8 @@ private:
      * The initial graph for the for constraining the set of possible parents, or null if there is none.
      */
     EdgeListGraph *initialGraph = NULL;
+
+    Knowledge knowledge;
 
     /**
      * Elapsed time of the most recent search.
@@ -204,6 +207,22 @@ private:
 	    return nodes;
 	}
 
+	bool isValid(Knowledge& knowledge) {
+	    
+	    if (knowledge.isEmpty()) return true;
+	    
+	    for (auto it = order.begin(); it!=order.end(); it++) {
+		for (auto jt = order.begin(); jt!=it; jt++) {
+		    Node x = *jt;
+		    Node y = *it;
+		    if (knowledge.isForbidden(x, y)) {
+			return false;
+		    }
+		}
+	    }
+	    return true;
+	}
+
 	// std::unordered_set<Node> getAncestors(Node& node) {
 	//     std::unordered_set<Node> ancestors;
 	//     for (const Node& pa : parentMap[node]) {
@@ -252,6 +271,8 @@ private:
 
     static int randWrapper(const int n) { return std::floor(R::unif_rand()*n); }
 
+    std::list<Node> initializeRandom();
+
 public:
 
     /**
@@ -298,6 +319,10 @@ public:
     }
 
     void setThreads(int threads) { this->threads = threads; }
+
+    Knowledge getKnowledge() { return this->knowledge; }
+
+    void setKnowledge(Knowledge& knowledge) { this->knowledge = knowledge; }
 
     double update(OrderGraph& tau);
 

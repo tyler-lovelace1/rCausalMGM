@@ -86,6 +86,7 @@ public:
         return nonSmoothValue(X);
     }
 
+    virtual void iterUpdate(arma::vec& X) = 0;
 
     void setVerbose(bool v) { verbose = v; }
     

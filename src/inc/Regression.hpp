@@ -13,7 +13,7 @@ class Regression
    *
    * @param alpha the significance level.
    */
-  virtual void setAlpha(double* alpha) = 0;
+  virtual void setAlpha(double alpha) = 0;
 
 
   /**
@@ -24,7 +24,7 @@ class Regression
    * @param regressors the list of variables being regressed on.
    * @return the regression plane.
    */
-  virtual RegressionResult regress(Node* target, std::list<Node&>* regressors) = 0;
+  virtual RegressionResult regress(const Node& target, std::list<Node>& regressors) = 0;
 
 };
 

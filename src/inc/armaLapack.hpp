@@ -9,7 +9,7 @@
 #ifndef ARMALAPACK_HPP_
 #define ARMALAPACK_HPP_
 
-#ifdef NDEBUG
+#ifndef NDEBUG
 // Make sure Armadillo does use "assert"...
 #define ARMA_NO_DEBUG
 #include <RcppArmadillo.h>

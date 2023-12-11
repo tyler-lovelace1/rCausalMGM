@@ -15,12 +15,15 @@ ProximalGradient::ProximalGradient(double beta, double alpha, bool edgeConverge)
 arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, double epsilon, int iterLimit, long time) {
     auto start = std::chrono::high_resolution_clock::now();
 
-    arma::vec X = cp->proximalOperator(1.0, Xin);
-    arma::vec Y = arma::vec(X);
-    arma::vec Z = arma::vec(X);
+    arma::vec X(Xin); // = cp->proximalOperator(1.0, Xin);
+    arma::vec Y(X);
+    arma::vec Z(X);
+    arma::vec Xold(X);
 
-    arma::vec GrY = cp->smoothGradient(Y);
-    arma::vec GrX = cp->smoothGradient(X);
+    cp->iterUpdate(X);
+
+    arma::vec GrY(cp->smoothGradient(Y));
+    arma::vec GrX(cp->smoothGradient(X));
 
     int iterCount = 0;
     int noEdgeChangeCount = 0;
@@ -42,8 +45,9 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
         Lold = L;
         L = L*alpha;
         thetaOld = theta;
-        arma::vec Xold = arma::vec(X);
-        obj = Fx + Gx;
+	cp->iterUpdate(Xold);
+        Xold = arma::vec(X);
+	obj = Fx + Gx;
 
         while(true) {
             theta = 2.0 / (1.0 + std::sqrt(1.0+(4.0*L)/(Lold*std::pow(thetaOld,2))));
@@ -130,7 +134,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             Z += Xold * (1 - (1.0 / theta));
         }
 
-        printIter = 5;
+        printIter = 10;
         if (iterCount % printIter == 0) {
 	    if (RcppThread::isInterrupted()) {
 		break;
@@ -163,15 +167,18 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
  }
 
 arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, double epsilon, int iterLimit) {
-    arma::vec X = cp->proximalOperator(1.0, Xin);
+    arma::vec X(Xin); // = cp->proximalOperator(1.0, Xin);
 
     // Rcpp::Rcout << "Original X = \n" << X.t() << std::endl;
 
-    arma::vec Y = arma::vec(X);
-    arma::vec Z = arma::vec(X);
+    arma::vec Y(X);
+    arma::vec Z(X);
+    arma::vec Xold(X);
 
-    arma::vec GrY = cp->smoothGradient(Y);
-    arma::vec GrX = cp->smoothGradient(X);
+    cp->iterUpdate(X);
+
+    arma::vec GrY(cp->smoothGradient(Y));
+    arma::vec GrX(cp->smoothGradient(X));
 
     int iterCount = 0;
     int noEdgeChangeCount = 0;
@@ -180,6 +187,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
     double theta = std::numeric_limits<double>::infinity();
     double thetaOld = theta;
     double L = 1.0;
+    double Lcur = L;
     double Lold = L;
     double LocalL;
 
@@ -200,8 +208,9 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
         thetaOld = theta;
 	Gxold = Gx;
 	Fxold = Fx;
-        arma::vec Xold = arma::vec(X);
-        obj = Fx + Gx;
+	cp->iterUpdate(Xold);
+        Xold = arma::vec(X);
+	obj = Fx + Gx;
 	
         while(true) {
             theta = 2.0 / (1.0 + std::sqrt(1.0+(4.0*L)/(Lold*std::pow(thetaOld,2))));
@@ -218,6 +227,8 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             // Rcpp::Rcout << "GrY: " << GrY.t() << std::endl;
             // MGMParams tempParams(temp, 5, 20);
             // Rcpp::Rcout << "tempParams: \n" << tempParams << std::endl;
+
+	    Lcur = L;
 
             Gx = cp->nonSmooth(1.0 / L, temp, X);
             if (backtrackSwitch) {
@@ -243,9 +254,10 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
                 LocalL = 2 * arma::as_scalar(XmY.t() * (GrX - GrY)) / normXY;
             }
 
-            Rcpp::Rcout << "   LocalL: " << LocalL << " L: " << L << std::endl;
+            // Rcpp::Rcout << "   LocalL: " << LocalL << " L: " << L << std::endl;
 	    // Rcpp::Rcout << "Qx: " << Qx << " Fx: " << Fx << std::endl;
             if (LocalL <= L) {
+		// L = (LocalL/alpha < 1) ? LocalL/alpha : L;
 		break;
             } else if (LocalL != std::numeric_limits<double>::infinity()) {
                 L = LocalL;
@@ -345,6 +357,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 	    if (RcppThread::isInterrupted()) {
 		break;
 	    }
+	    
 	    if (cp->isVerbose()) {
 		RcppThread::Rcout << "    Iter: " << iterCount << 
 		    " ||dx||/||x||: " << dx << 

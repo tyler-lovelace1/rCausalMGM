@@ -17,7 +17,7 @@
 #include "armaLapack.hpp"
 #include <string>
 
-enum DataType { NONE, CONTINUOUS, DISCRETE };
+enum DataType { NONE, CONTINUOUS, DISCRETE, CENSORED };
 
 class Variable {
     

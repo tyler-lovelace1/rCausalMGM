@@ -3,6 +3,9 @@
 
 #include "EdgeListGraph.hpp"
 #include "ChoiceGenerator.hpp"
+#include "Knowledge.hpp"
+// #include "SepsetProducer.hpp"
+#include "SearchGraphUtils.hpp"
 #include <stack>
 
 /**
@@ -24,6 +27,17 @@ private:
 
     // If knowledge is available.
     bool useRule4 = false;
+
+    /**
+     * The SepsetMap being constructed.
+     * Needs to be made
+     * Probably need to pass in a pointer
+     * Use virtual for classes to be inherited but not implemented
+     * use of protected: 'anything it needs to store'
+     */
+    // SepsetProducer sepsets;
+
+    Knowledge knowledge;
 
     // The stack of nodes to be visited.
     std::stack<Node> directStack;
@@ -66,9 +80,9 @@ private:
 
     void direct(Node a, Node c, EdgeListGraph& graph);
 
-    static bool isUnshieldedNoncollider(Node a, Node b, Node c, EdgeListGraph& graph);
+    bool isUnshieldedNoncollider(Node a, Node b, Node c, EdgeListGraph& graph);
 
-    static bool isArrowpointAllowed(Node from, Node to);
+    bool isArrowpointAllowed(Node from, Node to);
 
     bool doesNotCreateCycle(Node from, Node to, EdgeListGraph& graph);
 
@@ -77,6 +91,10 @@ private:
 public:
 
     MeekRules() {}
+
+    // MeekRules(SepsetProducer& sp) : sepsets(sp) {}
+
+    // void meekR0(EdgeListGraph& graph);
 
     void orientImplied(EdgeListGraph& graph);
 
@@ -89,6 +107,9 @@ public:
     void setUndirectUnforcedEdges(bool shouldUndirectUnforcedEdges) { this->shouldUndirectUnforcedEdges = shouldUndirectUnforcedEdges; }
 
     std::unordered_set<Node> getVisited() { return visited; }
+
+    void setKnowledge(Knowledge& knowledge) { this->knowledge = knowledge; }
+
 
 };
 

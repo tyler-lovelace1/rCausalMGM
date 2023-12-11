@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-LinearRegression::LinearRegression(DataSet &data)
+LinearRegression::LinearRegression(DataSet& data)
 {
     this->data = data;
     dataMat = arma::mat(data.getData());
@@ -17,6 +17,10 @@ LinearRegression::LinearRegression(DataSet &data)
     rows = arma::uvec(data.getNumRows());
     for (arma::uword i = 0; i < data.getNumRows(); i++)
         rows[i] = i;
+
+    // if (this->data.isCensored()) 
+    // 	coxRegression = CoxIRLSRegression(this->data);
+    
 }
 
 // LinearRegression::LinearRegression(LinearRegression &lr)
@@ -82,6 +86,12 @@ RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>
     arma::mat y = dataMat.submat(rows, target_Vec);
 
     arma::mat xSub = dataMat.submat(rows, regressors_);
+
+    for (arma::uword j = 0; j < regressors.size(); j++) {
+	if (regressors[j].isCensored()) {
+	    xSub.col(j) = getWZ(regressors[j], target);
+	}
+    }
 
     arma::mat x = arma::mat(xSub.n_rows, xSub.n_cols + 1);
     
@@ -179,6 +189,13 @@ RegressionResult LinearRegression::regress(const Node& target,
     arma::mat y = dataMat.submat(_rows, target_Vec);
 
     arma::mat xSub = dataMat.submat(_rows, regressors_);
+
+    for (arma::uword j = 0; j < regressors.size(); j++) {
+	if (regressors[j].isCensored()) {
+	    xSub.col(j) = getWZ(regressors[j], target).elem(_rows);
+	}
+    }
+
 
     arma::mat x = arma::mat(xSub.n_rows, xSub.n_cols + 1);
     
@@ -291,6 +308,33 @@ double LinearRegression::tss(const arma::vec& y)
         ssm += d * d;
     }
     return ssm;
+}
+
+arma::vec LinearRegression::getWZ(Node coxNode, Node target) {
+    if (!coxNode.isCensored())
+	throw std::runtime_error("Node " + coxNode.getName() + " is not censored");
+
+    coxNode = data.getVariable(coxNode.getName());
+    
+    // std::vector<std::string> _neighbors(coxNode.getNeighbors());
+    // std::vector<Node> neighbors;
+
+    // for (const std::string& name : _neighbors) {
+    // 	neighbors.push_back(data.getVariable(name));
+    // }
+    
+    // auto targetLoc = std::find(neighbors.begin(), neighbors.end(), target);
+    
+    // if (targetLoc != neighbors.end()) {
+    // 	// RcppThread::Rcout << "LinearRegression::getWZ:: Erasing " + targetLoc->getName() + "\n";
+    // 	// neighbors.erase(targetLoc);
+    // 	// CoxRegressionResult result = coxRegression.regress(coxNode, neighbors);
+    // 	// RcppThread::Rcout << "WZ:\n" << result.getResid().t() << std::endl;
+    // 	return WZmap.at(std::minmax(coxNode, target));
+    // }
+
+    // RcppThread::Rcout << "WZ:\n" << coxNode.getWZ().t() << std::endl;
+    return coxNode.getWZ();
 }
 
 // void LinearRegressionTest(const Rcpp::DataFrame& df) {

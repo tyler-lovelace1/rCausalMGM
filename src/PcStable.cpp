@@ -42,6 +42,19 @@ EdgeListGraph PcStable::search() {
     return search(independenceTest->getVariables());
 }
 
+
+EdgeListGraph PcStable::search(const std::vector<Node>& nodes) {
+    FasStableProducerConsumer fas(initialGraph, independenceTest, threads);
+
+    fas.setDepth(depth);
+    fas.setVerbose(verbose);
+    fas.setFDR(fdr);
+    fas.setKnowledge(knowledge);
+
+    return search(fas, nodes);
+}
+
+
 /**
  * Runs PC starting with a commplete graph over the given list of nodes, using the given independence test and
  * knowledge and returns the resultant graph. The returned graph will be a pattern if the independence information
@@ -51,7 +64,7 @@ EdgeListGraph PcStable::search() {
  * <p>
  * All of the given nodes must be in the domain of the given conditional independence test.
  */
-EdgeListGraph PcStable::search(const std::vector<Node>& nodes) {
+EdgeListGraph PcStable::search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes) {
     if (verbose) Rcpp::Rcout << "Starting PC-Stable algorithm..." << std::endl;
 
     if (independenceTest == NULL)
@@ -68,34 +81,98 @@ EdgeListGraph PcStable::search(const std::vector<Node>& nodes) {
     
     // graph = EdgeListGraph(nodes);
 
-    FasStableProducerConsumer fas(initialGraph, independenceTest, threads);
-    fas.setDepth(depth);
-    fas.setVerbose(verbose);
-    fas.setFDR(fdr);
+    // FasStableProducerConsumer fas(initialGraph, independenceTest, threads);
 
     graph = fas.search();
     sepsets = fas.getSepsets();
 
-    if (verbose) Rcpp::Rcout << "  Orienting edges..." << std::endl;
+    SepsetProducer sp;
+    SepsetMap nullSepsets;
+    
+    // if (orientRule == ORIENT_SEPSETS) {
+    // 	Rcpp::Rcout << "Sepset Map Orientations\n";
+    // 	// sp = SepsetProducer(sepsets, independenceTest);
+    // 	sp = SepsetProducer(graph, independenceTest, sepsets, threads);
+    // } else {
+    sp = SepsetProducer(graph, independenceTest, sepsets, threads);
+    // }
 
-    SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph, verbose);
+    sp.setOrientRule(orientRule);
+    sp.setDepth(depth);
+    sp.setVerbose(verbose);
+    sp.setKnowledge(knowledge);
+    
+    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+
+    sp.fillMap();
+    
+    if (verbose) Rcpp::Rcout << "  Orienting edges with knowledge..." << std::endl;
+
+    SearchGraphUtils::pcOrientbk(knowledge, graph);
+    // SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph, knowledge, verbose);
 
     MeekRules rules;
     rules.setAggressivelyPreventCycles(aggressivelyPreventCycles);
+    rules.setKnowledge(knowledge);
+
+    if (verbose) Rcpp::Rcout << "  Orienting colliders..." << std::endl;
+    // rules.meekR0(graph);
+    
+    std::vector<Triple> orderedColliders = sp.getOrderedColliders();
+
+    // if (false) {
+    // 	SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph, knowledge, verbose);
+    // } else {
+    SearchGraphUtils::orientCollidersUsingOrderedColliders(orderedColliders, graph,
+							   knowledge, verbose);
+    // }
+    
+    for (auto t : sp.getAmbiguousTriples())
+	graph.addAmbiguousTriple(t.x, t.y, t.z);
+
+    if (verbose) Rcpp::Rcout << "  Orienting implied edges..." << std::endl;
+    
     rules.orientImplied(graph);
 
-    // // Set algorithm and type
-    // std::ostringstream alg;
-    // alg << "PcStable: alpha = " << independenceTest->getAlpha();
-    // graph.setAlgorithm(alg.str());
-    // graph.setGraphType("markov equivalence class");
+    std::set<Edge> edgeSet = graph.getEdges();
+
+    for (Edge edge : edgeSet) {
+        if (edge.isBidirected()) {
+	    Node node1 = edge.getNode1();
+	    Node node2 = edge.getNode2();
+
+	    graph.removeEdge(node1, node2);
+	    graph.addUndirectedEdge(node1, node2);
+	}
+    }
+
+    score = 0.0;
+    for (int i = 0; i < allNodes.size(); i++) {
+	for (int j = 0; j < i; j++) {
+	    if (sepsets.isInSepsetMap(allNodes[i], allNodes[j])) {
+		score += std::log(sepsets.getPValue(allNodes[i], allNodes[j]));
+	    }	    
+	}
+    }
 
     // Set algorithm and type
+    std::string algString;
+    if (orientRule == ORIENT_SEPSETS)
+	algString = "PC-Stable";
+    else if (orientRule == ORIENT_MAXP)
+	algString = "PC-Max";
+    else if (orientRule == ORIENT_MAJORITY)
+	algString = "MPC-Stable";
+    else if (orientRule == ORIENT_CONSERVATIVE)
+	algString = "CPC-Stable";
+    else
+	algString = "PC-Stable";
+    
     std::ostringstream alg;
     if (initialGraph==NULL) {
-	alg << "PC-Stable";
+	alg << algString;
     } else {
-	alg << initialGraph->getAlgorithm() << "-" << "PC-Stable";
+	alg << initialGraph->getAlgorithm() << "-" << algString;
     }
     graph.setAlgorithm(alg.str());
     graph.setGraphType("completed partially directed acyclic graph");

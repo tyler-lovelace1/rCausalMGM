@@ -16,6 +16,7 @@
  */
 
 #include "EdgeListGraph.hpp"
+#include "Knowledge.hpp"
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
 #include "BlockingQueue.hpp"
@@ -40,7 +41,7 @@ private:
     /**
     * The background knowledge.
     */
-    // IKnowledge knowledge = new Knowledge2();
+    Knowledge knowledge;
 
 
     int maxReachablePathLength = -1;
@@ -87,9 +88,9 @@ private:
     /**
      * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
      */
-    std::vector<Node> possibleParents(const Node& x, std::vector<Node> nodes /*, IKnowledge knowledge*/);
+    std::vector<Node> possibleParents(const Node& x, std::vector<Node>& nodes);
 
-    bool possibleParentOf(std::string _z, std::string _x /* , IKnowledge bk */) { return true; /*!(bk.isForbidden(_z, _x) || bk.isRequired(_x, _z)); */ }
+    bool possibleParentOf(const Node& x, const Node& z);
 
     /**
      * A variable v is in Possible-D-Sep(A,B) iff
@@ -141,9 +142,9 @@ public:
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
 
-    // IKnowledge getKnowledge() { return knowledge; }
+    Knowledge getKnowledge() { return knowledge; }
 
-    // void setKnowledge(IKnowledge knowledge) { this->knowledge = knowledge; }
+    void setKnowledge(Knowledge& knowledge) { this->knowledge = knowledge; }
 
     int getMaxReachablePathLength() { return (maxReachablePathLength == std::numeric_limits<int>::max()) ? -1 : maxReachablePathLength; }
 

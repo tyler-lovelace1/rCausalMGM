@@ -32,6 +32,57 @@ bool Grasp::OrderGraph::operator>=(const OrderGraph& rhs) const {
     return !(*this < rhs);
 }
 
+
+std::list<Node> Grasp::initializeRandom() {
+    std::vector<std::set<Node>> tiers = knowledge.getTiers();
+
+    if (tiers.empty()) {
+	std::set<Node> _nodes(nodes.begin(), nodes.end());
+	tiers.push_back(_nodes);
+    }
+
+    std::list<Node> nodeList;
+
+    // int tierIdx=0;
+    for (const std::set<Node>& tier : tiers) {
+	// tierIdx++;
+	std::vector<Node> _tier(tier.begin(), tier.end());
+
+	// Rcpp::Rcout << "  Tier " << tierIdx << ":\n";
+	// for (const Node& n: _tier) Rcpp::Rcout << n << " ";
+	// Rcpp::Rcout << std::endl;
+	
+	std::random_shuffle(_tier.begin(), _tier.end(), randWrapper);
+	nodeList.insert(nodeList.end(), _tier.begin(), _tier.end());
+    }
+
+    // Rcpp::Rcout << "Node List:" << std::endl;
+    // for (const Node& n: this->nodes) {
+    // 	if (n.isContinuous()) Rcpp::Rcout << "C:";
+    // 	if (n.isDiscrete()) Rcpp::Rcout << "D:";
+    // 	if (n.isCensored()) Rcpp::Rcout << "S:";
+    // 	Rcpp::Rcout << n << " ";
+    // }
+    // Rcpp::Rcout << std::endl;
+
+    // Rcpp::Rcout << "Random initialization:" << std::endl;
+    // for (const Node& n: nodeList) {
+    // 	if (n.isContinuous()) Rcpp::Rcout << "C:";
+    // 	if (n.isDiscrete()) Rcpp::Rcout << "D:";
+    // 	if (n.isCensored()) Rcpp::Rcout << "S:";
+    // 	Rcpp::Rcout << n << " ";
+    // }
+    // Rcpp::Rcout << std::endl;
+
+    std::set<Node> set1(this->nodes.begin(), this->nodes.end());
+    std::set<Node> set2(nodeList.begin(), nodeList.end());
+
+    if (set1 != set2)
+	throw std::runtime_error("GRASP random initialization does not contain every node.");
+
+    return nodeList;
+}
+
 Grasp::Grasp(DataSet& data, int threads) : ds(data), growShrink(data, threads) {
     // growShrink = GrowShrink(data, threads);
 
@@ -45,9 +96,12 @@ Grasp::Grasp(DataSet& data, int threads) : ds(data), growShrink(data, threads) {
     }
 
     parallelism = std::max(parallelism, 1);
+
+    std::vector<Node> _nodes = data.getVariables();
     
     growShrink.setPenalty(penalty);
-    graph = EdgeListGraph(data.getVariables());
+    graph = EdgeListGraph(_nodes);
+    nodes = std::list<Node>(_nodes.begin(), _nodes.end());
     // std::vector<Node> _nodes(growShrink.getVariables());
     // std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
     // nodes = std::list<Node>(_nodes.begin(), _nodes.end());
@@ -127,7 +181,9 @@ double Grasp::update(OrderGraph& tau) {
 	// Rcpp::Rcout << std::endl;
 	double localBic = 1e20;
 	// std::list<Node> parents = growShrink.search(*it, prefix, &bic);
+	// if (it->isCensored()) growShrink.setVerbose(true);
 	std::list<Node> parents = growShrink.search(*it, prefix, &localBic);
+	// if (it->isCensored()) growShrink.setVerbose(false);
 	// Rcpp::Rcout << "Parents: ";
 	// for (Node n : parents) Rcpp::Rcout << n.getName() << " ";
 	// Rcpp::Rcout << std::endl;
@@ -297,7 +353,8 @@ bool Grasp::graspDFS(int tier) {
 
 	// if (tier==0) curDepth /= 4;
 
-	if (visitedTuckSets.count(tucked) || visited.count(tau) || curDepth > depth)
+	if (visitedTuckSets.count(tucked) || visited.count(tau) ||
+	    curDepth > depth || !tau.isValid(knowledge))
 	    continue;
 
 	// if (visitedTuckSets.count(tucked) || visited.count(tau) ||
@@ -648,9 +705,9 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 
     int inputDepth = depth;
 
-    std::vector<Node> _nodes(growShrink.getVariables());
-    std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
-    nodes = std::list<Node>(_nodes.begin(), _nodes.end());
+    // std::vector<Node> _nodes(growShrink.getVariables());
+    // std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
+    nodes = initializeRandom();
     pi = OrderGraph(nodes);
     score = update(pi);
 
@@ -662,11 +719,12 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 	if (verbose) Rcpp::Rcout << "Run " << i+1 << "...\n";
 	
 	if (i > 0) {
-	    std::vector<Node> _nodes(growShrink.getVariables());
-	    std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
-	    nodes = std::list<Node>(_nodes.begin(), _nodes.end());
+	    // std::vector<Node> _nodes(growShrink.getVariables());
+	    // std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
+	    // nodes = std::list<Node>(_nodes.begin(), _nodes.end());
+	    nodes = initializeRandom();
 	    pi = OrderGraph(nodes);
-	    update(pi);
+	    score = update(pi);
 	}
 	
 	for (int tier = 0; tier < 3; tier++) {
@@ -704,6 +762,10 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 	    // std::set<EdgeListGraph> runCpdagSet;
 
 	    for (const OrderGraph order : bestGraphs) {
+
+		// Rcpp::Rcout << "Best Order:\n";
+		// for (const Node& n : order.order) Rcpp::Rcout << n << " ";
+		// Rcpp::Rcout << "\n\n";
 	    
 		graph = order.toGraph();
 
@@ -724,7 +786,11 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 	    }
 	} else if (pi.score == bestOrder.score) {
 	    for (const OrderGraph order : bestGraphs) {
-	    
+
+		// Rcpp::Rcout << "Best Order:\n";
+		// for (const Node& n : order.order) Rcpp::Rcout << n << " ";
+		// Rcpp::Rcout << "\n\n";
+		
 		graph = order.toGraph();
 
 		std::ostringstream alg;

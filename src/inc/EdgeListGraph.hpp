@@ -16,7 +16,7 @@
 #include <iostream>
 #include <cctype>
 
-Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph);
+// Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph);
 
 void streamGraph(const Rcpp::List& list, std::ostream& os, std::string ext = "txt");
 
@@ -109,9 +109,9 @@ private:
     /**
      * @return true iff there is a directed path from node1 to node2.
      */
-    bool existsUndirectedPathVisit(const Node& node1, const Node& node2, std::unordered_set<Node>& path);
+    bool existsUndirectedPathVisit(const Node& node1, const Node& node2, std::set<Node>& path);
 
-    bool existsDirectedPathVisit(const Node& node1, const Node& node2, std::unordered_set<Node>& path);
+    bool existsDirectedPathVisit(const Node& node1, const Node& node2, std::set<Node>& path);
 
     /**
      * @return true iff there is a semi-directed path from node1 to node2
@@ -157,6 +157,8 @@ public:
      */
     ~EdgeListGraph() = default;
 
+
+    bool isEmpty() { return nodes.size()==0 || edgesSet.size()==0; }
 
 
     /**
@@ -248,6 +250,9 @@ public:
      */
     bool existsDirectedPathFromTo(const Node& node1, const Node& node2);
     bool existsUndirectedPathFromTo(const Node& node1, const Node& node2);
+    bool existsSemiDirectedPathFromTo(const Node& node1, const Node& node2);
+    bool existsAlmostDirectedPathFromTo(const Node& node1, const Node& node2);
+    // bool existsMixedDirectedPathFromTo(const Node& node1, const Node& node2);
     bool existsSemiDirectedPathFromTo(const Node& node1, std::unordered_set<Node>& nodes);
 
     /**
@@ -261,7 +266,12 @@ public:
     /**
      * @return the list of children for a node.
      */
-    std::vector<Node> getChildren(const Node& node);
+    std::vector<Node> getChildren(const Node& node) const;
+
+    /**
+     * @return the list of children for a node.
+     */
+    std::vector<Node> getPossibleChildren(const Node& node) const;
 
     int getConnectivity();
 
@@ -280,7 +290,12 @@ public:
     /**
      * @return the list of parents for a node.
      */
-    std::vector<Node> getParents(const Node& node);
+    std::vector<Node> getParents(const Node& node) const;
+
+    /**
+     * @return the list of parents for a node.
+     */
+    std::vector<Node> getPossibleParents(const Node& node) const;
 
     /**
      * @return the number of edges into the given node.
@@ -303,6 +318,11 @@ public:
      * Determines whether one node is an ancestor of another.
      */
     bool isAncestorOf(const Node& node1, const Node& node2);
+
+    /**
+     * Determines whether one node is a possible ancestor of another.
+     */
+    bool isPossibleAncestorOf(const Node& node1, const Node& node2);
 
     bool possibleAncestor(const Node& node1, const Node& node2);
 
@@ -419,7 +439,13 @@ public:
      * up twice in the list of adjacencies for X, for optimality; simply create a list an and array from these to
      * eliminate the duplication.
      */
-    std::vector<Node> getAdjacentNodes(const Node& node);
+    std::vector<Node> getAdjacentNodes(const Node& node) const;
+
+    std::vector<Node> getMarkovBlanket(const Node& node) const;
+
+    std::vector<Node> getBidirectedConnectedComponent(const Node& node) const;
+
+    // std::vector<Node> getConnectedColliders(const Node& node) const;
 
     /**
      * Removes the edge connecting the two given nodes.
@@ -635,7 +661,7 @@ public:
     bool removeNode(const Node& node);
 
     /**
-     * Removes a node from the graph.
+     * Removes a node from the graph and replaces it with an updated version.
      */
     bool updateNode(const Node& node);
 

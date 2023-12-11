@@ -1,54 +1,57 @@
 #include "Bootstrap.hpp"
 
-arma::umat Bootstrap::getBootstrapSamples() {
+// arma::umat Bootstrap::getBootstrapSamples() {
 
-    if (N < 1)
-        throw std::invalid_argument("Sample size must be > 0");
+//     if (N < 1)
+//         throw std::invalid_argument("Sample size must be > 0");
     
-    arma::umat sampMat(B, N);
+//     arma::umat sampMat(B, N);
 
-    for(arma::uword i = 0; i < B; i++) {
-        arma::urowvec curSamp;// (
-	    // arma::conv_to<arma::urowvec>::from(
-	    // 	arma::floor(N * arma::rowvec(subSize, arma::fill::randu))
-	    // 	)
-	    // );
-	// Rcpp::Rcout << "Bootstrap sample " << i << std::endl;
-	bool done = false;
-	int attempts = 5000;
-        while(!done) {
-	    // Rcpp::Rcout << "Attempt " << 5000 - attempts << std::endl;
-	    curSamp = arma::conv_to<arma::urowvec>::from(
-		arma::floor(N * arma::rowvec(N, arma::fill::randu))
-		);
-            for (arma::uword j = 0; j < i; j++) {
-                if (arma::all(curSamp == sampMat.row(j))) {
-		    continue;
-                }
-            }
-	    // Rcpp::Rcout << "Sample indices: " << curSamp << std::endl;
-	    done = true;
-	    DataSet subset(d, curSamp);
+//     for(arma::uword i = 0; i < B; i++) {
+//         arma::urowvec curSamp;// (
+// 	    // arma::conv_to<arma::urowvec>::from(
+// 	    // 	arma::floor(N * arma::rowvec(subSize, arma::fill::randu))
+// 	    // 	)
+// 	    // );
+// 	// Rcpp::Rcout << "Bootstrap sample " << i << std::endl;
+// 	bool done = false;
+// 	int attempts = 5000;
+//         while(!done) {
+// 	    // Rcpp::Rcout << "Attempt " << 5000 - attempts << std::endl;
+// 	    curSamp = arma::conv_to<arma::urowvec>::from(
+// 		arma::floor(N * arma::rowvec(N, arma::fill::randu))
+// 		);
+//             for (arma::uword j = 0; j < i; j++) {
+//                 if (arma::all(curSamp == sampMat.row(j))) {
+// 		    continue;
+//                 }
+//             }
+// 	    // Rcpp::Rcout << "Sample indices: " << curSamp << std::endl;
+// 	    done = true;
+// 	    DataSet subset(d, curSamp);
 	    
-	    if (StabilityUtils::checkForVariance(subset, d) != -1) {
-		done = false;
-	    }
-	    attempts--;
-	    if (attempts == 0) {
-		// Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
-		throw std::invalid_argument("Unable to find a bootstrapped dataset of size " + std::to_string(N) + " where there are at least two samples for each category of every discrete variable. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
-	    }
-        }
-        sampMat.row(i) = curSamp;
-    }
+// 	    if (StabilityUtils::checkForVariance(subset, d) != -1) {
+// 		done = false;
+// 	    }
+// 	    attempts--;
+// 	    if (attempts == 0) {
+// 		// Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+// 		throw std::invalid_argument("Unable to find a bootstrapped dataset of size " + std::to_string(N) + " where there are at least two samples for each category of every discrete variable. The number of samples per subsampled dataset can be increased with the subSize parameter to address this problem.");
+// 	    }
+//         }
+//         sampMat.row(i) = curSamp;
+//     }
     
-    return sampMat;
-}
+//     return sampMat;
+// }
 
 EdgeListGraph Bootstrap::runBootstrap() {
     auto startTime = std::chrono::high_resolution_clock::now();
     
-    arma::umat subs = StabilityUtils::subSampleWithReplacement(d, N, B);
+    // arma::umat subs;
+    
+    if (replace)   samps = StabilityUtils::subSampleWithReplacement(d, N, B);
+    else           samps = StabilityUtils::subSampleNoReplacement(d, N, B);
 
     if (verbose) Rcpp::Rcout << "  Bootstrapping..." << std::endl;
 
@@ -57,17 +60,24 @@ EdgeListGraph Bootstrap::runBootstrap() {
     std::vector<EdgeListGraph> graphVec;
 
     bool mgmInit = alg.find("mgm") != std::string::npos;
+    bool censFlag = d.isCensored();
 
     for (arma::uword i = 0; i < B; i++) {
 
-	if (verbose) Rcpp::Rcout << "    Running bootstrap " << i+1 << "...\r";
+	if (verbose) Rcpp::Rcout << "    Running bootstrap " << i+1 << "...\n";
 
-	DataSet subset(d, subs.row(i));
+	DataSet subset(d, samps.row(i));
+
+	// Rcpp::Rcout << subset << std::endl;
 
 	if (alg == "mgm") {
-	    
-	    MGM mgm(subset, lambda);
-	    graphVec.push_back(mgm.search());
+	    if (!censFlag) {
+		MGM mgm(subset, lambda);
+		graphVec.push_back(mgm.search());
+	    } else {
+		CoxMGM coxmgm(subset, lambda);
+		graphVec.push_back(coxmgm.search());
+	    }
 	    // Rcpp::Rcout << g << std::endl;
 	    
 	} else {
@@ -75,59 +85,25 @@ EdgeListGraph Bootstrap::runBootstrap() {
 	    IndTestMulti itm(subset, alpha);
 	    
 	    if (mgmInit) {
-		MGM mgm(subset, lambda);
-	        ig = mgm.search();
+		// MGM mgm(subset, lambda);
+	        // ig = mgm.search();
+		if (!censFlag) {
+		    MGM mgm(subset, lambda);
+		    ig = mgm.search();	       
+		} else {
+		    CoxMGM coxmgm(subset, lambda);
+		    ig = coxmgm.search();
+		}
 	    }
 
-	    if (alg.find("pcm") != std::string::npos) {
-		
-		PcMax causalAlg((IndependenceTest*) &itm);
-		if (threads > 0) causalAlg.setThreads(threads);
-	    
-		causalAlg.setVerbose(false);
-		causalAlg.setFDR(false);
-	    
-		if (mgmInit) {
-		    causalAlg.setInitialGraph(&ig);
-		}
-	    
-		graphVec.push_back(causalAlg.search());
-		
-	    } else if (alg.find("cpc") != std::string::npos) {
-		
-		CpcStable causalAlg((IndependenceTest*) &itm);
-		if (threads > 0) causalAlg.setThreads(threads);
-	    
-		causalAlg.setVerbose(false);
-		causalAlg.setFDR(false);
-	    
-		if (mgmInit) {
-		    causalAlg.setInitialGraph(&ig);
-		}
-	    
-		graphVec.push_back(causalAlg.search());
-		
-	    } else if (alg.find("pc50") != std::string::npos) {
-		
-		Pc50 causalAlg((IndependenceTest*) &itm);
-		if (threads > 0) causalAlg.setThreads(threads);
-	    
-		causalAlg.setVerbose(false);
-		causalAlg.setFDR(false);
-	    
-		if (mgmInit) {
-		    causalAlg.setInitialGraph(&ig);
-		}
-	    
-		graphVec.push_back(causalAlg.search());
-		
-	    } else if (alg.find("pc") != std::string::npos) {
+	    if (alg.find("pc") != std::string::npos) {
 		
 		PcStable causalAlg((IndependenceTest*) &itm);
 		if (threads > 0) causalAlg.setThreads(threads);
 	    
 		causalAlg.setVerbose(false);
 		causalAlg.setFDR(false);
+		causalAlg.setOrientRule(orientRule);
 	    
 		if (mgmInit) {
 		    causalAlg.setInitialGraph(&ig);
@@ -135,45 +111,6 @@ EdgeListGraph Bootstrap::runBootstrap() {
 	    
 		graphVec.push_back(causalAlg.search());
 		
-	    } else if (alg.find("cfci") != std::string::npos) {
-		
-		Cfci causalAlg((IndependenceTest*) &itm);
-		if (threads > 0) causalAlg.setThreads(threads);
-	    
-		causalAlg.setVerbose(false);
-		causalAlg.setFDR(false);
-	    
-		if (mgmInit) {
-		    causalAlg.setInitialGraph(&ig);
-		}
-	    
-		graphVec.push_back(causalAlg.search());
-	    } else if (alg.find("fcim") != std::string::npos) {
-		
-		FciMax causalAlg((IndependenceTest*) &itm);
-		if (threads > 0) causalAlg.setThreads(threads);
-	    
-		causalAlg.setVerbose(false);
-		causalAlg.setFDR(false);
-	    
-		if (mgmInit) {
-		    causalAlg.setInitialGraph(&ig);
-		}
-	    
-		graphVec.push_back(causalAlg.search());
-	    } else if (alg.find("fci50") != std::string::npos) {
-		
-		Fci50 causalAlg((IndependenceTest*) &itm);
-		if (threads > 0) causalAlg.setThreads(threads);
-	    
-		causalAlg.setVerbose(false);
-		causalAlg.setFDR(false);
-	    
-		if (mgmInit) {
-		    causalAlg.setInitialGraph(&ig);
-		}
-	    
-		graphVec.push_back(causalAlg.search());
 	    } else if (alg.find("fci") != std::string::npos) {
 		
 		Fci causalAlg((IndependenceTest*) &itm);
@@ -181,14 +118,16 @@ EdgeListGraph Bootstrap::runBootstrap() {
 	    
 		causalAlg.setVerbose(false);
 		causalAlg.setFDR(false);
+		causalAlg.setOrientRule(orientRule);
 	    
 		if (mgmInit) {
 		    causalAlg.setInitialGraph(&ig);
 		}
 	    
 		graphVec.push_back(causalAlg.search());
-	    }
-	    
+	    } else {
+		throw std::runtime_error("Invalid algorithm selected");
+	    }   
 	}
 
 	// graphVec.push_back(g);
@@ -203,60 +142,60 @@ EdgeListGraph Bootstrap::runBootstrap() {
 
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    std::string fullAlg = "";
+    std::string fullAlg = graphVec.at(0).getAlgorithm() + " Bootstrap Ensemble";
 
-    if (alg == "mgm") {
-	fullAlg = "MGM";
-    } else if (mgmInit) {
-	fullAlg = "MGM-";
-    }
+    // if (alg == "mgm") {
+    // 	fullAlg = "MGM";
+    // } else if (mgmInit) {
+    // 	fullAlg = "MGM-";
+    // }
     
-    if (alg.find("pcm") != std::string::npos) {
-	fullAlg += "PC-Max";
-    } else if (alg.find("cpc") != std::string::npos) {
-	fullAlg += "CPC-Stable";
-    } else if (alg.find("pc50") != std::string::npos) {
-	fullAlg += "PC50";
-    } else if (alg.find("pc") != std::string::npos) {
-	fullAlg += "PC-Stable";
-    } else if (alg.find("fcim") != std::string::npos) {
-	fullAlg += "FCI-Max";
-    } else if (alg.find("cfci") != std::string::npos) {
-	fullAlg += "CFCI-Stable";
-    } else if (alg.find("fci50") != std::string::npos) {
-	fullAlg += "FCI50";
-    } else if (alg.find("fci") != std::string::npos) {
-	fullAlg += "FCI-Stable";
-    }
+    // if (alg.find("pc") != std::string::npos) {
+    // 	if (rule==ORIENT_MAXP)
+    // 	    fullAlg += "PC-Max";
+    // 	else if (rule==ORIENT_CONSERVATIVE)  
+    // 	    fullAlg += "CPC-Stable";
+    // 	else if (rule==ORIENT_MAJORITY)
+    // 	    fullAlg += "MPC-Stable";
+    // } else if (alg.find("pc") != std::string::npos) {
+    // 	fullAlg += "PC-Stable";
+    // } else if (alg.find("fcim") != std::string::npos) {
+    // 	fullAlg += "FCI-Max";
+    // } else if (alg.find("cfci") != std::string::npos) {
+    // 	fullAlg += "CFCI-Stable";
+    // } else if (alg.find("fci50") != std::string::npos) {
+    // 	fullAlg += "FCI50";
+    // } else if (alg.find("fci") != std::string::npos) {
+    // 	fullAlg += "FCI-Stable";
+    // }
 
-    if (verbose) {
-	if (elapsedTime < 100*1000) {
-	    Rcpp::Rcout.precision(2);
-	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-	}
-        Rcpp::Rcout << std::endl << "  Bootstraped " + fullAlg + " Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    }
+    // if (verbose) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << std::endl << "  Bootstraped " + fullAlg + " Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
 
-    fullAlg += " Bootstrap Ensemble";
+    // fullAlg += " Bootstrap Ensemble";
 
     ensGraph.setAlgorithm(fullAlg);
 
-    std::string graphType;
-    if (alg.find("pc") != std::string::npos) {
-	graphType = "completed partially directed acyclic graph";
-    } else if (alg.find("fci") != std::string::npos) {
-	graphType = "partial ancestral graph";
-    } else if (alg == "mgm") {
-	graphType = "undirected";
-    }
+    std::string graphType = graphVec.at(0).getGraphType();
+    // if (alg.find("pc") != std::string::npos) {
+    // 	graphType = "completed partially directed acyclic graph";
+    // } else if (alg.find("fci") != std::string::npos) {
+    // 	graphType = "partial ancestral graph";
+    // } else if (alg == "mgm") {
+    // 	graphType = "undirected";
+    // }
     
     ensGraph.setGraphType(graphType);
 
     if (mgmInit) {
 	ensGraph.setHyperParam("lambda", lambda);
     } else if (alg != "mgm") {
-	
 	ensGraph.setHyperParam("alpha", { alpha });
     }
 
@@ -271,7 +210,7 @@ EdgeListGraph Bootstrap::makeEnsembleGraph(std::vector<EdgeListGraph>& graphVec)
 
     // vec indices:  0    1    2    3    4    5    6    7
     //              ---  -->  <--  <->  o->  <-o  o-o  None
-    std::unordered_map<NodePair, arma::rowvec, boost::hash<NodePair>> edgeFreq;
+    std::map<NodePair, arma::rowvec> edgeFreq;
 
     EdgeListGraph ensembleGraph(d.getVariables());
 
@@ -328,64 +267,64 @@ EdgeListGraph Bootstrap::makeEnsembleGraph(std::vector<EdgeListGraph>& graphVec)
 	// if (adjFreq >= thresh) {
 	int maxIdx = it->second.index_max();
 	
-	if (maxIdx == 7) {
-	    if (adjFreq > 0.5) {
-		if (useNondirected)
-		    ensembleGraph.addNondirectedEdge(n1, n2);
-		else
-		    ensembleGraph.addUndirectedEdge(n1, n2);
-	    }
-	    continue;
-	}
+	// if (maxIdx == 7) {
+	//     if (adjFreq > 0.5) {
+	// 	if (useNondirected)
+	// 	    ensembleGraph.addNondirectedEdge(n1, n2);
+	// 	else
+	// 	    ensembleGraph.addUndirectedEdge(n1, n2);
+	//     }
+	//     continue;
+	// }
 	
 	switch (maxIdx) {
 	case 0:
 	    ensembleGraph.addUndirectedEdge(n1, n2);
 	    break;
 	case 1:
-	    if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
-		if (useNondirected)
-		    ensembleGraph.addNondirectedEdge(n1, n2);
-		else
-		    ensembleGraph.addUndirectedEdge(n1, n2);
-	    } else
-		ensembleGraph.addDirectedEdge(n1, n2);
+	    // if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
+	    // 	if (useNondirected)
+	    // 	    ensembleGraph.addNondirectedEdge(n1, n2);
+	    // 	else
+	    // 	    ensembleGraph.addUndirectedEdge(n1, n2);
+	    // } else
+	    ensembleGraph.addDirectedEdge(n1, n2);
 	    break;
 	case 2:
-	    if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
-		if (useNondirected)
-		    ensembleGraph.addNondirectedEdge(n1, n2);
-		else
-		    ensembleGraph.addUndirectedEdge(n1, n2);
-	    } else
-		ensembleGraph.addDirectedEdge(n2, n1);
+	    // if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
+	    // 	if (useNondirected)
+	    // 	    ensembleGraph.addNondirectedEdge(n1, n2);
+	    // 	else
+	    // 	    ensembleGraph.addUndirectedEdge(n1, n2);
+	    // } else
+	    ensembleGraph.addDirectedEdge(n2, n1);
 	    break;
 	case 3:
-	    if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
-		if (useNondirected)
-		    ensembleGraph.addNondirectedEdge(n1, n2);
-		else
-		    ensembleGraph.addUndirectedEdge(n1, n2);
-	    } else
-		ensembleGraph.addBidirectedEdge(n1, n2);
+	    // if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
+	    // 	if (useNondirected)
+	    // 	    ensembleGraph.addNondirectedEdge(n1, n2);
+	    // 	else
+	    // 	    ensembleGraph.addUndirectedEdge(n1, n2);
+	    // } else
+	    ensembleGraph.addBidirectedEdge(n1, n2);
 	    break;
 	case 4:
-	    if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
-		if (useNondirected)
-		    ensembleGraph.addNondirectedEdge(n1, n2);
-		else
-		    ensembleGraph.addUndirectedEdge(n1, n2);
-	    } else
-		ensembleGraph.addPartiallyOrientedEdge(n1, n2);
+	    // if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
+	    // 	if (useNondirected)
+	    // 	    ensembleGraph.addNondirectedEdge(n1, n2);
+	    // 	else
+	    // 	    ensembleGraph.addUndirectedEdge(n1, n2);
+	    // } else
+	    ensembleGraph.addPartiallyOrientedEdge(n1, n2);
 	    break;
 	case 5:
-	    if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
-		if (useNondirected)
-		    ensembleGraph.addNondirectedEdge(n1, n2);
-		else
-		    ensembleGraph.addUndirectedEdge(n1, n2);
-	    } else
-		ensembleGraph.addPartiallyOrientedEdge(n2, n1);
+	    // if (ensemble == "majority" && it->second(maxIdx) < 0.5) {
+	    // 	if (useNondirected)
+	    // 	    ensembleGraph.addNondirectedEdge(n1, n2);
+	    // 	else
+	    // 	    ensembleGraph.addUndirectedEdge(n1, n2);
+	    // } else
+	    ensembleGraph.addPartiallyOrientedEdge(n2, n1);
 	    break;
 	case 6:
 	    // if (ensemble == "majority" && it->second(maxIdx) < 0.5) {

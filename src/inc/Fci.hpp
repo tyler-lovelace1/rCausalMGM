@@ -21,13 +21,14 @@
 #include "IndependenceTest.hpp"
 #include "SepsetMap.hpp"
 #include "ChoiceGenerator.hpp"
-// #include "SepsetProducer.hpp"
+#include "Knowledge.hpp"
+#include "SepsetProducer.hpp"
 #include "FasStableProducerConsumer.hpp"
 #include "PossibleDsepFciConsumerProducer.hpp"
 // #include "FasStableConcurrent.hpp"
 #include "FciOrient.hpp"
-#include "SepsetsPossibleDsep.hpp"
-#include "SepsetsSet.hpp"
+// #include "SepsetsPossibleDsep.hpp"
+// #include "SepsetsSet.hpp"
 #include <limits>
 
 
@@ -45,10 +46,10 @@ private:
      */
     SepsetMap sepsets;
 
-    // /**
-    //  * The background knowledge.
-    //  */
-    // private IKnowledge knowledge = new Knowledge2();
+    /**
+     * The background knowledge.
+     */
+    Knowledge knowledge;
 
     /**
      * The variables to search over (optional)
@@ -66,6 +67,11 @@ private:
      * True iff the possible dsep search is done.
      */
     bool possibleDsepSearchDone = true;
+
+    /** 
+     * Orientation rule for identifying colliders
+     */
+    OrientRule orientRule = ORIENT_MAXP;
 
     /**
      * The maximum length for any discriminating path. -1 if unlimited; otherwise, a positive integer.
@@ -100,9 +106,12 @@ private:
     std::unordered_map<Node, int> hashIndices;   // must lock
     // ICovarianceMatrix covarianceMatrix;
     double penaltyDiscount = 2;
-    SepsetMap possibleDsepSepsets ();
+    // SepsetMap possibleDsepSepsets ();
     EdgeListGraph *initialGraph = NULL;
     int possibleDsepDepth = -1;
+
+    SepsetProducer sp, mapSp;
+    SepsetMap possDsepSepsets;
 
         //========================PRIVATE METHODS==========================//
 
@@ -111,7 +120,7 @@ private:
     /**
      * Orients according to background knowledge
      */
-    void fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Node> variables);
+    void fciOrientbk(EdgeListGraph graph, std::vector<Node> variables);
 
 
 public:
@@ -143,11 +152,17 @@ public:
 
     EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes);
 
+    EdgeListGraph reorientWithRule(OrientRule rule);
+
     SepsetMap getSepsets() { return this->sepsets; }
 
-    // IKnowledge getKnowledge() { return this->knowledge; }
+    Knowledge getKnowledge() { return this->knowledge; }
 
-    // void setKnowledge(IKnowledge knowledge);
+    void setKnowledge(Knowledge& knowledge) { this->knowledge = knowledge; }
+
+    OrientRule getOrientRule() { return orientRule; }
+    
+    void setOrientRule(OrientRule rule) {this->orientRule = rule; }
 
     /**
      * @return true if Zhang's complete rule set should be used, false if only R1-R4 (the rule set of the original FCI)

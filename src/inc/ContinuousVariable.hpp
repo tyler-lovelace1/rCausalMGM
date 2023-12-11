@@ -36,10 +36,7 @@ public:
 	}
     }
 
-    ContinuousVariable(const ContinuousVariable& var) = default; // {
-    // 	name = var.name;
-    // 	type = var.type;
-    // }
+    ContinuousVariable(const ContinuousVariable& var) = default;
 
     ContinuousVariable& operator=(const ContinuousVariable& var) = default;
     
@@ -47,7 +44,7 @@ public:
 
     ContinuousVariable& operator=(ContinuousVariable&& var) = default;     
   
-    ~ContinuousVariable() = default;// {}
+    ~ContinuousVariable() = default;
 
     double getMissingValueMarker() { return this->MISSING_VALUE; }
 

@@ -6,10 +6,11 @@
 #include <boost/functional/hash.hpp>
 // #include "armaLapack.hpp"
 // #include "IndependenceTest.hpp"
-// #include "CoxIRLSRegression.hpp"
+#include "CoxIRLSRegression.hpp"
 #include "LogisticRegression.hpp"
 #include "LinearRegression.hpp"
-#include "IndTestMulti.hpp"
+#include "EdgeListGraph.hpp"
+// #include "IndTestMulti.hpp"
 // #include "Node.hpp"
 // #include "DataSet.hpp"
 #include "BlockingQueue.hpp"
@@ -29,13 +30,14 @@ private:
     DataSet internalData;
     std::map<Node, std::vector<Node>> variablesPerNode;
     std::map<Node, double> nullBICmap;
-    IndependenceTest *test;
-    // CoxIRLSRegression coxRegression;
+    EdgeListGraph graph;
+    CoxIRLSRegression coxRegression;
     LogisticRegression logisticRegression;
     LinearRegression regression;
     bool verbose = false;
     double penalty = 1;
     std::map<std::pair<Node, std::vector<Node>>, double> scoreHistory;
+    std::map<std::pair<Node,Node>, arma::vec> WZmap;
 
     // Concurrency
     struct RegressionTask {
@@ -215,6 +217,8 @@ public:
 
     void setPenalty(double penalty) { this->penalty = penalty; }
 
+    void setGraph(EdgeListGraph graph) { this->graph = graph; }
+
     arma::mat getSubsetData(DataSet& origData, std::vector<Node>& varSubset);
 
     int getSampleSize() { return originalData.getNumRows(); }
@@ -222,6 +226,8 @@ public:
     std::vector<DataSet*> getDataSets() { return { &originalData }; }
 
     void clearHistory() { scoreHistory.clear(); }
+
+    void resetWZ(Node target, std::vector<Node>& neighbors);
 
     // void scaledZ(const Node& target, std::vector<Node>& regressors);
 

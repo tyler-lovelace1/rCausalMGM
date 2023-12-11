@@ -1,5 +1,16 @@
 #include "Triple.hpp"
 
+Triple::Triple(const Node& x, const Node& y, const Node& z) {
+    this->y = y;
+    if (x <= z) {
+	this->x = x;
+	this->z = z;
+    } else {
+	this->x = z;
+	this->z = x;
+    }
+}
+
 std::string Triple::toString() const {
     std::ostringstream result;
 

@@ -55,6 +55,11 @@ EdgeListGraph Fci::search() {
 EdgeListGraph Fci::search(const std::vector<Node>& nodes) {
     FasStableProducerConsumer fas(initialGraph, test, threads);
 
+    fas.setKnowledge(knowledge);
+    fas.setDepth(depth);
+    fas.setVerbose(verbose);
+    fas.setFDR(fdr);
+
     return search(fas, nodes);
 }
 
@@ -67,33 +72,29 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
         throw std::invalid_argument("independenceTest of FCI Stable may not be NULL.");
 
     auto startTime = std::chrono::high_resolution_clock::now();
-
-    // fas->setKnowledge(getKnowledge());
-    fas.setDepth(depth);
-    fas.setVerbose(verbose);
-    fas.setFDR(fdr);
-    this->graph = fas.search();
-    this->sepsets = fas.getSepsets();
+    
+    graph = fas.search();
+    sepsets = fas.getSepsets();
     graph.reorientAllWith(ENDPOINT_CIRCLE);
-
-    // SepsetsPossibleDsep sp(graph, test,/* knowledge,*/ depth, maxPathLength);
-
+    SepsetProducer spTemp(graph, test);
+    // SepsetMap possDsepSepsets;
 
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
     if (isPossibleDsepSearchDone()) {
 	if (verbose) Rcpp::Rcout << "  Starting Posssible DSep search" << std::endl;
 	// SepsetsSet ssset(sepsets, test);
-	// FciOrient orienter(&ssset);
+	FciOrient orienter(spTemp);
+	orienter.fciOrientbk(knowledge, graph);
 
 	PossibleDsepFciConsumerProducer possibleDSep(graph, test, threads);
-	// possibleDSep.setKnowledge(getKnowledge());
+	possibleDSep.setKnowledge(knowledge);
 	possibleDSep.setDepth(getDepth());
 	possibleDSep.setMaxPathLength(maxPathLength);
 	possibleDSep.setVerbose(verbose);
 
-	SepsetMap searchResult = possibleDSep.search();
-	sepsets.addAll(searchResult);
+	possDsepSepsets = possibleDSep.search();
+	sepsets.addAll(possDsepSepsets);
 
 	graph = possibleDSep.getGraph();
 
@@ -108,13 +109,82 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new FciOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
     if (verbose) Rcpp::Rcout << "  Starting Orientations..." << std::endl;
-    SepsetsSet sepsetsset_(sepsets, test);
-    FciOrient fciorient_(&sepsetsset_, whyOrient);
+
+    FciOrient fciorient_;
+    mapSp = SepsetProducer(sepsets, test);
+    sp = SepsetProducer(graph, test, possDsepSepsets, threads);
+    
+    if (orientRule == ORIENT_SEPSETS) {
+
+	mapSp.setOrientRule(orientRule);
+	mapSp.setDepth(depth);
+	mapSp.setVerbose(verbose);
+	mapSp.setKnowledge(knowledge);
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+      
+	mapSp.fillMap();
+
+	fciorient_ = FciOrient(mapSp, whyOrient);
+      
+    } else {
+
+	sp.setOrientRule(orientRule);
+	sp.setDepth(depth);
+	sp.setVerbose(verbose);
+	sp.setKnowledge(knowledge);
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+      
+	sp.fillMap();
+
+	fciorient_ = FciOrient(sp, whyOrient);
+    }
+    
+    // sp.setOrientRule(orientRule);
+    // sp.setDepth(depth);
+    // sp.setVerbose(verbose);
+    // sp.setKnowledge(knowledge);
+    // if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+    
+    // sp.fillMap();
+    
+    // FciOrient fciorient_(sp, whyOrient);
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
     fciorient_.setMaxPathLength(maxPathLength);
-    // fciOrient.setKnowledge(knowledge);
+    fciorient_.setKnowledge(knowledge);
+
+    if (verbose) Rcpp::Rcout << "  Orienting colliders..." << std::endl;
+    
     fciorient_.ruleR0(graph);
+
+    if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
+	for (auto t : sp.getAmbiguousTriples())
+	    graph.addAmbiguousTriple(t.x, t.y, t.z);
+    }
+
+    if (verbose) Rcpp::Rcout << "  Orienting implied edges..." << std::endl;
+    
     fciorient_.doFinalOrientation(graph);
+
+    // Rcpp::Rcout << "Checking for almost cycles\n";
+    // for (Edge e : graph.getEdges()) {
+    // 	if(e.isBidirected() || e.isPartiallyOriented()) {
+    // 	    Rcpp::Rcout << "  Checking edge " << e << "...";
+    // 	    Node n1 = e.getNode1();
+    // 	    Node n2 = e.getNode2();
+    // 	    bool failFlag = false;
+    // 	    if (graph.isAncestorOf(n1, n2)) {
+    // 		Rcpp::Rcout << " Node " << n1 << " is an ancestor of " << n2 << "\n";
+    // 		failFlag = true;
+    // 	    }
+    // 	    if (graph.isAncestorOf(n2, n1)) {
+    // 		Rcpp::Rcout << " Node " << n2 << " is an ancestor of " << n1 << "\n";
+    // 		failFlag = true;
+    // 	    }
+    // 	    if (!failFlag) {
+    // 		Rcpp::Rcout << " Passed\n";
+    // 	    }
+    // 	}
+    // }
 
     // // Set algorithm and type
     // std::ostringstream alg;
@@ -123,11 +193,23 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
     // graph.setGraphType("partial ancestral graph");
 
     // Set algorithm and type
+    std::string algString;
+    if (orientRule == ORIENT_SEPSETS)
+	algString = "FCI-Stable";
+    else if (orientRule == ORIENT_MAXP)
+	algString = "FCI-Max";
+    else if (orientRule == ORIENT_MAJORITY)
+	algString = "MFCI-Stable";
+    else if (orientRule == ORIENT_CONSERVATIVE)
+	algString = "CFCI-Stable";
+    else
+	algString = "FCI-Stable";
+    
     std::ostringstream alg;
     if (initialGraph==NULL) {
-	alg << "FCI-Stable";
+	alg << algString;
     } else {
-	alg << initialGraph->getAlgorithm() << "-" << "FCI-Stable";
+	alg << initialGraph->getAlgorithm() << "-" << algString;
     }
     graph.setAlgorithm(alg.str());
     graph.setGraphType("partial ancestral graph");
@@ -142,6 +224,107 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
 	}
         Rcpp::Rcout << "FCI-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
+    
+    return graph;
+}
+
+EdgeListGraph Fci::reorientWithRule(OrientRule rule) {
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    graph.reorientAllWith(ENDPOINT_CIRCLE);
+  
+    if (verbose) Rcpp::Rcout << "  Starting New Orientations..." << std::endl;
+    
+    orientRule = rule;
+    
+    // if (verbose) Rcpp::Rcout << "  Starting Orientations..." << std::endl;
+
+    FciOrient fciorient_;
+    
+    if (orientRule == ORIENT_SEPSETS) {
+	mapSp.setOrientRule(orientRule);
+	mapSp.setDepth(depth);
+	mapSp.setVerbose(verbose);
+	mapSp.setKnowledge(knowledge);
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+      
+	mapSp.fillMap();
+
+	fciorient_ = FciOrient(mapSp, whyOrient);
+      
+    } else {
+	sp.setOrientRule(orientRule);
+	sp.setDepth(depth);
+	sp.setVerbose(verbose);
+	sp.setKnowledge(knowledge);
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+      
+	sp.fillMap();
+
+	fciorient_ = FciOrient(sp, whyOrient);
+    }
+    
+    // sp.setOrientRule(orientRule);
+    // sp.setDepth(depth);
+    // sp.setVerbose(verbose);
+    // sp.setKnowledge(knowledge);
+    // if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+    
+    // sp.fillMap();
+    
+    // FciOrient fciorient_(sp, whyOrient);
+    fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
+    fciorient_.setMaxPathLength(maxPathLength);
+    fciorient_.setKnowledge(knowledge);
+    fciorient_.ruleR0(graph);
+
+    if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
+	for (auto t : sp.getAmbiguousTriples())
+	    graph.addAmbiguousTriple(t.x, t.y, t.z);
+    }
+    
+    fciorient_.doFinalOrientation(graph);
+
+    // // Set algorithm and type
+    // std::ostringstream alg;
+    // alg << "FCI Stable: alpha = " << test->getAlpha();
+    // graph.setAlgorithm(alg.str());
+    // graph.setGraphType("partial ancestral graph");
+
+    // Set algorithm and type
+    std::string algString;
+    if (orientRule == ORIENT_SEPSETS)
+	algString = "FCI-Stable";
+    else if (orientRule == ORIENT_MAXP)
+	algString = "FCI-Max";
+    else if (orientRule == ORIENT_MAJORITY)
+	algString = "MFCI-Stable";
+    else if (orientRule == ORIENT_CONSERVATIVE)
+	algString = "CFCI-Stable";
+    else
+	algString = "FCI-Stable";
+    
+    std::ostringstream alg;
+    if (initialGraph==NULL) {
+	alg << algString;
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << algString;
+    }
+    graph.setAlgorithm(alg.str());
+    graph.setGraphType("partial ancestral graph");
+    
+
+    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+
+    if (verbose) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "Reorient Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
     }
     
     return graph;

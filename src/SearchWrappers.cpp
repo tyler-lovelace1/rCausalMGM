@@ -1,25 +1,29 @@
 #include "MGM.hpp"
+#include "CoxMGM.hpp"
 #include "PcStable.hpp"
-#include "CpcStable.hpp"
-#include "PcMax.hpp"
-#include "Pc50.hpp"
+// #include "CpcStable.hpp"
+// #include "PcMax.hpp"
+// #include "Pc50.hpp"
 #include "Fci.hpp"
-#include "Cfci.hpp"
-#include "FciMax.hpp"
-#include "Fci50.hpp"
+// #include "Cfci.hpp"
+// #include "FciMax.hpp"
+// #include "Fci50.hpp"
 #include "STEPS.hpp"
-#include "CausalMGMParams.hpp"
+#include "StabilityUtils.hpp"
+// #include "CausalMGMParams.hpp"
 // #include "STARS.hpp"
 #include "Bootstrap.hpp"
 // #include "Tests.hpp"
-#include "IndTestMulti.hpp"
+#include "IndTestMultiCox.hpp"
+// #include "BayesIndTestMultiCox.hpp"
 #include "GrowShrink.hpp"
 #include "Grasp.hpp"
-#include "CausalMGM.hpp"
+// #include "CausalMGM.hpp"
+#include "Knowledge.hpp"
 
 //' Calculate the MGM graph on a dataset
 //'
-//' @param df The dataframe
+//' @param data The dataframe
 //' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
 //' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
@@ -30,12 +34,12 @@
 //' g <- rCausalMGM::mgm(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List mgm(
-    const Rcpp::DataFrame &df, 
+    const Rcpp::DataFrame &data, 
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
@@ -82,9 +86,76 @@ Rcpp::List mgm(
 }
 
 
+//' Calculate the CoxMGM graph on a dataset
+//'
+//' @param data The dataframe
+//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::coxmgm(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List coxmgm(
+    const Rcpp::DataFrame &data, 
+    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2, 0.2, 0.2),
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+    
+    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+
+    std::vector<double> l(lambda.begin(), lambda.end());
+
+    int lamLength = 5;
+
+    if (l.size() == 1) {
+	for (int i = 1; i < lamLength; i++) {
+	    l.push_back(l[0]);
+	}
+    } else if (l.size() != lamLength) {
+	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+    }
+
+    CoxMGM mgm(ds, l);
+    mgm.setVerbose(v);
+    // mgm.calcLambdaMax();
+    EdgeListGraph mgmGraph = mgm.search();
+    
+    // mgmGraph.setHyperParam("lambda", Rcpp::NumericVector(l.begin(), l.end()));
+
+    RcppThread::checkUserInterrupt();
+
+    auto elapsedTime = mgm.getElapsedTime();
+
+    if (v) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "CoxMGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
+
+    Rcpp::List result = mgmGraph.toList();
+
+    return result;
+}
+
+
 //' Calculate the solution path for an MGM graph on a dataset
 //'
-//' @param df The dataframe
+//' @param data The dataframe
 //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
 //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 //' @param rank Whether or not to use rank-based associations as opposed to linear
@@ -96,13 +167,13 @@ Rcpp::List mgm(
 //' g <- rCausalMGM::mgmPath(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List mgmPath(
-    const Rcpp::DataFrame &df,
+    const Rcpp::DataFrame &data,
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 30,
     const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
@@ -188,10 +259,125 @@ Rcpp::List mgmPath(
 }
 
 
-
-//' Calculate the solution path for an MGM graph on a dataset
+//' Calculate the solution path for a CoxMGM graph on a dataset
 //'
-//' @param df The dataframe
+//' @param data The dataframe
+//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated MGM graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::coxmgmPath(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List coxmgmPath(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
+    const int nLambda = 30,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+
+    arma::vec _lambda;
+    std::vector<double> l; // = {0.2, 0.2, 0.2};
+
+    int n = ds.getNumRows();
+
+    CoxMGM mgm(ds);
+    mgm.setVerbose(v);
+
+    double logLambdaMax = std::log10(mgm.calcLambdaMax());
+
+    Rcpp::Rcout << "LambdaMax: " << std::pow(10, logLambdaMax) << std::endl;
+
+    // return Rcpp::List::create();
+
+    logLambdaMax = std::min(logLambdaMax,
+    			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
+    						      ((double) ds.getNumRows()))));
+
+    if (lambdas.isNotNull()) {
+        _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
+	l = std::vector<double>(_lambda.begin(), _lambda.end());
+    } else {
+	if (ds.getNumRows() > ds.getNumColumns()) {
+	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	} else {
+	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	}
+    }
+
+    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
+    arma::vec loglik(l.size(), arma::fill::zeros);
+    arma::vec nParams(l.size(), arma::fill::zeros);
+    std::vector<EdgeListGraph> mgmGraphs = mgm.searchPath(l, loglik, nParams);
+
+    RcppThread::checkUserInterrupt();
+
+    auto elapsedTime = mgm.getElapsedTime();
+
+    if (v) {
+	if (elapsedTime < 100*1000) {
+	    Rcpp::Rcout.precision(2);
+	} else {
+	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+	}
+        Rcpp::Rcout << "CoxMGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    }
+
+    Rcpp::List graphList;
+    
+    for (int i = 0; i < l.size(); i++) {
+        graphList.push_back(mgmGraphs[i].toList());
+    }
+
+    arma::vec aic = 2*nParams - 2*loglik;
+    arma::vec bic = std::log(n)*nParams - 2*loglik;
+
+    arma::uword aicIdx = arma::index_min(aic);
+    arma::uword bicIdx = arma::index_min(bic);
+    
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=mgmGraphs[bicIdx].toList(),
+					   Rcpp::_["graph.aic"]=mgmGraphs[aicIdx].toList(),
+					   Rcpp::_["graphs"]=graphList,
+					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+					   Rcpp::_["alphas"]=R_NilValue,
+					   Rcpp::_["AIC"] = aic,
+					   Rcpp::_["BIC"] = bic,
+					   Rcpp::_["loglik"] = loglik,
+					   Rcpp::_["nParams"] = nParams,
+					   Rcpp::_["n"] = n);
+
+    result.attr("class") = "graphPath";
+    
+    // Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
+    // 					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+    // 					   Rcpp::_["loglik"] = loglik,
+    // 					   Rcpp::_["nParams"] = nParams,
+    // 					   Rcpp::_["AIC"] = 2*nParams - 2*loglik,
+    // 					   Rcpp::_["BIC"] = std::log(n)*nParams - 2*loglik);
+    
+
+    return result;
+}
+
+
+//' Calculate the solution path for an MGM graph on a dataset with k-fold cross-validation
+//'
+//' @param data The dataframe
 //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
 //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 //' @param rank Whether or not to use rank-based associations as opposed to linear
@@ -203,7 +389,7 @@ Rcpp::List mgmPath(
 //' g <- rCausalMGM::mgmCV(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List mgmCV(
-    const Rcpp::DataFrame &df,
+    const Rcpp::DataFrame &data,
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 30,
     const int nfolds = 10,
@@ -211,7 +397,7 @@ Rcpp::List mgmCV(
     const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
@@ -311,7 +497,7 @@ Rcpp::List mgmCV(
 
 //' Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed
 //'
-//' @param df The dataframe
+//' @param data The dataframe
 //' @param lambdas A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
 //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 //' @param g The gamma parameter for STEPS. Defaults to 0.05
@@ -329,7 +515,7 @@ Rcpp::List mgmCV(
 //' g <- rCausalMGM::steps(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List steps(
-    const Rcpp::DataFrame &df, 
+    const Rcpp::DataFrame &data, 
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 30,
     const double gamma = 0.05,
@@ -345,13 +531,18 @@ Rcpp::List steps(
     std::vector<double> l;
     arma::vec _lambda;
     
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
 
     MGM mgm(ds);
@@ -363,11 +554,11 @@ Rcpp::List steps(
 						      ((double) ds.getNumRows()))));
     
     if (lambdas.isNotNull()) {
-        Rcpp::NumericVector _lambda(lambdas); 
+        _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -385,7 +576,12 @@ Rcpp::List steps(
     steps.setComputeStabs(computeStabs);
     steps.setVerbose(verbose);
 
-    arma::mat instabs(l.size(), 4);
+    arma::mat instabs;
+    if (ds.isCensored()) {
+	instabs = arma::mat(l.size(), 6);
+    } else {
+	instabs = arma::mat(l.size(), 4);
+    }
     instabs.fill(arma::datum::nan);
 
     arma::umat samps;
@@ -413,9 +609,73 @@ Rcpp::List steps(
 
 }
 
+// //' Runs the causal algorithm PC-Stable on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List pcStable(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+//     const double alpha = 0.05,
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
+
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
+
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+
+//     IndTestMultiCox itm(ds, alpha);
+
+//     PcStable pcs((IndependenceTest*) &itm);
+//     if (threads > 0) pcs.setThreads(threads);
+//     pcs.setVerbose(verbose);
+//     pcs.setFDR(fdr);
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         pcs.setInitialGraph(&ig);
+//     }
+//     Knowledge k;
+//     if (!knowledge.isNull()) {
+// 	Rcpp::List _knowledge(knowledge);
+// 	k = Knowledge(ds.getVariables(), _knowledge);
+// 	pcs.setKnowledge(k);
+//     }
+
+//     Rcpp::List result = pcs.search().toList();
+
+//     // ds.deleteVariables();
+
+//     return result;
+// }
+
 //' Runs the causal algorithm PC-Stable on a dataset
 //'
-//' @param df The dataframe
+//' @param data The dataframe
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
@@ -430,15 +690,18 @@ Rcpp::List steps(
 //' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List pcStable(
-    const Rcpp::DataFrame &df,
+    const Rcpp::DataFrame &data,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
+									"conservative", "sepsets"),
     const double alpha = 0.05,
     const int threads = -1,
     const bool fdr = false,
     const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
@@ -447,171 +710,170 @@ Rcpp::List pcStable(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    std::string rule;
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    IndTestMulti itm(ds, alpha);
+    std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
 
-    PcStable pcs((IndependenceTest*) &itm);
-    if (threads > 0) pcs.setThreads(threads);
-    pcs.setVerbose(verbose);
-    pcs.setFDR(fdr);
+    rule = orientRule[0];
+
+    std::transform(rule.begin(), rule.end(), rule.begin(),
+		   [](unsigned char c){ return std::tolower(c); });
+
+    if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
+	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    
+    IndTestMultiCox itm(ds, alpha);
+    
+    PcStable pc((IndependenceTest*) &itm);
+    if (threads > 0) pc.setThreads(threads);
+    pc.setVerbose(verbose);
+    pc.setFDR(fdr);
+    if (rule == "majority")
+	pc.setOrientRule(ORIENT_MAJORITY);
+    if (rule == "maxp")
+	pc.setOrientRule(ORIENT_MAXP);
+    if (rule == "conservative")
+	pc.setOrientRule(ORIENT_CONSERVATIVE);
+    if (rule == "sepsets")
+	pc.setOrientRule(ORIENT_SEPSETS);
+    
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
         ig = EdgeListGraph(_initialGraph, ds);
-        pcs.setInitialGraph(&ig);
+        pc.setInitialGraph(&ig);
+    }
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	pc.setKnowledge(k);
     }
 
-    Rcpp::List result = pcs.search().toList();
-
+    Rcpp::List result = pc.search().toList();
+    
     // ds.deleteVariables();
-
+    
     return result;
 }
 
 
-//' Calculate the solution path for an PC graph on a dataset
-//'
-//' @param df The dataframe
-//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
-//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated MGM graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::pcPath(data.n100.p25)
-// [[Rcpp::export]]
-Rcpp::List pcPath(
-    const Rcpp::DataFrame& df,
-    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
-    Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("max", "conservative", "majority", "none"),
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Runs the causal algorithm PC-Stable on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List pcStableBSC(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+//     const int N = 250,
+//     const int threads = -1,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
 
-    int n = ds.getNumRows();
-    int p = ds.getNumColumns();
+//     std::string rule;
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    std::vector<double> a(alphas.begin(), alphas.end());
+//     // std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
 
-    arma::vec _alphas(a);
+//     // rule = "sepsets"; // orientRule[0];
 
-    _alphas = arma::sort(_alphas, "ascend");
+//     // std::transform(rule.begin(), rule.end(), rule.begin(),
+//     // 		   [](unsigned char c){ return std::tolower(c); });
 
-    arma::vec loglik(_alphas.size(), arma::fill::zeros);
-    arma::vec nParams(_alphas.size(), arma::fill::zeros);
-    std::vector<EdgeListGraph> pcGraphs;
-    std::vector<CausalMGMParams> pcParams;
-    std::vector<double> l = { 0.5, 0.5, 0.5 };
-
-    for (arma::uword i = 0; i < _alphas.n_elem; i++) {
-
-	IndTestMulti itm(ds, _alphas(i));
-
-	if (orientRule[0]=="none") {
-
-	    PcStable pcs((IndependenceTest*) &itm);
-	    if (threads > 0) pcs.setThreads(threads);
-	    pcs.setVerbose(verbose);
-	    pcs.setFDR(fdr);
-	    pcGraphs.push_back(pcs.search());
-
-	} else if (orientRule[0]=="max") {
-
-	    PcMax pcm((IndependenceTest*) &itm);
-	    if (threads > 0) pcm.setThreads(threads);
-	    pcm.setVerbose(verbose);
-	    pcm.setFDR(fdr);
-	    pcGraphs.push_back(pcm.search());
-
-	} else if (orientRule[0]=="conservative") {
-
-	    CpcStable cpc((IndependenceTest*) &itm);
-	    if (threads > 0) cpc.setThreads(threads);
-	    cpc.setVerbose(verbose);
-	    cpc.setFDR(fdr);
-	    pcGraphs.push_back(cpc.search());
-
-	} else if (orientRule[0]=="majority") {
-
-	    Pc50 pc50((IndependenceTest*) &itm);
-	    if (threads > 0) pc50.setThreads(threads);
-	    pc50.setVerbose(verbose);
-	    pc50.setFDR(fdr);
-	    pcGraphs.push_back(pc50.search());
-
-	}
-
-	CausalMGM causalMGM(ds, pcGraphs.at(i));
-	causalMGM.setVerbose(verbose);
-	causalMGM.setLambda(l);
-	pcParams.push_back(causalMGM.search());
-
-	arma::vec par(pcParams.at(i).toMatrix1D());
-	loglik(i) = -n * causalMGM.smoothValue(par);
-	nParams(i) = causalMGM.getNParams();
-	
-	RcppThread::checkUserInterrupt();
-    }
-
-    // auto elapsedTime = mgm.getElapsedTime();
-
-    // if (v) {
-    // 	if (elapsedTime < 100*1000) {
-    // 	    Rcpp::Rcout.precision(2);
-    // 	} else {
-    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-    // 	}
-    //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    // }
-
-    Rcpp::List graphList;
+//     // if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
+//     // 	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     
-    for (int i = 0; i < a.size(); i++) {
-	Rcpp::List pcGraph = pcGraphs[i].toList();
-	pcGraph["parameters"] = pcParams[i].toList();
-        graphList.push_back(pcGraph);
-    }
-
-    arma::vec aic = 2*nParams - 2*loglik;
-    arma::vec bic = std::log(n)*nParams - 2*loglik;
-
-    arma::uword aicIdx = arma::index_min(aic);
-    arma::uword bicIdx = arma::index_min(bic);
+//     BayesIndTestMultiCox itm(ds, 0.05);
     
-    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=graphList[bicIdx],
-					   Rcpp::_["graph.aic"]=graphList[aicIdx],
-					   Rcpp::_["graphs"]=graphList,
-					   Rcpp::_["lambdas"]=R_NilValue,
-					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
-					   Rcpp::_["AIC"] = aic,
-					   Rcpp::_["BIC"] = bic,
-					   Rcpp::_["loglik"] = loglik,
-					   Rcpp::_["nParams"] = nParams,
-					   Rcpp::_["n"] = n);
+//     PcStable pc((IndependenceTest*) &itm);
+//     if (threads > 0) pc.setThreads(threads);
+//     pc.setVerbose(verbose);
+//     pc.setOrientRule(ORIENT_SEPSETS);
+//     // pc.setFDR(fdr);
+//     // if (rule == "majority")
+//     // 	pc.setOrientRule(ORIENT_MAJORITY);
+//     // if (rule == "maxp")
+//     // 	pc.setOrientRule(ORIENT_MAXP);
+//     // if (rule == "conservative")
+//     // 	pc.setOrientRule(ORIENT_CONSERVATIVE);
+//     // if (rule == "sepsets")
+//     // 	pc.setOrientRule(ORIENT_SEPSETS);
     
-    result.attr("class") = "graphPath";
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         pc.setInitialGraph(&ig);
+//     }
+//     Knowledge k;
+//     if (!knowledge.isNull()) {
+// 	Rcpp::List _knowledge(knowledge);
+// 	k = Knowledge(ds.getVariables(), _knowledge);
+// 	pc.setKnowledge(k);
+//     }
 
-    return result;
-}
+//     std::vector<EdgeListGraph> sampledGraphs;
+//     arma::vec scores(N);
+
+//     for (int i = 0; i < N; i++) {
+// 	sampledGraphs.push_back(pc.search());
+// 	scores(i) = pc.getScore();
+//     }
+
+//     Rcpp::List graphList;
+    
+//     for (int i = 0; i < N; i++) {
+//         graphList.push_back(sampledGraphs[i].toList());
+//     }
+
+//     arma::vec probs = arma::exp(scores - arma::max(scores));
+
+//     probs /= arma::accu(probs);
+
+//     arma::uword mapIdx = arma::index_max(scores);
+    
+//     Rcpp::List result = Rcpp::List::create(
+// 	Rcpp::_["graph.map"]=sampledGraphs[mapIdx].toList(),
+// 	Rcpp::_["graphs"]=graphList,
+// 	Rcpp::_["scores"]=scores,
+// 	Rcpp::_["graphPosterior"]=probs);
+    
+//     // ds.deleteVariables();
+    
+//     return result;
+// }
+
+
 
 
 // //' Calculate the solution path for an PC graph on a dataset
 // //'
-// //' @param df The dataframe
+// //' @param data The dataframe
 // //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
 // //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
 // //' @param rank Whether or not to use rank-based associations as opposed to linear
@@ -622,8 +884,8 @@ Rcpp::List pcPath(
 // //' data("data.n100.p25")
 // //' g <- rCausalMGM::pcPath(data.n100.p25)
 // // [[Rcpp::export]]
-// Rcpp::List pcCV(
-//     const Rcpp::DataFrame& df,
+// Rcpp::List pcPath(
+//     const Rcpp::DataFrame& data,
 //     Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
 //     Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("max", "conservative", "majority", "none"),
 //     const int threads = -1,
@@ -631,7 +893,7 @@ Rcpp::List pcPath(
 //     const bool rank = false,
 //     const bool verbose = false
 // ) {
-//     DataSet ds = DataSet(df);
+//     DataSet ds = DataSet(data);
 //     ds.dropMissing();
 
 //     if (rank) {
@@ -657,7 +919,145 @@ Rcpp::List pcPath(
 
 //     for (arma::uword i = 0; i < _alphas.n_elem; i++) {
 
-// 	IndTestMulti itm(ds, _alphas(i));
+// 	IndTestMultiCox itm(ds, _alphas(i));
+
+// 	if (orientRule[0]=="none") {
+
+// 	    PcStable pcs((IndependenceTest*) &itm);
+// 	    if (threads > 0) pcs.setThreads(threads);
+// 	    pcs.setVerbose(verbose);
+// 	    pcs.setFDR(fdr);
+// 	    pcGraphs.push_back(pcs.search());
+
+// 	} else if (orientRule[0]=="max") {
+
+// 	    PcMax pcm((IndependenceTest*) &itm);
+// 	    if (threads > 0) pcm.setThreads(threads);
+// 	    pcm.setVerbose(verbose);
+// 	    pcm.setFDR(fdr);
+// 	    pcGraphs.push_back(pcm.search());
+
+// 	} else if (orientRule[0]=="conservative") {
+
+// 	    CpcStable cpc((IndependenceTest*) &itm);
+// 	    if (threads > 0) cpc.setThreads(threads);
+// 	    cpc.setVerbose(verbose);
+// 	    cpc.setFDR(fdr);
+// 	    pcGraphs.push_back(cpc.search());
+
+// 	} else if (orientRule[0]=="majority") {
+
+// 	    Pc50 pc50((IndependenceTest*) &itm);
+// 	    if (threads > 0) pc50.setThreads(threads);
+// 	    pc50.setVerbose(verbose);
+// 	    pc50.setFDR(fdr);
+// 	    pcGraphs.push_back(pc50.search());
+
+// 	}
+
+// 	CausalMGM causalMGM(ds, pcGraphs.at(i));
+// 	causalMGM.setVerbose(verbose);
+// 	causalMGM.setLambda(l);
+// 	pcParams.push_back(causalMGM.search());
+
+// 	arma::vec par(pcParams.at(i).toMatrix1D());
+// 	loglik(i) = -n * causalMGM.smoothValue(par);
+// 	nParams(i) = causalMGM.getNParams();
+	
+// 	RcppThread::checkUserInterrupt();
+//     }
+
+//     // auto elapsedTime = mgm.getElapsedTime();
+
+//     // if (v) {
+//     // 	if (elapsedTime < 100*1000) {
+//     // 	    Rcpp::Rcout.precision(2);
+//     // 	} else {
+//     // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+//     // 	}
+//     //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+//     // }
+
+//     Rcpp::List graphList;
+    
+//     for (int i = 0; i < a.size(); i++) {
+// 	Rcpp::List pcGraph = pcGraphs[i].toList();
+// 	pcGraph["parameters"] = pcParams[i].toList();
+//         graphList.push_back(pcGraph);
+//     }
+
+//     arma::vec aic = 2*nParams - 2*loglik;
+//     arma::vec bic = std::log(n)*nParams - 2*loglik;
+
+//     arma::uword aicIdx = arma::index_min(aic);
+//     arma::uword bicIdx = arma::index_min(bic);
+    
+//     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=graphList[bicIdx],
+// 					   Rcpp::_["graph.aic"]=graphList[aicIdx],
+// 					   Rcpp::_["graphs"]=graphList,
+// 					   Rcpp::_["lambdas"]=R_NilValue,
+// 					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
+// 					   Rcpp::_["AIC"] = aic,
+// 					   Rcpp::_["BIC"] = bic,
+// 					   Rcpp::_["loglik"] = loglik,
+// 					   Rcpp::_["nParams"] = nParams,
+// 					   Rcpp::_["n"] = n);
+    
+//     result.attr("class") = "graphPath";
+
+//     return result;
+// }
+
+
+// //' Calculate the solution path for an PC graph on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
+// //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated MGM graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' g <- rCausalMGM::pcPath(data.n100.p25)
+// // [[Rcpp::export]]
+// Rcpp::List pcCV(
+//     const Rcpp::DataFrame& data,
+//     Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
+//     Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("max", "conservative", "majority", "none"),
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
+
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
+
+//     int n = ds.getNumRows();
+//     int p = ds.getNumColumns();
+
+//     std::vector<double> a(alphas.begin(), alphas.end());
+
+//     arma::vec _alphas(a);
+
+//     _alphas = arma::sort(_alphas, "ascend");
+
+//     arma::vec loglik(_alphas.size(), arma::fill::zeros);
+//     arma::vec nParams(_alphas.size(), arma::fill::zeros);
+//     std::vector<EdgeListGraph> pcGraphs;
+//     std::vector<CausalMGMParams> pcParams;
+//     std::vector<double> l = { 0.5, 0.5, 0.5 };
+
+//     for (arma::uword i = 0; i < _alphas.n_elem; i++) {
+
+// 	IndTestMultiCox itm(ds, _alphas(i));
 
 // 	if (orientRule[0]=="none") {
 
@@ -758,174 +1158,174 @@ Rcpp::List pcPath(
 // }
 
 
-//' Runs the causal algorithm CPC-Stable on a dataset
-//'
-//' @param df The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
-// [[Rcpp::export]]
-Rcpp::List cpcStable(
-    const Rcpp::DataFrame &df,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    const double alpha = 0.05,
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Runs the causal algorithm CPC-Stable on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List cpcStable(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     const double alpha = 0.05,
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
-    IndTestMulti itm(ds, alpha);
+//     IndTestMultiCox itm(ds, alpha);
 
-    CpcStable cpc((IndependenceTest*) &itm);
-    if (threads > 0) cpc.setThreads(threads);
-    cpc.setVerbose(verbose);
-    cpc.setFDR(fdr);
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        cpc.setInitialGraph(&ig);
-    }
-    Rcpp::List result = cpc.search().toList();
+//     CpcStable cpc((IndependenceTest*) &itm);
+//     if (threads > 0) cpc.setThreads(threads);
+//     cpc.setVerbose(verbose);
+//     cpc.setFDR(fdr);
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         cpc.setInitialGraph(&ig);
+//     }
+//     Rcpp::List result = cpc.search().toList();
 
-    // ds.deleteVariables();
+//     // ds.deleteVariables();
 
-    return result;
-}
+//     return result;
+// }
 
-//' Runs the causal algorithm PC-Max on a dataset
-//'
-//' @param df The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
-// [[Rcpp::export]]
-Rcpp::List pcMax(
-    const Rcpp::DataFrame &df,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    const double alpha = 0.05,
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Runs the causal algorithm PC-Max on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List pcMax(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     const double alpha = 0.05,
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
 
-    IndTestMulti itm(ds, alpha);
+//     IndTestMultiCox itm(ds, alpha);
 
-    PcMax pcm((IndependenceTest*) &itm);
-    if (threads > 0) pcm.setThreads(threads);
-    pcm.setVerbose(verbose);
-    pcm.setFDR(fdr);
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        pcm.setInitialGraph(&ig);
-    }
-    Rcpp::List result = pcm.search().toList();
+//     PcMax pcm((IndependenceTest*) &itm);
+//     if (threads > 0) pcm.setThreads(threads);
+//     pcm.setVerbose(verbose);
+//     pcm.setFDR(fdr);
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         pcm.setInitialGraph(&ig);
+//     }
+//     Rcpp::List result = pcm.search().toList();
 
-    return result;
-}
+//     return result;
+// }
 
 
-//' Runs the causal algorithm PC50 on a dataset
-//'
-//' @param df The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::pc50(data.n100.p25, initialGraph = ig)
-// [[Rcpp::export]]
-Rcpp::List pc50(
-    const Rcpp::DataFrame &df,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    const double alpha = 0.05,
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Runs the causal algorithm PC50 on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::pc50(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List pc50(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     const double alpha = 0.05,
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
 
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
 
-    IndTestMulti itm(ds, alpha);
+//     IndTestMultiCox itm(ds, alpha);
 
-    Pc50 pc50((IndependenceTest*) &itm);
-    if (threads > 0) pc50.setThreads(threads);
-    pc50.setVerbose(verbose);
-    pc50.setFDR(fdr);
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        pc50.setInitialGraph(&ig);
-    }
-    Rcpp::List result = pc50.search().toList();
+//     Pc50 pc50((IndependenceTest*) &itm);
+//     if (threads > 0) pc50.setThreads(threads);
+//     pc50.setVerbose(verbose);
+//     pc50.setFDR(fdr);
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         pc50.setInitialGraph(&ig);
+//     }
+//     Rcpp::List result = pc50.search().toList();
 
-    // ds.deleteVariables();
+//     // ds.deleteVariables();
 
-    return result;
-}
+//     return result;
+// }
 
 
 
 //' Runs the causal algorithm FCI-Stable on a dataset
 //'
-//' @param df The dataframe
+//' @param data The dataframe
 //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
 //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
 //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
@@ -940,15 +1340,18 @@ Rcpp::List pc50(
 //' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List fciStable(
-    const Rcpp::DataFrame &df,
+    const Rcpp::DataFrame &data,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
+									"conservative", "sepsets"),
     const double alpha = 0.05,
     const int threads = -1,
     const bool fdr = false,
     const bool rank = false,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
@@ -956,24 +1359,58 @@ Rcpp::List fciStable(
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
     }
-    
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+
+    std::string rule;
     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+
+    std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
+
+    rule = orientRule[0];
+
+    std::transform(rule.begin(), rule.end(), rule.begin(),
+		   [](unsigned char c){ return std::tolower(c); });
+
+    if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
+	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     
-    IndTestMulti itm(ds, alpha);
+    IndTestMultiCox itm(ds, alpha);
     
     Fci fci((IndependenceTest*) &itm);
     if (threads > 0) fci.setThreads(threads);
     fci.setVerbose(verbose);
     fci.setFDR(fdr);
+    if (rule == "majority")
+	fci.setOrientRule(ORIENT_MAJORITY);
+    if (rule == "maxp")
+	fci.setOrientRule(ORIENT_MAXP);
+    if (rule == "conservative")
+	fci.setOrientRule(ORIENT_CONSERVATIVE);
+    if (rule == "sepsets")
+	fci.setOrientRule(ORIENT_SEPSETS);
+    
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
         Rcpp::List _initialGraph(initialGraph);
         ig = EdgeListGraph(_initialGraph, ds);
         fci.setInitialGraph(&ig);
     }
-    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	fci.setKnowledge(k);
+    }
+
     Rcpp::List result = fci.search().toList();
+
+    // result.push_back(, "majority");
+
+    // result.push_back(fci.reorientWithRule(ORIENT_MAXP).toList(), "maxp");
+    // result.push_back(fci.reorientWithRule(ORIENT_CONSERVATIVE).toList(), "conservative");
+    // result.push_back(fci.reorientWithRule(ORIENT_SEPSETS).toList(), "sepsets");
+    // fci.reorientWithRule(ORIENT_CONSERVATIVE);
+    // fci.reorientWithRule(ORIENT_SEPSETS);
     
     // ds.deleteVariables();
     
@@ -981,185 +1418,192 @@ Rcpp::List fciStable(
 }
 
 
-//' Runs the causal algorithm CFCI-Stable on a dataset
-//'
-//' @param df The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::cfci(data.n100.p25, initialGraph = ig)
-// [[Rcpp::export]]
-Rcpp::List cfci(
-    const Rcpp::DataFrame &df,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    const double alpha = 0.05,
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Runs the causal algorithm CFCI-Stable on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::cfci(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List cfci(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     const double alpha = 0.05,
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
     
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
-    IndTestMulti itm(ds, alpha);
+//     IndTestMultiCox itm(ds, alpha);
     
-    Cfci cfci((IndependenceTest*) &itm);
-    if (threads > 0) cfci.setThreads(threads);
-    cfci.setVerbose(verbose);
-    cfci.setFDR(fdr);
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        cfci.setInitialGraph(&ig);
-    }
+//     Cfci cfci((IndependenceTest*) &itm);
+//     if (threads > 0) cfci.setThreads(threads);
+//     cfci.setVerbose(verbose);
+//     cfci.setFDR(fdr);
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         cfci.setInitialGraph(&ig);
+//     }
     
-    Rcpp::List result = cfci.search().toList();
+//     Rcpp::List result = cfci.search().toList();
     
-    // ds.deleteVariables();
+//     // ds.deleteVariables();
     
-    return result;
-}
+//     return result;
+// }
 
 
-//' Runs the causal algorithm FCI-Max on a dataset
-//'
-//' @param df The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::fciMax(data.n100.p25, initialGraph = ig)
-// [[Rcpp::export]]
-Rcpp::List fciMax(
-    const Rcpp::DataFrame &df,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    const double alpha = 0.05,
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Runs the causal algorithm FCI-Max on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::fciMax(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List fciMax(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     const double alpha = 0.05,
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
     
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
-    IndTestMulti itm(ds, alpha);
+//     IndTestMultiCox itm(ds, alpha);
     
-    FciMax fcimax((IndependenceTest*) &itm);
-    if (threads > 0) fcimax.setThreads(threads);
-    fcimax.setVerbose(verbose);
-    fcimax.setFDR(fdr);
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        fcimax.setInitialGraph(&ig);
-    }
+//     FciMax fcimax((IndependenceTest*) &itm);
+//     if (threads > 0) fcimax.setThreads(threads);
+//     fcimax.setVerbose(verbose);
+//     fcimax.setFDR(fdr);
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         fcimax.setInitialGraph(&ig);
+//     }
 
-    Rcpp::List result;
-    try {
-	result = fcimax.search().toList();
-    } catch(std::exception& e) {
-	Rcpp::Rcout << e.what() << std::endl;
-    }
+//     Rcpp::List result;
+//     try {
+// 	result = fcimax.search().toList();
+//     } catch(std::exception& e) {
+// 	Rcpp::Rcout << e.what() << std::endl;
+//     }
         
-    return result;
-}
+//     return result;
+// }
 
 
-//' Runs the causal algorithm FCI50 Stable on a dataset
-//'
-//' @param df The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::fci50(data.n100.p25, initialGraph = ig)
-// [[Rcpp::export]]
-Rcpp::List fci50(
-    const Rcpp::DataFrame &df,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    const double alpha = 0.05,
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Runs the causal algorithm FCI50 Stable on a dataset
+// //'
+// //' @param data The dataframe
+// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::fci50(data.n100.p25, initialGraph = ig)
+// // [[Rcpp::export]]
+// Rcpp::List fci50(
+//     const Rcpp::DataFrame &data,
+//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+//     const double alpha = 0.05,
+//     const int threads = -1,
+//     const bool fdr = false,
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
     
-    IndTestMulti itm(ds, alpha);
+//     IndTestMultiCox itm(ds, alpha);
     
-    Fci50 fci50((IndependenceTest*) &itm);
-    if (threads > 0) fci50.setThreads(threads);
-    fci50.setVerbose(verbose);
-    fci50.setFDR(fdr);
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        fci50.setInitialGraph(&ig);
-    }
+//     Fci50 fci50((IndependenceTest*) &itm);
+//     if (threads > 0) fci50.setThreads(threads);
+//     fci50.setVerbose(verbose);
+//     fci50.setFDR(fdr);
+//     EdgeListGraph ig;
+//     if (!initialGraph.isNull()) {
+//         Rcpp::List _initialGraph(initialGraph);
+//         ig = EdgeListGraph(_initialGraph, ds);
+//         fci50.setInitialGraph(&ig);
+//     }
+//     Knowledge k;
+//     if (!knowledge.isNull()) {
+// 	Rcpp::List _knowledge(knowledge);
+// 	k = Knowledge(ds.getVariables(), _knowledge);
+// 	fci50.setKnowledge(k);
+//     }
     
-    Rcpp::List result = fci50.search().toList();
+//     Rcpp::List result = fci50.search().toList();
     
-    // ds.deleteVariables();
+//     // ds.deleteVariables();
     
-    return result;
-}
+//     return result;
+// }
 
 
 // // no export // [[Rcpp::export]]
 // Rcpp::List stars(
-//     const Rcpp::DataFrame& df,
+//     const Rcpp::DataFrame& data,
 //     const std::string method, 
 //     Rcpp::Nullable<Rcpp::NumericVector> params = R_NilValue,
 //     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
@@ -1208,7 +1652,7 @@ Rcpp::List fci50(
 // 				    + "{ mgm, pc, cpc, pcm, fci, cfci, fcim }");
 //     }
     
-//     DataSet ds(df, maxDiscrete);
+//     DataSet ds(data, maxDiscrete);
 
 //     if (params.isNotNull()) {
 //         Rcpp::NumericVector _params(params); 
@@ -1257,149 +1701,143 @@ Rcpp::List fci50(
 // }
 
 
-//' Runs bootstrapping for a selected causal discovery algorithm on the dataset.
-//'
-//' @param df The dataframe
-//' @param algorithm string indicating the name of the causal discovery algorithm to bootstrap. Causal discovery algorithms can be run alone or with mgm to learn an initial graph. Options include "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-pc50", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50." The default value is set to "mgm-pc50."
-//' @param ensemble Method for construncting an ensemble graph from bootstrapped graphs. Options include "highest", which orients edges according to the orientation with the highest bootstrap probability, or "majority", which only orients edges if they have an orientation with a bootstrap probability > 0.5. Otherwise, the adjacency is included but the edge is left unoreineted. The default value is "highest."
-//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param numBoots The number of bootstrap samples to run. Defaults to 20.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph with a table of edge stabilities
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
-// [[Rcpp::export]]
-Rcpp::List bootstrap(
-    const Rcpp::DataFrame& df,
-    Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50"),
-    Rcpp::StringVector ensemble = Rcpp::CharacterVector::create("highest", "majority"),
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
-    const double alpha = 0.05,
-    const int numBoots = 20,
-    const int threads = -1,
-    const bool rank = false,
-    const bool verbose = false
-    ) {
+// //' Runs bootstrapping for a selected causal discovery algorithm on the dataset.
+// //'
+// //' @param data The dataframe
+// //' @param algorithm string indicating the name of the causal discovery algorithm to bootstrap. Causal discovery algorithms can be run alone or with mgm to learn an initial graph. Options include "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-pc50", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50." The default value is set to "mgm-pc50."
+// //' @param ensemble Method for construncting an ensemble graph from bootstrapped graphs. Options include "highest", which orients edges according to the orientation with the highest bootstrap probability, or "majority", which only orients edges if they have an orientation with a bootstrap probability > 0.5. Otherwise, the adjacency is included but the edge is left unoreineted. The default value is "highest."
+// //' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
+// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+// //' @param numBoots The number of bootstrap samples to run. Defaults to 20.
+// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph with a table of edge stabilities
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
+// // [[Rcpp::export]]
+// Rcpp::List bootstrap(
+//     const Rcpp::DataFrame& data,
+//     Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm", "pc", "fci", "mgm-pc", "mgm-fci"),
+//     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
+// 									"conservative", "sepsets"),
+//     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
+//     const double alpha = 0.05,
+//     const int numBoots = 20,
+//     const int threads = -1,
+//     const bool replace = true,
+//     const bool rank = false,
+//     const bool verbose = false
+//     ) {
 
-    // Rcpp::Rcout << "running stars...\n";
+//     // Rcpp::Rcout << "running stars...\n";
 
-    std::string alg, _method, _ensemble;
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+//     std::string alg, _method;
+//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-    _method = algorithm[0];
+//     _method = algorithm[0];
 
-    _ensemble = ensemble[0];
+//     // Rcpp::Rcout << _method << std::endl;
+//     std::transform(_method.begin(), _method.end(), _method.begin(),
+// 		   [](unsigned char c){ return std::tolower(c); });
+//     // Rcpp::Rcout << _method << std::endl;
+//     _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
+//     // Rcpp::Rcout << _method << std::endl;
 
-    // Rcpp::Rcout << _method << std::endl;
-    std::transform(_method.begin(), _method.end(), _method.begin(),
-		   [](unsigned char c){ return std::tolower(c); });
-    // Rcpp::Rcout << _method << std::endl;
-    _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
-    // Rcpp::Rcout << _method << std::endl;
+//     if (_method == "mgm") {
+// 	alg = "mgm";
+//     } else if (_method.substr(0,2) == "pc") {
+// 	alg = "pc";
+//     } else if (_method.substr(0,3) == "fci") {
+// 	alg = "fci";
+//     } else if (_method.substr(0,5) == "mgmpc") {
+// 	alg = "mgmpc";
+//     } else if (_method.substr(0,6) == "mgmfci") {
+// 	alg = "mgmfci";
+//     } else {
+// 	throw std::invalid_argument("Invalid algorithm: " + _method
+// 				    + "\n   Algorithm must be in the list: "
+// 				    + "{ mgm, pc, fci, mgm-pc, mgm-fci }");
+//     }
 
-    std::transform(_ensemble.begin(), _ensemble.end(), _ensemble.begin(),
-		   [](unsigned char c){ return std::tolower(c); });
+//     std::string rule;
 
-    if (_method == "mgm") {
-	alg = "mgm";
-    } else if (_method == "pc" || _method == "pcs" || _method == "pcstable") {
-	alg = "pc";
-    } else if (_method == "cpc" || _method == "cpcstable") {
-	alg = "cpc";
-    } else if (_method == "pcm" || _method == "pcmax") {
-	alg = "pcm";
-    } else if (_method == "pc50") {
-	alg = "pc50";
-    }else if (_method == "fci" || _method == "fcistable") {
-	alg = "fci";
-    } else if (_method == "cfci" || _method == "cfcistable") {
-	alg = "cfci";
-    } else if (_method == "fcim" || _method == "fcimax") {
-	alg = "fcim";
-    } else if (_method == "fci50") {
-	alg = "fci50";
-    } else if (_method == "mgmpc" || _method == "mgmpcs" || _method == "mgmpcstable") {
-	alg = "mgmpc";
-    } else if (_method == "mgmcpc" || _method == "mgmcpcstable") {
-	alg = "mgmcpc";
-    } else if (_method == "mgmpcm" || _method == "mgmpcmax") {
-	alg = "mgmpcm";
-    } else if (_method == "mgmpc50") {
-	alg = "mgmpc50";
-    }else if (_method == "mgmfci" || _method == "mgmfcistable") {
-	alg = "mgmfci";
-    } else if (_method == "mgmcfci" || _method == "mgmcfcistable") {
-	alg = "mgmcfci";
-    } else if (_method == "mgmfcim" || _method == "mgmfcimax") {
-	alg = "mgmfcim";
-    } else if (_method == "mgmfci50") {
-	alg = "mgmfci50";
-    } else {
-	throw std::invalid_argument("Invalid algorithm: " + _method
-				    + "\n   Algorithm must be in the list: "
-				    + "{ mgm, pc, cpc, pcm, pc50, fci, cfci, fcim, fci50, "
-				    + "mgm-pc, mgm-cpc, mgm-pcm, mgm-pc50, mgm-fci, "
-				    + "mgm-cfci, mgm-fcim, mgm-fci50 }");
-    }
+//     std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
 
-    std::vector<double> l(lambda.begin(), lambda.end());
+//     rule = orientRule[0];
 
-    int lamLength = 3;
+//     std::transform(rule.begin(), rule.end(), rule.begin(),
+// 		   [](unsigned char c){ return std::tolower(c); });
 
-    // if (ds.isMixed()) {
-    // 	// if (ds.isCensored()) {
-    // 	//     lamLength = 5;
-    // 	// } else {
-    // 	//     lamLength = 3;
-    // 	// }
-    // 	lamLength = 3;
-    // } // else {
-    // // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
-    // // }
+//     if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
+// 	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
 
-    if (l.size() == 1) {
-	for (int i = 1; i < lamLength; i++) {
-	    l.push_back(l[0]);
-	}
-    } else if (l.size() != lamLength) {
-	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
-    }
+//     std::vector<double> l(lambda.begin(), lambda.end());
 
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
 
-    
-    Bootstrap boot(ds, alg, _ensemble, numBoots);
-    if (threads > 0) boot.setThreads(threads);
-    boot.setVerbose(verbose);
-    boot.setAlpha(alpha);
-    boot.setLambda(l);
-    // boot.setFdr(fdr);
+//     int lamLength = 3;
 
-    Rcpp::List result = boot.runBootstrap().toList();
+//     if (ds.isMixed()) {
+//     	if (ds.isCensored()) {
+//     	    lamLength = 5;
+//     	} else {
+//     	    lamLength = 3;
+//     	}
+//     	lamLength = 3;
+//     } // else {
+//     // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
+//     // }
 
-    result["stabilities"] = boot.getStabs();
+//     if (l.size() == 1) {
+// 	for (int i = 1; i < lamLength; i++) {
+// 	    l.push_back(l[0]);
+// 	}
+//     } else if (l.size() != lamLength) {
+// 	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+//     }
 
-    return result;
+//     Bootstrap boot(ds, alg, numBoots, replace);
+//     if (threads > 0) boot.setThreads(threads);
+//     boot.setVerbose(verbose);
+//     boot.setAlpha(alpha);
+//     boot.setLambda(l);
+//     if (rule.substr(0,3) == "maj")
+// 	boot.setOrientRule(ORIENT_MAJORITY);
+//     if (rule.substr(0,3) == "max")
+// 	boot.setOrientRule(ORIENT_MAXP);
+//     if (rule.substr(0,1) == "c")
+// 	boot.setOrientRule(ORIENT_CONSERVATIVE);
+//     if (rule.substr(0,1) == "s")
+// 	boot.setOrientRule(ORIENT_SEPSETS);
+//     // boot.setFdr(fdr);
 
-}
+//     Rcpp::List result = boot.runBootstrap().toList();
+
+//     result["stabilities"] = boot.getStabs();
+
+//     // result["subsamples"] = boot.getSubSamps();
+
+//     // result.push_back(boot.getSubSamps(), "subsamples");
+
+//     return result;
+
+// }
 
 
 //' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
 //'
-//' @param df The dataframe
+//' @param data The dataframe
 //' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The list of features in the Markov Blanket and the BIC score
@@ -1409,14 +1847,15 @@ Rcpp::List bootstrap(
 //' g <- rCausalMGM::growShrinkMB(data.n100.p25)
 // [[Rcpp::export]]
  Rcpp::StringVector growShrinkMB(
-    const Rcpp::DataFrame& df,
+    const Rcpp::DataFrame& data,
     const std::string& target,
+    Rcpp::Nullable<Rcpp::List> graph = R_NilValue,
     const double penalty = 1,
     const bool rank = false,
     const int threads = -1,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
@@ -1428,6 +1867,14 @@ Rcpp::List bootstrap(
     GrowShrink gs(ds, threads);
     gs.setVerbose(verbose);
     gs.setPenalty(penalty);
+
+    EdgeListGraph g;
+    if (!graph.isNull()) {
+        Rcpp::List _graph(graph);
+        g = EdgeListGraph(_graph, ds);
+        gs.setGraph(g);
+    }
+    
     // mgm.calcLambdaMax();
     Node targetNode = ds.getVariable(target);
 
@@ -1459,7 +1906,7 @@ Rcpp::List bootstrap(
 
 //' Runs the GRaSP causal discovery algorithm on the dataset 
 //'
-//' @param df The dataframe
+//' @param data The dataframe
 //' @param rank Whether or not to use rank-based associations as opposed to linear
 //' @param verbose Whether or not to output additional information. Defaults to FALSE.
 //' @return The list of features in the Markov Blanket and the BIC score
@@ -1469,8 +1916,9 @@ Rcpp::List bootstrap(
 //' g <- rCausalMGM::markovBlanket(data.n100.p25)
 // [[Rcpp::export]]
 Rcpp::List grasp(
-    const Rcpp::DataFrame& df,
+    const Rcpp::DataFrame& data,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
     const int depth = 2,
     const int numStarts = 3,
     const double penalty = 1,
@@ -1478,7 +1926,7 @@ Rcpp::List grasp(
     const int threads = -1,
     const bool verbose = false
 ) {
-    DataSet ds = DataSet(df);
+    DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
@@ -1498,6 +1946,12 @@ Rcpp::List grasp(
         Rcpp::List _initialGraph(initialGraph);
         ig = EdgeListGraph(_initialGraph, ds);
         grasp.setInitialGraph(&ig);
+    }
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	grasp.setKnowledge(k);
     }
 
     RcppThread::checkUserInterrupt();
@@ -1524,58 +1978,58 @@ Rcpp::List grasp(
 
 
 
-//' Parameterize a graph using the MGM framework
-//'
-//' @param df The dataframe
-//' @param graph An graph to parameterize.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-//' g <- parameterize(data.n100.p25, g)
-// [[Rcpp::export]]
-Rcpp::List parameterize(
-    const Rcpp::DataFrame& df,
-    Rcpp::List graph,
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.5, 0.5, 0.5),
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //' Parameterize a graph using the MGM framework
+// //'
+// //' @param data The dataframe
+// //' @param graph An graph to parameterize.
+// //' @param rank Whether or not to use rank-based associations as opposed to linear
+// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
+// //' @return The calculated search graph
+// //' @export
+// //' @examples
+// //' data("data.n100.p25")
+// //' ig <- rCausalMGM::mgm(data.n100.p25)
+// //' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+// //' g <- parameterize(data.n100.p25, g)
+// // [[Rcpp::export]]
+// Rcpp::List parameterize(
+//     const Rcpp::DataFrame& data,
+//     Rcpp::List graph,
+//     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.5, 0.5, 0.5),
+//     const bool rank = false,
+//     const bool verbose = false
+// ) {
+//     DataSet ds = DataSet(data);
+//     ds.dropMissing();
 
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
+//     if (rank) {
+// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+// 	ds.npnTransform();
+// 	if (verbose) Rcpp::Rcout << "done\n";
+//     }
 
-    std::vector<double> l(lambda.begin(), lambda.end());
+//     std::vector<double> l(lambda.begin(), lambda.end());
 
-    int lamLength = 3;
+//     int lamLength = 3;
 
-    if (l.size() == 1) {
-	for (int i = 1; i < lamLength; i++) {
-	    l.push_back(l[0]);
-	}
-    } else if (l.size() != lamLength) {
-	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
-    }
+//     if (l.size() == 1) {
+// 	for (int i = 1; i < lamLength; i++) {
+// 	    l.push_back(l[0]);
+// 	}
+//     } else if (l.size() != lamLength) {
+// 	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+//     }
 
-    EdgeListGraph g(graph, ds);
-    CausalMGM causalMGM(ds, g);
-    causalMGM.setVerbose(verbose);
-    causalMGM.setLambda(l);
+//     EdgeListGraph g(graph, ds);
+//     CausalMGM causalMGM(ds, g);
+//     causalMGM.setVerbose(verbose);
+//     causalMGM.setLambda(l);
 
-    Rcpp::List result = g.toList();
+//     Rcpp::List result = g.toList();
 
-    result["parameters"] = causalMGM.search().toList();
+//     result["parameters"] = causalMGM.search().toList();
 
-    // ds.deleteVariables();
+//     // ds.deleteVariables();
 
-    return result;
-}
+//     return result;
+// }

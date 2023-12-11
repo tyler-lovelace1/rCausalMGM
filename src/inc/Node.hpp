@@ -19,9 +19,12 @@
 #include "Variable.hpp"
 #include "ContinuousVariable.hpp"
 #include "DiscreteVariable.hpp"
+#include "CensoredVariable.hpp"
 #include <string>
 // #include <memory>
 #include <exception>
+// #include <algorithm>
+// #include <iterator>
 
 class Node {
     
@@ -56,6 +59,13 @@ public:
 	var(var) {
     	// RcppThread::Rcout << "new\n";
     }
+
+    Node(CensoredVariable* var) :
+	name(var->getName()),
+	type(var->getType()),
+	var(var) {
+    	// RcppThread::Rcout << "new censored variable " + name + ", type = " << type << "\n";
+    }
     
     ~Node() {
 	// RcppThread::Rcout << "delete\n";
@@ -63,6 +73,7 @@ public:
     }
 
     Node(const Node& other) {
+	// RcppThread::Rcout << "copying (constructor) node " + other.name + " of type " << other.type << "\n";
 	name = other.name;
 	type = other.type;
 	observed = other.observed;
@@ -70,16 +81,20 @@ public:
 	    var = (Variable*) new ContinuousVariable(other.var);
 	} else if (type==DISCRETE) {
 	    var = (Variable*) new DiscreteVariable(other.var);
+	} else if (type==CENSORED) {
+	    var = (Variable*) new CensoredVariable(other.var);
 	} else if (other.isNull()) {
 	    // RcppThread::Rcout << "copying null node\n";
 	    var = nullptr;
 	} else {
+	    // RcppThread::Rcout << "copying (constructor) node " + name + "\n";
 	    throw std::runtime_error("Invalid variable type detected for Node " + name);
 	}
 	// RcppThread::Rcout << "new\n";
     }
 
     Node& operator=(const Node& other) {
+	// RcppThread::Rcout << "copying (assignment) node " + other.name + " of type " << other.type << "\n";
 	if (this != &other) {
 	    delete var;
 	    name = other.name;
@@ -89,6 +104,8 @@ public:
 		var = (Variable*) new ContinuousVariable(other.var);
 	    } else if (type==DISCRETE) {
 		var = (Variable*) new DiscreteVariable(other.var);
+	    } else if (type==CENSORED) {
+		var = (Variable*) new CensoredVariable(other.var);
 	    } else if (other.isNull()) {
 		// RcppThread::Rcout << "copying null node\n";
 		var = nullptr;
@@ -102,7 +119,7 @@ public:
     
     Node(Node&& other) : Node() {
 	// if (other.isNull()) RcppThread::Rcout << "moving null node\n";
-	// else                RcppThread::Rcout << "moving " << *this << "\n";
+	// else                RcppThread::Rcout << "moving " << other << "\n";
 	// RcppThread::Rcout << "move\n";
 	std::swap(name, other.name);
 	std::swap(type, other.type);
@@ -138,15 +155,21 @@ public:
 
     bool isDiscrete() const { return type==DISCRETE; }
 
+    bool isCensored() const { return type==CENSORED; }
+
     bool isObserved() const { return observed; }
   
     bool isMissingValue(const std::string& val) const {
+	// RcppThread::Rcout << "checking missing value for node " + name + "\n";
+
         switch (type) {
 	    
     	case CONTINUOUS:
 	    return ((ContinuousVariable*)var)->isMissingValue(val);
     	case DISCRETE:
 	    return ((DiscreteVariable*)var)->isMissingValue(val);
+	case CENSORED:
+	    return ((CensoredVariable*)var)->isMissingValue(val);
     	default:
 	    throw std::runtime_error("Invalid variable type detected for Node " + name);
 	      
@@ -155,15 +178,19 @@ public:
     }
   
     bool checkValue(const std::string& val) const {
+	// RcppThread::Rcout << "checking value for node " + name + "\n";
+
     	switch (type) {
 	    
     	case CONTINUOUS:
 	    return ((ContinuousVariable*)var)->checkValue(val);
     	case DISCRETE:
 	    return ((DiscreteVariable*)var)->checkValue(val);
+	case CENSORED:
+	    return ((CensoredVariable*)var)->checkValue(val);
     	default:
 	    throw std::runtime_error("Invalid variable type detected for Node " + name);
-	      
+	    
     	}
     	return false;
     }
@@ -185,6 +212,150 @@ public:
     	    throw std::runtime_error("Node " + name + " is not discrete");
     	return ((DiscreteVariable*)var)->getCategories();
     }
+
+    bool setCensor(arma::vec& values, arma::uvec& censor, arma::uvec& strata) {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->setCensor(values, censor, strata);
+    }
+  
+    bool setCensor(arma::vec&& values, arma::uvec&& censor, arma::uvec&& strata) {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->setCensor(values, censor, strata);
+    }
+
+    std::vector<arma::uvec> getOrder() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getOrder();
+    }
+
+    arma::uvec getOrder(int strata) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getOrder(strata);
+    }
+
+    arma::uvec getStrata() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getStrata();
+    }
+
+    arma::uvec getCensorVec() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getCensorVec();
+    }
+
+    std::vector<arma::uvec> getCensor() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getCensor();
+    }
+
+    arma::uvec getCensor(int strata) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getCensor(strata);
+    }
+
+    std::vector<arma::uvec> getH() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getH();
+    }
+
+    arma::uvec getH(int strata) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getH(strata);
+    }
+
+    std::vector<arma::uvec> getIndex() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getIndex();
+    }
+
+    arma::uvec getIndex(int strata) const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getIndex(strata);
+    }
+
+    // arma::uvec getCC() const {
+    // 	if (type!=CENSORED)
+    // 	    throw std::runtime_error("Node " + name + " is not censored");
+    // 	return ((CensoredVariable*)var)->getCC();
+    // }
+
+    // arma::uword getCC(int i) const {
+    // 	if (type!=CENSORED)
+    // 	    throw std::runtime_error("Node " + name + " is not censored");
+    // 	return ((CensoredVariable*)var)->getCC(i);
+    // }
+
+    arma::uword getNumStrata() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getNumStrata();
+    }
+
+    arma::uword getNEvents() const {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getNEvents();
+    }
+
+    void setNeighbors(std::vector<std::string>& neighbors) {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+        ((CensoredVariable*)var)->setNeighbors(neighbors);
+    }
+    
+    std::vector<std::string> getNeighbors() {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getNeighbors();
+    }
+    
+    void setWZ(arma::vec& WZ) {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	((CensoredVariable*)var)->setWZ(WZ);
+    }
+    
+    arma::vec getWZ() {
+	if (type!=CENSORED)
+    	    throw std::runtime_error("Node " + name + " is not censored");
+	return ((CensoredVariable*)var)->getWZ();
+    }
+
+    // void resetCoxModel(CoxIRLSRegression& coxRegression) {
+    // 	if (type!=CENSORED)
+    // 	    throw std::runtime_error("Node " + name + " is not censored");
+    // 	((CensoredVariable*)var)->resetCoxModel(coxRegression);
+    // 	std::vector<Node> regressors(coxRegression.getVariables());
+    // 	((CensoredVariable*)var)->coxResult = regress(*this, regressors);
+    // }
+    
+    // arma::vec getWZ(std::vector<Node> xyList) {
+    // 	if (type!=CENSORED)
+    // 	    throw std::runtime_error("Node " + name + " is not censored");
+    // 	std::vector<Node> regressors(((CensoredVariable*)var)->coxRegression.getVariables());
+    // 	std::vector<Node> diff;
+    // 	std::sort(xyList.begin(), xyList.end());
+    // 	std::sort(regressors.begin(), regressors.end());
+    // 	std::set_difference(regressors.begin(), regressors.end(),
+    // 			    xyList.begin(), xyList.end(),
+    // 			    std::inserter(diff, diff.begin()));
+    // 	if (diff != regressors) {
+    // 	    CoxRegressionResult
+    // 	}
+    // 	return ((CensoredVariable*)var)->getWZ();
+    // }
     
     friend struct std::hash<Node>;
     friend std::size_t hash_value(const Node& n);

@@ -14,7 +14,7 @@ public:
     Node z;
 
     Triple() {}
-    Triple(const Node& x, const Node& y, const Node& z) : x(x), y(y), z(z) {}
+    Triple(const Node& x, const Node& y, const Node& z);
     Triple(const Triple& other) = default;
     Triple& operator=(const Triple& other) = default;
     Triple(Triple&& other) = default;

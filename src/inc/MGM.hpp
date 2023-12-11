@@ -146,6 +146,9 @@ public:
      */
     arma::vec proximalOperator(double t, arma::vec& X);
 
+    
+    void iterUpdate(arma::vec& X) {}
+
     /**
      *  Learn MGM traditional way with objective function tolerance. Recommended for inference applications that need
      *  accurate pseudolikelihood

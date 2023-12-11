@@ -1286,6 +1286,11 @@ EdgeListGraph MGM::graphFromMGM() {
  */
 EdgeListGraph MGM::search() {
     auto start = std::chrono::high_resolution_clock::now();
+    if (verbose) {
+	RcppThread::Rcout << "  Learning MGM for lambda = { "
+			  << lambda[0] << " " << lambda[1] << " "
+			  << lambda[2] << " }\n";
+    }
     learn(1e-5, 500);
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
     return graphFromMGM();
@@ -1299,7 +1304,7 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
     std::vector<EdgeListGraph> pathGraphs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
     for (int i = 0; i < lambdas.size(); i++) {
-	if (verbose) RcppThread::Rcout << "  Learning MGM for lambda = " << lambdas[i] << "\r";
+	if (verbose) RcppThread::Rcout << "  Learning MGM for lambda = " << lambdas[i] << "\n";
 	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i] };
 	setLambda(lambda);
 	learn(1e-5, 500);
