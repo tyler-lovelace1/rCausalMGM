@@ -1701,138 +1701,138 @@ Rcpp::List fciStable(
 // }
 
 
-// //' Runs bootstrapping for a selected causal discovery algorithm on the dataset.
-// //'
-// //' @param data The dataframe
-// //' @param algorithm string indicating the name of the causal discovery algorithm to bootstrap. Causal discovery algorithms can be run alone or with mgm to learn an initial graph. Options include "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-pc50", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50." The default value is set to "mgm-pc50."
-// //' @param ensemble Method for construncting an ensemble graph from bootstrapped graphs. Options include "highest", which orients edges according to the orientation with the highest bootstrap probability, or "majority", which only orients edges if they have an orientation with a bootstrap probability > 0.5. Otherwise, the adjacency is included but the edge is left unoreineted. The default value is "highest."
-// //' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param numBoots The number of bootstrap samples to run. Defaults to 20.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph with a table of edge stabilities
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
-// // [[Rcpp::export]]
-// Rcpp::List bootstrap(
-//     const Rcpp::DataFrame& data,
-//     Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm", "pc", "fci", "mgm-pc", "mgm-fci"),
-//     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
-// 									"conservative", "sepsets"),
-//     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
-//     const double alpha = 0.05,
-//     const int numBoots = 20,
-//     const int threads = -1,
-//     const bool replace = true,
-//     const bool rank = false,
-//     const bool verbose = false
-//     ) {
+//' Runs bootstrapping for a selected causal discovery algorithm on the dataset.
+//'
+//' @param data The dataframe
+//' @param algorithm string indicating the name of the causal discovery algorithm to bootstrap. Causal discovery algorithms can be run alone or with mgm to learn an initial graph. Options include "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-pc50", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50." The default value is set to "mgm-pc50."
+//' @param ensemble Method for construncting an ensemble graph from bootstrapped graphs. Options include "highest", which orients edges according to the orientation with the highest bootstrap probability, or "majority", which only orients edges if they have an orientation with a bootstrap probability > 0.5. Otherwise, the adjacency is included but the edge is left unoreineted. The default value is "highest."
+//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param numBoots The number of bootstrap samples to run. Defaults to 20.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph with a table of edge stabilities
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List bootstrap(
+    const Rcpp::DataFrame& data,
+    Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm", "pc", "fci", "mgm-pc", "mgm-fci"),
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
+									"conservative", "sepsets"),
+    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
+    const double alpha = 0.05,
+    const int numBoots = 20,
+    const int threads = -1,
+    const bool replace = true,
+    const bool rank = false,
+    const bool verbose = false
+    ) {
 
-//     // Rcpp::Rcout << "running stars...\n";
+    // Rcpp::Rcout << "running stars...\n";
 
-//     std::string alg, _method;
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    std::string alg, _method;
+    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
+    // bool v = Rcpp::is_true(Rcpp::all(verbose));
 
-//     _method = algorithm[0];
+    _method = algorithm[0];
 
-//     // Rcpp::Rcout << _method << std::endl;
-//     std::transform(_method.begin(), _method.end(), _method.begin(),
-// 		   [](unsigned char c){ return std::tolower(c); });
-//     // Rcpp::Rcout << _method << std::endl;
-//     _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
-//     // Rcpp::Rcout << _method << std::endl;
+    // Rcpp::Rcout << _method << std::endl;
+    std::transform(_method.begin(), _method.end(), _method.begin(),
+		   [](unsigned char c){ return std::tolower(c); });
+    // Rcpp::Rcout << _method << std::endl;
+    _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
+    // Rcpp::Rcout << _method << std::endl;
 
-//     if (_method == "mgm") {
-// 	alg = "mgm";
-//     } else if (_method.substr(0,2) == "pc") {
-// 	alg = "pc";
-//     } else if (_method.substr(0,3) == "fci") {
-// 	alg = "fci";
-//     } else if (_method.substr(0,5) == "mgmpc") {
-// 	alg = "mgmpc";
-//     } else if (_method.substr(0,6) == "mgmfci") {
-// 	alg = "mgmfci";
-//     } else {
-// 	throw std::invalid_argument("Invalid algorithm: " + _method
-// 				    + "\n   Algorithm must be in the list: "
-// 				    + "{ mgm, pc, fci, mgm-pc, mgm-fci }");
-//     }
+    if (_method == "mgm") {
+	alg = "mgm";
+    } else if (_method.substr(0,2) == "pc") {
+	alg = "pc";
+    } else if (_method.substr(0,3) == "fci") {
+	alg = "fci";
+    } else if (_method.substr(0,5) == "mgmpc") {
+	alg = "mgmpc";
+    } else if (_method.substr(0,6) == "mgmfci") {
+	alg = "mgmfci";
+    } else {
+	throw std::invalid_argument("Invalid algorithm: " + _method
+				    + "\n   Algorithm must be in the list: "
+				    + "{ mgm, pc, fci, mgm-pc, mgm-fci }");
+    }
 
-//     std::string rule;
+    std::string rule;
 
-//     std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
+    std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
 
-//     rule = orientRule[0];
+    rule = orientRule[0];
 
-//     std::transform(rule.begin(), rule.end(), rule.begin(),
-// 		   [](unsigned char c){ return std::tolower(c); });
+    std::transform(rule.begin(), rule.end(), rule.begin(),
+		   [](unsigned char c){ return std::tolower(c); });
 
-//     if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
-// 	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
+	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
 
-//     std::vector<double> l(lambda.begin(), lambda.end());
+    std::vector<double> l(lambda.begin(), lambda.end());
 
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
 
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
-//     int lamLength = 3;
+    int lamLength = 3;
 
-//     if (ds.isMixed()) {
-//     	if (ds.isCensored()) {
-//     	    lamLength = 5;
-//     	} else {
-//     	    lamLength = 3;
-//     	}
-//     	lamLength = 3;
-//     } // else {
-//     // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
-//     // }
+    if (ds.isMixed()) {
+    	if (ds.isCensored()) {
+    	    lamLength = 5;
+    	} else {
+    	    lamLength = 3;
+    	}
+    	lamLength = 3;
+    } // else {
+    // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
+    // }
 
-//     if (l.size() == 1) {
-// 	for (int i = 1; i < lamLength; i++) {
-// 	    l.push_back(l[0]);
-// 	}
-//     } else if (l.size() != lamLength) {
-// 	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
-//     }
+    if (l.size() == 1) {
+	for (int i = 1; i < lamLength; i++) {
+	    l.push_back(l[0]);
+	}
+    } else if (l.size() != lamLength) {
+	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+    }
 
-//     Bootstrap boot(ds, alg, numBoots, replace);
-//     if (threads > 0) boot.setThreads(threads);
-//     boot.setVerbose(verbose);
-//     boot.setAlpha(alpha);
-//     boot.setLambda(l);
-//     if (rule.substr(0,3) == "maj")
-// 	boot.setOrientRule(ORIENT_MAJORITY);
-//     if (rule.substr(0,3) == "max")
-// 	boot.setOrientRule(ORIENT_MAXP);
-//     if (rule.substr(0,1) == "c")
-// 	boot.setOrientRule(ORIENT_CONSERVATIVE);
-//     if (rule.substr(0,1) == "s")
-// 	boot.setOrientRule(ORIENT_SEPSETS);
-//     // boot.setFdr(fdr);
+    Bootstrap boot(ds, alg, numBoots, replace);
+    if (threads > 0) boot.setThreads(threads);
+    boot.setVerbose(verbose);
+    boot.setAlpha(alpha);
+    boot.setLambda(l);
+    if (rule.substr(0,3) == "maj")
+	boot.setOrientRule(ORIENT_MAJORITY);
+    if (rule.substr(0,3) == "max")
+	boot.setOrientRule(ORIENT_MAXP);
+    if (rule.substr(0,1) == "c")
+	boot.setOrientRule(ORIENT_CONSERVATIVE);
+    if (rule.substr(0,1) == "s")
+	boot.setOrientRule(ORIENT_SEPSETS);
+    // boot.setFdr(fdr);
 
-//     Rcpp::List result = boot.runBootstrap().toList();
+    Rcpp::List result = boot.runBootstrap().toList();
 
-//     result["stabilities"] = boot.getStabs();
+    result["stabilities"] = boot.getStabs();
 
-//     // result["subsamples"] = boot.getSubSamps();
+    // result["subsamples"] = boot.getSubSamps();
 
-//     // result.push_back(boot.getSubSamps(), "subsamples");
+    // result.push_back(boot.getSubSamps(), "subsamples");
 
-//     return result;
+    return result;
 
-// }
+}
 
 
 //' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset

@@ -352,7 +352,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 	//     theta = std::numeric_limits<double>::infinity();
 	// }
 
-        printIter = 10;
+        printIter = 1;
         if (iterCount % printIter == 0) {
 	    if (RcppThread::isInterrupted()) {
 		break;

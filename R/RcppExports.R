@@ -324,6 +324,26 @@ fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = 
     .Call(`_rCausalMGM_fciStable`, data, initialGraph, knowledge, orientRule, alpha, threads, fdr, rank, verbose)
 }
 
+#' Runs bootstrapping for a selected causal discovery algorithm on the dataset.
+#'
+#' @param data The dataframe
+#' @param algorithm string indicating the name of the causal discovery algorithm to bootstrap. Causal discovery algorithms can be run alone or with mgm to learn an initial graph. Options include "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-pc50", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50." The default value is set to "mgm-pc50."
+#' @param ensemble Method for construncting an ensemble graph from bootstrapped graphs. Options include "highest", which orients edges according to the orientation with the highest bootstrap probability, or "majority", which only orients edges if they have an orientation with a bootstrap probability > 0.5. Otherwise, the adjacency is included but the edge is left unoreineted. The default value is "highest."
+#' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
+#' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param numBoots The number of bootstrap samples to run. Defaults to 20.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph with a table of edge stabilities
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
+bootstrap <- function(data, algorithm = as.character( c("mgm", "pc", "fci", "mgm-pc", "mgm-fci")), orientRule = as.character( c("majority", "maxp", 									"conservative", "sepsets")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, numBoots = 20L, threads = -1L, replace = TRUE, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_bootstrap`, data, algorithm, orientRule, lambda, alpha, numBoots, threads, replace, rank, verbose)
+}
+
 #' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
 #'
 #' @param data The dataframe

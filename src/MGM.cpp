@@ -183,7 +183,7 @@ MGM::MGM(DataSet ds, std::vector<double>& lambda) {
 	mixed = false;
 	pDummy = 1;
     }
-    
+
     this->xDat = ds.getContinuousData();
     this->yDat = ds.getDiscreteData();
     this->l = ds.getDiscLevels();
@@ -216,7 +216,7 @@ MGM::MGM(DataSet ds, std::vector<double>& lambda) {
     calcWeights();
 
     //Creates dummy variables for each category of discrete variables (stored in dDat)
-    makeDummy();
+    makeDummy();    
 }
 
 
@@ -538,7 +538,6 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //         gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
     //     }
     // }
-
 
     /*
     for s=1:p

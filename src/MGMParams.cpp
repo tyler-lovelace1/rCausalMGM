@@ -58,7 +58,7 @@ MGMParams::MGMParams(arma::vec& vec, int p, int ltot) {
 /**
  * Copy all params into a single vector
  */
-arma::vec MGMParams::toMatrix1D() {
+arma::vec MGMParams::toMatrix1D() {    
     int p = alpha1.n_elem;
     int ltot = alpha2.n_elem;
     std::vector<int> lens{p*p, p, p*ltot, ltot*ltot, p, ltot};
@@ -76,7 +76,7 @@ arma::vec MGMParams::toMatrix1D() {
     outVec.subvec(lenSums[2], arma::size(phi.as_col())) = phi.as_col();
     outVec.subvec(lenSums[3], arma::size(alpha1)) = alpha1;
     outVec.subvec(lenSums[4], arma::size(alpha2)) = alpha2;
-    
+
     return outVec;
 }
 

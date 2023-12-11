@@ -337,6 +337,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// bootstrap
+Rcpp::List bootstrap(const Rcpp::DataFrame& data, Rcpp::StringVector algorithm, const Rcpp::StringVector orientRule, Rcpp::NumericVector lambda, const double alpha, const int numBoots, const int threads, const bool replace, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_bootstrap(SEXP dataSEXP, SEXP algorithmSEXP, SEXP orientRuleSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP numBootsSEXP, SEXP threadsSEXP, SEXP replaceSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::StringVector >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::StringVector >::type orientRule(orientRuleSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const int >::type numBoots(numBootsSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type replace(replaceSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(bootstrap(data, algorithm, orientRule, lambda, alpha, numBoots, threads, replace, rank, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // growShrinkMB
 Rcpp::StringVector growShrinkMB(const Rcpp::DataFrame& data, const std::string& target, Rcpp::Nullable<Rcpp::List> graph, const double penalty, const bool rank, const int threads, const bool verbose);
 RcppExport SEXP _rCausalMGM_growShrinkMB(SEXP dataSEXP, SEXP targetSEXP, SEXP graphSEXP, SEXP penaltySEXP, SEXP rankSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
@@ -399,6 +419,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 11},
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 9},
     {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 9},
+    {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 10},
     {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 7},
     {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 9},
     {NULL, NULL, 0}
