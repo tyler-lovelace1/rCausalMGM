@@ -7,6 +7,7 @@
 #include "SepsetMap.hpp"
 #include "IndTestMulti.hpp"
 #include "PcStable.hpp"
+#include "Knowledge.hpp"
 // #include "CpcStable.hpp"
 // #include "PcMax.hpp"
 // #include "Pc50.hpp"
@@ -38,6 +39,8 @@ private:
     // arma::umat samps;
     // bool fdr;
     OrientRule orientRule;
+    Knowledge knowledge;
+    
     bool replace = false;
     bool verbose = false;
     int threads = -1;
@@ -70,6 +73,7 @@ public:
     void setLambda(std::vector<double> l) { lambda = l; }
     void setAlgorithm(std::string alg) { this->alg = alg; }
     void setOrientRule(OrientRule rule) {this->orientRule = rule; }
+    void setKnowledge(Knowledge& knowledge) { this->knowledge = knowledge; }
 
 
     arma::umat getSubSamps() { return samps; }

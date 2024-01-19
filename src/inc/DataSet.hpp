@@ -65,6 +65,8 @@ public:
     void addVariable(Node v);
     void addVariable(int i, Node v);
 
+    void removeVariable(Node v);
+
     const Node& getVariable(int i) { return variables[i]; }
     const Node& getVariable(std::string name) const { return variables.at(name2idx.at(name)); }
     const std::vector<Node>& getVariables() { return variables; }

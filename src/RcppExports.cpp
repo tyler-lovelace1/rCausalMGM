@@ -50,6 +50,30 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// DGScoreTest
+double DGScoreTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames, double penalty);
+RcppExport SEXP _rCausalMGM_DGScoreTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP, SEXP penaltySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
+    Rcpp::traits::input_parameter< double >::type penalty(penaltySEXP);
+    rcpp_result_gen = Rcpp::wrap(DGScoreTest(df, targetName, regressorNames, penalty));
+    return rcpp_result_gen;
+END_RCPP
+}
+// DGScoreTest2
+void DGScoreTest2(const Rcpp::DataFrame& df);
+RcppExport SEXP _rCausalMGM_DGScoreTest2(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    DGScoreTest2(df);
+    return R_NilValue;
+END_RCPP
+}
 // saveGraph
 void saveGraph(const Rcpp::List& graph, const std::string& filename);
 RcppExport SEXP _rCausalMGM_saveGraph(SEXP graphSEXP, SEXP filenameSEXP) {
@@ -203,6 +227,29 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// RegrBicScoreTest
+double RegrBicScoreTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames);
+RcppExport SEXP _rCausalMGM_RegrBicScoreTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
+    rcpp_result_gen = Rcpp::wrap(RegrBicScoreTest(df, targetName, regressorNames));
+    return rcpp_result_gen;
+END_RCPP
+}
+// RegrBicScoreTest2
+void RegrBicScoreTest2(const Rcpp::DataFrame& df);
+RcppExport SEXP _rCausalMGM_RegrBicScoreTest2(SEXP dfSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    RegrBicScoreTest2(df);
+    return R_NilValue;
+END_RCPP
+}
 // mgm
 Rcpp::List mgm(const Rcpp::DataFrame& data, Rcpp::NumericVector lambda, const bool rank, const bool verbose);
 RcppExport SEXP _rCausalMGM_mgm(SEXP dataSEXP, SEXP lambdaSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
@@ -338,13 +385,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // bootstrap
-Rcpp::List bootstrap(const Rcpp::DataFrame& data, Rcpp::StringVector algorithm, const Rcpp::StringVector orientRule, Rcpp::NumericVector lambda, const double alpha, const int numBoots, const int threads, const bool replace, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_bootstrap(SEXP dataSEXP, SEXP algorithmSEXP, SEXP orientRuleSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP numBootsSEXP, SEXP threadsSEXP, SEXP replaceSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+Rcpp::List bootstrap(const Rcpp::DataFrame& data, Rcpp::StringVector algorithm, Rcpp::Nullable<Rcpp::List> knowledge, const Rcpp::StringVector orientRule, Rcpp::NumericVector lambda, const double alpha, const int numBoots, const int threads, const bool replace, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_bootstrap(SEXP dataSEXP, SEXP algorithmSEXP, SEXP knowledgeSEXP, SEXP orientRuleSEXP, SEXP lambdaSEXP, SEXP alphaSEXP, SEXP numBootsSEXP, SEXP threadsSEXP, SEXP replaceSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< Rcpp::StringVector >::type algorithm(algorithmSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type knowledge(knowledgeSEXP);
     Rcpp::traits::input_parameter< const Rcpp::StringVector >::type orientRule(orientRuleSEXP);
     Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
@@ -353,24 +401,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type replace(replaceSEXP);
     Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(bootstrap(data, algorithm, orientRule, lambda, alpha, numBoots, threads, replace, rank, verbose));
+    rcpp_result_gen = Rcpp::wrap(bootstrap(data, algorithm, knowledge, orientRule, lambda, alpha, numBoots, threads, replace, rank, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
 // growShrinkMB
-Rcpp::StringVector growShrinkMB(const Rcpp::DataFrame& data, const std::string& target, Rcpp::Nullable<Rcpp::List> graph, const double penalty, const bool rank, const int threads, const bool verbose);
-RcppExport SEXP _rCausalMGM_growShrinkMB(SEXP dataSEXP, SEXP targetSEXP, SEXP graphSEXP, SEXP penaltySEXP, SEXP rankSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
+Rcpp::StringVector growShrinkMB(const Rcpp::DataFrame& data, const std::string& target, const double penalty, const bool rank, const int threads, const bool verbose);
+RcppExport SEXP _rCausalMGM_growShrinkMB(SEXP dataSEXP, SEXP targetSEXP, SEXP penaltySEXP, SEXP rankSEXP, SEXP threadsSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
     Rcpp::traits::input_parameter< const std::string& >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type graph(graphSEXP);
     Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
     Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(growShrinkMB(data, target, graph, penalty, rank, threads, verbose));
+    rcpp_result_gen = Rcpp::wrap(growShrinkMB(data, target, penalty, rank, threads, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -398,6 +445,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_BayesIndTestMultiCoxTest", (DL_FUNC) &_rCausalMGM_BayesIndTestMultiCoxTest, 4},
     {"_rCausalMGM_test_censored", (DL_FUNC) &_rCausalMGM_test_censored, 4},
     {"_rCausalMGM_CoxIRLSRegressionTest", (DL_FUNC) &_rCausalMGM_CoxIRLSRegressionTest, 3},
+    {"_rCausalMGM_DGScoreTest", (DL_FUNC) &_rCausalMGM_DGScoreTest, 4},
+    {"_rCausalMGM_DGScoreTest2", (DL_FUNC) &_rCausalMGM_DGScoreTest2, 1},
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
     {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
@@ -411,6 +460,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_prMetricsOrientation", (DL_FUNC) &_rCausalMGM_prMetricsOrientation, 3},
     {"_rCausalMGM_prMetrics", (DL_FUNC) &_rCausalMGM_prMetrics, 3},
     {"_rCausalMGM_allMetrics", (DL_FUNC) &_rCausalMGM_allMetrics, 3},
+    {"_rCausalMGM_RegrBicScoreTest", (DL_FUNC) &_rCausalMGM_RegrBicScoreTest, 3},
+    {"_rCausalMGM_RegrBicScoreTest2", (DL_FUNC) &_rCausalMGM_RegrBicScoreTest2, 1},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_coxmgm", (DL_FUNC) &_rCausalMGM_coxmgm, 4},
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
@@ -419,8 +470,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 11},
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 9},
     {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 9},
-    {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 10},
-    {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 7},
+    {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 11},
+    {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 6},
     {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 9},
     {NULL, NULL, 0}
 };

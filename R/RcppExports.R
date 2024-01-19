@@ -13,6 +13,14 @@ CoxIRLSRegressionTest <- function(df, targetName, regressorNames) {
     invisible(.Call(`_rCausalMGM_CoxIRLSRegressionTest`, df, targetName, regressorNames))
 }
 
+DGScoreTest <- function(df, targetName, regressorNames, penalty = 1.0) {
+    .Call(`_rCausalMGM_DGScoreTest`, df, targetName, regressorNames, penalty)
+}
+
+DGScoreTest2 <- function(df) {
+    invisible(.Call(`_rCausalMGM_DGScoreTest2`, df))
+}
+
 #' Save a graph to a file
 #'
 #' @param list The graph object
@@ -187,6 +195,14 @@ allMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
     .Call(`_rCausalMGM_allMetrics`, estimate, groundTruth, groundTruthDAG)
 }
 
+RegrBicScoreTest <- function(df, targetName, regressorNames) {
+    .Call(`_rCausalMGM_RegrBicScoreTest`, df, targetName, regressorNames)
+}
+
+RegrBicScoreTest2 <- function(df) {
+    invisible(.Call(`_rCausalMGM_RegrBicScoreTest2`, df))
+}
+
 #' Calculate the MGM graph on a dataset
 #'
 #' @param data The dataframe
@@ -340,8 +356,8 @@ fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = 
 #' @examples
 #' data("data.n100.p25")
 #' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
-bootstrap <- function(data, algorithm = as.character( c("mgm", "pc", "fci", "mgm-pc", "mgm-fci")), orientRule = as.character( c("majority", "maxp", 									"conservative", "sepsets")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, numBoots = 20L, threads = -1L, replace = TRUE, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_bootstrap`, data, algorithm, orientRule, lambda, alpha, numBoots, threads, replace, rank, verbose)
+bootstrap <- function(data, algorithm = as.character( c("mgm", "pc", "fci", "mgm-pc", "mgm-fci")), knowledge = NULL, orientRule = as.character( c("majority", "maxp", 									"conservative", "sepsets")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, numBoots = 20L, threads = -1L, replace = TRUE, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_bootstrap`, data, algorithm, knowledge, orientRule, lambda, alpha, numBoots, threads, replace, rank, verbose)
 }
 
 #' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
@@ -354,8 +370,8 @@ bootstrap <- function(data, algorithm = as.character( c("mgm", "pc", "fci", "mgm
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::growShrinkMB(data.n100.p25)
-growShrinkMB <- function(data, target, graph = NULL, penalty = 1, rank = FALSE, threads = -1L, verbose = FALSE) {
-    .Call(`_rCausalMGM_growShrinkMB`, data, target, graph, penalty, rank, threads, verbose)
+growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, threads = -1L, verbose = FALSE) {
+    .Call(`_rCausalMGM_growShrinkMB`, data, target, penalty, rank, threads, verbose)
 }
 
 #' Runs the GRaSP causal discovery algorithm on the dataset 

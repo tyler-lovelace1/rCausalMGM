@@ -10,6 +10,7 @@
 #include "PcStable.hpp"
 #include "FciStable.hpp"
 
+enum CvType {GRID, SEQUENTIAL, RANDOM};
 
 class SearchCV {
 
@@ -30,6 +31,8 @@ class SearchCV {
     std::vector<Node> scoreNodes;
 
     bool verbose = false;
+    bool nested = false;
+    bool seRule;
 
     std::vector<Node> expandVariable(DataSet& dataSet, const Node& var);
     double multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node>& indep, int k);

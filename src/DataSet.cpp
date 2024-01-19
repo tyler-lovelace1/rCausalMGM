@@ -400,13 +400,12 @@ void DataSet::npnTransform() {
 }
 
 
-void DataSet::addVariable(Node v)
-{
+void DataSet::addVariable(Node v) {
     // Rcpp::Rcout << "adding variable " << v->getName() << "..." << std::endl;
     variables.push_back(v);
-    arma::vec col = arma::vec(n);
-    for (int i = 0; i < n; i++)
-        col[i] = arma::datum::nan;
+    arma::vec col = arma::vec(n, arma::fill::value(arma::datum::nan));
+    // for (int i = 0; i < n; i++)
+    //     col[i] = arma::datum::nan;
 
     variableNames.push_back(v.getName());
     name2idx.insert(std::pair<std::string, int>(v.getName(), m));
@@ -418,15 +417,33 @@ void DataSet::addVariable(Node v)
     // Rcpp::Rcout << "variable " << v->getName() << " inserted" << std::endl;
 }
 
-void DataSet::addVariable(int i, Node v)
-{
+void DataSet::removeVariable(Node v) {
+    int idx = var2idx.at(v);
+
+    data.shed_col(idx);
+
+    for (int i = idx; i < variables.size(); i++) {
+	name2idx.at(variableNames.at(i)) = i-1;
+	var2idx.at(variables.at(i)) = i-1;
+    }
+
+    name2idx.erase(variableNames.at(idx));
+    var2idx.erase(variables.at(idx));
+    
+    variableNames.erase(variableNames.begin()+idx);
+    variables.erase(variables.begin()+idx);
+
+    m--;
+}
+
+void DataSet::addVariable(int i, Node v) {
     if (i > m || i < 0)
         throw std::invalid_argument("index " + std::to_string(i) + " out of bounds");
 
     variables.insert(variables.begin() + i, v);
-    arma::vec col = arma::vec(n);
-    for (int i = 0; i < n; i++)
-        col[i] = arma::datum::nan;
+    arma::vec col = arma::vec(n, arma::fill::value(arma::datum::nan));
+    // for (int i = 0; i < n; i++)
+    //     col[i] = arma::datum::nan;
 
     variableNames.push_back(v.getName());
     name2idx.insert(std::pair<std::string, int>(v.getName(), i));

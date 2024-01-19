@@ -17,6 +17,8 @@
 #include "IndTestMultiCox.hpp"
 // #include "BayesIndTestMultiCox.hpp"
 #include "GrowShrink.hpp"
+#include "DegenerateGaussianScore.hpp"
+#include "RegressionBicScore.hpp"
 #include "Grasp.hpp"
 // #include "CausalMGM.hpp"
 #include "Knowledge.hpp"
@@ -1721,6 +1723,7 @@ Rcpp::List fciStable(
 Rcpp::List bootstrap(
     const Rcpp::DataFrame& data,
     Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm", "pc", "fci", "mgm-pc", "mgm-fci"),
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
 									"conservative", "sepsets"),
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
@@ -1809,6 +1812,14 @@ Rcpp::List bootstrap(
 
     Bootstrap boot(ds, alg, numBoots, replace);
     if (threads > 0) boot.setThreads(threads);
+
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	boot.setKnowledge(k);
+    }
+
     boot.setVerbose(verbose);
     boot.setAlpha(alpha);
     boot.setLambda(l);
@@ -1846,15 +1857,16 @@ Rcpp::List bootstrap(
 //' data("data.n100.p25")
 //' g <- rCausalMGM::growShrinkMB(data.n100.p25)
 // [[Rcpp::export]]
- Rcpp::StringVector growShrinkMB(
+Rcpp::StringVector growShrinkMB(
     const Rcpp::DataFrame& data,
     const std::string& target,
-    Rcpp::Nullable<Rcpp::List> graph = R_NilValue,
     const double penalty = 1,
     const bool rank = false,
     const int threads = -1,
     const bool verbose = false
 ) {
+    // Rcpp::Nullable<Rcpp::List> graph = R_NilValue,
+   
     DataSet ds = DataSet(data);
     ds.dropMissing();
 
@@ -1863,29 +1875,38 @@ Rcpp::List bootstrap(
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
     }
-    
-    GrowShrink gs(ds, threads);
-    gs.setVerbose(verbose);
-    gs.setPenalty(penalty);
 
-    EdgeListGraph g;
-    if (!graph.isNull()) {
-        Rcpp::List _graph(graph);
-        g = EdgeListGraph(_graph, ds);
-        gs.setGraph(g);
-    }
-    
-    // mgm.calcLambdaMax();
+    // EdgeListGraph g;
+    // if (!graph.isNull()) {
+    //     Rcpp::List _graph(graph);
+    //     g = EdgeListGraph(_graph, ds);
+    //     gs.setGraph(g);
+    // }
+
     Node targetNode = ds.getVariable(target);
 
     std::vector<Node> regressors(ds.getVariables());
     auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
 
     regressors.erase(it, regressors.end());
+
+    double score = 0;
     
-    double bic = 0;
-    
-    std::list<Node> mb = gs.search(targetNode, regressors, &bic);
+    std::vector<Node> mb;
+
+    if (!ds.isCensored()) {
+	DegenerateGaussianScore scorer(ds, penalty);
+	GrowShrink gs(&scorer);
+	gs.setVerbose(verbose);
+	
+	mb = gs.search(targetNode, regressors, &score);
+    } else {
+        RegressionBicScore scorer(ds, penalty);
+	GrowShrink gs(&scorer);
+	gs.setVerbose(verbose);
+
+	mb = gs.search(targetNode, regressors, &score);
+    }
     
     RcppThread::checkUserInterrupt();
 
@@ -1896,9 +1917,9 @@ Rcpp::List bootstrap(
     }
 
     // Rcpp::List result = Rcpp::List::create(Rcpp::_["markov.blanket"]=_mb,
-    // 					   Rcpp::_["BIC"]=bic);
-
-    _mb.attr("BIC") = Rcpp::wrap(bic);
+    // 					   Rcpp::_["SCORE"]=score);
+    
+    _mb.attr("Score") = Rcpp::wrap(score);
     
     return _mb;
 }
@@ -1935,7 +1956,15 @@ Rcpp::List grasp(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
-    Grasp grasp(ds, threads);
+    Score *scorer;
+
+    if (!ds.isCensored()) {
+	scorer = new DegenerateGaussianScore(ds, penalty);
+    } else {
+        scorer = new RegressionBicScore(ds, penalty);
+    }	
+
+    Grasp grasp(scorer, threads);
     grasp.setVerbose(verbose);
     grasp.setDepth(depth);
     grasp.setNumStarts(numStarts);
@@ -1972,6 +2001,8 @@ Rcpp::List grasp(
 					   Rcpp::_["count"]=graphCounts,
 					   Rcpp::_["BIC"]=graphBICs
 	);
+
+    delete scorer;
 
     return result;
 }

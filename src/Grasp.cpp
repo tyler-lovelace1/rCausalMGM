@@ -56,23 +56,61 @@ std::list<Node> Grasp::initializeRandom() {
 	nodeList.insert(nodeList.end(), _tier.begin(), _tier.end());
     }
 
-    // Rcpp::Rcout << "Node List:" << std::endl;
-    // for (const Node& n: this->nodes) {
-    // 	if (n.isContinuous()) Rcpp::Rcout << "C:";
-    // 	if (n.isDiscrete()) Rcpp::Rcout << "D:";
-    // 	if (n.isCensored()) Rcpp::Rcout << "S:";
-    // 	Rcpp::Rcout << n << " ";
-    // }
-    // Rcpp::Rcout << std::endl;
+    std::set<Node> set1(this->nodes.begin(), this->nodes.end());
+    std::set<Node> set2(nodeList.begin(), nodeList.end());
 
-    // Rcpp::Rcout << "Random initialization:" << std::endl;
-    // for (const Node& n: nodeList) {
-    // 	if (n.isContinuous()) Rcpp::Rcout << "C:";
-    // 	if (n.isDiscrete()) Rcpp::Rcout << "D:";
-    // 	if (n.isCensored()) Rcpp::Rcout << "S:";
-    // 	Rcpp::Rcout << n << " ";
-    // }
-    // Rcpp::Rcout << std::endl;
+    if (set1 != set2)
+	throw std::runtime_error("GRASP random initialization does not contain every node.");
+
+    return nodeList;
+}
+
+std::list<Node> Grasp::initializeMinDegree() {
+    std::vector<std::set<Node>> tiers = knowledge.getTiers();
+
+    if (tiers.empty()) {
+	std::set<Node> _nodes(nodes.begin(), nodes.end());
+	tiers.push_back(_nodes);
+    }
+
+    std::list<Node> nodeList;
+
+    if (initialGraph==NULL) {
+
+	// int tierIdx=0;
+	for (const std::set<Node>& tier : tiers) {
+	    // tierIdx++;
+	    std::vector<Node> _tier(tier.begin(), tier.end());
+
+	    EdgeListGraph tierUndir(_tier);
+
+	    for (int i = 0; i < _tier.size(); i++) {
+		std::vector<Node> parents = growShrink.search(_tier.at(i), _tier);
+		for (Node n : parents) {
+		    tierUndir.addUndirectedEdge(_tier.at(i), n);
+		}
+	    }
+
+	    Rcpp::Rcout << "GrowShrink undirected graph:\n" << tierUndir;
+
+	    initialGraph = new EdgeListGraph(tierUndir);
+
+	    std::list<Node> mdOrder = minDegreeAlgorithm(tierUndir);
+	
+	    // std::random_shuffle(_tier.begin(), _tier.end(), randWrapper);
+	
+	    nodeList.insert(nodeList.end(), mdOrder.begin(), mdOrder.end());
+
+	    
+	}
+
+    } else {
+
+	std::list<Node> mdOrder = minDegreeAlgorithm(*initialGraph);
+		
+	nodeList.insert(nodeList.end(), mdOrder.begin(), mdOrder.end());
+
+    }
 
     std::set<Node> set1(this->nodes.begin(), this->nodes.end());
     std::set<Node> set2(nodeList.begin(), nodeList.end());
@@ -83,7 +121,68 @@ std::list<Node> Grasp::initializeRandom() {
     return nodeList;
 }
 
-Grasp::Grasp(DataSet& data, int threads) : ds(data), growShrink(data, threads) {
+std::list<Node> Grasp::minDegreeAlgorithm(EdgeListGraph graph) {
+
+    int p = graph.getNumNodes();
+    int minDegree;
+    int degree;
+    Node mdNode;
+    std::set<Node> active;
+    std::list<Node> mdOrder;
+
+    for (Node n : graph.getNodes()) {
+	active.insert(n);
+    }
+
+    while (!active.empty()) {
+	minDegree = 2 * p;
+	for (Node n : active) {
+	    degree = graph.getDegree(n);
+	    if (degree < minDegree) {
+		minDegree = degree;
+		mdNode = n;
+	    } else if (degree==minDegree && R::runif(0,1) < 0.5) {
+		mdNode = n;
+	    }
+	}
+
+	Rcpp::Rcout << "Min Degree = " << minDegree << " : " << mdNode << std::endl;
+
+	std::vector<Node> adjNodes = graph.getAdjacentNodes(mdNode);
+
+	if (minDegree > 1) {
+	    for (int i = 1; i < adjNodes.size(); i++) {
+		for (int j = 0; j < i; j++) {
+		    graph.addUndirectedEdge(adjNodes.at(i), adjNodes.at(j));
+		}
+
+		// std::vector<Node> possibleAdj(graph.getAdjacentNodes(adjNodes.at(i)));
+		// possibleAdj.insert(possibleAdj.end(), adjNodes.begin(), adjNodes.end());
+		// std::vector<Node> mb = growShrink.search(adjNodes.at(i), possibleAdj);
+		
+		// for (Node n : mb) {
+		//     graph.addUndirectedEdge(adjNodes.at(i), n);
+		// }
+	    }
+	}
+
+	graph.removeNode(mdNode);
+
+	active.erase(mdNode);
+
+	mdOrder.push_front(mdNode);
+
+	// Rcpp::Rcout << "\nUpdated Graph:\n\n" << graph << "\n\n";
+    }
+
+    Rcpp::Rcout << "Minimum degree order:\n";
+    for (Node n : mdOrder) Rcpp::Rcout << n << " ";
+    Rcpp::Rcout << "\n";
+
+    return mdOrder;
+}
+
+Grasp::Grasp(Score *scorer, int threads) : growShrink(scorer) {
     // growShrink = GrowShrink(data, threads);
 
     if (threads > 0) parallelism = threads;
@@ -97,7 +196,7 @@ Grasp::Grasp(DataSet& data, int threads) : ds(data), growShrink(data, threads) {
 
     parallelism = std::max(parallelism, 1);
 
-    std::vector<Node> _nodes = data.getVariables();
+    std::vector<Node> _nodes = scorer->getVariables();
     
     growShrink.setPenalty(penalty);
     graph = EdgeListGraph(_nodes);
@@ -182,7 +281,7 @@ double Grasp::update(OrderGraph& tau) {
 	double localBic = 1e20;
 	// std::list<Node> parents = growShrink.search(*it, prefix, &bic);
 	// if (it->isCensored()) growShrink.setVerbose(true);
-	std::list<Node> parents = growShrink.search(*it, prefix, &localBic);
+	std::vector<Node> parents = growShrink.search(*it, prefix, &localBic);
 	// if (it->isCensored()) growShrink.setVerbose(false);
 	// Rcpp::Rcout << "Parents: ";
 	// for (Node n : parents) Rcpp::Rcout << n.getName() << " ";
@@ -324,22 +423,25 @@ bool Grasp::graspDFS(int tier) {
     OrderGraph tau = pi;
     OrderGraph oldTau;
     double oldScore = tau.score;
+    double oldBic = tau.bic;
     int curDepth = 0;
-    std::set<Grasp::OrderGraph> visited = {};
-    std::set<std::set<NodePair>> visitedTuckSets = {};
+    std::set<std::list<Node>> visited = {};
+    // std::set<std::set<NodePair>> visitedTuckSets = {};
     std::set<NodePair> tucked = {};
-    int N = ds.getNumRows();
-    double buffer = std::log(N);
+    // int N = ds.getNumRows();
+    // double buffer = std::log(N);
 
     std::stack<Grasp::OrderGraph> graphStack;
     std::stack<std::set<NodePair>> tuckStack;
     std::stack<int> depthStack;
     
-    bool first = true;
+    bool first = false;
 
     graphStack.push(tau);
     tuckStack.push(tucked);
     depthStack.push(0);
+
+    // Rcpp::Rcout << "  Tier " << tier << " DFS\n"; 
 
     while (!graphStack.empty()) {
 	tau = graphStack.top();
@@ -353,8 +455,7 @@ bool Grasp::graspDFS(int tier) {
 
 	// if (tier==0) curDepth /= 4;
 
-	if (visitedTuckSets.count(tucked) || visited.count(tau) ||
-	    curDepth > depth || !tau.isValid(knowledge))
+	if ((curDepth > depth && tier > 0) || (curDepth > 4*depth) || visited.count(tau.order) || !tau.isValid(knowledge))
 	    continue;
 
 	// if (visitedTuckSets.count(tucked) || visited.count(tau) ||
@@ -369,16 +470,26 @@ bool Grasp::graspDFS(int tier) {
 	    // Rcpp::Rcout << "    Old Score = " << oldTau.score << std::endl;
 	    // Rcpp::Rcout << "    Old BIC = " << oldTau.bic << std::endl;
 
-	    if (tau.score < pi.score || (tau.score==pi.score && tau.bic < pi.bic)) {
+	    EdgeListGraph dag = tau.toDAG();
+
+	    // Rcpp::Rcout << "Depth = " << curDepth << "\n"; // Current Order:\n";
+	    // for (Node n : tau.order) Rcpp::Rcout << n << " ";
+	    // Rcpp::Rcout << "\nCurrent Graph:\n" << dag;
+
+	    // Rcpp::Rcout << "    Score = " << tau.score << ", BIC = " << tau.bic << "\n";
+	    
+	    // if (tau.score < pi.score || (tau.score==pi.score && tau.bic < pi.bic)) {
+	    if (tau.bic < pi.bic) {
 		pi = tau;
 		bestGraphs.clear();
 		bestGraphs.insert(pi);
 		// growShrink.clearHistory();
-		if (verbose) Rcpp::Rcout << "    Score = " << pi.score << ", BIC = " << pi.bic << "\r";
+		// Rcpp::Rcout << "    Graph Updated\n";
+		if (verbose) Rcpp::Rcout << "    Depth = " << curDepth << ", Score = " << pi.score << ", BIC = " << pi.bic << "\n";
 		return true;
 	    }
 
-	    if (tau.score > pi.score) continue;
+	    if (tau.bic - pi.bic > 3) continue;
 
 	    // double dBic = tau.bic - pi.bic;
 	    // double postProbTau = std::exp(-0.5 * dBic);
@@ -388,7 +499,7 @@ bool Grasp::graspDFS(int tier) {
 
 	    // if (tau.bic != pi.bic && postProbTau < 0.05) continue;
 
-	    if (verbose) Rcpp::Rcout << "    Score = " << tau.score << ", BIC = " << tau.bic << "\r";
+	    if (verbose) Rcpp::Rcout << "    Depth = " << curDepth << ", Score = " << tau.score << ", BIC = " << tau.bic << "\n";
 
 	    if (tau.bic == pi.bic) bestGraphs.insert(tau);
 	
@@ -408,9 +519,9 @@ bool Grasp::graspDFS(int tier) {
 
 	// Rcpp::Rcout << "    Old Score = " << oldTau.score << std::endl;
 
-	visited.insert(tau);
+	visited.insert(tau.order);
 
-	visitedTuckSets.insert(tucked);
+	// visitedTuckSets.insert(tucked);
 
 	oldTau = tau;
 
@@ -438,6 +549,8 @@ bool Grasp::graspDFS(int tier) {
 
 		if (tier==0 && !covered) continue;
 		if (covered && tucked.count(tuck)) continue;
+
+		// if (tier==0 && covered) Rcpp::Rcout << "Covered: Tucking " << tuck.first << " " << tuck.second << std::endl;
 
 		// if (tier == 0) {
 		//     Rcpp::Rcout << "  Tucking covered edge " << x.getName() << " --> "
@@ -525,6 +638,10 @@ bool Grasp::graspDFS(int tier) {
 		    continue;
 		}
 
+		// if (tier==1 && singular) Rcpp::Rcout << "Singular: Tucking " << tuck.first << " " << tuck.second << std::endl;
+
+		// if (tier==2) Rcpp::Rcout << "All Edges: Tucking " << tuck.first << " " << tuck.second << std::endl;
+
 		// if (tier == 1) {
 		//     Rcpp::Rcout << "  Tucking singular edge " << x.getName() << " --> "
 		// 		<< y.getName() << std::endl;
@@ -551,7 +668,7 @@ bool Grasp::graspDFS(int tier) {
 		graphStack.push(tau);
 		tuckStack.push(tucked);
 		depthStack.push(curDepth+1);
-		tucked.erase(tuck);
+		// tucked.erase(tuck);
 		    // dfsBreak = true;
 		    // break;
 		    // }
@@ -754,7 +871,7 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 	    if (verbose) Rcpp::Rcout << "\n";
 	}
 
-	if (pi.score < bestOrder.score) {
+	if (pi.bic < bestOrder.bic) {
 	    bestOrder = pi;
 
 	    cpdagMap.clear();
@@ -784,7 +901,7 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 		    cpdagMap[graph] = std::pair<int, double>(1, order.bic);
 		}
 	    }
-	} else if (pi.score == bestOrder.score) {
+	} else if (pi.bic == bestOrder.bic) {
 	    for (const OrderGraph order : bestGraphs) {
 
 		// Rcpp::Rcout << "Best Order:\n";

@@ -204,7 +204,7 @@ plot.graph <- function(x,
                                        collapse=", "), "}")),
                    ifelse(is.null(x[["alpha"]]), c(""),
                           paste0("\nalpha = ",
-                                 as.numeric(x[["alpha"]]))))
+                                 as.numeric(round(x[["alpha"]], 4)))))
     }
 
     graph::graph.par(list(graph = append(list(main = dotParams[["main"]]),
@@ -516,3 +516,78 @@ graphTable <- function(graph, stabilities = NULL) {
 as.data.frame.graph <- function(x, ...) {
     return(graphTable(x))
 }
+
+
+createKnowledge <- function(tiers = list(), forbidWithinTiers=NULL,
+                            forbidden=list(), required=list()) {
+    if (is.null(forbidWithinTiers)) {
+        if (length(tiers) != 0) {
+            forbidWithinTiers <- rep(FALSE, length(tiers))
+        } else {
+            forbidWithinTiers <- as.logical(c())
+        }
+    }
+    knowledge <- list(tiers=tiers, forbidWithinTiers=forbidWithinTiers,
+                      forbidden=forbidden, required=required)
+    class(knowledge) <- 'knowledge'
+    return(knowledge)
+}
+
+## simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3, coefMin=0.5, coefMax=1.5, snr=1) {
+##     numCat <- floor(p * categoricalFrac)
+##     numCont <- p - numCat
+##     nodes <- c()
+##     if (numCont > 0) {
+##         nodes <- c(nodes, paste0('X',1:numCont))
+##     }
+##     if (numCat>0) {
+##         nodes <- c(nodes, paste0('Y',1:numCat))
+##     }
+
+##     permNodes <- sample(nodes)
+
+##     numEdges <- floor(deg * p / 2)
+
+##     edgeIdx <- sample(1:(p*(p-1)/2), numEdges)
+
+##     adjMat <- matrix(0, p, p)
+
+##     adjMat[lower.tri(adjMat)][edgeIdx] <- 1
+
+##     data <- data.frame()
+
+##     idx <- 1
+##     for (node in permNodes) {
+##         pa <- permNodes[adjMat[idx,]==1]
+##         print(node)
+##         print(idx)
+##         print(pa)
+##         if (length(pa) > 0) {
+##             f <- as.formula(paste('~ 0', paste(pa, collapse=' + '), sep=' + '))
+##         }
+        
+##         if (grepl('X', node)) {
+##             if (length(pa)==0) {
+##                 val <- rnorm(n)
+##             } else {
+##                 mod.mat <- model.matrix(f, data)
+##                 beta <- sample(c(-1, 1), ncol(mod.mat), replace=T) * runif(ncol(mod.mat), coefMin, coefMax)
+##                 pred <- mod.mat %*% beta
+
+##                 varS <- var(pred)
+##                 varN <- varS / snr
+##                 val <- as.vector(scale(pred + rnorm(n, sd=sqrt(varN))))
+##             }
+##         }
+##         if (idx==1) {
+##             data <- data.frame(val)
+##             colnames(data) <- node
+##         } else {
+##             data[,node] <- val
+##         }
+##         idx <- idx + 1
+##     }
+
+##     result <- list(data=data[,nodes], graph=adjMat2Graph(adjMat, permNodes, directed=T))
+##     return(result)
+## }

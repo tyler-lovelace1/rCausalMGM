@@ -302,7 +302,7 @@ public:
      */
     int getIndegree(const Node& node);
 
-    int getDegree(const Node& node);
+    int getDegree(const Node& node) { return edgeLists.at(node).size(); }
 
     /**
      * @return the number of edges out of the given node.

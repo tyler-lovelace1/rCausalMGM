@@ -213,8 +213,7 @@ bool IndTestMultiCox::isIndependent(const Node& x, const Node& y, std::vector<No
     }
 }
 
-std::vector<Node> IndTestMultiCox::expandVariable(DataSet &dataSet, const Node& var)
-{
+std::vector<Node> IndTestMultiCox::expandVariable(DataSet &dataSet, const Node& var) {
     if (var.isContinuous())
     {
         std::vector<Node> contList;
@@ -888,8 +887,7 @@ Node IndTestMultiCox::getVariable(std::string name)
     return emptyVar;
 }
 
-arma::mat IndTestMultiCox::getSubsetData(DataSet &origData, std::vector<Node> &varSubset)
-{
+arma::mat IndTestMultiCox::getSubsetData(DataSet &origData, std::vector<Node> &varSubset) {
     arma::mat origMat = origData.getData();
     arma::uvec colIndices(varSubset.size());
     arma::uvec rowIndices(origMat.n_rows);

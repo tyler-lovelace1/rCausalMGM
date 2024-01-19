@@ -53,7 +53,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
     if (replace)   samps = StabilityUtils::subSampleWithReplacement(d, N, B);
     else           samps = StabilityUtils::subSampleNoReplacement(d, N, B);
 
-    if (verbose) Rcpp::Rcout << "  Bootstrapping..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Bootstrapping...\n" << std::endl;
 
     // EdgeListGraph g;
 
@@ -64,7 +64,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
 
     for (arma::uword i = 0; i < B; i++) {
 
-	if (verbose) Rcpp::Rcout << "    Running bootstrap " << i+1 << "...\n";
+	if (verbose) Rcpp::Rcout << "\r    Running bootstrap " << i+1 << "...";
 
 	DataSet subset(d, samps.row(i));
 
@@ -100,7 +100,8 @@ EdgeListGraph Bootstrap::runBootstrap() {
 		
 		PcStable causalAlg((IndependenceTest*) &itm);
 		if (threads > 0) causalAlg.setThreads(threads);
-	    
+
+		causalAlg.setKnowledge(this->knowledge);
 		causalAlg.setVerbose(false);
 		causalAlg.setFDR(false);
 		causalAlg.setOrientRule(orientRule);
@@ -115,7 +116,8 @@ EdgeListGraph Bootstrap::runBootstrap() {
 		
 		Fci causalAlg((IndependenceTest*) &itm);
 		if (threads > 0) causalAlg.setThreads(threads);
-	    
+
+		causalAlg.setKnowledge(this->knowledge);
 		causalAlg.setVerbose(false);
 		causalAlg.setFDR(false);
 		causalAlg.setOrientRule(orientRule);
@@ -138,7 +140,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
 
     EdgeListGraph ensGraph = makeEnsembleGraph(graphVec);
 
-    // if (verbose) Rcpp::Rcout << std::endl << "  Finished" << std::endl;
+    if (verbose) Rcpp::Rcout << std::endl << "  Finished" << std::endl;
 
     auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 

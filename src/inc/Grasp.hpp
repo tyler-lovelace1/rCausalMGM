@@ -241,6 +241,20 @@ private:
 	    }
 	}
 
+	EdgeListGraph toDAG() const {
+	    std::vector<Node> nodes(order.begin(), order.end());
+
+	    EdgeListGraph graph(nodes);
+
+	    for (const Node& node : nodes) {
+		for (const Node& pa : parentMap.at(node)) {
+		    graph.addDirectedEdge(pa, node);
+		}
+	    }
+
+	    return graph;
+	}
+
 	EdgeListGraph toGraph() const {
 	    std::vector<Node> nodes(order.begin(), order.end());
 
@@ -273,6 +287,10 @@ private:
 
     std::list<Node> initializeRandom();
 
+    std::list<Node> initializeMinDegree();
+
+    std::list<Node> minDegreeAlgorithm(EdgeListGraph graph);
+
 public:
 
     /**
@@ -283,7 +301,7 @@ public:
      */
     Grasp() {}
 
-    Grasp(DataSet& data, int threads = -1);
+    Grasp(Score* scorer, int threads = -1);
 
     /**
      * @return the elapsed time of the search, in milliseconds.
