@@ -31,7 +31,7 @@ IndTestMultiCox::IndTestMultiCox(DataSet& data, double alpha)
 
     // Rcpp::Rcout << "dataset expanded\n";
 
-    this->coxRegression = CoxIRLSRegression(internalData);
+    this->coxRegression = CoxRegression(internalData);
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
@@ -59,7 +59,7 @@ IndTestMultiCox::IndTestMultiCox(DataSet& data, double alpha, bool preferLinear)
         variablesPerNode.insert(std::pair<Node, std::vector<Node>>(var, vars));
     }
 
-    this->coxRegression = CoxIRLSRegression(internalData);
+    this->coxRegression = CoxRegression(internalData);
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
@@ -338,8 +338,7 @@ bool IndTestMultiCox::isIndependentMultinomialLogisticRegression(const Node& x, 
     arma::mat coeffsDep = arma::mat();  //yzList.size()+1, variablesPerNode.at(x).size());
 
     /*********************************************************************/
-    for (int i = 0; i < variablesPerNode.at(x).size(); i++)
-    {
+    for (int i = 0; i < variablesPerNode.at(x).size(); i++) {
         const Node& varX = variablesPerNode.at(x).at(i);
 	// LogisticRegressionResult result0;
 	// LogisticRegressionResult result1;
@@ -509,8 +508,7 @@ bool IndTestMultiCox::isMissing(const Node& x, int i)
     return false;
 }
 
-double IndTestMultiCox::multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node> &indep)
-{
+double IndTestMultiCox::multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node> &indep) {
 
     // if (dep == nullNode)
     //     throw std::invalid_argument("must have a dependent node to regress on!");
@@ -887,22 +885,21 @@ Node IndTestMultiCox::getVariable(std::string name)
     return emptyVar;
 }
 
-arma::mat IndTestMultiCox::getSubsetData(DataSet &origData, std::vector<Node> &varSubset) {
-    arma::mat origMat = origData.getData();
+arma::mat IndTestMultiCox::getSubsetData(DataSet& origData, std::vector<Node> &varSubset) {
+    // arma::mat origMat = origData.getData();
     arma::uvec colIndices(varSubset.size());
-    arma::uvec rowIndices(origMat.n_rows);
+    // arma::uvec rowIndices(origData.getNumRows());
     // for (const Node& var : varSubset){
-    for (int i = 0; i < varSubset.size(); i++)
-    {
+    for (int i = 0; i < varSubset.size(); i++) {
         const Node& var = varSubset.at(i);
         arma::uword j = origData.getColumn(var);
         colIndices[i] = j;
     }
-    for (int i = 0; i < origMat.n_rows; i++)
-    {
-        rowIndices[i] = i;
-    }
-    return origMat.submat(rowIndices, colIndices);
+    // for (int i = 0; i < origMat.n_rows; i++)
+    // {
+    //     rowIndices[i] = i;
+    // }
+    return origData.getSubsetData(colIndices);
 }
 
 void IndTestMultiCox::resetWZ(Node target, std::vector<Node>& neighbors) {
@@ -972,7 +969,7 @@ void IndTestMultiCox::resetWZ(Node target, std::vector<Node>& neighbors) {
     // Rcpp::Rcout << "WZmap complete for Node " + target.getName() + "\n";
 
     if (internalData.updateNode(target)) {
-	this->coxRegression = CoxIRLSRegression(internalData);
+	this->coxRegression = CoxRegression(internalData);
 	this->logisticRegression = LogisticRegression(internalData);
 	// this->logisticRegression.setWZmap(WZmap);
 	this->regression = LinearRegression(internalData);
@@ -982,7 +979,7 @@ void IndTestMultiCox::resetWZ(Node target, std::vector<Node>& neighbors) {
 
 // void IndTestMultiCoxTest(const Rcpp::DataFrame& df) {
 //   Rcpp::Rcout << "*******Start******* \n";
-//   DataSet data(df, 5);
+//   DataSet data(df);
 //   Rcpp::Rcout << "Dataset Constructed \n";
 //   IndTestMultiCox itm(data, 0.05);
 //   Rcpp::Rcout << "Independence Test Constructed \n";

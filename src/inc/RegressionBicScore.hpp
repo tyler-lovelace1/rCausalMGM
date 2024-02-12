@@ -6,7 +6,7 @@
 #include "DataSet.hpp"
 #include "LogisticRegression.hpp"
 #include "LinearRegression.hpp"
-#include "CoxIRLSRegression.hpp"
+#include "CoxRegression.hpp"
 
 class RegressionBicScore : public Score {
 private:
@@ -23,7 +23,7 @@ private:
 
     double N, logN;
 
-    CoxIRLSRegression coxRegression;
+    CoxRegression coxRegression;
     LogisticRegression logisticRegression;
     LinearRegression regression;
     
@@ -37,7 +37,7 @@ private:
 
     void resetWZ(Node target, std::vector<Node>& neighbors);
 
-    double multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node> &indep);
+    double multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node>& indep);
 
     double logLikLinearRegression(const Node& x, std::vector<Node>& regressors);
 

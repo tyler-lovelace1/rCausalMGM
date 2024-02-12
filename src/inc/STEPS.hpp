@@ -47,7 +47,7 @@ public:
 
     EdgeListGraph runStepsPar();
 
-    EdgeListGraph runStepsPath(arma::mat& instabs, arma::umat& samps);
+    std::vector<EdgeListGraph> runStepsPath(arma::mat& instabs, arma::umat& samps);
 
     void setComputeStabs(bool cs) { computeStabs = cs; }
     bool getComputeStabs() { return computeStabs; }

@@ -44,7 +44,7 @@ public:
     DataSet() {}
     DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
     DataSet(const Rcpp::DataFrame& df);
-    DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
+    // DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
     DataSet(const DataSet& ds, const arma::urowvec& rows); // subset rows
     
     DataSet(const DataSet& ds) = default;
@@ -89,6 +89,9 @@ public:
     std::vector<std::string> getVariableNames() { return variableNames; }
 
     arma::mat getData() { return data; }
+
+    arma::mat getSubsetData(arma::uvec colIdxs);
+    arma::mat getSubsetData(arma::uvec rowIdxs, arma::uvec colIdxs);
     
     arma::mat getContinuousData();
     arma::mat getDiscreteData();

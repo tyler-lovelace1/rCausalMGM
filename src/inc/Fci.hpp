@@ -71,7 +71,7 @@ private:
     /** 
      * Orientation rule for identifying colliders
      */
-    OrientRule orientRule = ORIENT_MAXP;
+    OrientRule orientRule = ORIENT_MAJORITY;
 
     /**
      * The maximum length for any discriminating path. -1 if unlimited; otherwise, a positive integer.

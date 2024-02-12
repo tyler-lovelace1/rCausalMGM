@@ -5,7 +5,7 @@
 #include "IndependenceTest.hpp"
 #include "LogisticRegression.hpp"
 #include "LinearRegression.hpp"
-#include "CoxIRLSRegression.hpp"
+#include "CoxRegression.hpp"
 #include "Variable.hpp"
 #include "DataSet.hpp"
 
@@ -18,7 +18,7 @@ private:
     double alpha;
     double lastP;
     std::map<Node, std::vector<Node>> variablesPerNode;
-    CoxIRLSRegression coxRegression;
+    CoxRegression coxRegression;
     LogisticRegression logisticRegression;
     LinearRegression regression;
     bool verbose = false;

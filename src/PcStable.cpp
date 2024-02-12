@@ -86,74 +86,83 @@ EdgeListGraph PcStable::search(FasStableProducerConsumer& fas, const std::vector
     graph = fas.search();
     sepsets = fas.getSepsets();
 
-    SepsetProducer sp;
+    // SepsetProducer sp;
     SepsetMap nullSepsets;
+    mapSp = SepsetProducer(graph, sepsets, independenceTest);
+    sp = SepsetProducer(graph, independenceTest, nullSepsets, threads);
     
-    // if (orientRule == ORIENT_SEPSETS) {
-    // 	Rcpp::Rcout << "Sepset Map Orientations\n";
-    // 	// sp = SepsetProducer(sepsets, independenceTest);
-    // 	sp = SepsetProducer(graph, independenceTest, sepsets, threads);
-    // } else {
-    sp = SepsetProducer(graph, independenceTest, sepsets, threads);
-    // }
+    if (orientRule == ORIENT_SEPSETS) {
+	
+	mapSp.setOrientRule(orientRule);
+	mapSp.setDepth(depth);
+	mapSp.setVerbose(verbose);
+	mapSp.setKnowledge(knowledge);
 
-    sp.setOrientRule(orientRule);
-    sp.setDepth(depth);
-    sp.setVerbose(verbose);
-    sp.setKnowledge(knowledge);
-    
-    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
 
-    sp.fillMap();
+	mapSp.fillMap();
+	
+    } else {
+	
+	sp.setOrientRule(orientRule);
+	sp.setDepth(depth);
+	sp.setVerbose(verbose);
+	sp.setKnowledge(knowledge);
+
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+
+	sp.fillMap();
     
-    if (verbose) Rcpp::Rcout << "  Orienting edges with knowledge..." << std::endl;
+    }
 
     SearchGraphUtils::pcOrientbk(knowledge, graph);
-    // SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph, knowledge, verbose);
 
     MeekRules rules;
     rules.setAggressivelyPreventCycles(aggressivelyPreventCycles);
     rules.setKnowledge(knowledge);
 
     if (verbose) Rcpp::Rcout << "  Orienting colliders..." << std::endl;
-    // rules.meekR0(graph);
-    
-    std::vector<Triple> orderedColliders = sp.getOrderedColliders();
 
-    // if (false) {
-    // 	SearchGraphUtils::orientCollidersUsingSepsets(sepsets, graph, knowledge, verbose);
-    // } else {
+    std::vector<Triple> orderedColliders;
+
+    if (orientRule == ORIENT_SEPSETS) {    
+	orderedColliders = mapSp.getOrderedColliders();
+    } else {
+	orderedColliders = sp.getOrderedColliders();
+    }
+
     SearchGraphUtils::orientCollidersUsingOrderedColliders(orderedColliders, graph,
 							   knowledge, verbose);
-    // }
-    
-    for (auto t : sp.getAmbiguousTriples())
-	graph.addAmbiguousTriple(t.x, t.y, t.z);
+
+    if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
+	for (auto t : sp.getAmbiguousTriples())
+	    graph.addAmbiguousTriple(t.x, t.y, t.z);
+    }
 
     if (verbose) Rcpp::Rcout << "  Orienting implied edges..." << std::endl;
     
     rules.orientImplied(graph);
 
-    std::set<Edge> edgeSet = graph.getEdges();
+    // std::set<Edge> edgeSet = graph.getEdges();
 
-    for (Edge edge : edgeSet) {
-        if (edge.isBidirected()) {
-	    Node node1 = edge.getNode1();
-	    Node node2 = edge.getNode2();
+    // for (Edge edge : edgeSet) {
+    //     if (edge.isBidirected()) {
+    // 	    Node node1 = edge.getNode1();
+    // 	    Node node2 = edge.getNode2();
 
-	    graph.removeEdge(node1, node2);
-	    graph.addUndirectedEdge(node1, node2);
-	}
-    }
+    // 	    graph.removeEdge(node1, node2);
+    // 	    graph.addUndirectedEdge(node1, node2);
+    // 	}
+    // }
 
-    score = 0.0;
-    for (int i = 0; i < allNodes.size(); i++) {
-	for (int j = 0; j < i; j++) {
-	    if (sepsets.isInSepsetMap(allNodes[i], allNodes[j])) {
-		score += std::log(sepsets.getPValue(allNodes[i], allNodes[j]));
-	    }	    
-	}
-    }
+    // score = 0.0;
+    // for (int i = 0; i < allNodes.size(); i++) {
+    // 	for (int j = 0; j < i; j++) {
+    // 	    if (sepsets.isInSepsetMap(allNodes[i], allNodes[j])) {
+    // 		score += std::log(sepsets.getPValue(allNodes[i], allNodes[j]));
+    // 	    }	    
+    // 	}
+    // }
 
     // Set algorithm and type
     std::string algString;
@@ -177,16 +186,140 @@ EdgeListGraph PcStable::search(FasStableProducerConsumer& fas, const std::vector
     graph.setAlgorithm(alg.str());
     graph.setGraphType("completed partially directed acyclic graph");
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+    // elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+
+    // if (verbose) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "PC-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
+
+    double elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - startTime).count();
 
     if (verbose) {
-	if (elapsedTime < 100*1000) {
-	    Rcpp::Rcout.precision(2);
-	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-	}
-        Rcpp::Rcout << "PC-Stable Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+        double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  PC-Stable Elapsed Time =  " << elapsedTime << " s" << std::endl;
     }
 
+    return graph;
+}
+
+
+
+EdgeListGraph PcStable::reorientWithRule(OrientRule rule) {
+
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    graph.reorientAllWith(ENDPOINT_TAIL);
+    graph.clearAmbiguousTriples();
+  
+    if (verbose) Rcpp::Rcout << "  Starting New Orientations..." << std::endl;
+    
+    orientRule = rule;
+    
+    if (orientRule == ORIENT_SEPSETS) {
+	
+	mapSp.setOrientRule(orientRule);
+	mapSp.setDepth(depth);
+	mapSp.setVerbose(verbose);
+	mapSp.setKnowledge(knowledge);
+
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+
+	mapSp.fillMap();
+	
+    } else {
+	
+	sp.setOrientRule(orientRule);
+	sp.setDepth(depth);
+	sp.setVerbose(verbose);
+	sp.setKnowledge(knowledge);
+
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+
+	sp.fillMap();
+    
+    }
+    
+    SearchGraphUtils::pcOrientbk(knowledge, graph);
+
+    MeekRules rules;
+    rules.setAggressivelyPreventCycles(aggressivelyPreventCycles);
+    rules.setKnowledge(knowledge);
+
+    if (verbose) Rcpp::Rcout << "  Orienting colliders..." << std::endl;
+
+    std::vector<Triple> orderedColliders;
+
+    if (orientRule == ORIENT_SEPSETS) {
+	orderedColliders = mapSp.getOrderedColliders();
+    } else {
+	orderedColliders = sp.getOrderedColliders();
+    }
+
+    SearchGraphUtils::orientCollidersUsingOrderedColliders(orderedColliders, graph,
+							   knowledge, verbose);
+    
+    if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
+	for (auto t : sp.getAmbiguousTriples())
+	    graph.addAmbiguousTriple(t.x, t.y, t.z);
+    }
+
+    if (verbose) Rcpp::Rcout << "  Orienting implied edges..." << std::endl;
+    
+    rules.orientImplied(graph);
+
+    // // Set algorithm and type
+    // std::ostringstream alg;
+    // alg << "FCI Stable: alpha = " << test->getAlpha();
+    // graph.setAlgorithm(alg.str());
+    // graph.setGraphType("partial ancestral graph");
+
+    // Set algorithm and type
+    std::string algString;
+    if (orientRule == ORIENT_SEPSETS)
+	algString = "PC-Stable";
+    else if (orientRule == ORIENT_MAXP)
+	algString = "PC-Max";
+    else if (orientRule == ORIENT_MAJORITY)
+	algString = "MPC-Stable";
+    else if (orientRule == ORIENT_CONSERVATIVE)
+	algString = "CPC-Stable";
+    else
+	algString = "PC-Stable";
+    
+    std::ostringstream alg;
+    if (initialGraph==NULL) {
+	alg << algString;
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << algString;
+    }
+    graph.setAlgorithm(alg.str());
+    graph.setGraphType("completed partially directed acyclic graph");
+    
+
+    // auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+
+    // if (verbose) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "Reorient Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
+    
+    double elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - startTime).count();
+
+    if (verbose) {
+        double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  Reorient Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
+    
     return graph;
 }

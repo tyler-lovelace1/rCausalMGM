@@ -2990,6 +2990,13 @@ void CoxMGM::iterUpdate(arma::vec& parIn) {
     // Rcpp::Rcout << "Finished\n";
 }
 
+std::string CoxMGM::printParameters(arma::vec& X) {
+    std::stringstream ss;
+    MGMParams par(X, p, lsum);
+    ss << par;
+    return ss.str();
+}
+
 /**
  *  Learn CoxMGM traditional way with objective function tolerance. Recommended for inference applications that need
  *  accurate pseudolikelihood

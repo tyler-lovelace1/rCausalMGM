@@ -15,55 +15,14 @@
 #include <fstream>
 #include <thread>
 
-LogisticRegression::LogisticRegression(DataSet &data)
-{
+LogisticRegression::LogisticRegression(DataSet &data) {
     this->data = data;
     this->dataCols = data.getData().t();
     this->rows = arma::uvec(data.getNumRows());
     for (int i = 0; i < data.getNumRows(); i++)
         rows[i] = i;
-
-    // if (this->data.isCensored()) 
-    // 	coxRegression = CoxIRLSRegression(this->data);
 }
 
-// LogisticRegression::LogisticRegression(LogisticRegression &lr)
-// {
-//     this->data = lr.data;
-//     this->dataCols = this->data.getData().t();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (int i = 0; i < this->data.getNumRows(); i++)
-//         rows[i] = i;
-// }
-
-// LogisticRegression::LogisticRegression(LogisticRegression &&lr)
-// {
-//     this->data = lr.data;
-//     this->dataCols = this->data.getData().t();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (int i = 0; i < this->data.getNumRows(); i++)
-//         rows[i] = i;
-// }
-
-// LogisticRegression &LogisticRegression::operator=(LogisticRegression &lr)
-// {
-//     this->data = lr.data;
-//     this->dataCols = this->data.getData().t();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (int i = 0; i < this->data.getNumRows(); i++)
-//         rows[i] = i;
-//     return *this;
-// }
-
-// LogisticRegression &LogisticRegression::operator=(LogisticRegression &&lr)
-// {
-//     this->data = lr.data;
-//     this->dataCols = this->data.getData().t();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (int i = 0; i < this->data.getNumRows(); i++)
-//         rows[i] = i;
-//     return *this;
-// }
 
 LogisticRegressionResult LogisticRegression::regress(const Node& x,
 						     std::vector<Node>& regressors)
@@ -261,6 +220,8 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
         }
     }
 
+    // arma::mat xTx = x * x.t(); // numRegressors + 1 x numRegressors + 1 
+
     arma::vec par = arma::vec(numRegressors + 1, arma::fill::zeros);
     arma::vec parStdErr = arma::vec(numRegressors + 1, arma::fill::zeros);
     arma::mat arr = arma::mat(numRegressors + 1, numRegressors + 2, arma::fill::zeros);
@@ -299,11 +260,19 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	    // RcppThread::Rcout << "Time out : Logistic Regression not converging" << std::endl
 	    //  		      << "Loglikelihood: " << ll << std::endl;
 	    if (!par.is_finite()) {
-		// RcppThread::Rcout << "Logistic Regression not converging: Non-finite values in coefficient vector" << std::endl
-		// 		  << "   Iter: " << iter << std::endl
-		// 		  << "   Loglikelihood: " << ll << std::endl
-		// 		  << "   Null Loglikelihood: " << llN << std::endl;
-		throw std::runtime_error("Logistic Regression not converging: Non-finite values in coefficient vector");
+		std::stringstream ss;
+		ss << "Logistic Regression not converging: Non-finite values in coefficient vector" << std::endl;
+		ss << "Regressing " << targetName << " on { ";
+		for (std::string varName : regressorNames) {
+		    ss << varName << " ";
+		}
+		ss << "}\n";
+		ss << "   Iter: " << iter << std::endl
+		   << "   Loglikelihood: " << ll << std::endl
+		   << "   |dx|: " << arma::mean(arma::abs(arr.col(numRegressors + 1))) << std::endl
+		   << "   updates: " << arr.col(numRegressors + 1) << std::endl
+		   << "   Parameters = " << par.t() << std::endl;
+		throw std::runtime_error(ss.str());
 	    }
 	    // RcppThread::Rcout << "Time out : Logistic Regression not converging" << std::endl
 	    // 		      << "   Iter: " << iter << std::endl
@@ -371,33 +340,44 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	    llN = ll;
 	}
 
+	// RcppThread::Rcout << arr << std::endl;
+
 	for (arma::uword j = 1; j <= numRegressors; j++) {
 	    for (arma::uword k = 0; k < j; k++) {
 		arr(j, k) = arr(k, j);
 	    }
 	}
 
-	for (arma::uword i = 0; i <= numRegressors; i++) {
-	    double s = arr(i, i);
-	    arr(i, i) = 1.0;
-	    for (arma::uword k = 0; k <= numRegressors + 1; k++) {
-		arr(i, k) = arr(i, k) / s;
-	    }
+	arr.col(numRegressors + 1) = arma::solve(arr(arma::span(0,numRegressors),
+						     arma::span(0,numRegressors)),
+						 arr.col(numRegressors + 1),
+						 arma::solve_opts::likely_sympd);
 
-	    for (arma::uword j = 0; j <= numRegressors; j++) {
-		if (i != j) {
-		    s = arr(j, i);
-		    arr(j, i) = 0.0;
-		    for (arma::uword k = 0; k <= numRegressors + 1; k++) {
-			arr(j, k) = arr(j, k) - s * arr(i, k);
-		    }
-		}
-	    }
-	}
+	// for (arma::uword i = 0; i <= numRegressors; i++) {
+	//     double s = arr(i, i);
+	//     arr(i, i) = 1.0;
+	//     for (arma::uword k = 0; k <= numRegressors + 1; k++) {
+	// 	arr(i, k) = arr(i, k) / s;
+	//     }
+
+	//     for (arma::uword j = 0; j <= numRegressors; j++) {
+	// 	if (i != j) {
+	// 	    s = arr(j, i);
+	// 	    arr(j, i) = 0.0;
+	// 	    for (arma::uword k = 0; k <= numRegressors + 1; k++) {
+	// 		arr(j, k) = arr(j, k) - s * arr(i, k);
+	// 	    }
+	// 	}
+	//     }
+	// }
+
+	// RcppThread::Rcout << arr << std::endl;
 
 	for (arma::uword j = 0; j <= numRegressors; j++) {
 	    par[j] += arr(j, numRegressors + 1);
 	}
+
+	// RcppThread::Rcout << "    Iter " << iter << ":    ll = " << ll << "    |dx| = " << arma::mean(arma::abs(arr.col(numRegressors + 1))) << "\n";
     }
 
     // if (ll > llN) ll = llN;
@@ -413,9 +393,25 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     
     double zScore;
 
+    // arma::mat cov(numRegressors+1, numRegressors+1, arma::fill::zeros);
+
+    arma::mat cov = arma::solve(arr(arma::span(0,numRegressors),
+				    arma::span(0,numRegressors)),
+				arma::eye(numRegressors+1, numRegressors+1),
+				arma::solve_opts::likely_sympd);
+
+    // bool success = arma::inv_sympd(cov,
+    // 				   arr(arma::span(0,numRegressors),
+    // 				       arma::span(0,numRegressors)),
+    // 				   arma::inv_opts::allow_approx);
+
+    // if (!success) {
+    // 	RcppThread::Rcout << "arr:\n" << arr << "\ncov:\n" << cov << "\npar:\n" << par.t() << std::endl;
+    // }
+
     for (arma::uword j = 1; j <= numRegressors; j++) {
 	par[j] = par[j] / xStdDevs[j];
-	parStdErr[j] = std::sqrt(arr(j, j)) / xStdDevs[j];
+	parStdErr[j] = std::sqrt(cov(j, j)) / xStdDevs[j];
 	par[0] = par[0] - par[j] * xMeans[j];
 	zScore = par[j] / parStdErr[j];
 
@@ -457,8 +453,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 				    pValues, intercept, ll, sigMarker, chiSq, alpha);
 }
 
-double LogisticRegression::norm(double z)
-{
+double LogisticRegression::norm(double z) {
     // std::ofstream logfile;
     // logfile.open("../debug.log", std::ios_base::app);
 

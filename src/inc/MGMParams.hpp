@@ -18,6 +18,7 @@ private:
 
 public:
     MGMParams() {}
+    MGMParams(int p, int ltot);
     MGMParams(const arma::mat& beta, const arma::vec& betad, const arma::mat& theta,
 	      const arma::mat& phi, const arma::vec& alpha1, const arma::vec& alpha2);
     // MGMParams(const std::vector<std::string>& names, const arma::mat& beta,

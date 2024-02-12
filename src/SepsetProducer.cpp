@@ -360,16 +360,19 @@ std::vector<Triple> SepsetProducer::getOrderedColliders() {
 
 	    // Rcpp::Rcout << Triple(a,b,c) << std::endl;
 
+	    // Rcpp::Rcout << "{ " << a << ", " << c << " }: p value = " << sepsets.getPValue(a, c) << std::endl;
+
 	    if (isCollider(a, b, c)) {
 		Triple t(a,b,c);
 		// Rcpp::Rcout << t << " is a collider" << std::endl;
 		orderedColliders.push_back(t);
 		score[t] = 0.0;
 		if (rule == ORIENT_SEPSETS) {
-		    // Rcpp::Rcout << "P value: " << sepsets.getPValue(a, c) << std::endl;
+		    // Rcpp::Rcout << "{ " << a << ", " << c << " }: p value = " << sepsets.getPValue(a, c) << std::endl;
 		    score[t] = sepsets.getPValue(a, c);
 		} else if (rule == ORIENT_MAXP) {
 		    // Rcpp::Rcout << "Max P: " << maxP[t] << std::endl;
+		    // Rcpp::Rcout << "{ " << a << ", " << c << " }: p value = " << maxP[t] << std::endl;
 		    score[t] = maxP[t];
 		} else if (rule == ORIENT_MAJORITY) {
 		    std::pair<int, int> count = sepsetCount[t];

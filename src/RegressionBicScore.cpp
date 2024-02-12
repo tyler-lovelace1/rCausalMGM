@@ -4,9 +4,9 @@
 #include "RcppThread.h"
 
 RegressionBicScore::RegressionBicScore(DataSet& data, double penalty) {
-    if (data.isCensored()) {
-	throw std::invalid_argument("The Degenerate Gaussian Score is not supported for censored variables.");
-    }
+    // if (data.isCensored()) {
+    // 	throw std::invalid_argument("The Degenerate Gaussian Score is not supported for censored variables.");
+    // }
     
     this->searchVariables = data.getVariables();
     this->originalData = DataSet(data);
@@ -26,7 +26,7 @@ RegressionBicScore::RegressionBicScore(DataSet& data, double penalty) {
 	}
     }
 
-    this->coxRegression = CoxIRLSRegression(internalData);
+    this->coxRegression = CoxRegression(internalData);
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
 
@@ -34,7 +34,7 @@ RegressionBicScore::RegressionBicScore(DataSet& data, double penalty) {
 
     std::vector<Node> emptySet = {};
 
-    Rcpp::Rcout << "Null Likelihoods:\n";
+    // Rcpp::Rcout << "Null Likelihoods:\n";
 
     for (Node n : variables) {
 	if (n.isContinuous()) {
@@ -47,7 +47,7 @@ RegressionBicScore::RegressionBicScore(DataSet& data, double penalty) {
 	} else {
 	    throw std::invalid_argument(n.getName() + " is an unrecognized variable type");
 	}
-	Rcpp::Rcout << "  " << n << " : " << nullLL.at(n) << "\n";
+	// Rcpp::Rcout << "  " << n << " : " << nullLL.at(n) << "\n";
     }
     
 }
@@ -156,7 +156,7 @@ void RegressionBicScore::resetWZ(Node target, std::vector<Node>& neighbors) {
     target.setWZ(WZ);
 
     if (internalData.updateNode(target)) {
-	this->coxRegression = CoxIRLSRegression(internalData);
+	this->coxRegression = CoxRegression(internalData);
 	this->logisticRegression = LogisticRegression(internalData);
 	this->regression = LinearRegression(internalData);
     }
@@ -178,7 +178,7 @@ arma::mat RegressionBicScore::getSubsetData(DataSet& origData, std::vector<Node>
     return origMat.submat(rowIndices, colIndices);
 }
 
-double RegressionBicScore::multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node> &indep) {
+double RegressionBicScore::multiLL(arma::mat &coeffs, const Node& dep, std::vector<Node>& indep) {
 
     if (dep.getName() == "??")
         throw std::invalid_argument("must have a dependent node to regress on!");
@@ -204,15 +204,25 @@ double RegressionBicScore::multiLL(arma::mat &coeffs, const Node& dep, std::vect
 
     probs.insert_cols(0, arma::mat(indepData.n_rows, 1, arma::fill::zeros)); // reference class
 
-    probs = arma::exp(probs);
-
-    probs.each_row( [](arma::rowvec& r) { r /= arma::sum(r); } );
-
     double ll = 0;
     for (int i = 0; i < N; i++) {
-        arma::rowvec curRow = probs.row(i); // - b;
-        ll += std::log(curRow.at((int)depData.at(i)));
+        arma::rowvec curRow = probs.row(i);
+	curRow -= curRow.max();
+        double logsumexp = std::log(arma::sum(arma::exp(curRow)));
+	curRow -= logsumexp;
+	ll += curRow((int) depData.at(i));	
     }
+    
+    // probs = arma::exp(probs);
+
+    // probs.each_row( [](arma::rowvec& r) { r /= arma::sum(r); } );
+
+    // double ll = 0;
+    // for (int i = 0; i < N; i++) {
+    //     arma::rowvec curRow = probs.row(i); // - b;
+    //     ll += std::log(curRow.at((int)depData.at(i)));
+    // }
+
     if (std::isnan(ll)) {
         ll = -std::numeric_limits<double>::infinity();
     }
@@ -241,7 +251,7 @@ double RegressionBicScore::logLikMultinomialLogisticRegression(const Node& x, st
 	
 	if (numCats == 1) {
 	    result = logisticRegression.regress(x, regressors);
-	    ll = -result.getLogLikelihood() / 2;
+	    ll = -result.getLogLikelihood() / 2.0;
 	} else { 
 	    arma::mat coeffs = arma::mat();
 

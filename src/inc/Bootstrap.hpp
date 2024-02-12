@@ -5,7 +5,7 @@
 #include "CoxMGM.hpp"
 #include "StabilityUtils.hpp"
 #include "SepsetMap.hpp"
-#include "IndTestMulti.hpp"
+#include "IndTestMultiCox.hpp"
 #include "PcStable.hpp"
 #include "Knowledge.hpp"
 // #include "CpcStable.hpp"

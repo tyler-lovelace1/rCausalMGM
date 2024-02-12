@@ -15,6 +15,7 @@
 #include "Bootstrap.hpp"
 // #include "Tests.hpp"
 #include "IndTestMultiCox.hpp"
+#include "SearchCV.hpp"
 // #include "BayesIndTestMultiCox.hpp"
 #include "GrowShrink.hpp"
 #include "DegenerateGaussianScore.hpp"
@@ -71,16 +72,13 @@ Rcpp::List mgm(
 
     RcppThread::checkUserInterrupt();
 
-    auto elapsedTime = mgm.getElapsedTime();
+    // double elapsedTime = mgm.getElapsedTime();
 
-    if (verbose) {
-	if (elapsedTime < 100*1000) {
-	    Rcpp::Rcout.precision(2);
-	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-	}
-        Rcpp::Rcout << "MGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    }
+    // if (verbose) {
+    // 	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+    // 	elapsedTime = std::round(elapsedTime * factor) / factor;
+    //     Rcpp::Rcout << "  MGM Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    // }
 
     Rcpp::List result = mgmGraph.toList();
 
@@ -184,7 +182,7 @@ Rcpp::List mgmPath(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
-    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+    // bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
 
     arma::vec _lambda;
     std::vector<double> l; // = {0.2, 0.2, 0.2};
@@ -193,7 +191,7 @@ Rcpp::List mgmPath(
     int p = ds.getNumColumns();
 
     MGM mgm(ds);
-    mgm.setVerbose(v);
+    mgm.setVerbose(verbose);
 
     double logLambdaMax = std::log10(mgm.calcLambdaMax());
 
@@ -206,7 +204,7 @@ Rcpp::List mgmPath(
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -221,16 +219,24 @@ Rcpp::List mgmPath(
 
     RcppThread::checkUserInterrupt();
 
-    auto elapsedTime = mgm.getElapsedTime();
+    // auto elapsedTime = mgm.getElapsedTime();
 
-    if (v) {
-	if (elapsedTime < 100*1000) {
-	    Rcpp::Rcout.precision(2);
-	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-	}
-        Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    }
+    // if (v) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
+
+    // double elapsedTime = mgm.getElapsedTime();
+
+    // if (verbose) {
+    // 	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+    // 	elapsedTime = std::round(elapsedTime * factor) / factor;
+    //     Rcpp::Rcout << "  MGM Path Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    // }
 
     Rcpp::List graphList;
     
@@ -314,7 +320,7 @@ Rcpp::List coxmgmPath(
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -394,7 +400,7 @@ Rcpp::List mgmCV(
     const Rcpp::DataFrame &data,
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 30,
-    const int nfolds = 10,
+    const int nfolds = 5,
     Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
     const bool rank = false,
     const bool verbose = false
@@ -429,7 +435,7 @@ Rcpp::List mgmCV(
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (n > p) {
-	    _lambda = arma::logspace(logLambdaMax-2, logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -456,39 +462,57 @@ Rcpp::List mgmCV(
     // Rcpp::Rcout << "Fold ids: " << _foldid.t() << std::endl;
     // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
     arma::mat loglik(l.size(), nfolds, arma::fill::zeros);
+    arma::uvec index(2, arma::fill::zeros);
     // arma::vec nParams(l.size(), arma::fill::zeros);
-    std::vector<EdgeListGraph> cvGraphs = mgm.searchPathCV(l, nfolds, _foldid, loglik);
+    if (!SearchCV::checkFoldID(_foldid)) {
+	throw std::invalid_argument("Invalid input for foldid. Values must be in the range 1:nfolds, with folds of approximately equal size.");
+    }
+    std::vector<EdgeListGraph> cvGraphs = mgm.searchPathCV(l, nfolds, _foldid, loglik, index);
 
     RcppThread::checkUserInterrupt();
 
-    auto elapsedTime = mgm.getElapsedTime();
+    // double elapsedTime = mgm.getElapsedTime();
 
-    if (v) {
-	if (elapsedTime < 100*1000) {
-	    Rcpp::Rcout.precision(2);
-	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-	}
-        Rcpp::Rcout << "MGM Cross-Validation Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    }
+    // if (verbose) {
+    // 	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+    // 	elapsedTime = std::round(elapsedTime * factor) / factor;
+    //     Rcpp::Rcout << "  MGM Cross-Validation Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    // }
+
+
+    // auto elapsedTime = mgm.getElapsedTime();
+
+    // if (v) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "MGM Cross-Validation Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
 
     // Rcpp::List graphList;
     
     // for (int i = 0; i < l.size(); i++) {
     //     graphList.push_back(mgmGraphs[i].toList());
+
     // }
 
+    // uint minIdx = arma::find(lambdas == cvGraphs[0].getHyperParam("lambda")[1])[0];
+    // uint seIdx = arma::find(lambdas == cvGraphs[1].getHyperParam("lambda")[1])[0];
+
     // Rcpp::List result;
-    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[1].toList(),
-					   Rcpp::_["graph.1se"]=cvGraphs[0].toList(),
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
     					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
-					   Rcpp::_["lambda.min"]=cvGraphs[1].getHyperParam("lambda"),
-					   Rcpp::_["lambda.1se"]=cvGraphs[0].getHyperParam("lambda"),
 					   Rcpp::_["alphas"]=R_NilValue,
-					   Rcpp::_["alpha.min"]=R_NilValue,
-					   Rcpp::_["alpha.1se"]=R_NilValue,
-					   Rcpp::_["foldid"]=_foldid,
-    					   Rcpp::_["loglik"] = loglik);
+					   Rcpp::_["orientRules"]=R_NilValue,
+					   Rcpp::_["idx.min"]=index(0) + 1,
+					   Rcpp::_["idx.1se"]=index(1) + 1,
+					   Rcpp::_["mean"] = arma::mean(loglik, 1),
+					   Rcpp::_["se"] = arma::stddev(loglik, 0, 1),
+					   Rcpp::_["size"] = R_NilValue,
+					   Rcpp::_["foldid"]=_foldid);
 
     result.attr("class") = "graphCV";
 
@@ -560,7 +584,7 @@ Rcpp::List steps(
 	l = std::vector<double>(_lambda.begin(), _lambda.end());
     } else {
 	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
+	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	} else {
 	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
@@ -588,16 +612,18 @@ Rcpp::List steps(
 
     arma::umat samps;
 
-    Rcpp::List graph = steps.runStepsPath(instabs, samps).toList();
+    std::vector<EdgeListGraph> graphs = steps.runStepsPath(instabs, samps);
+    Rcpp::List graphSteps = graphs.at(0).toList();
 
     if (computeStabs) {
-        graph["stabilities"] = steps.getStabs();
+        graphSteps["stabilities"] = steps.getStabs();
         std::vector<std::string> names = ds.getVariableNames();
-        Rcpp::rownames(graph["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-        Rcpp::colnames(graph["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+        Rcpp::rownames(graphSteps["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+        Rcpp::colnames(graphSteps["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
     }
 
-    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph"]=graph,
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.steps"]=graphSteps,
+					   Rcpp::_["graph.stars"]=graphs.at(1).toList(),
     					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
 					   Rcpp::_["gamma"]=gamma,
     					   Rcpp::_["instability"] = instabs,
@@ -692,11 +718,10 @@ Rcpp::List steps(
 //' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List pcStable(
-    const Rcpp::DataFrame &data,
+    const Rcpp::DataFrame& data,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
-									"conservative", "sepsets"),
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority"),
     const double alpha = 0.05,
     const int threads = -1,
     const bool fdr = false,
@@ -712,19 +737,11 @@ Rcpp::List pcStable(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
-    std::string rule;
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
-
-    std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
-
-    rule = orientRule[0];
-
-    std::transform(rule.begin(), rule.end(), rule.begin(),
-		   [](unsigned char c){ return std::tolower(c); });
-
-    if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
-	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
     
     IndTestMultiCox itm(ds, alpha);
     
@@ -732,14 +749,7 @@ Rcpp::List pcStable(
     if (threads > 0) pc.setThreads(threads);
     pc.setVerbose(verbose);
     pc.setFDR(fdr);
-    if (rule == "majority")
-	pc.setOrientRule(ORIENT_MAJORITY);
-    if (rule == "maxp")
-	pc.setOrientRule(ORIENT_MAXP);
-    if (rule == "conservative")
-	pc.setOrientRule(ORIENT_CONSERVATIVE);
-    if (rule == "sepsets")
-	pc.setOrientRule(ORIENT_SEPSETS);
+    pc.setOrientRule(SepsetProducer::str2rule(_orientRule.at(0)));
     
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -747,6 +757,7 @@ Rcpp::List pcStable(
         ig = EdgeListGraph(_initialGraph, ds);
         pc.setInitialGraph(&ig);
     }
+    
     Knowledge k;
     if (!knowledge.isNull()) {
 	Rcpp::List _knowledge(knowledge);
@@ -754,12 +765,657 @@ Rcpp::List pcStable(
 	pc.setKnowledge(k);
     }
 
-    Rcpp::List result = pc.search().toList();
-    
-    // ds.deleteVariables();
+    EdgeListGraph g = pc.search();
+    Rcpp::List result;
+    if (_orientRule.size() == 1) {
+	result = g.toList();
+    } else {
+	bool first = true;
+	for (std::string rule : _orientRule) {
+	    if (first) {
+		first = false;
+	    } else {
+		g = pc.reorientWithRule(SepsetProducer::str2rule(rule));
+	    }
+	    result.push_back(g.toList(), rule);
+	}
+    }
     
     return result;
 }
+
+
+//' Runs the causal algorithm PC-Stable on a dataset
+//'
+//' @param data The dataframe
+//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List pcCV(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
+    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    const int nfolds = 5,
+    Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
+    const int threads = -1,
+    const bool fdr = false,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+
+    std::vector<OrientRule> rules;
+
+    for (std::string rule : _orientRule) {
+	rules.push_back(SepsetProducer::str2rule(rule));
+    }
+
+    SearchCV cv;
+
+    arma::uvec _foldid;
+    
+    if (foldid.isNull()) {
+	cv = SearchCV(ds, "pc", nfolds);
+    } else {
+	_foldid = Rcpp::as<arma::uvec>(foldid);
+	cv = SearchCV(ds, "pc", _foldid);
+    }
+
+    cv.setVerbose(verbose);
+    cv.setAlphas(_alphas);
+    cv.setOrientRules(rules);
+    cv.setFDR(fdr);
+
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        cv.setInitialGraph(&ig);
+    }
+    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	cv.setKnowledge(k);
+    }
+
+    std::vector<EdgeListGraph> cvGraphs = cv.causalCV();
+
+    std::set<CvResult> results = cv.getCVResults();
+
+    int nValues = results.size();
+    arma::vec mbSize(nValues);
+    arma::vec mean(nValues);
+    arma::vec se(nValues);
+    arma::vec alphasOut(nValues);
+    std::vector<std::string> rulesOut(nValues);
+
+    uint idx = 0;
+    uint minIdx = 0;
+    CvResult minResult(1e20, 1e20, 0);
+    for (auto res : results) {
+	mbSize(idx) = res.mbSize;
+	mean(idx) = res.mean;
+	se(idx) = res.se;
+	alphasOut(idx) = res.alpha;
+	rulesOut.at(idx) = SepsetProducer::rule2str(res.rule);
+	if (res.mean < minResult.mean) {
+	    minIdx = idx;
+	    minResult = res;
+	}
+	idx++;
+    }
+
+    uint seIdx = 0;
+    for (auto res : results) {
+	if (res.mean < minResult.mean + minResult.se) {
+	    // seResult = res;
+	    break;
+	}
+	seIdx++;
+    }
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
+    					   Rcpp::_["lambdas"]=R_NilValue,
+					   Rcpp::_["alphas"]=alphasOut,
+					   Rcpp::_["orientRules"]=rulesOut,
+					   Rcpp::_["idx.min"]=minIdx+1,
+					   Rcpp::_["idx.1se"]=seIdx+1,
+					   Rcpp::_["mean"] = mean,
+					   Rcpp::_["se"] = se,
+					   Rcpp::_["size"] = mbSize,
+					   Rcpp::_["foldid"]=cv.getFoldID());
+
+    result.attr("class") = "graphCV";
+        
+    return result;
+}
+
+
+//' Runs the causal algorithm FCI-Stable on a dataset
+//'
+//' @param data The dataframe
+//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List fciCV(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
+    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    const int nfolds = 5,
+    Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
+    const int threads = -1,
+    const bool fdr = false,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+
+    std::vector<OrientRule> rules;
+
+    for (std::string rule : _orientRule) {
+	rules.push_back(SepsetProducer::str2rule(rule));
+    }
+
+    SearchCV cv;
+
+    arma::uvec _foldid;
+    
+    if (foldid.isNull()) {
+	cv = SearchCV(ds, "fci", nfolds);
+    } else {
+	_foldid = Rcpp::as<arma::uvec>(foldid);
+	cv = SearchCV(ds, "fci", _foldid);
+    }
+
+    cv.setVerbose(verbose);
+    cv.setAlphas(_alphas);
+    cv.setOrientRules(rules);
+    cv.setFDR(fdr);
+
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        cv.setInitialGraph(&ig);
+    }
+    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	cv.setKnowledge(k);
+    }
+
+    std::vector<EdgeListGraph> cvGraphs = cv.causalCV();
+
+    std::set<CvResult> results = cv.getCVResults();
+
+    int nValues = results.size();
+    arma::vec mbSize(nValues);
+    arma::vec mean(nValues);
+    arma::vec se(nValues);
+    arma::vec alphasOut(nValues);
+    std::vector<std::string> rulesOut(nValues);
+
+    uint idx = 0;
+    uint minIdx = 0;
+    CvResult minResult(1e20, 1e20, 0);
+    for (auto res : results) {
+	mbSize(idx) = res.mbSize;
+	mean(idx) = res.mean;
+	se(idx) = res.se;
+	alphasOut(idx) = res.alpha;
+	rulesOut.at(idx) = SepsetProducer::rule2str(res.rule);
+	if (res.mean < minResult.mean) {
+	    minIdx = idx;
+	    minResult = res;
+	}
+	idx++;
+    }
+
+    uint seIdx = 0;
+    for (auto res : results) {
+	if (res.mean < minResult.mean + minResult.se) {
+	    // seResult = res;
+	    break;
+	}
+	seIdx++;
+    }
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
+    					   Rcpp::_["lambdas"]=R_NilValue,
+					   Rcpp::_["alphas"]=alphasOut,
+					   Rcpp::_["orientRules"]=rulesOut,
+					   Rcpp::_["idx.min"]=minIdx+1,
+					   Rcpp::_["idx.1se"]=seIdx+1,
+					   Rcpp::_["mean"] = mean,
+					   Rcpp::_["se"] = se,
+					   Rcpp::_["size"] = mbSize,
+					   Rcpp::_["foldid"]=cv.getFoldID());
+
+    result.attr("class") = "graphCV";
+        
+    return result;
+}
+
+
+//' Runs the causal algorithm PC-Stable on a dataset
+//'
+//' @param data The dataframe
+//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List mgmpcCV(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const std::string cvType = "grid",
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
+    Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
+    const int nLambda = 20,
+    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    const int numPoints = 60,
+    const int nfolds = 5,
+    Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
+    const int threads = -1,
+    const bool fdr = false,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+
+    std::vector<OrientRule> rules;
+
+    for (std::string rule : _orientRule) {
+	rules.push_back(SepsetProducer::str2rule(rule));
+    }
+
+    // std::vector<double> l;
+    arma::vec _lambdas;
+
+    MGM mgm(ds);
+
+    double lambdaMax = mgm.calcLambdaMax();
+
+    lambdaMax = std::min(lambdaMax,
+			 10 * std::sqrt(std::log10(ds.getNumColumns()) /
+					((double) ds.getNumRows())));
+    
+    if (lambdas.isNotNull()) {
+        _lambdas = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
+	// l = std::vector<double>(_lambdas.begin(), _lambdas.end());
+    } else {
+	if (ds.getNumRows() > ds.getNumColumns()) {
+	    _lambdas = arma::linspace(lambdaMax*0.05, lambdaMax, nLambda); 
+	    // l = std::vector<double>(_lambdas.begin(), _lambdas.end());
+	} else {
+	    _lambdas = arma::linspace(lambdaMax*0.1, lambdaMax, nLambda); 
+	    // l = std::vector<double>(_lambdas.begin(), _lambdas.end());
+	}
+    }
+
+
+    SearchCV cv;
+
+    arma::uvec _foldid;
+    
+    if (foldid.isNull()) {
+	cv = SearchCV(ds, "pc", nfolds);
+    } else {
+	_foldid = Rcpp::as<arma::uvec>(foldid);
+	cv = SearchCV(ds, "pc", _foldid);
+    }
+
+    cv.setVerbose(verbose);
+    cv.setOrientRules(rules);
+    cv.setFDR(fdr);
+    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	cv.setKnowledge(k);
+    }
+
+    std::vector<EdgeListGraph> cvGraphs;
+
+    if (cvType=="grid") {
+	
+	cv.setAlphas(_alphas);
+	cv.setLambdas(_lambdas);
+	cvGraphs = cv.causalMGMGridCV();
+	
+    } else if (cvType=="random") {
+	
+	double aMax = _alphas.max();
+	double aMin = _alphas.min();
+	double lMax = _lambdas.max();
+	double lMin = _lambdas.min();
+
+	_lambdas = (lMax - lMin) * arma::randu(numPoints) + lMin;
+	_alphas = (aMax - aMin) * arma::randu(numPoints) + aMin;
+	
+	cv.setAlphas(_alphas);
+	cv.setLambdas(_lambdas);
+	cvGraphs = cv.causalMGMRandCV();
+	
+    } else {
+	throw std::invalid_argument("CV Type must be one of \"grid\" or \"random\"");
+    }
+
+    std::set<CvResult> results = cv.getCVResults();
+
+    int nValues = results.size();
+    arma::vec mbSize(nValues);
+    arma::vec mean(nValues);
+    arma::vec se(nValues);
+    arma::vec alphasOut(nValues);
+    arma::vec lambdasOut(nValues);
+    std::vector<std::string> rulesOut(nValues);
+
+    uint idx = 0;
+    uint minIdx = 0;
+    CvResult minResult(1e20, 1e20, 0);
+    for (auto res : results) {
+	mbSize(idx) = res.mbSize;
+	mean(idx) = res.mean;
+	se(idx) = res.se;
+	alphasOut(idx) = res.alpha;
+	lambdasOut(idx) = res.lambda.at(0);
+	rulesOut.at(idx) = SepsetProducer::rule2str(res.rule);
+	if (res.mean < minResult.mean) {
+	    minIdx = idx;
+	    minResult = res;
+	}
+	idx++;
+    }
+
+    uint seIdx = 0;
+    for (auto res : results) {
+	if (res.mean < minResult.mean + minResult.se) {
+	    // seResult = res;
+	    break;
+	}
+	seIdx++;
+    }
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
+    					   Rcpp::_["lambdas"]=lambdasOut,
+					   Rcpp::_["alphas"]=alphasOut,
+					   Rcpp::_["orientRules"]=rulesOut,
+					   Rcpp::_["idx.min"]=minIdx+1,
+					   Rcpp::_["idx.1se"]=seIdx+1,
+					   Rcpp::_["mean"] = mean,
+					   Rcpp::_["se"] = se,
+					   Rcpp::_["size"] = mbSize,
+					   Rcpp::_["foldid"]=cv.getFoldID());
+
+    result.attr("class") = "graphCV";
+        
+    return result;
+}
+
+
+//' Runs the causal algorithm FCI-Stable on a dataset
+//'
+//' @param data The dataframe
+//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List mgmfciCV(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const std::string cvType = "grid",
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
+    Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
+    const int nLambda = 20,
+    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    const int numPoints = 60,
+    const int nfolds = 5,
+    Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
+    const int threads = -1,
+    const bool fdr = false,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+
+    std::vector<OrientRule> rules;
+
+    for (std::string rule : _orientRule) {
+	rules.push_back(SepsetProducer::str2rule(rule));
+    }
+
+    // std::vector<double> l;
+    arma::vec _lambdas;
+
+    MGM mgm(ds);
+
+    double lambdaMax = mgm.calcLambdaMax();
+
+    lambdaMax = std::min(lambdaMax,
+			 10 * std::sqrt(std::log10(ds.getNumColumns()) /
+					((double) ds.getNumRows())));
+    
+    if (lambdas.isNotNull()) {
+        _lambdas = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
+	// l = std::vector<double>(_lambdas.begin(), _lambdas.end());
+    } else {
+	if (ds.getNumRows() > ds.getNumColumns()) {
+	    _lambdas = arma::linspace(lambdaMax*0.05, lambdaMax, nLambda); 
+	    // l = std::vector<double>(_lambdas.begin(), _lambdas.end());
+	} else {
+	    _lambdas = arma::linspace(lambdaMax*0.1, lambdaMax, nLambda); 
+	    // l = std::vector<double>(_lambdas.begin(), _lambdas.end());
+	}
+    }
+
+
+    SearchCV cv;
+
+    arma::uvec _foldid;
+    
+    if (foldid.isNull()) {
+	cv = SearchCV(ds, "fci", nfolds);
+    } else {
+	_foldid = Rcpp::as<arma::uvec>(foldid);
+	cv = SearchCV(ds, "fci", _foldid);
+    }
+
+    cv.setVerbose(verbose);
+    cv.setOrientRules(rules);
+    cv.setFDR(fdr);
+    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	cv.setKnowledge(k);
+    }
+
+    std::vector<EdgeListGraph> cvGraphs;
+
+    if (cvType=="grid") {
+	
+	cv.setAlphas(_alphas);
+	cv.setLambdas(_lambdas);
+	cvGraphs = cv.causalMGMGridCV();
+	
+    } else if (cvType=="random") {
+	
+	double aMax = _alphas.max();
+	double aMin = _alphas.min();
+	double lMax = _lambdas.max();
+	double lMin = _lambdas.min();
+
+	_lambdas = (lMax - lMin) * arma::randu(numPoints) + lMin;
+	_alphas = (aMax - aMin) * arma::randu(numPoints) + aMin;
+	
+	cv.setAlphas(_alphas);
+	cv.setLambdas(_lambdas);
+	cvGraphs = cv.causalMGMRandCV();
+	
+    } else {
+	throw std::invalid_argument("CV Type must be one of \"grid\" or \"random\"");
+    }
+
+    std::set<CvResult> results = cv.getCVResults();
+
+    int nValues = results.size();
+    arma::vec mbSize(nValues);
+    arma::vec mean(nValues);
+    arma::vec se(nValues);
+    arma::vec alphasOut(nValues);
+    arma::vec lambdasOut(nValues);
+    std::vector<std::string> rulesOut(nValues);
+
+    uint idx = 0;
+    uint minIdx = 0;
+    CvResult minResult(1e20, 1e20, 0);
+    for (auto res : results) {
+	mbSize(idx) = res.mbSize;
+	mean(idx) = res.mean;
+	se(idx) = res.se;
+	alphasOut(idx) = res.alpha;
+	lambdasOut(idx) = res.lambda.at(0);
+	rulesOut.at(idx) = SepsetProducer::rule2str(res.rule);
+	if (res.mean < minResult.mean) {
+	    minIdx = idx;
+	    minResult = res;
+	}
+	idx++;
+    }
+
+    uint seIdx = 0;
+    for (auto res : results) {
+	if (res.mean < minResult.mean + minResult.se) {
+	    // seResult = res;
+	    break;
+	}
+	seIdx++;
+    }
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
+    					   Rcpp::_["lambdas"]=lambdasOut,
+					   Rcpp::_["alphas"]=alphasOut,
+					   Rcpp::_["orientRules"]=rulesOut,
+					   Rcpp::_["idx.min"]=minIdx+1,
+					   Rcpp::_["idx.1se"]=seIdx+1,
+					   Rcpp::_["mean"] = mean,
+					   Rcpp::_["se"] = se,
+					   Rcpp::_["size"] = mbSize,
+					   Rcpp::_["foldid"]=cv.getFoldID());
+
+    result.attr("class") = "graphCV";
+        
+    return result;
+}
+
 
 
 // //' Runs the causal algorithm PC-Stable on a dataset
@@ -1342,11 +1998,10 @@ Rcpp::List pcStable(
 //' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
 // [[Rcpp::export]]
 Rcpp::List fciStable(
-    const Rcpp::DataFrame &data,
+    const Rcpp::DataFrame& data,
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
-									"conservative", "sepsets"),
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority"),
     const double alpha = 0.05,
     const int threads = -1,
     const bool fdr = false,
@@ -1362,19 +2017,11 @@ Rcpp::List fciStable(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
-    std::string rule;
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
-
-    std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
-
-    rule = orientRule[0];
-
-    std::transform(rule.begin(), rule.end(), rule.begin(),
-		   [](unsigned char c){ return std::tolower(c); });
-
-    if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
-	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
     
     IndTestMultiCox itm(ds, alpha);
     
@@ -1382,14 +2029,7 @@ Rcpp::List fciStable(
     if (threads > 0) fci.setThreads(threads);
     fci.setVerbose(verbose);
     fci.setFDR(fdr);
-    if (rule == "majority")
-	fci.setOrientRule(ORIENT_MAJORITY);
-    if (rule == "maxp")
-	fci.setOrientRule(ORIENT_MAXP);
-    if (rule == "conservative")
-	fci.setOrientRule(ORIENT_CONSERVATIVE);
-    if (rule == "sepsets")
-	fci.setOrientRule(ORIENT_SEPSETS);
+    fci.setOrientRule(SepsetProducer::str2rule(_orientRule.at(0)));
     
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {
@@ -1397,6 +2037,7 @@ Rcpp::List fciStable(
         ig = EdgeListGraph(_initialGraph, ds);
         fci.setInitialGraph(&ig);
     }
+    
     Knowledge k;
     if (!knowledge.isNull()) {
 	Rcpp::List _knowledge(knowledge);
@@ -1404,17 +2045,21 @@ Rcpp::List fciStable(
 	fci.setKnowledge(k);
     }
 
-    Rcpp::List result = fci.search().toList();
-
-    // result.push_back(, "majority");
-
-    // result.push_back(fci.reorientWithRule(ORIENT_MAXP).toList(), "maxp");
-    // result.push_back(fci.reorientWithRule(ORIENT_CONSERVATIVE).toList(), "conservative");
-    // result.push_back(fci.reorientWithRule(ORIENT_SEPSETS).toList(), "sepsets");
-    // fci.reorientWithRule(ORIENT_CONSERVATIVE);
-    // fci.reorientWithRule(ORIENT_SEPSETS);
-    
-    // ds.deleteVariables();
+    EdgeListGraph g = fci.search();
+    Rcpp::List result;
+    if (_orientRule.size() == 1) {
+	result = g.toList();
+    } else {
+	bool first = true;
+	for (std::string rule : _orientRule) {
+	    if (first) {
+		first = false;
+	    } else {
+		g = fci.reorientWithRule(SepsetProducer::str2rule(rule));
+	    }
+	    result.push_back(g.toList(), rule);
+	}
+    }
     
     return result;
 }

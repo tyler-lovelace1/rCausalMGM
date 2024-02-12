@@ -12,6 +12,15 @@ MGMParams::MGMParams(const arma::mat& beta, const arma::vec& betad,
     // this->alpha2 = alpha2;
 }
 
+MGMParams::MGMParams(int p, int ltot) {
+    beta = arma::mat(p,      p,     arma::fill::zeros);  // beta
+    betad = arma::vec(p,            arma::fill::zeros);  // betad
+    theta = arma::mat(ltot,  p,     arma::fill::zeros);  // theta
+    phi = arma::mat(ltot,    ltot,  arma::fill::zeros);  // phi
+    alpha1 = arma::vec(p,           arma::fill::zeros);  // alpha1
+    alpha2 = arma::vec(ltot,        arma::fill::zeros);  // alpha2
+}
+
 // MGMParams::MGMParams(const std::vector<std::string>& names, const arma::mat& beta,
 // 		     const arma::vec& betad, const arma::mat& theta,
 // 		     const arma::mat& phi, const arma::vec& alpha1,

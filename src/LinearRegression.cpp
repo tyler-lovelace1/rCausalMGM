@@ -9,61 +9,15 @@
 
 #include <fstream>
 
-LinearRegression::LinearRegression(DataSet& data)
-{
+LinearRegression::LinearRegression(DataSet& data) {
     this->data = data;
     dataMat = arma::mat(data.getData());
     variables = data.getVariables();
     rows = arma::uvec(data.getNumRows());
     for (arma::uword i = 0; i < data.getNumRows(); i++)
-        rows[i] = i;
-
-    // if (this->data.isCensored()) 
-    // 	coxRegression = CoxIRLSRegression(this->data);
-    
+        rows[i] = i;    
 }
 
-// LinearRegression::LinearRegression(LinearRegression &lr)
-// {
-//     this->data = lr.data;
-//     dataMat = arma::mat(lr.dataMat);
-//     this->variables = this->data.getVariables();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (arma::uword i = 0; i < data.getNumRows(); i++)
-//         rows[i] = i;
-// }
-
-// LinearRegression::LinearRegression(LinearRegression &&lr)
-// {
-//     this->data = lr.data;
-//     dataMat = lr.dataMat;
-//     this->variables = this->data.getVariables();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (arma::uword i = 0; i < data.getNumRows(); i++)
-//         rows[i] = i;
-// }
-
-// LinearRegression &LinearRegression::operator=(LinearRegression &lr)
-// {
-//     this->data = lr.data;
-//     dataMat = arma::mat(lr.dataMat);
-//     this->variables = this->data.getVariables();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (arma::uword i = 0; i < data.getNumRows(); i++)
-//         rows[i] = i;
-//     return *this;
-// }
-
-// LinearRegression &LinearRegression::operator=(LinearRegression &&lr)
-// {
-//     this->data = lr.data;
-//     dataMat = lr.dataMat;
-//     this->variables = this->data.getVariables();
-//     this->rows = arma::uvec(this->data.getNumRows());
-//     for (arma::uword i = 0; i < data.getNumRows(); i++)
-//         rows[i] = i;
-//     return *this;
-// }
 
 RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>& regressors) {
 
@@ -107,7 +61,8 @@ RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>
     }
 
     arma::vec b = arma::solve(x, y);
-    arma::mat xTxInv = arma::inv_sympd(x.t() * x);
+    arma::mat xTxInv = arma::solve(x.t() * x, arma::eye(x.n_cols, x.n_cols),
+				   arma::solve_opts::likely_sympd);
     
     arma::mat yHat = x * b;
     arma::mat res = y - yHat;
@@ -211,7 +166,8 @@ RegressionResult LinearRegression::regress(const Node& target,
     }
 
     arma::vec b = arma::solve(x, y);
-    arma::mat xTxInv = arma::inv_sympd(x.t() * x);
+    arma::mat xTxInv = arma::solve(x.t() * x, arma::eye(x.n_cols, x.n_cols),
+				   arma::solve_opts::likely_sympd);
     
     arma::mat yHat = x * b;
     arma::mat res = y - yHat;

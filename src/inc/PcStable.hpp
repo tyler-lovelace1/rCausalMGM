@@ -46,10 +46,12 @@ private:
      */
     EdgeListGraph *initialGraph = NULL;
 
+    SepsetProducer sp, mapSp;
+
     /** 
      * Orientation rule for identifying colliders
      */
-    OrientRule orientRule = ORIENT_MAXP;
+    OrientRule orientRule = ORIENT_MAJORITY;
 
     /**
      * Elapsed time of the most recent search.
@@ -157,26 +159,39 @@ public:
     EdgeListGraph search();
 
     /**
-     * Runs PC starting with a commplete graph over the given list of nodes, using the given independence test and
-     * knowledge and returns the resultant graph. The returned graph will be a pattern if the independence information
-     * is consistent with the hypothesis that there are no latent common causes. It may, however, contain cycles or
-     * bidirected edges if this assumption is not born out, either due to the actual presence of latent common causes,
-     * or due to statistical errors in conditional independence judgments.
-     * <p>
-     * All of the given nodes must be in the domain of the given conditional independence test.
+     * Runs PC starting with a commplete graph over the given list of
+     * nodes, using the given independence test and knowledge and
+     * returns the resultant graph. The returned graph will be a
+     * pattern if the independence information is consistent with the
+     * hypothesis that there are no latent common causes. It may,
+     * however, contain cycles or bidirected edges if this assumption
+     * is not born out, either due to the actual presence of latent
+     * common causes, or due to statistical errors in conditional
+     * independence judgments.  <p> All of the given nodes must be in
+     * the domain of the given conditional independence test.
      */
     EdgeListGraph search(const std::vector<Node>& nodes);
 
     /**
-     * Runs PC starting with a commplete graph over the given list of nodes, using the given independence test and
-     * knowledge and returns the resultant graph. The returned graph will be a pattern if the independence information
-     * is consistent with the hypothesis that there are no latent common causes. It may, however, contain cycles or
-     * bidirected edges if this assumption is not born out, either due to the actual presence of latent common causes,
-     * or due to statistical errors in conditional independence judgments.
-     * <p>
-     * All of the given nodes must be in the domain of the given conditional independence test.
+     * Runs PC starting with a commplete graph over the given list of
+     * nodes, using the given independence test and knowledge and
+     * returns the resultant graph. The returned graph will be a
+     * pattern if the independence information is consistent with the
+     * hypothesis that there are no latent common causes. It may,
+     * however, contain cycles or bidirected edges if this assumption
+     * is not born out, either due to the actual presence of latent
+     * common causes, or due to statistical errors in conditional
+     * independence judgments.  <p> All of the given nodes must be in
+     * the domain of the given conditional independence test.
      */
     EdgeListGraph search(FasStableProducerConsumer& fas, const std::vector<Node>& nodes);
+
+    /**
+     * Reorients edges in PC-Stable object with a new orient
+     * rule. Uses already filled SepsetProducer to avoid re-performing
+     * conditional independence tests to determine new orientations.
+     */
+    EdgeListGraph reorientWithRule(OrientRule rule);
 
 };
 

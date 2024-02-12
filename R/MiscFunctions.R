@@ -46,17 +46,17 @@ print.graphCV <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
     cat("Minimum cross-validation log(pseudo-likelihood) graph:\n")
     cat("  Index: ")
-    cat(ifelse(mgmFlag,
-               which(x$lambdas %in% x$lambda.min),
-               which(x$alphas %in% x$alpha.min)))
+    cat(x$idx.min)
+    cat("\n  Average Markov Blanket Size: ")
+    cat(mean(sapply(x$graph.min$markov.blankets, length)))
     cat("\n\n")
     print(x$graph.min)
     cat("\n")
     cat("One standard error above the minimum cross-validation log(pseudo-likelihood) graph:\n")
     cat("  Index: ")
-    cat(ifelse(mgmFlag,
-               which(x$lambdas %in% x$lambda.1se),
-               which(x$alphas %in% x$alpha.1se)))
+    cat(x$idx.1se)
+    cat("\n  Average Markov Blanket Size: ")
+    cat(mean(sapply(x$graph.1se$markov.blankets, length)))
     cat("\n\n")
     print(x$graph.1se)
     invisible(x)
@@ -88,30 +88,34 @@ print.graphPath <- function(x, ...) {
 #'
 #' @param x The graphSTEPS object
 #' @export
-print.graphSTEPS <- function(x, gamma = NULL, ...) {
+print.graphSTEPS <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
-    if (is.null(gamma)) {
-        gamma <- x$gamma
-    }
-    cat("StEPS selected graph:\n")
-    print(x$graph)
-    cat("\n")
-    cat("StEPS selected lambda for gamma = ")
-    cat(gamma)
-    cat(":\n")
-    allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
-    allIdx <- allIdx[length(allIdx)]
-    ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
-    ccIdx <- ccIdx[length(ccIdx)]
-    cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
-    cdIdx <- cdIdx[length(cdIdx)]
-    ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
-    ddIdx <- ddIdx[length(ddIdx)]
-    cat(paste0("lambda = { ", x$lambdas[ccIdx], ", ", x$lambdas[cdIdx], ", ", x$lambdas[ddIdx], " }\n\n"))
-    cat("StARS selected lambda for gamma = ")
-    cat(gamma)
-    cat(":\n")
-    cat(paste0("lambda = ", x$lambdas[allIdx],"\n"))
+    ## if (is.null(gamma)) {
+    gamma <- x$gamma
+    ## }
+    cat("StEPS selected graph:\n\n")
+    print(x$graph.steps)
+    cat("\n\n")
+    ## cat("\n")
+    ## cat("StEPS selected lambda for gamma = ")
+    ## cat(gamma)
+    ## cat(":\n")
+    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
+    ## allIdx <- allIdx[length(allIdx)]
+    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
+    ## ccIdx <- ccIdx[length(ccIdx)]
+    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
+    ## cdIdx <- cdIdx[length(cdIdx)]
+    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
+    ## ddIdx <- ddIdx[length(ddIdx)]
+    ## cat(paste0("lambda = { ", as.numeric(x$graph.steps$lambda[1]), ", ", as.numeric(x$graph.steps$lambda[2]), ", ", as.numeric(x$graph.steps$lambda[3]), " }\n\n"))
+    cat("StARS selected graph:\n\n")
+    print(x$graph.stars)
+    ## cat("\n")
+    ## cat("StARS selected lambda for gamma = ")
+    ## cat(gamma)
+    ## cat(":\n")
+    ## cat(paste0("lambda = ", as.numeric(x$graph.stars$lambda[1]) ,"\n"))
     invisible(x)
 }
 
@@ -222,32 +226,39 @@ plot.graph <- function(x,
 #' @param x The graph object
 #' @export
 plot.graphCV <- function(x, ...) {
-    mgmFlag <- !is.null(x$lambdas)
+    mgmFlag <- x$graph.min$type=="undirected"
     
     if (mgmFlag) {
         log10params <- log10(x$lambdas)
+        minParam <- log10(x$lambdas[x$idx.min])
+        seParam <- log10(x$lambdas[x$idx.1se])
     } else {
-        log10params <- log10(x$alphas)
+        log10params <- x$size
+        minParam <- x$size[x$idx.min]
+        seParam <- x$size[x$idx.1se]
     }
     
-    llMeans <- rowMeans(x$loglik)
-    llSe <- apply(x$loglik, 1, sd)
+    llMeans <- x$mean
+    llSe <- x$se
 
-    ll.range <- (max(llMeans + llSe) - min(llMeans - llSe))
-    ll.lims <- c(min(llMeans - llSe) - 0.025 * ll.range,
-                 max(llMeans + llSe) + 0.025 * ll.range)
+    upperVal <- quantile(llMeans+llSe, probs=0.75)
+    lowerVal <- quantile(llMeans-llSe, probs=0.25)
+
+    iqr <- upperVal - lowerVal
+    ll.lims <- c(lowerVal - 1.5 * iqr,
+                 upperVal + 1.5 * iqr)
 
     plot(x=log10params, y=llMeans, col='red', pch=19,
-         xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
+         xlab=ifelse(mgmFlag, expression(log10(lambda)), "Average Markov Blanket Size"),
          ylab="-log(Pseudo-Likelihood)", ylim=ll.lims)
     
     arrows(x0=log10params, x1=log10params, y0=llMeans-llSe, code=3, angle=90,
            length=0.05, y1=llMeans+llSe, col='darkgray')
     
-    abline(v=ifelse(mgmFlag, log10(x$lambda.min[1]), log10(x$alpha.min[1])),
+    abline(v=minParam,
            col='black', lty=3, lw=2)
     
-    abline(v=ifelse(mgmFlag, log10(x$lambda.1se[1]), log10(x$alpha.1se[1])),
+    abline(v=seParam,
            col='black', lty=3, lw=2)
 }
 
@@ -294,12 +305,12 @@ plot.graphPath <- function(x, ...) {
 #'
 #' @param x The graph object
 #' @export
-plot.graphSTEPS <- function(x, gamma=NULL, ...) {
+plot.graphSTEPS <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
 
-    if (is.null(gamma)) {
-        gamma <- x$gamma
-    }
+    ## if (is.null(gamma)) {
+    gamma <- x$gamma
+    ## }
 
     if (mgmFlag) {
         log10params <- log10(x$lambdas)
@@ -317,19 +328,19 @@ plot.graphSTEPS <- function(x, gamma=NULL, ...) {
 
     abline(h=gamma, lty=2, col='gray', lw=2)
 
-    allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
-    allIdx <- allIdx[length(allIdx)]
-    ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
-    ccIdx <- ccIdx[length(ccIdx)]
-    cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
-    cdIdx <- cdIdx[length(cdIdx)]
-    ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
-    ddIdx <- ddIdx[length(ddIdx)]
+    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
+    ## allIdx <- allIdx[length(allIdx)]
+    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
+    ## ccIdx <- ccIdx[length(ccIdx)]
+    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
+    ## cdIdx <- cdIdx[length(cdIdx)]
+    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
+    ## ddIdx <- ddIdx[length(ddIdx)]
     
-    abline(v=log10params[allIdx], col='black',  lty=3, lw=2)
-    abline(v=log10params[ccIdx],  col='red',    lty=3, lw=2)
-    abline(v=log10params[cdIdx],  col='blue',   lty=3, lw=2)
-    abline(v=log10params[ddIdx],  col='purple', lty=3, lw=2)
+    abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
+    abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
+    abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
+    abline(v=log10(x$graph.stars$lambda[1]),  col='black',  lty=3, lw=2)
 
     legend(x = "topleft", title="Edge Type", 
            legend = c("All", "C-C", "C-D", "D-D"), 
@@ -533,61 +544,136 @@ createKnowledge <- function(tiers = list(), forbidWithinTiers=NULL,
     return(knowledge)
 }
 
-## simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3, coefMin=0.5, coefMax=1.5, snr=1) {
-##     numCat <- floor(p * categoricalFrac)
-##     numCont <- p - numCat
-##     nodes <- c()
-##     if (numCont > 0) {
-##         nodes <- c(nodes, paste0('X',1:numCont))
-##     }
-##     if (numCat>0) {
-##         nodes <- c(nodes, paste0('Y',1:numCat))
-##     }
+simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.0, deg=3, coefMin=0.5, coefMax=1.5, snr=4) {
+    numCat <- floor(p * categoricalFrac)
+    numCont <- p - numCat
+    nodes <- c()
+    if (numCont > 0) {
+        nodes <- c(nodes, paste0('X',1:numCont))
+    }
+    if (numCat>0) {
+        nodes <- c(nodes, paste0('Y',1:numCat))
+    }
 
-##     permNodes <- sample(nodes)
+    permNodes <- sample(nodes)
 
-##     numEdges <- floor(deg * p / 2)
+    numEdges <- floor(deg * p / 2)
 
-##     edgeIdx <- sample(1:(p*(p-1)/2), numEdges)
+    edgeIdx <- sample(1:(p*(p-1)/2), numEdges)
 
-##     adjMat <- matrix(0, p, p)
+    adjMat <- matrix(0, p, p)
 
-##     adjMat[lower.tri(adjMat)][edgeIdx] <- 1
+    adjMat[lower.tri(adjMat)][edgeIdx] <- 1
 
-##     data <- data.frame()
+    logsumexp <- function(x) {
+        b <- max(x)
+        x <- x-b
+        return(log(sum(exp(x)))+b)
+    }
 
-##     idx <- 1
-##     for (node in permNodes) {
-##         pa <- permNodes[adjMat[idx,]==1]
-##         print(node)
-##         print(idx)
-##         print(pa)
-##         if (length(pa) > 0) {
-##             f <- as.formula(paste('~ 0', paste(pa, collapse=' + '), sep=' + '))
-##         }
+    softmax <- function(x) {
+        return(exp(x-logsumexp(x)))
+    }
+
+    data <- data.frame()
+
+    idx <- 1
+    for (node in permNodes) {
+        pa <- permNodes[adjMat[idx,]==1]
+        ## print(node)
+        ## print(idx)
+        ## print(pa)
+        if (length(pa) > 0) {
+            f <- as.formula(paste('~', paste(pa, collapse=' + '), sep=' + '))
+            mod.mat <- as.matrix(model.matrix(f, data)[,-1])
+            if (ncol(mod.mat)==1) {
+                colnames(mod.mat) <- pa
+            }
+        }
         
-##         if (grepl('X', node)) {
-##             if (length(pa)==0) {
-##                 val <- rnorm(n)
-##             } else {
-##                 mod.mat <- model.matrix(f, data)
-##                 beta <- sample(c(-1, 1), ncol(mod.mat), replace=T) * runif(ncol(mod.mat), coefMin, coefMax)
-##                 pred <- mod.mat %*% beta
+        if (grepl('X', node)) {
+            if (length(pa)==0) {
+                val <- rnorm(n)
+            } else {
+                ## print(head(mod.mat))
+                ## print(ncol(mod.mat))
+                ## beta <- sample(c(-1, 1), ncol(mod.mat), replace=T) * runif(ncol(mod.mat), coefMin, coefMax)
+                betaScale <- runif(length(pa), coefMin, coefMax)
+                names(betaScale) <- pa
+                beta <- matrix(runif(ncol(mod.mat), -1, 1), 1)
+                colnames(beta) <- colnames(mod.mat)
+                for (paNode in pa) {
+                    paIdx <- grep(paNode, colnames(beta))
+                    ## print(paNode)
+                    ## print(paIdx)
+                    if (grepl('X', paNode)) {
+                        beta[,paIdx] <- sign(beta[,paIdx]) * betaScale[paNode]
+                    } else {
+                        ## print(beta[,paIdx])
+                        beta[,paIdx] <- beta[,paIdx] - mean(beta[,paIdx])
+                        beta[,paIdx] <- betaScale[paNode] * beta[,paIdx] / sqrt(sum(beta[,paIdx]^2))
+                        ## print(betaScale[paNode])
+                        ## print(sqrt(sum(beta[,paIdx]^2)))
+                        ## print(beta[,paIdx])
+                    }
+                }
 
-##                 varS <- var(pred)
-##                 varN <- varS / snr
-##                 val <- as.vector(scale(pred + rnorm(n, sd=sqrt(varN))))
-##             }
-##         }
-##         if (idx==1) {
-##             data <- data.frame(val)
-##             colnames(data) <- node
-##         } else {
-##             data[,node] <- val
-##         }
-##         idx <- idx + 1
-##     }
+                ## print(beta)
+                
+                pred <- mod.mat %*% t(beta)
 
-##     result <- list(data=data[,nodes], graph=adjMat2Graph(adjMat, permNodes, directed=T))
-##     return(result)
-## }
+                ## print(paste("Beta: ", paste(beta, collapse=", ")))
+
+                varS <- var(pred)
+                ## print(paste("Signal Variance:", varS))
+                ## varN <- varS / snr
+                varN <- runif(1, 1, 4)
+                ## print(paste("Noise Variance:", varN))
+                ## print(paste("SNR:", varS / varN))
+                val <- as.vector(scale(pred + rnorm(n, sd=sqrt(varN))))
+            }
+        } else if (grepl('Y', node)) {
+            if (length(pa)==0) {
+                logprobs <- matrix(rep(0, 3*n), n)
+                val <- factor(
+                    apply(logprobs, 1, function(x) sample(c('A','B','C'), 1, prob=softmax(x))),
+                    levels=c('A','B','C')
+                )
+            } else {
+                ## mod.mat <- as.matrix(model.matrix(f, data)[,-1])
+
+                betaScale <- runif(length(pa), coefMin, coefMax)
+                names(betaScale) <- pa
+                
+                beta <- matrix(runif(3 * ncol(mod.mat), -1, 1), 3)
+                colnames(beta) <- colnames(mod.mat)
+                for (paNode in pa) {
+                    paIdx <- grep(paNode, colnames(beta))
+                    beta[,paIdx] <- beta[,paIdx] - mean(beta[,paIdx])
+                    beta[,paIdx] <- betaScale[paNode] * beta[,paIdx] / sqrt(sum(beta[,paIdx]^2))
+                }
+
+                ## print(beta)
+                
+                logprobs <- mod.mat %*% t(beta)
+
+                val <- factor(
+                    apply(logprobs, 1, function(x) sample(c('A','B','C'), 1, prob=softmax(x))),
+                    levels=c('A','B','C')
+                )
+            }
+        }
+        if (idx==1) {
+            data <- data.frame(val)
+            colnames(data) <- node
+        } else {
+            data[,node] <- val
+        }
+        idx <- idx + 1
+    }
+
+    head(data)
+
+    result <- list(data=data[,nodes], graph=adjMat2Graph(adjMat, permNodes, directed=T))
+    return(result)
+}

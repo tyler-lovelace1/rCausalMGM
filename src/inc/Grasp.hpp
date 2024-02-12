@@ -68,7 +68,7 @@ private:
     GrowShrink growShrink;
 
     struct OrderGraph {
-        double score, bic;
+        double score=1e20, bic=1e20;
 	std::list<Node> order;
 	std::list<Node>::iterator start, stop;
 	std::unordered_map<Node, std::unordered_set<Node>> parentMap;

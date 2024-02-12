@@ -544,6 +544,8 @@ public:
     void addUnderlineTriple(const Node& x, const Node& y, const Node& z) { underLineTriples.insert(Triple(x, y, z)); }
     void addDottedUnderlineTriple(const Node& x, const Node& y, const Node& z) { dottedUnderLineTriples.insert(Triple(x, y, z)); }
 
+    void clearAmbiguousTriples() { ambiguousTriples.clear(); }
+
     void removeAmbiguousTriple(const Node& x, const Node& y, const Node& z);
     void removeUnderlineTriple(const Node& x, const Node& y, const Node& z);
     void removeDottedUnderlineTriple(const Node& x, const Node& y, const Node& z);

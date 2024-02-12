@@ -82,7 +82,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
 	    
 	} else {
 	    EdgeListGraph ig;
-	    IndTestMulti itm(subset, alpha);
+	    IndTestMultiCox itm(subset, alpha);
 	    
 	    if (mgmInit) {
 		// MGM mgm(subset, lambda);

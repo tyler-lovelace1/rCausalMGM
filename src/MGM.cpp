@@ -98,28 +98,33 @@ MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<
 
 MGM::MGM(DataSet ds) {
 
+   //  double lamValue = 5 * std::sqrt(std::log10(ds.getNumColumns()) / ((double) ds.getNumRows()));
+
+   //  std::vector<double> lambda = { lamValue, lamValue, lamValue };
+   // MGM(ds, lambda);
+    
     bool mixed = true;
 
     if (ds.isContinuous()) {
-	this->dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
-	ds.addVariable(dummyVar);
-	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
-	    ds.set(i, j, std::floor(R::runif(0,2)));
-	}
-	mixed = false;
-	qDummy = 1;
+    	this->dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
+    	ds.addVariable(dummyVar);
+    	arma::uword j = ds.getColumn(dummyVar);
+    	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+    	    ds.set(i, j, std::floor(R::runif(0,2)));
+    	}
+    	mixed = false;
+    	qDummy = 1;
     }
 
     if (ds.isDiscrete()) {
-	this->dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
-	ds.addVariable(dummyVar);
-	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
-	    ds.set(i, j, std::floor(R::rnorm(0,1)));
-	}
-	mixed = false;
-	pDummy = 1;
+    	this->dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
+    	ds.addVariable(dummyVar);
+    	arma::uword j = ds.getColumn(dummyVar);
+    	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+    	    ds.set(i, j, std::floor(R::rnorm(0,1)));
+    	}
+    	mixed = false;
+    	pDummy = 1;
     }
     
     this->xDat = ds.getContinuousData();
@@ -155,10 +160,15 @@ MGM::MGM(DataSet ds) {
 
     //Creates dummy variables for each category of discrete variables (stored in dDat)
     makeDummy();
+
+    arma::vec dDatSum = arma::sum(dDat, 0).t();
+
+    params.alpha2 = arma::log(dDatSum / (arma::vec(lsum, arma::fill::value(n)) - dDatSum));
+    
 }
 
 
-MGM::MGM(DataSet ds, std::vector<double>& lambda) {
+MGM::MGM(DataSet ds, std::vector<double> lambda) {
 
     bool mixed = true;
 
@@ -216,7 +226,11 @@ MGM::MGM(DataSet ds, std::vector<double>& lambda) {
     calcWeights();
 
     //Creates dummy variables for each category of discrete variables (stored in dDat)
-    makeDummy();    
+    makeDummy();
+
+    arma::vec dDatSum = arma::sum(dDat, 0).t();
+
+    params.alpha2 = arma::log(dDatSum / (arma::vec(lsum, arma::fill::value(n)) - dDatSum));
 }
 
 
@@ -410,14 +424,13 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     par.beta = arma::symmatu(par.beta);
     par.beta.diag(0).zeros();
 
+    par.phi = arma::symmatu(par.phi);
     for (arma::uword i = 0; i < q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
 
-    par.phi = arma::symmatu(par.phi);
-
     //Xbeta=X*beta*diag(1./betad);
-    arma::mat divBetaD = arma::diagmat(arma::vec(p, arma::fill::ones) / par.betad);
+    arma::mat divBetaD = arma::diagmat(1 / par.betad);
     arma::mat xBeta = xDat * par.beta * divBetaD;
 
     //Dtheta=D*theta*diag(1./betad);
@@ -441,7 +454,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 
     //sqloss=-n/2*sum(log(betad))+...
     //.5*norm((X-e*alpha1'-Xbeta-Dtheta)*diag(sqrt(betad)),'fro')^2;
-    double sqloss = -n/2.0*arma::sum(arma::log(arma::vec(par.betad))) +
+    double sqloss = -n/2.0*arma::sum(arma::log(par.betad)) +
                     0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(par.betad)), "fro"), 2);
 
     //ok now tempLoss = res
@@ -514,14 +527,14 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //end
     for (arma::uword i = 0; i < q; i++) {
         gradOut.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
-        // for (arma::uword j = 0; j < p; i++) {
-        //     arma::subview<double> tempVec = gradOut.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1);
-        //     gradOut.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1) -= arma::mean(tempVec);
-        // }
-	// for (arma::uword j = i+1; j < q; j++) {
-        //     arma::subview<double> tempMat = gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-        //     gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
-        // }
+        for (arma::uword j = 0; j < p; j++) {
+	    // Rcpp::Rcout << "Theta(" << i << "," << j << ")\n"; 
+	    gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)) -= arma::mean(gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)));
+        }
+	for (arma::uword j = i+1; j < q; j++) {
+	    // Rcpp::Rcout << "Phi(" << i << "," << j << ")\n";
+	    gradOut.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])) -= arma::mean(gradOut.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])));
+        }
     }
 
     // for (arma::uword i = 0; i < p; i++) {
@@ -546,8 +559,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     */
     gradOut.betad = arma::vec(xDat.n_cols);
     for(arma::uword i = 0; i < p; i++){
-        gradOut.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(tempLoss.col(i), 2), 2) / 2.0 -
-                           arma::as_scalar(tempLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i)));
+        gradOut.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(tempLoss.col(i), 2), 2) / 2.0 - arma::dot(tempLoss.col(i),  (xBeta.col(i) + dTheta.col(i) + par.alpha1(i) / par.betad(i)));
     }
 
     gradOut.alpha1 /= (double) n;
@@ -577,6 +589,500 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     return (sqloss + catloss)/((double) n);
 }
 
+
+// /**
+//  * Calculate value of g(X) and gradient of g(X) at the same time for efficiency reasons.
+//  *
+//  * @param X input Vector
+//  * @param Xout gradient of g(X)
+//  * @return value of g(X)
+//  */
+// double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec, arma::vec& hessOutVec) {
+//     MGMParams par(parIn, p, lsum);
+
+//     // Rcpp::Rcout << "par: \n" << par << std::endl;
+
+//     MGMParams gradOut;
+//     MGMParams hessOut(hessOutVec, p, lsum);
+
+//     for(arma::uword i = 0; i < par.betad.size(); i++) {
+//         if(par.betad(i) <= 0)
+//             return arma::datum::inf;
+//     }
+
+//     //beta=beta-diag(diag(beta));
+//     //for r=1:q
+//     //  phi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
+//     //end
+//     //beta=triu(beta); phi=triu(phi);
+//     //beta=beta+beta';
+//     //phi=phi+phi';
+//     par.beta = arma::symmatu(par.beta);
+//     par.beta.diag(0).zeros();
+
+//     par.phi = arma::symmatu(par.phi);
+//     for (arma::uword i = 0; i < q; i++) {
+//         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+//     }
+
+//     //Xbeta=X*beta*diag(1./betad);
+//     arma::mat divBetaD = arma::diagmat(1 / par.betad);
+//     arma::mat xBeta = xDat * par.beta * divBetaD;
+
+//     //Dtheta=D*theta*diag(1./betad);
+//     arma::mat dTheta = dDat * par.theta * divBetaD;
+
+//     // Squared loss
+//     //tempLoss =  (X-e*alpha1'-Xbeta-Dtheta) = -res (in gradient code)
+//     arma::mat tempLoss(n, xDat.n_cols);
+
+//     //wxprod=X*(theta')+D*phi+e*alpha2';
+//     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi;
+
+//     for (arma::uword i = 0; i < n; i++) {
+//         for (arma::uword j = 0; j < xDat.n_cols; j++) {
+// 	    tempLoss(i, j) = xDat(i,j) - par.alpha1(j) / par.betad(j) - xBeta(i,j) - dTheta(i,j);
+//         }
+//         for (arma::uword j = 0; j < dDat.n_cols; j++) {
+//             wxProd(i,j) = wxProd(i,j) + par.alpha2(j);
+//         }
+//     }
+
+//     for (arma::uword j = 0; j < xDat.n_cols; j++) {
+// 	hessOut.beta.row(j) = xDat2Sum;
+// 	hessOut.theta.col(j) = dDat2Sum;
+//     }
+
+//     //sqloss=-n/2*sum(log(betad))+...
+//     //.5*norm((X-e*alpha1'-Xbeta-Dtheta)*diag(sqrt(betad)),'fro')^2;
+//     double sqloss = -n/2.0*arma::sum(arma::log(par.betad)) +
+//                     0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(par.betad)), "fro"), 2);
+
+//     //ok now tempLoss = res
+//     tempLoss *= -1;
+
+//     //gradbeta=X'*(res);
+//     gradOut.beta = xDat.t() * tempLoss;
+
+//     //gradbeta=gradbeta-diag(diag(gradbeta)); % zero out diag
+//     //gradbeta=tril(gradbeta)'+triu(gradbeta);
+//     gradOut.beta = arma::trimatl(gradOut.beta, -1).t() + arma::trimatu(gradOut.beta, 1);
+    
+//     hessOut.beta = arma::trimatl(hessOut.beta, -1).t() + arma::trimatu(hessOut.beta, 1);
+
+//     //gradalpha1=diag(betad)*sum(res,0)';
+//     gradOut.alpha1 = arma::sum(tempLoss, 0).t();
+
+//     hessOut.alpha1.fill(n);
+
+//     //gradtheta=D'*(res);
+//     gradOut.theta = dDat.t() * tempLoss;
+
+//     // categorical loss
+//     /*catloss=0;
+//     wxprod=X*(theta')+D*phi+e*alpha2'; %this is n by Ltot
+//     for r=1:q
+//         wxtemp=wxprod(:,Lsum(r)+1:Lsum(r)+L(r));
+//         denom= logsumexp(wxtemp,2); %this is n by 1
+//         catloss=catloss-sum(wxtemp(sub2ind([n L(r)],(1:n)',Y(:,r))));
+//         catloss=catloss+sum(denom);
+//     end
+//     */
+//     double catloss = 0;
+//     for (arma::uword i = 0; i < yDat.n_cols; i++) {
+//         arma::subview<double> wxTemp = wxProd(0, lcumsum[i], arma::size(n, l[i]));
+
+//         //need to copy init values for calculating nll
+//         arma::mat wxTemp0(wxTemp);
+
+//         // does this need to be done in log space??
+//         wxTemp = arma::exp(wxTemp);
+//         arma::vec invDenom = arma::vec(n, arma::fill::ones) / arma::sum(wxTemp, 1);
+//         wxTemp = arma::diagmat(invDenom) * wxTemp;
+
+//         for (arma::uword k = 0; k < n; k++) {
+//             const arma::vec& curRow0 = wxTemp0.row(k);
+
+//             catloss -= curRow0((arma::uword) yDat(k,i) - 1);
+//             catloss += logsumexp(curRow0);
+
+//             //wxtemp(sub2ind(size(wxtemp),(1:n)',Y(:,r)))=wxtemp(sub2ind(size(wxtemp),(1:n)',Y(:,r)))-1;
+//             // wxTemp(k, (arma::uword) yDat(k,i)-1) -= 1;
+//         }
+//     }
+
+//     arma::mat wxRes = wxProd-dDat;
+
+//     //gradalpha2=sum(wxprod,0)';
+//     gradOut.alpha2 = arma::sum(wxRes, 0).t();
+
+//     //gradw=X'*wxprod;
+//     arma::mat gradW = xDat.t() * wxRes;
+
+//     //gradtheta=gradtheta+gradw';
+//     gradOut.theta += gradW.t();
+
+//     //gradphi=D'*wxprod;
+//     gradOut.phi = dDat.t() * wxRes;
+
+//     // hessOut.alpha2 = arma::vec(lsum);
+    
+//     for (arma::uword j = 0; j < dDat.n_cols; j++) {
+// 	arma::vec wxProdVar = wxProd.col(j) % (1 - wxProd.col(j));
+// 	hessOut.alpha2(j) = arma::sum(wxProdVar);
+// 	hessOut.phi.col(j) = arma::sum(arma::diagmat(wxProdVar) * dDat, 0);
+// 	hessOut.theta.row(j) += arma::sum(arma::diagmat(wxProdVar) * xDat2, 0);
+//     }
+
+//     //gradphi=tril(gradphi)'+triu(gradphi);
+//     gradOut.phi = arma::trimatl(gradOut.phi, 0).t() + arma::trimatu(gradOut.phi, 0);
+
+//     hessOut.phi = arma::trimatl(hessOut.phi, 0).t() + arma::trimatu(hessOut.phi, 0);
+
+
+//     //zero out gradphi diagonal and ensure each group in theta and phi sum to 0 
+//     //for r=1:q
+//     //gradphi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
+//     //end
+//     for (arma::uword i = 0; i < q; i++) {
+//         gradOut.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+
+// 	hessOut.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+
+//         for (arma::uword j = 0; j < p; j++) {
+// 	    // Rcpp::Rcout << "Theta(" << i << "," << j << ")\n"; 
+// 	    gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)) -= arma::mean(gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)));
+//         }
+// 	for (arma::uword j = i+1; j < q; j++) {
+// 	    // Rcpp::Rcout << "Phi(" << i << "," << j << ")\n";
+// 	    gradOut.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j])) -= arma::mean(gradOut.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j])));
+//         }
+//     }
+
+//     // for (arma::uword i = 0; i < p; i++) {
+//     //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+//     //         const arma::vec& tempVec = gradOut.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+//     //         gradOut.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) -= arma::mean(tempVec);
+//     //     }
+//     // }
+
+//     // for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+//     //     for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+//     //         const arma::mat& tempMat = gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+//     //         // Use the tempMat subview again to set the values (doesn't work with const)
+//     //         gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
+//     //     }
+//     // }
+
+//     /*
+//     for s=1:p
+//         gradbetad(s)=-n/(2*betad(s))+1/2*norm(res(:,s))^2-res(:,s)'*(Xbeta(:,s)+Dtheta(:,s));
+//     end
+//     */
+//     gradOut.betad = arma::vec(xDat.n_cols);
+//     for(arma::uword i = 0; i < p; i++){
+
+// 	arma::vec xHatDivBeta = xBeta.col(i) + dTheta.col(i) + par.alpha1(i) / par.betad(i);
+	
+//         gradOut.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(tempLoss.col(i), 2), 2) / 2.0 - arma::dot(tempLoss.col(i),  xHatDivBeta);
+
+// 	hessOut.betad(i) = 1 / (2.0 * std::pow(par.betad(i), 2)) + arma::dot(xHatDivBeta, xHatDivBeta) / par.betad(i);
+	
+// 	// hessOut.betad(i) = (2 * std::pow(arma::norm(xBeta.col(i) + dTheta.col(i) + par.alpha1(i) / par.betad(i), 2), 2) + par.betad(i)) / (2.0 * std::pow(par.betad(i), 3));
+//     }
+
+    
+
+//     gradOut.alpha1 /= (double) n;
+//     gradOut.alpha2 /= (double) n;
+//     gradOut.betad /= (double) n;
+//     gradOut.beta /= (double) n;
+//     gradOut.theta /= (double) n;
+//     gradOut.phi /= (double) n;
+
+//     Rcpp::Rcout << "gradOut: \n" << gradOut << std::endl;
+
+//     if (pDummy != 0) {
+// 	gradOut.alpha1.fill(0);
+// 	gradOut.betad.fill(0);
+// 	gradOut.beta.fill(0);
+// 	gradOut.theta.fill(0);
+//     }
+
+//     if (qDummy != 0) {
+// 	gradOut.alpha2.fill(0);
+// 	gradOut.theta.fill(0);
+// 	gradOut.phi.fill(0);
+//     }
+
+//     gradOutVec = gradOut.toMatrix1D();
+
+//     hessOut.alpha1 /= (double) n;
+//     hessOut.alpha2 /= (double) n;
+//     hessOut.betad /= (double) n;
+//     hessOut.beta /= (double) n;
+//     hessOut.theta /= (double) n;
+//     hessOut.phi /= (double) n;
+
+//     Rcpp::Rcout << "hessOut: \n" << hessOut << std::endl;
+
+//     hessOut.betad.fill(1);
+
+//     if (pDummy != 0) {
+// 	hessOut.alpha1.fill(1);
+// 	hessOut.betad.fill(1);
+// 	hessOut.beta.fill(1);
+// 	hessOut.theta.fill(1);
+//     }
+
+//     if (qDummy != 0) {
+// 	hessOut.alpha2.fill(1);
+// 	hessOut.theta.fill(1);
+// 	hessOut.phi.fill(1);
+//     }
+
+//     hessOutVec = hessOut.toMatrix1D();
+
+//     return (sqloss + catloss)/((double) n);
+// }
+
+
+// /**
+//  * Calculate value of g(X) and gradient of g(X) at the same time for efficiency reasons.
+//  *
+//  * @param X input Vector
+//  * @param Xout gradient of g(X)
+//  * @return value of g(X)
+//  */
+// double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
+//     MGMParams par(parIn, p, lsum);
+
+//     // Rcpp::Rcout << "par: \n" << par << std::endl;
+
+//     MGMParams gradOut(p, lsum);
+
+//     for(arma::uword i = 0; i < par.betad.size(); i++) {
+//         if(par.betad(i) <= 0)
+//             return arma::datum::inf;
+//     }
+
+//     //beta=beta-diag(diag(beta));
+//     //for r=1:q
+//     //  phi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
+//     //end
+//     //beta=triu(beta); phi=triu(phi);
+//     //beta=beta+beta';
+//     //phi=phi+phi';
+//     // par.beta = arma::symmatu(par.beta);
+//     // par.beta.diag(0).zeros();
+
+//     for (arma::uword i = 0; i < q; i++) {
+//         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+//     }
+
+//     par.phi = arma::symmatu(par.phi);
+
+//     //Xbeta=X*beta*diag(1./betad);
+//     // arma::mat divBetaD = arma::diagmat(arma::vec(p, arma::fill::ones) / par.betad);
+//     // arma::mat xBeta = xDat * par.beta * divBetaD;
+
+//     //Dtheta=D*theta*diag(1./betad);
+//     // arma::mat dTheta = dDat * par.theta * divBetaD;
+
+//     // Squared loss
+//     //tempLoss =  (X-e*alpha1'-Xbeta-Dtheta) = -res (in gradient code)
+//     // arma::mat tempLoss(n, xDat.n_cols);
+
+//     //wxprod=X*(theta')+D*phi+e*alpha2';
+//     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi;
+
+//     double sqloss = -n/2.0*arma::sum(arma::log(par.betad));
+    
+//     for (arma::uword i = 0; i < n; i++) {
+// 	// arma::vec xhat(p, arma::fill::zeros);
+//         for (arma::uword j = 0; j < p; j++) {
+// 	    double divBetaj = 1 / par.betad(j);
+// 	    double xhatij = par.alpha1(j);
+// 	    for (arma::uword k = 0; k < p; k++) {
+// 		if (j == k) continue;
+// 		else if (j < k) {
+// 		    xhatij += par.beta(j,k) * xDat(i,k);
+// 		} else {
+// 		    xhatij += par.beta(k,j) * xDat(i,k);
+// 		}
+// 	    }
+// 	    for (arma::uword k = 0; k < lsum; k++) {
+// 		xhatij += par.theta(k,j) * dDat(i,k);
+// 	    }
+	    
+// 	    double resij = xDat(i,j) - xhatij * divBetaj;
+
+// 	    sqloss += 0.5 * par.betad(j) * resij * resij;
+
+// 	    for (arma::uword k = 0; k < p; k++) {
+// 		if (j == k) continue;
+// 		else if (j < k) {
+// 		    gradOut.beta(j,k) -= resij * xDat(i,k);
+// 		} else {
+// 		    gradOut.beta(k,j) -= resij * xDat(i,k);
+// 		}
+// 	    }
+
+// 	    for (arma::uword k = 0; k < lsum; k++) {
+// 		gradOut.theta(k,j) -= resij * dDat(i,k);
+// 	    }
+
+// 	    gradOut.alpha1(j) -= resij;
+
+// 	    gradOut.betad(j) += -0.5 * divBetaj + 0.5 * resij*resij + resij * xhatij * divBetaj;
+	    
+// 	    // tempLoss(i, j) = xDat(i,j) - par.alpha1(j) / par.betad(j) - xBeta(i,j) - dTheta(i,j);
+//         }
+//         for (arma::uword j = 0; j < lsum; j++) {
+//             wxProd(i,j) = wxProd(i,j) + par.alpha2(j);
+//         }
+//     }
+
+//     //sqloss=-n/2*sum(log(betad))+...
+//     //.5*norm((X-e*alpha1'-Xbeta-Dtheta)*diag(sqrt(betad)),'fro')^2;
+//     // double sqloss = -n/2.0*arma::sum(arma::log(arma::vec(par.betad))) +
+//     //                 0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(par.betad)), "fro"), 2);
+
+//     //ok now tempLoss = res
+//     // tempLoss *= -1;
+
+//     //gradbeta=X'*(res);
+//     // gradOut.beta = xDat.t() * tempLoss;
+
+//     //gradbeta=gradbeta-diag(diag(gradbeta)); % zero out diag
+//     //gradbeta=tril(gradbeta)'+triu(gradbeta);
+//     // gradOut.beta = arma::symmatu(gradOut.beta);
+
+//     //gradalpha1=diag(betad)*sum(res,0)';
+//     // gradOut.alpha1 = arma::sum(tempLoss, 0).t();
+
+//     //gradtheta=D'*(res);
+//     // gradOut.theta = dDat.t() * tempLoss;
+
+//     // categorical loss
+//     /*catloss=0;
+//     wxprod=X*(theta')+D*phi+e*alpha2'; %this is n by Ltot
+//     for r=1:q
+//         wxtemp=wxprod(:,Lsum(r)+1:Lsum(r)+L(r));
+//         denom= logsumexp(wxtemp,2); %this is n by 1
+//         catloss=catloss-sum(wxtemp(sub2ind([n L(r)],(1:n)',Y(:,r))));
+//         catloss=catloss+sum(denom);
+//     end
+//     */
+//     double catloss = 0;
+//     for (arma::uword i = 0; i < yDat.n_cols; i++) {
+//         arma::subview<double> wxTemp = wxProd(0, lcumsum[i], arma::size(n, l[i]));
+
+//         //need to copy init values for calculating nll
+//         arma::mat wxTemp0(wxTemp);
+
+//         // does this need to be done in log space??
+//         wxTemp = arma::exp(wxTemp);
+//         arma::vec invDenom = arma::vec(n, arma::fill::ones) / arma::sum(wxTemp, 1);
+//         wxTemp = arma::diagmat(invDenom) * wxTemp;
+
+//         for (arma::uword k = 0; k < n; k++) {
+//             const arma::vec& curRow0 = wxTemp0.row(k);
+
+//             catloss -= curRow0((arma::uword) yDat(k,i) - 1);
+//             catloss += logsumexp(curRow0);
+
+//             //wxtemp(sub2ind(size(wxtemp),(1:n)',Y(:,r)))=wxtemp(sub2ind(size(wxtemp),(1:n)',Y(:,r)))-1;
+//             wxTemp(k, (arma::uword) yDat(k,i)-1) -= 1;
+//         }
+//     }
+
+//     //gradalpha2=sum(wxprod,0)';
+//     gradOut.alpha2 = arma::sum(wxProd, 0).t();
+
+//     //gradw=X'*wxprod;
+//     arma::mat gradW = xDat.t() * wxProd;
+
+//     //gradtheta=gradtheta+gradw';
+//     gradOut.theta += gradW.t();
+
+//     //gradphi=D'*wxprod;
+//     gradOut.phi = dDat.t() * wxProd;
+
+//     //gradphi=tril(gradphi)'+triu(gradphi);
+//     gradOut.phi = arma::trimatl(gradOut.phi, 0).t() + arma::trimatu(gradOut.phi, 0);
+
+//     //zero out gradphi diagonal and ensure each group in theta and phi sum to 0 
+//     //for r=1:q
+//     //gradphi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
+//     //end
+//     for (arma::uword i = 0; i < q; i++) {
+//         gradOut.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
+//         // for (arma::uword j = 0; j < p; i++) {
+//         //     arma::subview<double> tempVec = gradOut.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1);
+//         //     gradOut.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1) -= arma::mean(tempVec);
+//         // }
+// 	// for (arma::uword j = i+1; j < q; j++) {
+//         //     arma::subview<double> tempMat = gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+//         //     gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
+//         // }
+//     }
+
+//     // for (arma::uword i = 0; i < p; i++) {
+//     //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+//     //         const arma::vec& tempVec = gradOut.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+//     //         gradOut.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) -= arma::mean(tempVec);
+//     //     }
+//     // }
+
+//     // for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+//     //     for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+//     //         const arma::mat& tempMat = gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+//     //         // Use the tempMat subview again to set the values (doesn't work with const)
+//     //         gradOut.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) -= arma::mean(arma::mean(tempMat));
+//     //     }
+//     // }
+
+//     /*
+//     for s=1:p
+//         gradbetad(s)=-n/(2*betad(s))+1/2*norm(res(:,s))^2-res(:,s)'*(Xbeta(:,s)+Dtheta(:,s));
+//     end
+//     */
+//     // gradOut.betad = arma::vec(xDat.n_cols);
+//     // for(arma::uword i = 0; i < p; i++){
+//     //     gradOut.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(tempLoss.col(i), 2), 2) / 2.0 -
+//     //                        arma::as_scalar(tempLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i)));
+//     // }
+
+//     gradOut.alpha1 /= (double) n;
+//     gradOut.alpha2 /= (double) n;
+//     gradOut.betad /= (double) n;
+//     gradOut.beta /= (double) n;
+//     gradOut.theta /= (double) n;
+//     gradOut.phi /= (double) n;
+
+//     // Rcpp::Rcout << "gradOut: \n" << gradOut << std::endl;
+
+//     if (pDummy != 0) {
+// 	gradOut.alpha1.fill(0);
+// 	gradOut.betad.fill(0);
+// 	gradOut.beta.fill(0);
+// 	gradOut.theta.fill(0);
+//     }
+
+//     if (qDummy != 0) {
+// 	gradOut.alpha2.fill(0);
+// 	gradOut.theta.fill(0);
+// 	gradOut.phi.fill(0);
+//     }
+
+//     gradOutVec = gradOut.toMatrix1D();
+
+//     return (sqloss + catloss)/((double) n);
+// }
+
+
+
 double MGM::smoothValue(arma::vec& parIn) {
     MGMParams par(parIn, p, lsum);
 
@@ -594,11 +1100,12 @@ double MGM::smoothValue(arma::vec& parIn) {
     par.beta = arma::symmatu(par.beta);
     par.beta.diag(0).zeros();
 
+    
+    par.phi = arma::symmatu(par.phi);
+    
     for (arma::uword i = 0; i < q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
-
-    par.phi = arma::symmatu(par.phi);
 
     arma::mat divBetaD = arma::diagmat(arma::vec(p, arma::fill::ones) / par.betad);
 
@@ -629,7 +1136,7 @@ double MGM::smoothValue(arma::vec& parIn) {
 
     // Rcpp::Rcout << "tempLoss: \n" << tempLoss << std::endl;
 
-    double sqloss = -n/2.0*arma::sum(arma::log(arma::vec(par.betad))) +
+    double sqloss = -n/2.0*arma::sum(arma::log(par.betad)) +
                     0.5 * std::pow(arma::norm(tempLoss * arma::diagmat(arma::sqrt(arma::vec(par.betad))), "fro"), 2);
     
     // Rcpp::Rcout << "sqloss: " << sqloss << std::endl;
@@ -769,6 +1276,140 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms;
 }
 
+// /**
+//  * Calculate value of h(X) and proxOperator of h(X) at the same time for efficiency reasons.
+//  *
+//  * @param t positive parameter for prox operator
+//  * @param X input vector
+//  * @param Xout vector solution to prox_t(X)
+//  * @return value of h(X)
+//  */
+// double MGM::nonSmooth(double t, arma::vec& X, arma::vec& hess, arma::vec& pX) {
+//     double nonSmooth = 0;
+
+//     arma::vec tlam = lambda * t;
+
+//     //Constructor copies and checks dimension
+//     //par is a copy so we can update it
+//     MGMParams par(X, p, lsum);
+//     MGMParams hessPar(hess, p, lsum);
+
+//     // Rcpp::Rcout << "NS par: \n" << par << std::endl;
+
+//     //penbeta = t(1).*(wv(1:p)'*wv(1:p));
+//     //betascale=zeros(size(beta));
+//     //betascale=max(0,1-penbeta./abs(beta));
+//     arma::mat weightMat = weights * weights.t();
+
+//     // Rcpp::Rcout << "weightMat = \n" << weightMat << std::endl;
+
+//     const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
+//     arma::mat betaScale = betaWeight * -tlam(0) / hessPar.beta;
+//     arma::mat absBeta = arma::abs(par.beta); 
+    
+//     betaScale /= absBeta;
+//     betaScale += 1;
+//     betaScale.transform( [](double val) {return std::max(val, 0.0); } );
+
+//     // Rcpp::Rcout << "betaScale = \n" << betaScale << std::endl;
+
+//     double betaNorms = 0;
+
+//     for (arma::uword i = 0; i < p; i++) {
+//         for (arma::uword j = 0; j < p; j++) {
+//             double curVal = par.beta(i,j);
+//             if (curVal != 0) {
+//                 curVal *= betaScale(i,j);
+//                 // Rcpp::Rcout << "curVal = " << curVal << std::endl;
+//                 par.beta(i,j) = curVal;
+//                 betaNorms += std::abs(betaWeight(i,j)*curVal);
+//                 // Rcpp::Rcout << "curBetaNorms = " << betaNorms << std::endl;
+
+//             }
+//         }
+//     }
+//     // Rcpp::Rcout << "NS betaNorms = \n" << betaNorms << std::endl;
+
+//     //weight beta
+//     //betaw = (wv(1:p)'*wv(1:p)).*beta;
+//     //betanorms=sum(abs(betaw(:)));
+//     //double betaNorm = betaWeight.copy().assign(par.beta, Functions.mult).assign(Functions.abs).zSum();
+
+//     /*
+//     thetanorms=0;
+//     for s=1:p
+//         for j=1:q
+//             tempvec=theta(Lsums(j)+1:Lsums(j+1),s);
+//             tempvec=max(0,1-t(2)*(wv(s)*wv(p+j))/norm(tempvec))*tempvec;
+//             thetanorms=thetanorms+(wv(s)*wv(p+j))*norm(tempvec);
+//             theta(Lsums(j)+1:Lsums(j+1),s)=tempvec(1:L(j));
+//         end
+//     end
+//     */
+//     double thetaNorms = 0;
+//     for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+//         for (arma::uword j = 0; j < p; j++) {
+// 	    arma::subview<double> tempVec = par.theta(lcumsum[i], j, arma::size(l[i], 1));
+// 	    // arma::subview<double> hessVec = hessPar.theta(lcumsum[i], j, arma::size(l[i], 1));
+// 	    // arma::vec thetaScale = - tlam(1) * weightMat(i,p+j) * hessVec / arma::norm(tempVec, 2);
+// 	    // thetaScale += 1;
+// 	    // thetaScale.transform( [](double val) {return std::max(val, 0.0); } );
+	    
+// 	    double hessWeight = arma::norm(hessPar.theta(lcumsum[i], j, arma::size(l[i], 1)), "fro");
+// 	    double thetaScale = std::max(0.0, 1 - tlam(1) / hessWeight / arma::norm(tempVec, "fro"));
+
+// 	    Rcpp::Rcout << "Theta(" << i << "," << j << "):    HessWeight:  " << hessWeight<< "    Norm:  " << arma::norm(tempVec, "fro") << "    thetaScale:  " << thetaScale << std::endl;
+            
+//             par.theta(lcumsum[i], j, arma::size(l[i], 1)) = tempVec * thetaScale;
+//             thetaNorms += weightMat(i, p+j) * arma::norm(tempVec, "fro");
+//         }
+//     }
+//     // Rcpp::Rcout << "NS thetaNorms = \n" << thetaNorms << std::endl;
+
+//     /*
+//     for r=1:q
+//         for j=1:q
+//             if r<j
+//                 tempmat=phi(Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1));
+//                 tempmat=max(0,1-t(3)*(wv(p+r)*wv(p+j))/norm(tempmat))*tempmat; % Lj by 2*Lr
+//                 phinorms=phinorms+(wv(p+r)*wv(p+j))*norm(tempmat,'fro');
+//                 phi( Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1) )=tempmat;
+//             end
+//         end
+//     end
+//     */
+//     double phiNorms = 0;
+//     for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+//         for (arma::uword j = i+1; j < q; j++) {
+// 	    arma::subview<double> tempMat = par.phi(lcumsum[i], lcumsum[j], arma::size(l[i],l[j]));
+// 	    double hessWeight = arma::norm(hessPar.phi(lcumsum[i], lcumsum[j], arma::size(l[i],l[j])), "fro");
+// 	    // arma::subview<double> hessMat = hessPar.phi(lcumsum[i], lcumsum[j], arma::size(l[i],l[j]));
+// 	    // arma::mat phiScale = - tlam(2) * weightMat(p+i,p+j) * hessMat / arma::norm(tempMat, "fro");
+// 	    // phiScale += 1;
+// 	    // phiScale.transform( [](double val) {return std::max(val, 0.0); } );
+	    
+// 	    double phiScale = std::max(0.0, 1 - tlam(2) / hessWeight / arma::norm(tempMat, "fro"));
+
+// 	    Rcpp::Rcout << "Phi(" << i << "," << j << "):    HessWeight:  " << hessWeight<< "    Norm:  " << arma::norm(tempMat, "fro") << "    phiScale:  " << phiScale <<  std::endl;
+	    
+//             par.phi(lcumsum[i], lcumsum[j], arma::size(l[i],l[j])) = tempMat * phiScale;
+            
+//             // arma::subview<double> tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+// 	    // double hessWeight = arma::norm(hessPar.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1), "fro");
+//             // double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)*hessWeight/arma::norm(tempMat, "fro"));
+//             // // Use the tempMat subview again to set the values (doesn't work with const)
+//             // par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
+//             phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
+//         }
+//     }
+
+//     // Rcpp::Rcout << "NS phiNorms = \n" << phiNorms << std::endl;
+
+//     pX = par.toMatrix1D();
+//     return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms;
+// }
+
+
 /**
  * Calculate value of h(X)
  *
@@ -853,14 +1494,14 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     par.beta.diag(0).zeros();
     // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
 
+    par.phi = arma::symmatu(par.phi);
     for (arma::uword i = 0; i < q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
 
-    par.phi = arma::symmatu(par.phi);
     // Rcpp::Rcout << "par.phi: \n" << par.phi << std::endl;
 
-    arma::mat divBetaD = arma::diagmat(arma::vec(p, arma::fill::ones) / par.betad);
+    arma::mat divBetaD = arma::diagmat(1 / par.betad);
     // Rcpp::Rcout << "divBetaD: \n" << divBetaD << std::endl;
 
     //Xbeta=X*beta*diag(1./betad);
@@ -879,7 +1520,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < p; j++) {
-            negLoss(i,j) = xBeta(i,j) - xDat(i,j) + par.alpha1(j)/par.betad(j) + dTheta(i,j);
+            negLoss(i,j) = xBeta(i,j) - xDat(i,j) + par.alpha1(j) / par.betad(j) + dTheta(i,j);
         }
         for (arma::uword j = 0; j < dDat.n_cols; j++) {
             wxProd(i, j) += par.alpha2(j);
@@ -958,14 +1599,17 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     //end
     for (arma::uword i = 0; i < q; i++) {
         grad.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
-        // for (arma::uword j = 0; j < p; i++) {
-        //     arma::subview<double> tempVec = grad.theta.col(j).subvec(lcumsum[i], lcumsum[i+1]-1);
-        //     tempVec -= arma::mean(tempVec);
-        // }
-	// for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
-        //     arma::subview<double> tempMat = grad.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-        //     tempMat -= arma::mean(arma::mean(tempMat));
-        // }
+
+	// Rcpp::Rcout << "smoothGradient: Centering Gradients\n";
+
+        for (arma::uword j = 0; j < p; j++) {
+	    // Rcpp::Rcout << "Theta(" << i << "," << j << ")\n"; 
+	    grad.theta(lcumsum[i], j, arma::size(l[i], 1)) -= arma::mean(grad.theta(lcumsum[i], j, arma::size(l[i], 1)));
+        }
+	for (arma::uword j = i+1; j < q; j++) {
+	    // Rcpp::Rcout << "Phi(" << i << "," << j << ")\n";
+	    grad.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])) -= arma::mean(grad.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])));
+        }
     }
 
     // for (arma::uword i = 0; i < p; i++) {
@@ -993,7 +1637,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
         // Rcpp::Rcout << "BETA NORM (i = " << i << "):\n" << std::pow(arma::norm(negLoss.col(i), 2), 2) << std::endl;
         // Rcpp::Rcout << "BETA SCALAR (i = " << i << "):\n" << arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i))) << std::endl;
         grad.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(negLoss.col(i), 2), 2) / 2.0 -
-                           arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i)));
+	    arma::dot(negLoss.col(i), (xBeta.col(i) + dTheta.col(i) + par.alpha1(i) / par.betad(i)));
     }
 
     grad.alpha1 /= (double) n;
@@ -1204,7 +1848,7 @@ EdgeListGraph MGM::graphFromMGM() {
         for (arma::uword j = i+1; j < p; j++) {
             double v1 = params.beta(i,j);
 
-            if (std::abs(v1) > 0) {
+            if (std::abs(v1) > 2*arma::datum::eps) {
                 if(!g.isAdjacentTo(variables[i], variables[j]) &&
 		   !(variables[i] == dummyVar || variables[j] == dummyVar)) {
                     g.addUndirectedEdge(variables[i], variables[j]);
@@ -1217,7 +1861,7 @@ EdgeListGraph MGM::graphFromMGM() {
         for (arma::uword j = 0; j < q; j++) {
             double v1 = arma::accu(arma::abs(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1)));
 
-            if (v1 > 0) {
+            if (v1 > 2*arma::datum::eps) {
                 if(!g.isAdjacentTo(variables[i], variables[p+j]) &&
 		   !(variables[i] == dummyVar || variables[p+j] == dummyVar)) {
                     g.addUndirectedEdge(variables[i], variables[p+j]);
@@ -1230,7 +1874,7 @@ EdgeListGraph MGM::graphFromMGM() {
         for (arma::uword j = i+1; j < q; j++) {
             double v1 = arma::accu(arma::abs(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j]))));
 
-            if (v1 > 0) {
+            if (v1 > 2*arma::datum::eps) {
                 if(!g.isAdjacentTo(variables[p+i], variables[p+j]) &&
 		   !(variables[p+i] == dummyVar || variables[p+j] == dummyVar)) {
                     g.addUndirectedEdge(variables[p+i], variables[p+j]);
@@ -1291,7 +1935,12 @@ EdgeListGraph MGM::search() {
 			  << lambda[2] << " }\n";
     }
     learn(1e-5, 500);
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-start).count();
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  MGM Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
     return graphFromMGM();
 }
 
@@ -1311,13 +1960,18 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
 
 	arma::vec par(params.toMatrix1D());
 	loglik(i) = -n * smoothValue(par);
-	nParams(i) = arma::accu(par!=0);
+	nParams(i) = arma::accu(abs(par)>2*arma::datum::eps);
 
 	RcppThread::checkUserInterrupt();
 		
     }
     if (verbose) RcppThread::Rcout << std::endl;;
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-start).count();
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  MGM Path Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
     return pathGraphs;
 }
 
@@ -1325,9 +1979,10 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
 std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
 					     int nfolds,
 					     arma::uvec& foldid,
-					     arma::mat& loglik) {
+					     arma::mat& loglik,
+					     arma::uvec& index) {
     auto start = std::chrono::high_resolution_clock::now();
-    std::vector<EdgeListGraph> cvGraphs;
+    std::vector<EdgeListGraph> cvGraphs(2);
     // std::vector<MGM> trainMGMs;
     // std::vector<MGM> testMGMs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
@@ -1397,11 +2052,14 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
     arma::uword minIdx = arma::index_min(meanLoglik);
 
     arma::uword seIdx = minIdx;
-    for (arma::uword i = minIdx; i >= 0; i--) {
+    for (int i = minIdx; i >= 0; i--) {
 	if (meanLoglik(i) == meanLoglik(minIdx)) minIdx = i;
 	else if (meanLoglik(i) > meanLoglik(minIdx) + seLoglik(minIdx)) break;
 	seIdx = i;
     }
+
+    index(0) = minIdx;
+    index(1) = seIdx;
 
     lambda = { lambdas[seIdx], lambdas[seIdx], lambdas[seIdx] };
 
@@ -1410,7 +2068,7 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
     setLambda(lambda);
     learn(1e-5, 500);
 
-    cvGraphs.push_back(graphFromMGM());
+    cvGraphs.at(1) = graphFromMGM();
 
     lambda = { lambdas[minIdx], lambdas[minIdx], lambdas[minIdx] };
 
@@ -1419,9 +2077,43 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
     setLambda(lambda);
     learn(1e-5, 500);
 
-    cvGraphs.push_back(graphFromMGM());
+    cvGraphs.at(0) = graphFromMGM();
     
     if (verbose) RcppThread::Rcout << std::endl;
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-start).count();
+
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  MGM Cross-Validation Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
+    
     return cvGraphs;
 }
+
+
+std::string MGM::printParameters(arma::vec& X) {
+    std::stringstream ss;
+    MGMParams par(X, p, lsum);
+    ss << par;
+    return ss.str();
+}
+
+
+
+// // [[Rcpp::export]]
+// Rcpp::List AdaProxMGMTest(const Rcpp::DataFrame &df, double lambda) {
+//     DataSet ds(df);
+
+//     std::vector<double> lambdas = { lambda, lambda, lambda };
+
+//     MGM mgm(ds, lambdas);
+//     mgm.verbose = true;
+
+//     AdaProx ap = AdaProx();
+//     arma::vec curParams = mgm.params.toMatrix1D();
+//     arma::vec newParams = ap.learn((ConvexProximal*) &mgm, curParams, 1e-5, 500);
+//     mgm.params = MGMParams(newParams, mgm.p, mgm.lsum);
+
+//     return mgm.graphFromMGM().toList();
+// }

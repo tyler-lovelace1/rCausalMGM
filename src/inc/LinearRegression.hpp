@@ -5,10 +5,7 @@
 #include "DataSet.hpp"
 #include "Node.hpp"
 #include "RegressionResult.hpp"
-// #include "CoxIRLSRegression.hpp"
-// #include "CoxRegressionResult.hpp"
 #include <list>
-// #include <mutex>
 
 class LinearRegression
 {
@@ -41,11 +38,7 @@ private:
     arma::uvec rows;
     // arma::vec res2;
 
-    // CoxIRLSRegression coxRegression;
-
     std::map<std::pair<Node,Node>, arma::vec> WZmap;
-
-    // std::mutex linregMutex;
 
 public:
     //============================CONSTRUCTORS==========================//

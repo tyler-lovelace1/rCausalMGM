@@ -744,7 +744,7 @@ arma::mat IndTestMulti::getSubsetData(DataSet &origData, std::vector<Node> &varS
 
 // void indTestMultiTest(const Rcpp::DataFrame& df) {
 //   Rcpp::Rcout << "*******Start******* \n";
-//   DataSet data(df, 5);
+//   DataSet data(df);
 //   Rcpp::Rcout << "Dataset Constructed \n";
 //   IndTestMulti itm(data, 0.05);
 //   Rcpp::Rcout << "Independence Test Constructed \n";

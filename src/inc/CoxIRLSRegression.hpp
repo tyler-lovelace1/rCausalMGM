@@ -98,7 +98,7 @@ public:
     // arma::vec getResidualsWithoutFirstRegressor() {return res2;}
 
     friend void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName,
-				      std::vector<std::string>& regressorNames);
+				      std::vector<std::string>& regressorNames, int repetitions);
 
 };
 #endif /* COXIRLSREGRESSION_HPP_ */

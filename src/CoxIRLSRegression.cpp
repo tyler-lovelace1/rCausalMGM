@@ -1,14 +1,12 @@
-// [[Rcpp::depends(BH, RcppThread)]]
+// [[Rcpp::depends(BH)]]
 
 #include "CoxIRLSRegression.hpp"
 #include "CoxRegressionResult.hpp"
-#include "RcppThread.h"
 #include <iostream>
 #include <algorithm>
 #include <math.h>
 #include <boost/math/distributions/normal.hpp>
 
-#include <fstream>
 
 CoxIRLSRegression::CoxIRLSRegression(DataSet& data) {
     this->data = data;
@@ -128,7 +126,7 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    while (dbeta > 1e-5) {
+    while (dbeta > 1e-8 || std::abs(new_l - old_l) > 1e-7) {
 
 	double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
 	if (curr > 5 || iter > 100 || !beta.is_finite()) {
@@ -173,6 +171,10 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 
 	dbeta = arma::norm(beta-oldBeta, 2) / arma::norm(beta, 2);
 	iter++;
+
+	// Rcpp::Rcout << "Iter:  " << iter << "    Loss:  " << new_l << "    |dx|/|x|:  "
+	// 	    << dbeta << "    |dll|:  " << std::abs(new_l - old_l)
+	// 	    << "\n    beta:  " << beta.t() << std::endl;
 	
 	// Rcpp::Rcout << "Iter:\t" << iter << "\n   Loss:\t" << new_l << "\n   beta:"
 	// 	    << beta.t() << "\n   beta - betaOld:" << (beta-oldBeta).t()
@@ -349,7 +351,7 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    while (dbeta > 1e-5) {
+    while (dbeta > 1e-8 || std::abs(new_l - old_l) > 1e-7) {
 
 	double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
 	if (curr > 5 || iter > 100 || !beta.is_finite()) {
@@ -394,6 +396,10 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 
 	dbeta = arma::norm(beta-oldBeta, 2) / arma::norm(beta, 2);
 	iter++;
+
+	// Rcpp::Rcout << "Iter:  " << iter << "    Loss:  " << new_l << "    |dx|/|x|:  "
+	// 	    << dbeta << "    |dll|:  " << std::abs(new_l - old_l)
+	// 	    << "\n    beta:  " << beta.t() << std::endl;
 	// RcppThread::Rcout << "Iter:\t" << iter << "\n   Loss:\t" << new_l << "\n   beta:"
 	// 		  << beta.t() << "\n   beta - betaOld:" << (beta-oldBeta).t()
 	// 		  << "\n   dbeta:\t" << dbeta
@@ -762,9 +768,11 @@ void CoxIRLSRegression::infoMat(arma::vec& beta, arma::mat& hess,
 
 // [[Rcpp::export]]
 void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName,
-			   std::vector<std::string>& regressorNames) {
+			   std::vector<std::string>& regressorNames, int repetitions) {
     DataSet data = DataSet(df);
     data.dropMissing();
+
+    repetitions = std::max(1, repetitions);
 
     Rcpp::Rcout << "-----START----- \n";
     Node target = data.getVariable(targetName);
@@ -775,7 +783,7 @@ void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName,
 
     std::vector<Node> regressors;
     for (Node var : inputRegressors) {
-	Rcpp::Rcout << var << std::endl;
+	// Rcpp::Rcout << var << std::endl;
 	if (var.isContinuous()) {
 	    regressors.push_back(var);
 	    continue;
@@ -802,7 +810,7 @@ void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName,
 
 	    variables.push_back(newVar);
 
-	    Rcpp::Rcout << newVar << std::endl;
+	    // Rcpp::Rcout << newVar << std::endl;
 
 	    data.addVariable(newVar);
 
@@ -824,14 +832,29 @@ void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName,
 
     CoxIRLSRegression reg(data);
     
-    CoxRegressionResult result = reg.regress(target, regressors);
+    CoxRegressionResult result;
+    auto start = std::chrono::high_resolution_clock::now();
+    
+    for (int i = 0; i < repetitions; i++) {
+	result = reg.regress(target, regressors);
+    }
+
+    double curr = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
     Rcpp::Rcout << result;
     Rcpp::Rcout << "-----END----- \n";
     
     Rcpp::Rcout << "-----START----- \n";
     arma::uvec rows = arma::regspace<arma::uvec>(0,data.getNumRows()/2-1);
-    result = reg.regress(target, regressors, rows);
+
+    start = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < repetitions; i++) {
+	result = reg.regress(target, regressors, rows);
+    }
+    curr += std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - start).count();
+    
     Rcpp::Rcout << result;
     Rcpp::Rcout << "-----END----- \n";
+
+    Rcpp::Rcout << "Elapsed Time: " << curr << " seconds.\n";
     
 }

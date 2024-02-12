@@ -25,12 +25,21 @@ private:
     //Continuous Data
     arma::mat xDat;
 
+    // //Squared Continuous Data
+    // arma::mat xDat2;
+
+    // //Diagonal of second moment of continuous data
+    // arma::vec xDat2Sum;
+
     //Discrete Data coded as integers
     arma::mat yDat;
 
     //Discrete Data coded as dummy variables
     arma::mat dDat;
 
+    // //Diagonal of second moment Discrete Data dummy variable
+    // arma::vec dDat2Sum;
+    
     std::vector<Node> variables;
     std::vector<Node> initVariables;
 
@@ -38,7 +47,7 @@ private:
 
     arma::vec lambda;
 
-    long elapsedTime = 0;
+    double elapsedTime = 0.0;
 
     //Levels of Discrete variables
     std::vector<int> l;
@@ -74,7 +83,7 @@ public:
     MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
     MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<int> l, std::vector<double> lambda);
     MGM(DataSet ds);
-    MGM(DataSet ds, std::vector<double>& lambda);
+    MGM(DataSet ds, std::vector<double> lambda);
 
     // MGM(const MGM& other) = default;
     // MGM& operator=(const MGM& other) = default;
@@ -82,10 +91,12 @@ public:
     // MGM& operator=(const MGM&& other) = default;
     // ~MGM() = default;
 
+    std::string printParameters(arma::vec& X);
+
     MGMParams getParams() { return params; }
     void setParams(MGMParams newParams) { params = newParams; }
     void setTimeout(long time) { timeout = time; }
-    long getElapsedTime() { return elapsedTime; }
+    double getElapsedTime() { return elapsedTime; }
     arma::vec getLambda() { return lambda; }
 
     // void setVerbose(bool v) { verbose = v; }
@@ -102,8 +113,18 @@ public:
      */
     double smooth(arma::vec& parIn, arma::vec& gradOutVec);
 
+    // /**
+    //  * Calculate value of g(X) and gradient of g(X) at the same time for efficiency reasons.
+    //  *
+    //  * @param X input Vector
+    //  * @param gradOutVec gradient of g(X)
+    //  * @param hessOutVec diagonal of hessian of g(X)
+    //  * @return value of g(X)
+    //  */
+    // double smooth(arma::vec& parIn, arma::vec& gradOutVec, arma::vec& hessOutVec);
+
     /**
-     * Calculate value of smooth function g(X)
+     * calculate value of smooth function g(X)
      *
      * @param X input vector
      * @return value of g(X)
@@ -115,10 +136,21 @@ public:
      *
      * @param t positive parameter for prox operator
      * @param X input vector
-     * @param Xout vector solution to prox_t(X)
+     * @param pX vector solution to prox_t(X)
      * @return value of h(X)
      */
     double nonSmooth(double t, arma::vec& X, arma::vec& pX);
+
+    // /**
+    //  * Calculate value of h(X) and proxOperator of h(X) at the same time for efficiency reasons.
+    //  *
+    //  * @param t positive parameter for prox operator
+    //  * @param X input vector
+    //  * @param hess diagonal of the hessian
+    //  * @param pX vector solution to prox_t(X)
+    //  * @return value of h(X)
+    //  */
+    // double nonSmooth(double t, arma::vec& X, arma::vec& hess, arma::vec& pX);
 
     /**
      * Calculate value of h(X)
@@ -204,11 +236,14 @@ public:
     std::vector<EdgeListGraph> searchPathCV(std::vector<double> lambdas,
 					    int nfolds,
 					    arma::uvec& foldid,
-					    arma::mat& loglik);
+					    arma::mat& loglik,
+					    arma::uvec& index);
     
     //  std::vector<EdgeListGraph> searchPath(std::vector<double> lambdas);
     
-    friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+    // friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+
+    friend Rcpp::List AdaProxMGMTest(const Rcpp::DataFrame &df, double lambda);
 
 };
 

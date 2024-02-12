@@ -13,6 +13,8 @@
 #define CONVEXPROXIMAL_HPP_
 
 #include "armaLapack.hpp"
+#include <sstream>
+#include <string>
 
 class ConvexProximal {
 
@@ -81,12 +83,14 @@ public:
      * @param Xout vector solution to prox_t(X)
      * @return value of h(X)
      */
-    virtual double nonSmooth(double t, arma::vec& X, arma::vec& Xout){
+    virtual double nonSmooth(double t, arma::vec& X, arma::vec& Xout) {
         Xout = proximalOperator(t,X);
         return nonSmoothValue(X);
     }
 
     virtual void iterUpdate(arma::vec& X) = 0;
+
+    virtual std::string printParameters(arma::vec& X) = 0;
 
     void setVerbose(bool v) { verbose = v; }
     

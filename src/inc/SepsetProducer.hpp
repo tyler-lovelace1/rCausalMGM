@@ -117,7 +117,8 @@ public:
         }
     }
 
-    SepsetProducer(SepsetMap& sepsets, IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE){
+    SepsetProducer(const EdgeListGraph& _graph, SepsetMap& sepsets, IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE){
+	this->graph = _graph;
 	this->sepsets = sepsets;
 	this->test = test;
 	this->rule = ORIENT_SEPSETS;
@@ -203,6 +204,37 @@ public:
 
     Knowledge getKnowledge() { return knowledge; }
     void setKnowledge(Knowledge knowledge) { this->knowledge = knowledge; }
+
+    static OrientRule str2rule(std::string rule) {
+	std::transform(rule.begin(), rule.end(), rule.begin(),
+		       [](unsigned char c){ return std::tolower(c); });
+	if (rule == "majority") {
+	    return ORIENT_MAJORITY;
+	} else if (rule == "conservative") {
+	    return ORIENT_CONSERVATIVE;
+	} else if (rule == "maxp") {
+	    return ORIENT_MAXP;
+	} else if (rule == "sepsets") {
+	    return ORIENT_SEPSETS;
+	} else {
+	    throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+	}
+    }
+
+    static std::string rule2str(OrientRule rule) {
+	if (rule == ORIENT_MAJORITY) {
+	    return "majority";
+	} else if (rule == ORIENT_CONSERVATIVE) {
+	    return "conservative";
+	} else if (rule == ORIENT_MAXP) {
+	    return "maxp";
+	} else if (rule == ORIENT_SEPSETS) {
+	    return "sepsets";
+	} else {
+	    throw std::invalid_argument("Invalid OrientRule value");
+	}
+    }
+
 
     // virtual ~SepsetProducer() {}
 

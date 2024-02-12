@@ -166,7 +166,7 @@ EdgeListGraph STEPS::runStepsPar() {
 }
 
 
-EdgeListGraph STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
+std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
 
     // Sort in descending order
     std::sort(lambda.begin(), lambda.end(), std::greater<double>());
@@ -364,6 +364,8 @@ EdgeListGraph STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
 	    pool.parallelForEach(coxmgmList,
 				 [&] (CoxMGM& m) {
 				     // RcppThread::Rcout << "MGM run started...\n";
+				     // EdgeListGraph ig = m.graphFromCoxMGM();
+				     // RcppThread::Rcout << "Graph starting from " << ig << "\n";
 				     m.setLambda(lambdaCurr);
 				     EdgeListGraph g = m.search();
 				     arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
@@ -378,6 +380,8 @@ EdgeListGraph STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
 	    pool.parallelForEach(mgmList,
 				 [&] (MGM& m) {
 				     // RcppThread::Rcout << "MGM run started...\n";
+				     // EdgeListGraph ig = m.graphFromMGM();
+				     // RcppThread::Rcout << "Graph starting from " << ig.getEdges().size() << " edges\n";
 				     m.setLambda(lambdaCurr);
 				     EdgeListGraph g = m.search();
 				     arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
@@ -667,11 +671,15 @@ EdgeListGraph STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
 	if (verbose) {
 	    Rcpp::Rcout << "Selected Lambdas: { " << CC << " " << CD << " " << DD
 			<< " " << SC << " " << SD << " }" << std::endl;
+	    Rcpp::Rcout << "StARS lambda: " << oneLamb << std::endl;
 	}
     } else {
 	lambda = { CC, CD, DD };
-	if (verbose) Rcpp::Rcout << "Selected lambdas: { " << CC << ", " << CD << ", " << DD
-				 << " }" << std::endl;
+	if (verbose) {
+	    Rcpp::Rcout << "Selected lambdas: { " << CC << ", " << CD << ", " << DD
+			<< " }" << std::endl;
+	    Rcpp::Rcout << "StARS lambda: " << oneLamb << std::endl;
+	}
     }
     
     if (oneLamb == -1)
@@ -679,13 +687,23 @@ EdgeListGraph STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
     else
         origLambda = oneLamb;
     
-    EdgeListGraph g;
+    EdgeListGraph gSteps, gStars;
     if (d.isCensored()) {
 	CoxMGM m(d, lambda);
-	g = m.search();
+	gSteps = m.search();
+	
+	lambda = { oneLamb, oneLamb, oneLamb, oneLamb, oneLamb };
+	
+	m = CoxMGM(d, lambda);
+	gStars = m.search();
     } else {
 	MGM m(d, lambda);
-	g = m.search();
+	gSteps = m.search();
+
+	lambda = { oneLamb, oneLamb, oneLamb, };
+	
+	m = MGM(d, lambda);
+	gStars = m.search();
     }
 
     if (computeStabs) {
@@ -698,7 +716,7 @@ EdgeListGraph STEPS::runStepsPath(arma::mat& instabs, arma::umat& samps) {
     lastLambda = lambda;
     
     // EdgeListGraph g = m.graphFromMGM();
-    g.setHyperParam("lambda", arma::vec(lambda));
+    // gSteps.setHyperParam("lambda", arma::vec(lambda));
     
-    return g;
+    return { gSteps, gStars };
 }

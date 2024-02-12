@@ -13,9 +13,6 @@
 // class Node;
 
 #include "Variable.hpp"
-// #include "CoxIRLSRegression.hpp"
-// #include "CoxRegressionResult.hpp"
-// #include "Node.hpp"
 #include <cmath>
 #include <limits>
 #include <exception>
@@ -38,8 +35,6 @@ private:
     // arma::uvec CC;
     arma::vec WZ;
     std::vector<std::string> neighbors;
-    // CoxIRLSRegression coxRegression;
-    // CoxRegressionResult coxResult;
 
 public:
     CensoredVariable(const std::string& name) {

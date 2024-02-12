@@ -73,7 +73,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 
 		    arma::uvec strata(surv.n_rows, arma::fill::zeros);
 		    if (x.hasAttribute("strata")) {
-			Rcpp::Rcout << "Node Object " << curName << " has strata\n";
+			// Rcpp::Rcout << "Node Object " << curName << " has strata\n";
 			Rcpp::RObject st = x.attr("strata");
 			if (Rcpp::is<Rcpp::NumericVector>(st)) {
 			    Rcpp::stop("Strata for " + curName + " is numeric; strata must be discrete and should be either a character vector, integer vector, or factor.");
@@ -146,8 +146,8 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 		    variables[i].setCensor(values(nonmissing), censor(nonmissing), strata(nonmissing));
 		    data.col(i) = values;
 		    // missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::NumericVector(values.begin(), values.end())));
-		    Rcpp::Rcout << "Surv Object " << curName << " data input complete\n";
-		    Rcpp::Rcout << variables[i] << std::endl;
+		    // Rcpp::Rcout << "Surv Object " << curName << " data input complete\n";
+		    // Rcpp::Rcout << variables[i] << std::endl;
 		} else {
 		    Rcpp::stop(curName + " is a numeric matrix but is not a Surv object");
 		}
@@ -262,90 +262,90 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 }
 
 
-DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete) {
-    this->maxDiscrete = maxDiscrete;
-    const Rcpp::CharacterVector names = df.names();
-    this->m = names.length();
-    this->n = df.nrows();
-    this->data.set_size(this->n, this->m);
-    this->name2idx = std::unordered_map<std::string, int>();
-    this->var2idx = std::unordered_map<Node, int>();
-    int numUnique;
-    std::string val, curName;
+// DataSet::DataSet(const Rcpp::DataFrame &df, const int maxDiscrete) {
+//     this->maxDiscrete = maxDiscrete;
+//     const Rcpp::CharacterVector names = df.names();
+//     this->m = names.length();
+//     this->n = df.nrows();
+//     this->data.set_size(this->n, this->m);
+//     this->name2idx = std::unordered_map<std::string, int>();
+//     this->var2idx = std::unordered_map<Node, int>();
+//     int numUnique;
+//     std::string val, curName;
     
 
-    for (int i = 0; i < m; i++)
-    {
+//     for (int i = 0; i < m; i++)
+//     {
 
-        Rcpp::CharacterVector col = df[i];
+//         Rcpp::CharacterVector col = df[i];
 
-        curName = (std::string)names[i];
+//         curName = (std::string)names[i];
 
-        std::set<std::string> unique = getUnique(col);
+//         std::set<std::string> unique = getUnique(col);
 
-        numUnique = unique.size();
+//         numUnique = unique.size();
 
-        if (numUnique > maxDiscrete)
-        {
+//         if (numUnique > maxDiscrete)
+//         {
 
-            variables.push_back(Node(new ContinuousVariable(curName)));
-        }
-        else
-        {
+//             variables.push_back(Node(new ContinuousVariable(curName)));
+//         }
+//         else
+//         {
 
-            std::vector<std::string> categories;
+//             std::vector<std::string> categories;
 
-            for (auto it = unique.begin(); it != unique.end(); it++)
-                categories.push_back(*it);
+//             for (auto it = unique.begin(); it != unique.end(); it++)
+//                 categories.push_back(*it);
 
-            std::sort(categories.begin(), categories.end());
+//             std::sort(categories.begin(), categories.end());
 
-            variables.push_back(Node(new DiscreteVariable(curName, categories)));
-        }
+//             variables.push_back(Node(new DiscreteVariable(curName, categories)));
+//         }
 
-        variableNames.push_back(curName);
-        name2idx.insert(std::pair<std::string, int>(curName, i));
-        var2idx.insert(std::pair<Node, int>(variables[i], i));
+//         variableNames.push_back(curName);
+//         name2idx.insert(std::pair<std::string, int>(curName, i));
+//         var2idx.insert(std::pair<Node, int>(variables[i], i));
 
-        for (int j = 0; j < n; j++)
-        {
+//         for (int j = 0; j < n; j++)
+//         {
 
-            val = (std::string)col[j];
+//             val = (std::string)col[j];
 
-            if (variables[i].isMissingValue(val))
-            {
-                throw std::runtime_error("Missing values not yet implemented");
-            }
-            else if (variables[i].isContinuous())
-            {
-                if (variables[i].checkValue(val))
-                {
-                    this->data(j, i) = std::stod(val);
-                }
-                else
-                {
-                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of continuous variable " + curName + 
-                        " (HINT: If this variable is intended to be discrete, consider raising the maxDiscrete parameter)");
-                }
-            }
-            else if (variables[i].isDiscrete())
-            {
-                if (variables[i].checkValue(val))
-                {
-                    this->data(j, i) = (double) variables[i].getIndex(val);
-                }
-                else
-                {
-                    throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of discrete variable " + curName);
-                }
-            }
-            else
-            {
-                throw std::runtime_error("invalid variable type");
-            }
-        }
-    }
-}
+//             if (variables[i].isMissingValue(val))
+//             {
+//                 throw std::runtime_error("Missing values not yet implemented");
+//             }
+//             else if (variables[i].isContinuous())
+//             {
+//                 if (variables[i].checkValue(val))
+//                 {
+//                     this->data(j, i) = std::stod(val);
+//                 }
+//                 else
+//                 {
+//                     throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of continuous variable " + curName + 
+//                         " (HINT: If this variable is intended to be discrete, consider raising the maxDiscrete parameter)");
+//                 }
+//             }
+//             else if (variables[i].isDiscrete())
+//             {
+//                 if (variables[i].checkValue(val))
+//                 {
+//                     this->data(j, i) = (double) variables[i].getIndex(val);
+//                 }
+//                 else
+//                 {
+//                     throw std::runtime_error("invalid value encountered in row " + std::to_string(j) + " of discrete variable " + curName);
+//                 }
+//             }
+//             else
+//             {
+//                 throw std::runtime_error("invalid variable type");
+//             }
+//         }
+//     }
+// }
 
 
 void DataSet::dropMissing() {
@@ -783,6 +783,14 @@ int DataSet::getInt(int row, int col) {
 //     return result;
 // }
 
+arma::mat DataSet::getSubsetData(arma::uvec colIdxs) {
+    return data.cols(colIdxs);
+}
+
+arma::mat DataSet::getSubsetData(arma::uvec rowIdxs, arma::uvec colIdxs) {
+    return data(rowIdxs, colIdxs);
+}
+
 arma::mat DataSet::getContinuousData() {
     std::vector<arma::uword> continuousColumns = std::vector<arma::uword>();
 
@@ -845,7 +853,7 @@ bool DataSet::updateNode(const Node& node) {
 
 // no export //[[Rcpp::export]]
 void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete = 5) {
-    DataSet ds = DataSet(df, maxDiscrete);
+    DataSet ds = DataSet(df);
     // Rcpp::Rcout << ds;
 
     std::vector<DataSet> dsVec;

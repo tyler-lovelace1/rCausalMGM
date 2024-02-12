@@ -128,6 +128,8 @@ public:
     void setTimeout(long time) { timeout = time; }
     long getElapsedTime() { return elapsedTime; }
 
+    std::string printParameters(arma::vec& X);
+
     // void setVerbose(bool v) { verbose = v; }
     void setLambda(std::vector<double> lambda) { this->lambda = arma::vec(lambda); }
 

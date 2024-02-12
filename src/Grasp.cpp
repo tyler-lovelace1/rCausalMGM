@@ -489,7 +489,7 @@ bool Grasp::graspDFS(int tier) {
 		return true;
 	    }
 
-	    if (tau.bic - pi.bic > 3) continue;
+	    if (tau.bic > pi.bic) continue;
 
 	    // double dBic = tau.bic - pi.bic;
 	    // double postProbTau = std::exp(-0.5 * dBic);
@@ -824,25 +824,25 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 
     // std::vector<Node> _nodes(growShrink.getVariables());
     // std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
-    nodes = initializeRandom();
-    pi = OrderGraph(nodes);
-    score = update(pi);
+    // nodes = initializeRandom();
+    // pi = OrderGraph(nodes);
+    // score = update(pi);
 
-    OrderGraph bestOrder = pi;
+    OrderGraph bestOrder;
 
     std::map<EdgeListGraph, std::pair<int, double>> cpdagMap;
 
     for (int i = 0; i < numStarts; i++) {
 	if (verbose) Rcpp::Rcout << "Run " << i+1 << "...\n";
 	
-	if (i > 0) {
-	    // std::vector<Node> _nodes(growShrink.getVariables());
-	    // std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
-	    // nodes = std::list<Node>(_nodes.begin(), _nodes.end());
-	    nodes = initializeRandom();
-	    pi = OrderGraph(nodes);
-	    score = update(pi);
-	}
+	// if (i > 0) {
+	// std::vector<Node> _nodes(growShrink.getVariables());
+	// std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
+	// nodes = std::list<Node>(_nodes.begin(), _nodes.end());
+	nodes = initializeRandom();
+	pi = OrderGraph(nodes);
+	score = update(pi);
+	// }
 	
 	for (int tier = 0; tier < 3; tier++) {
 	    double oldScore = nodes.size() * nodes.size();
@@ -851,7 +851,7 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 	    double curBIC = pi.bic;
 	    // growShrink.clearHistory();
 
-	    if (tier==0)  depth = std::max(inputDepth, 4);
+	    if (tier==0)  depth = std::max(inputDepth, 10);
 	    else          depth = inputDepth;
 
 	    if (verbose) Rcpp::Rcout << "  Running GRaSP" << tier << "...\n";

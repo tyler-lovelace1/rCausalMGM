@@ -5,8 +5,6 @@
 #include "DataSet.hpp"
 #include "Node.hpp"
 #include "LogisticRegressionResult.hpp"
-// #include "CoxIRLSRegression.hpp"
-// #include "CoxRegressionResult.hpp"
 
 class LogisticRegression
 {
@@ -16,8 +14,6 @@ class LogisticRegression
     // double dataCols[][]; ?
     arma::mat dataCols;
     arma::uvec rows;
-
-    // CoxIRLSRegression coxRegression;
 
     std::map<std::pair<Node,Node>, arma::vec> WZmap;
 

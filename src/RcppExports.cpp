@@ -12,19 +12,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// BayesIndTestMultiCoxTest
-void BayesIndTestMultiCoxTest(const std::string& x, const std::string& y, const Rcpp::StringVector& z, const Rcpp::DataFrame& df);
-RcppExport SEXP _rCausalMGM_BayesIndTestMultiCoxTest(SEXP xSEXP, SEXP ySEXP, SEXP zSEXP, SEXP dfSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type x(xSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type y(ySEXP);
-    Rcpp::traits::input_parameter< const Rcpp::StringVector& >::type z(zSEXP);
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    BayesIndTestMultiCoxTest(x, y, z, df);
-    return R_NilValue;
-END_RCPP
-}
 // test_censored
 void test_censored(const std::string& name, arma::vec& values, arma::uvec& censor, arma::uvec& strata);
 RcppExport SEXP _rCausalMGM_test_censored(SEXP nameSEXP, SEXP valuesSEXP, SEXP censorSEXP, SEXP strataSEXP) {
@@ -39,14 +26,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // CoxIRLSRegressionTest
-void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames);
-RcppExport SEXP _rCausalMGM_CoxIRLSRegressionTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP) {
+void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames, int repetitions);
+RcppExport SEXP _rCausalMGM_CoxIRLSRegressionTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP, SEXP repetitionsSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
     Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
-    CoxIRLSRegressionTest(df, targetName, regressorNames);
+    Rcpp::traits::input_parameter< int >::type repetitions(repetitionsSEXP);
+    CoxIRLSRegressionTest(df, targetName, regressorNames, repetitions);
+    return R_NilValue;
+END_RCPP
+}
+// CoxRegressionTest
+void CoxRegressionTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames, int repetitions);
+RcppExport SEXP _rCausalMGM_CoxRegressionTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP, SEXP repetitionsSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
+    Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
+    Rcpp::traits::input_parameter< int >::type repetitions(repetitionsSEXP);
+    CoxRegressionTest(df, targetName, regressorNames, repetitions);
     return R_NilValue;
 END_RCPP
 }
@@ -250,6 +251,22 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// causalMGMRandCvTest
+Rcpp::List causalMGMRandCvTest(const Rcpp::DataFrame& data, std::string alg, arma::vec lambdas, arma::vec alphas, uint nfolds, bool fdr);
+RcppExport SEXP _rCausalMGM_causalMGMRandCvTest(SEXP dataSEXP, SEXP algSEXP, SEXP lambdasSEXP, SEXP alphasSEXP, SEXP nfoldsSEXP, SEXP fdrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< std::string >::type alg(algSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type lambdas(lambdasSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type alphas(alphasSEXP);
+    Rcpp::traits::input_parameter< uint >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< bool >::type fdr(fdrSEXP);
+    rcpp_result_gen = Rcpp::wrap(causalMGMRandCvTest(data, alg, lambdas, alphas, nfolds, fdr));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mgm
 Rcpp::List mgm(const Rcpp::DataFrame& data, Rcpp::NumericVector lambda, const bool rank, const bool verbose);
 RcppExport SEXP _rCausalMGM_mgm(SEXP dataSEXP, SEXP lambdaSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
@@ -365,6 +382,96 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// pcCV
+Rcpp::List pcCV(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::List> initialGraph, Rcpp::Nullable<Rcpp::List> knowledge, const Rcpp::StringVector orientRule, Rcpp::NumericVector alphas, const int nfolds, Rcpp::Nullable<Rcpp::NumericVector> foldid, const int threads, const bool fdr, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_pcCV(SEXP dataSEXP, SEXP initialGraphSEXP, SEXP knowledgeSEXP, SEXP orientRuleSEXP, SEXP alphasSEXP, SEXP nfoldsSEXP, SEXP foldidSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type knowledge(knowledgeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::StringVector >::type orientRule(orientRuleSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alphas(alphasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type foldid(foldidSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fdr(fdrSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(pcCV(data, initialGraph, knowledge, orientRule, alphas, nfolds, foldid, threads, fdr, rank, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// fciCV
+Rcpp::List fciCV(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::List> initialGraph, Rcpp::Nullable<Rcpp::List> knowledge, const Rcpp::StringVector orientRule, Rcpp::NumericVector alphas, const int nfolds, Rcpp::Nullable<Rcpp::NumericVector> foldid, const int threads, const bool fdr, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_fciCV(SEXP dataSEXP, SEXP initialGraphSEXP, SEXP knowledgeSEXP, SEXP orientRuleSEXP, SEXP alphasSEXP, SEXP nfoldsSEXP, SEXP foldidSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type initialGraph(initialGraphSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type knowledge(knowledgeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::StringVector >::type orientRule(orientRuleSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alphas(alphasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type foldid(foldidSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fdr(fdrSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(fciCV(data, initialGraph, knowledge, orientRule, alphas, nfolds, foldid, threads, fdr, rank, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mgmpcCV
+Rcpp::List mgmpcCV(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::List> knowledge, const std::string cvType, const Rcpp::StringVector orientRule, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, Rcpp::NumericVector alphas, const int numPoints, const int nfolds, Rcpp::Nullable<Rcpp::NumericVector> foldid, const int threads, const bool fdr, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_mgmpcCV(SEXP dataSEXP, SEXP knowledgeSEXP, SEXP cvTypeSEXP, SEXP orientRuleSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP alphasSEXP, SEXP numPointsSEXP, SEXP nfoldsSEXP, SEXP foldidSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type knowledge(knowledgeSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type cvType(cvTypeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::StringVector >::type orientRule(orientRuleSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambdas(lambdasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nLambda(nLambdaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alphas(alphasSEXP);
+    Rcpp::traits::input_parameter< const int >::type numPoints(numPointsSEXP);
+    Rcpp::traits::input_parameter< const int >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type foldid(foldidSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fdr(fdrSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(mgmpcCV(data, knowledge, cvType, orientRule, lambdas, nLambda, alphas, numPoints, nfolds, foldid, threads, fdr, rank, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mgmfciCV
+Rcpp::List mgmfciCV(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::List> knowledge, const std::string cvType, const Rcpp::StringVector orientRule, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, Rcpp::NumericVector alphas, const int numPoints, const int nfolds, Rcpp::Nullable<Rcpp::NumericVector> foldid, const int threads, const bool fdr, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_mgmfciCV(SEXP dataSEXP, SEXP knowledgeSEXP, SEXP cvTypeSEXP, SEXP orientRuleSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP alphasSEXP, SEXP numPointsSEXP, SEXP nfoldsSEXP, SEXP foldidSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type knowledge(knowledgeSEXP);
+    Rcpp::traits::input_parameter< const std::string >::type cvType(cvTypeSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::StringVector >::type orientRule(orientRuleSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambdas(lambdasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nLambda(nLambdaSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type alphas(alphasSEXP);
+    Rcpp::traits::input_parameter< const int >::type numPoints(numPointsSEXP);
+    Rcpp::traits::input_parameter< const int >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type foldid(foldidSEXP);
+    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type fdr(fdrSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(mgmfciCV(data, knowledge, cvType, orientRule, lambdas, nLambda, alphas, numPoints, nfolds, foldid, threads, fdr, rank, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // fciStable
 Rcpp::List fciStable(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::List> initialGraph, Rcpp::Nullable<Rcpp::List> knowledge, const Rcpp::StringVector orientRule, const double alpha, const int threads, const bool fdr, const bool rank, const bool verbose);
 RcppExport SEXP _rCausalMGM_fciStable(SEXP dataSEXP, SEXP initialGraphSEXP, SEXP knowledgeSEXP, SEXP orientRuleSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
@@ -442,9 +549,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rCausalMGM_BayesIndTestMultiCoxTest", (DL_FUNC) &_rCausalMGM_BayesIndTestMultiCoxTest, 4},
     {"_rCausalMGM_test_censored", (DL_FUNC) &_rCausalMGM_test_censored, 4},
-    {"_rCausalMGM_CoxIRLSRegressionTest", (DL_FUNC) &_rCausalMGM_CoxIRLSRegressionTest, 3},
+    {"_rCausalMGM_CoxIRLSRegressionTest", (DL_FUNC) &_rCausalMGM_CoxIRLSRegressionTest, 4},
+    {"_rCausalMGM_CoxRegressionTest", (DL_FUNC) &_rCausalMGM_CoxRegressionTest, 4},
     {"_rCausalMGM_DGScoreTest", (DL_FUNC) &_rCausalMGM_DGScoreTest, 4},
     {"_rCausalMGM_DGScoreTest2", (DL_FUNC) &_rCausalMGM_DGScoreTest2, 1},
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
@@ -462,6 +569,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_allMetrics", (DL_FUNC) &_rCausalMGM_allMetrics, 3},
     {"_rCausalMGM_RegrBicScoreTest", (DL_FUNC) &_rCausalMGM_RegrBicScoreTest, 3},
     {"_rCausalMGM_RegrBicScoreTest2", (DL_FUNC) &_rCausalMGM_RegrBicScoreTest2, 1},
+    {"_rCausalMGM_causalMGMRandCvTest", (DL_FUNC) &_rCausalMGM_causalMGMRandCvTest, 6},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_coxmgm", (DL_FUNC) &_rCausalMGM_coxmgm, 4},
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
@@ -469,6 +577,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_mgmCV", (DL_FUNC) &_rCausalMGM_mgmCV, 7},
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 11},
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 9},
+    {"_rCausalMGM_pcCV", (DL_FUNC) &_rCausalMGM_pcCV, 11},
+    {"_rCausalMGM_fciCV", (DL_FUNC) &_rCausalMGM_fciCV, 11},
+    {"_rCausalMGM_mgmpcCV", (DL_FUNC) &_rCausalMGM_mgmpcCV, 14},
+    {"_rCausalMGM_mgmfciCV", (DL_FUNC) &_rCausalMGM_mgmfciCV, 14},
     {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 9},
     {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 11},
     {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 6},

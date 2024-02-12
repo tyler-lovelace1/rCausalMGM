@@ -103,7 +103,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             }
         }
 
-        dx = arma::norm((X - Xold) / std::max(1.0, arma::norm(X, 2)), 2);
+	dx = arma::norm((X - Xold), 2) / std::max(1.0, arma::norm(X, 2));
 
         //sometimes there are more edge changes after initial 0, so may want to do two zeros in a row...
         if (diffEdges == 0 && edgeConverge) {
@@ -283,7 +283,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             }
         }
 
-        dx = arma::norm((X - Xold) / std::max(1.0, arma::norm(X, 2)), 2);
+	dx = arma::norm((X - Xold), 2) / std::max(1.0, arma::norm(X, 2));
 
 	// dx = (Fx+Gx - obj) / std::min(Fx+Gx, obj);
 
@@ -362,7 +362,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 		RcppThread::Rcout << "    Iter: " << iterCount << 
 		    " ||dx||/||x||: " << dx << 
 		    " loss: " << Fx + Gx << "\n";
-		// Rcpp::Rcout << "X = \n" << X.t() << std::endl;
+		// RcppThread::Rcout << "Params = \n" << cp->printParameters(X) << std::endl;
 	    }
         }
 
