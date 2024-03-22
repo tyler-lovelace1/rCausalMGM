@@ -7,10 +7,12 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <stack>
-#include "GrowShrink.hpp"
+// #include "GrowShrink.hpp"
+#include "GrowShrinkTree.hpp"
 #include "EdgeListGraph.hpp"
 #include "Knowledge.hpp"
 #include <chrono>
+#include <mutex>
 
 typedef std::pair<Node, Node> NodePair;
 
@@ -63,9 +65,17 @@ private:
 
     bool verbose = false;
 
+    bool scoreEdges = true;
+
     std::list<Node> nodes;
 
-    GrowShrink growShrink;
+    // GrowShrink growShrink;
+
+    Score* scorer;
+
+    std::map<Node, GrowShrinkTree> gstMap;
+
+    std::map<Node, std::mutex> gstMutexMap;
 
     struct OrderGraph {
         double score=1e20, bic=1e20;
@@ -283,11 +293,13 @@ private:
 
     double score;
 
-    static int randWrapper(const int n) { return std::floor(R::unif_rand()*n); }
-
     std::list<Node> initializeRandom();
 
     std::list<Node> initializeMinDegree();
+
+    std::list<Node> initializeBOSS();
+
+    OrderGraph internalBOSS(Node n, OrderGraph tau);
 
     std::list<Node> minDegreeAlgorithm(EdgeListGraph graph);
 
@@ -333,7 +345,7 @@ public:
 
     void setPenalty(double penalty) {
 	this->penalty = penalty;
-	growShrink.setPenalty(penalty);
+	this->scorer->setPenalty(penalty);
     }
 
     void setThreads(int threads) { this->threads = threads; }

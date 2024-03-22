@@ -313,12 +313,18 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
 
             double var = arma::var(curr);
 
-            if (var <= 0.0001) {
+            if (var <= 0.00001) {
 		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  " << var << std::endl;
                 return i;
             }
 
         } else if (d.getVariable(i).isDiscrete()) {
+
+	    if (d.getVariable(i).getNumCategories() < 2) {
+		Rcpp::Rcout << "    " << d.getVariable(i).getName() << " has only one category\n";
+		return i;
+	    }
+	    
             std::unordered_map<int, int> cats;
             for (arma::uword j = 0; j < full.getNumRows(); j++) {
                 cats[full.getInt(j, i)] = 0;
@@ -365,12 +371,18 @@ int StabilityUtils::checkForVariance(DataSet& d) {
 
             double var = arma::var(curr);
 
-            if (var <= 0.0001) {
+            if (var <= 0.00001) {
 		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  " << var << std::endl;
                 return i;
             }
 
         } else if (d.getVariable(i).isDiscrete()) {
+
+	    if (d.getVariable(i).getNumCategories() < 2) {
+		Rcpp::Rcout << "    " << d.getVariable(i).getName() << " has only one category\n";
+		return i;
+	    }
+	  
             std::unordered_map<int, int> cats;
             for (arma::uword j = 0; j < d.getNumRows(); j++) {
                 cats[d.getInt(j, i)] = 0;

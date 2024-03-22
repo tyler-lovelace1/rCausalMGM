@@ -1,27 +1,17 @@
 #include "MGM.hpp"
 #include "CoxMGM.hpp"
 #include "PcStable.hpp"
-// #include "CpcStable.hpp"
-// #include "PcMax.hpp"
-// #include "Pc50.hpp"
 #include "Fci.hpp"
-// #include "Cfci.hpp"
-// #include "FciMax.hpp"
-// #include "Fci50.hpp"
 #include "STEPS.hpp"
+#include "STARS.hpp"
 #include "StabilityUtils.hpp"
-// #include "CausalMGMParams.hpp"
-// #include "STARS.hpp"
 #include "Bootstrap.hpp"
-// #include "Tests.hpp"
 #include "IndTestMultiCox.hpp"
 #include "SearchCV.hpp"
-// #include "BayesIndTestMultiCox.hpp"
 #include "GrowShrink.hpp"
 #include "DegenerateGaussianScore.hpp"
 #include "RegressionBicScore.hpp"
 #include "Grasp.hpp"
-// #include "CausalMGM.hpp"
 #include "Knowledge.hpp"
 
 //' Calculate the MGM graph on a dataset
@@ -49,6 +39,11 @@ Rcpp::List mgm(
 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
     
     std::vector<double> l(lambda.begin(), lambda.end());
@@ -111,6 +106,11 @@ Rcpp::List coxmgm(
 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
     
     bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
@@ -180,6 +180,11 @@ Rcpp::List mgmPath(
 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
 
     // bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
@@ -293,6 +298,11 @@ Rcpp::List coxmgmPath(
 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
 
     bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
@@ -414,6 +424,11 @@ Rcpp::List mgmCV(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
 
     arma::vec _lambda;
@@ -442,15 +457,18 @@ Rcpp::List mgmCV(
 	    l = std::vector<double>(_lambda.begin(), _lambda.end());
 	}
     }
-
+    
     arma::uvec _foldid;
     
     if (foldid.isNull()) {
 	// Rcpp::NumericVector folds = Rcpp::as<Rcpp::NumericVector>(arma::linspace(1, nfolds));
 	// folds = Rcpp::rep_len(folds, n);
-	arma::vec folds = arma::linspace(1, nfolds, nfolds);
-	folds = arma::repmat(folds, 1, std::ceil(n/((double)nfolds)));
-	_foldid = arma::conv_to<arma::uvec>::from(folds(Rcpp::as<arma::uvec>(Rcpp::sample(n,n))-1));
+	// arma::vec folds = arma::linspace(1, nfolds, nfolds);
+	// folds = arma::repmat(folds, 1, std::ceil(n/((double)nfolds)));
+	// _foldid = arma::conv_to<arma::uvec>::from(folds(Rcpp::as<arma::uvec>(Rcpp::sample(n,n))-1));
+	_foldid = arma::linspace<arma::uvec>(1, n, n) - 1;
+	_foldid.transform([nfolds](arma::uword val) { return val % nfolds + 1; });
+	_foldid = arma::shuffle(_foldid);
     } else {
 	_foldid = Rcpp::as<arma::uvec>(foldid);
     }
@@ -459,15 +477,16 @@ Rcpp::List mgmCV(
 	throw std::invalid_argument("foldid has a length that does not equal number of samples in the dataset.");
     }
 
-    // Rcpp::Rcout << "Fold ids: " << _foldid.t() << std::endl;
-    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
-    arma::mat loglik(l.size(), nfolds, arma::fill::zeros);
-    arma::uvec index(2, arma::fill::zeros);
-    // arma::vec nParams(l.size(), arma::fill::zeros);
     if (!SearchCV::checkFoldID(_foldid)) {
 	throw std::invalid_argument("Invalid input for foldid. Values must be in the range 1:nfolds, with folds of approximately equal size.");
     }
-    std::vector<EdgeListGraph> cvGraphs = mgm.searchPathCV(l, nfolds, _foldid, loglik, index);
+
+    // Rcpp::Rcout << "Fold ids: " << _foldid.t() << std::endl;
+    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
+    arma::mat loglik(l.size(), arma::max(_foldid), arma::fill::zeros);
+    arma::uvec index(2, arma::fill::zeros);
+    // arma::vec nParams(l.size(), arma::fill::zeros);
+    std::vector<EdgeListGraph> cvGraphs = mgm.searchPathCV(l, _foldid, loglik, index);
 
     RcppThread::checkUserInterrupt();
 
@@ -631,11 +650,239 @@ Rcpp::List steps(
 
     result.attr("class") = "graphSTEPS";
 
-    // ds.deleteVariables();
-
     return result;
 
 }
+
+//' Runs the causal algorithm PC-Stable on a dataset
+//'
+//' @param data The dataframe
+//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List pcStars(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority"),
+    Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
+    const double gamma = 0.01,
+    const int numSub = 20,
+    const int subSize = -1,
+    const bool leaveOneOut = false,
+    const bool computeStabs = false,
+    const int threads = -1,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    arma::vec _alphas;
+
+    if (alphas.isNotNull()) {
+        _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
+    } else {
+      _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
+    }
+
+    std::vector<OrientRule> rules;
+
+    for (std::string rule : _orientRule) {
+	rules.push_back(SepsetProducer::str2rule(rule));
+    }
+
+    STARS stars;
+
+    if (subSize < 0)
+	stars = STARS(ds, "pc", _alphas, gamma, numSub, leaveOneOut);
+    else
+	stars = STARS(ds, "pc", _alphas, gamma, numSub, subSize, leaveOneOut);
+
+    stars.setVerbose(verbose);
+    stars.setOrientRule(rules.at(0));
+    // stars.setFDR(fdr);
+
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        stars.setInitialGraph(&ig);
+    }
+    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	stars.setKnowledge(k);
+    }
+
+    arma::mat instabs = arma::mat(_alphas.n_elem, 1);
+    instabs.fill(arma::datum::nan);
+
+    arma::umat samps;
+
+    Rcpp::List graphStars = stars.runStarsPar(instabs, samps).toList();
+
+    if (computeStabs) {
+        graphStars["stabilities"] = stars.getStabs();
+        std::vector<std::string> names = ds.getVariableNames();
+        Rcpp::rownames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+        Rcpp::colnames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    }
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph"]=graphStars,
+    					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
+					   Rcpp::_["gamma"]=gamma,
+    					   Rcpp::_["instability"] = instabs,
+					   Rcpp::_["subsamples"] = samps);
+
+    result.attr("class") = "graphSTARS";
+
+    return result;
+}
+
+
+//' Runs the causal algorithm FCI-Stable on a dataset
+//'
+//' @param data The dataframe
+//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+//' @param fdr Whether or not to run with FDR correction for the adjacencies.
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The calculated search graph
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' ig <- rCausalMGM::mgm(data.n100.p25)
+//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+// [[Rcpp::export]]
+Rcpp::List fciStars(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority"),
+    Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
+    const double gamma = 0.01,
+    const int numSub = 20,
+    const int subSize = -1,
+    const bool leaveOneOut = false,
+    const bool computeStabs = false,
+    const int threads = -1,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    arma::vec _alphas;
+
+    if (alphas.isNotNull()) {
+        _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
+    } else {
+      _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
+    }
+
+    std::vector<OrientRule> rules;
+
+    for (std::string rule : _orientRule) {
+	rules.push_back(SepsetProducer::str2rule(rule));
+    }
+
+    STARS stars;
+
+    if (subSize < 0)
+	stars = STARS(ds, "fci", _alphas, gamma, numSub, leaveOneOut);
+    else
+	stars = STARS(ds, "fci", _alphas, gamma, numSub, subSize, leaveOneOut);
+
+    stars.setVerbose(verbose);
+    stars.setOrientRule(rules.at(0));
+    // stars.setFDR(fdr);
+
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        stars.setInitialGraph(&ig);
+    }
+    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	stars.setKnowledge(k);
+    }
+
+    arma::mat instabs = arma::mat(_alphas.n_elem, 1);
+    instabs.fill(arma::datum::nan);
+
+    arma::umat samps;
+
+    Rcpp::List graphStars = stars.runStarsPar(instabs, samps).toList();
+
+    if (computeStabs) {
+        graphStars["stabilities"] = stars.getStabs();
+        std::vector<std::string> names = ds.getVariableNames();
+        Rcpp::rownames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+        Rcpp::colnames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    }
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph"]=graphStars,
+    					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
+					   Rcpp::_["gamma"]=gamma,
+    					   Rcpp::_["instability"] = instabs,
+					   Rcpp::_["subsamples"] = samps);
+
+    result.attr("class") = "graphSTARS";
+
+    return result;
+}
+
 
 // //' Runs the causal algorithm PC-Stable on a dataset
 // //'
@@ -737,6 +984,11 @@ Rcpp::List pcStable(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     if (orientRule.size()==0) {
 	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     }
@@ -806,7 +1058,7 @@ Rcpp::List pcCV(
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
-    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
     const int nfolds = 5,
     Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
     const int threads = -1,
@@ -823,12 +1075,23 @@ Rcpp::List pcCV(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     if (orientRule.size()==0) {
 	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     }
     
     std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
-    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+    arma::vec _alphas;
+
+    if (alphas.isNotNull()) {
+        _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
+    } else {
+      _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
+    }
 
     std::vector<OrientRule> rules;
 
@@ -941,7 +1204,7 @@ Rcpp::List fciCV(
     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
-    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
     const int nfolds = 5,
     Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
     const int threads = -1,
@@ -958,13 +1221,24 @@ Rcpp::List fciCV(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     if (orientRule.size()==0) {
 	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     }
     
     std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
-    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+    arma::vec _alphas;
 
+    if (alphas.isNotNull()) {
+        _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
+    } else {
+      _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
+    }
+    
     std::vector<OrientRule> rules;
 
     for (std::string rule : _orientRule) {
@@ -1074,11 +1348,11 @@ Rcpp::List fciCV(
 Rcpp::List mgmpcCV(
     const Rcpp::DataFrame& data,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-    const std::string cvType = "grid",
+    const std::string cvType = "random",
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 20,
-    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
     const int numPoints = 60,
     const int nfolds = 5,
     Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
@@ -1096,12 +1370,23 @@ Rcpp::List mgmpcCV(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     if (orientRule.size()==0) {
 	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     }
     
     std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
-    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+    arma::vec _alphas;
+
+    if (alphas.isNotNull()) {
+        _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
+    } else {
+      _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
+    }
 
     std::vector<OrientRule> rules;
 
@@ -1259,7 +1544,7 @@ Rcpp::List mgmfciCV(
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 20,
-    Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2),
+    Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
     const int numPoints = 60,
     const int nfolds = 5,
     Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
@@ -1277,13 +1562,24 @@ Rcpp::List mgmfciCV(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     if (orientRule.size()==0) {
 	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     }
     
     std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
-    arma::vec _alphas = Rcpp::as<arma::vec>(alphas);
+    arma::vec _alphas;
 
+    if (alphas.isNotNull()) {
+        _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
+    } else {
+      _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
+    }
+    
     std::vector<OrientRule> rules;
 
     for (std::string rule : _orientRule) {
@@ -2017,6 +2313,11 @@ Rcpp::List fciStable(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     if (orientRule.size()==0) {
 	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
     }
@@ -2348,6 +2649,21 @@ Rcpp::List fciStable(
 // }
 
 
+// Rcpp::List bootstrap(
+//     const Rcpp::DataFrame& data,
+//     Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm", "pc", "fci", "mgm-pc", "mgm-fci"),
+//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+//     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
+// 									"conservative", "sepsets"),
+//     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
+//     const double alpha = 0.05,
+//     const int numBoots = 20,
+//     const int threads = -1,
+//     const bool replace = true,
+//     const bool rank = false,
+//     const bool verbose = false
+//     )
+
 //' Runs bootstrapping for a selected causal discovery algorithm on the dataset.
 //'
 //' @param data The dataframe
@@ -2367,33 +2683,69 @@ Rcpp::List fciStable(
 // [[Rcpp::export]]
 Rcpp::List bootstrap(
     const Rcpp::DataFrame& data,
-    Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm", "pc", "fci", "mgm-pc", "mgm-fci"),
+    Rcpp::List graph,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
-									"conservative", "sepsets"),
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
-    const double alpha = 0.05,
     const int numBoots = 20,
     const int threads = -1,
-    const bool replace = true,
+    const bool replace = false,
     const bool rank = false,
     const bool verbose = false
     ) {
 
-    // Rcpp::Rcout << "running stars...\n";
+    // Rcpp::Rcout << "running bootstrap...\n";
 
-    std::string alg, _method;
-    // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-    // bool v = Rcpp::is_true(Rcpp::all(verbose));
+    EdgeListGraph g(graph);
 
-    _method = algorithm[0];
+    std::string alg, _method, rule;
+
+    _method = g.getAlgorithm();
 
     // Rcpp::Rcout << _method << std::endl;
     std::transform(_method.begin(), _method.end(), _method.begin(),
 		   [](unsigned char c){ return std::tolower(c); });
     // Rcpp::Rcout << _method << std::endl;
     _method.erase(std::remove(_method.begin(), _method.end(), '-'), _method.end());
+
+    std::string tempStr = "mgm";
+    std::string::size_type found = _method.find(tempStr);
+    
+    if (found != std::string::npos) {
+	if (_method[found + tempStr.length()] == 'm') {
+	    rule = "majority";
+	    _method.erase(found + tempStr.length(), 1);
+	} else if (_method[found + tempStr.length()] == 'c') {
+	    rule = "conservative";
+	    _method.erase(found + tempStr.length(), 1);
+	} else {
+	    rule = "sepsets";
+	}
+    } else {
+	if (_method[0] == 'm') {
+	    rule = "majority";
+	    _method.erase(0, 1);
+	} else if (_method[0] == 'c') {
+	    rule = "conservative";
+	    _method.erase(0, 1);
+	} else {
+	    rule = "sepsets";
+	}
+    }
+
+    tempStr = "max";
+    found = _method.find(tempStr);
+    if (found != std::string::npos) {
+	rule = "maxp";
+	_method.erase(found, tempStr.length());
+    }
+    
+    tempStr = "stable";
+    found = _method.find(tempStr);
+    if (found != std::string::npos)
+	_method.erase(found, tempStr.length());
+    
     // Rcpp::Rcout << _method << std::endl;
+
+    // Rcpp::Rcout << rule << std::endl;
 
     if (_method == "mgm") {
 	alg = "mgm";
@@ -2410,49 +2762,33 @@ Rcpp::List bootstrap(
 				    + "\n   Algorithm must be in the list: "
 				    + "{ mgm, pc, fci, mgm-pc, mgm-fci }");
     }
-
-    std::string rule;
-
-    std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
-
-    rule = orientRule[0];
-
-    std::transform(rule.begin(), rule.end(), rule.begin(),
-		   [](unsigned char c){ return std::tolower(c); });
-
-    if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
-	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
-
-    std::vector<double> l(lambda.begin(), lambda.end());
-
+    
     DataSet ds = DataSet(data);
     ds.dropMissing();
 
     if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
+    	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+    	ds.npnTransform();
+    	if (verbose) Rcpp::Rcout << "done\n";
     }
 
-    int lamLength = 3;
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
 
-    if (ds.isMixed()) {
-    	if (ds.isCensored()) {
-    	    lamLength = 5;
-    	} else {
-    	    lamLength = 3;
-    	}
-    	lamLength = 3;
-    } // else {
-    // 	throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
-    // }
+    arma::vec _lambda = g.getHyperParam("lambda");
+    std::vector<double> l;
 
-    if (l.size() == 1) {
-	for (int i = 1; i < lamLength; i++) {
-	    l.push_back(l[0]);
-	}
-    } else if (l.size() != lamLength) {
-	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
+    if (_lambda.n_elem>0) {
+	l = std::vector<double>(_lambda.begin(), _lambda.end());
+    }
+
+    arma::vec _alpha = g.getHyperParam("alpha");
+    double alpha = 0.05;
+    
+    if (_alpha.n_elem > 0) {
+	alpha = _alpha(0);
     }
 
     Bootstrap boot(ds, alg, numBoots, replace);
@@ -2460,31 +2796,27 @@ Rcpp::List bootstrap(
 
     Knowledge k;
     if (!knowledge.isNull()) {
-	Rcpp::List _knowledge(knowledge);
-	k = Knowledge(ds.getVariables(), _knowledge);
-	boot.setKnowledge(k);
+    	Rcpp::List _knowledge(knowledge);
+    	k = Knowledge(ds.getVariables(), _knowledge);
+    	boot.setKnowledge(k);
     }
 
     boot.setVerbose(verbose);
     boot.setAlpha(alpha);
     boot.setLambda(l);
-    if (rule.substr(0,3) == "maj")
-	boot.setOrientRule(ORIENT_MAJORITY);
-    if (rule.substr(0,3) == "max")
-	boot.setOrientRule(ORIENT_MAXP);
-    if (rule.substr(0,1) == "c")
-	boot.setOrientRule(ORIENT_CONSERVATIVE);
-    if (rule.substr(0,1) == "s")
-	boot.setOrientRule(ORIENT_SEPSETS);
+    boot.setOrientRule(SepsetProducer::str2rule(rule));
+    
     // boot.setFdr(fdr);
 
     Rcpp::List result = boot.runBootstrap().toList();
 
     result["stabilities"] = boot.getStabs();
 
-    // result["subsamples"] = boot.getSubSamps();
+    result["subsamples"] = boot.getSubSamps();
 
     // result.push_back(boot.getSubSamps(), "subsamples");
+
+    result.attr("class") = "graph";
 
     return result;
 
@@ -2507,7 +2839,6 @@ Rcpp::StringVector growShrinkMB(
     const std::string& target,
     const double penalty = 1,
     const bool rank = false,
-    const int threads = -1,
     const bool verbose = false
 ) {
     // Rcpp::Nullable<Rcpp::List> graph = R_NilValue,
@@ -2519,6 +2850,11 @@ Rcpp::StringVector growShrinkMB(
 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
 	ds.npnTransform();
 	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
 
     // EdgeListGraph g;
@@ -2601,6 +2937,11 @@ Rcpp::List grasp(
 	if (verbose) Rcpp::Rcout << "done\n";
     }
 
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
     Score *scorer;
 
     if (!ds.isCensored()) {
@@ -2613,7 +2954,7 @@ Rcpp::List grasp(
     grasp.setVerbose(verbose);
     grasp.setDepth(depth);
     grasp.setNumStarts(numStarts);
-    grasp.setPenalty(penalty);
+    // grasp.setPenalty(penalty);
 
     EdgeListGraph ig;
     if (!initialGraph.isNull()) {

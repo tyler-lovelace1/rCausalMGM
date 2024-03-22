@@ -911,10 +911,10 @@ std::vector<Node> EdgeListGraph::getPossibleChildren(const Node& node) const {
     std::vector<Edge> edges = edgeLists.at(node);
 
     for (Edge edge : edges) {
-        Endpoint endpoint1 = edge.getDistalEndpoint(node);
+	// Endpoint endpoint1 = edge.getDistalEndpoint(node);
         Endpoint endpoint2 = edge.getProximalEndpoint(node);
 
-        if (endpoint1 == ENDPOINT_ARROW && endpoint2 != ENDPOINT_ARROW) {
+        if (endpoint2 != ENDPOINT_ARROW) {
             possChildren.push_back(edge.getDistalNode(node));
         }
     }
@@ -1729,7 +1729,7 @@ bool operator>(const EdgeListGraph& g1, const EdgeListGraph& g2) {
 }
 
 
-std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph) {
+std::ostream& operator<<(std::ostream& os, EdgeListGraph graph) {
 
     os << "Graph Nodes:\n";
     std::vector<Node> nodes = graph.getNodes();
@@ -2472,7 +2472,7 @@ EdgeListGraph EdgeListGraph::getPAG(std::vector<Node>& latent) {
 	}
     }
     
-    SepsetProducer sepsetsset(sepsets, nullptr);
+    SepsetProducer sepsetsset(pag, sepsets, nullptr);
     sepsetsset.setOrientRule(ORIENT_SEPSETS);
 
     FciOrient rules(sepsetsset);
@@ -2699,11 +2699,18 @@ Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
 	if (g2.isAdjacentTo(edge1.getNode1(), edge1.getNode2())) {
 	    Edge edge2 = g2.getEdge(edge1.getNode1(), edge1.getNode2());
 	    
-	    if (edge1.getDistalEndpoint(edge1.getNode1()) !=
-		edge2.getDistalEndpoint(edge1.getNode1()) ||
-		edge1.getProximalEndpoint(edge1.getNode1()) !=
-		edge2.getProximalEndpoint(edge1.getNode1())) {
+	    if (edge1 != edge2) {
 		orientSHD += 1;
+		if (g1.getGraphType()=="completed partially directed acyclic graph") {
+		    if (!edge1.isUndirected() && !edge2.isUndirected()) {
+			orientSHD += 1;
+		    }
+		}
+		if (g1.getGraphType()=="partial ancestral graph") {
+		    if (!edge1.isNondirected() && !edge1.isNondirected()) {
+			orientSHD += 1;
+		    }
+		}
 	    }
 	    
 	} else {
@@ -2733,10 +2740,7 @@ Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
     // skelSHD = skeletonSHD(graph1, graph2);
     SHD = orientSHD + skelSHD;
     
-    return Rcpp::NumericVector::create(
-	Rcpp::_["SHD"] = SHD,
-        Rcpp::_["skeletonSHD"] = skelSHD,
-        Rcpp::_["orientationSHD"] = orientSHD);
+    return Rcpp::NumericVector::create(Rcpp::_["SHD"] = SHD);
 }
 
 
@@ -2752,8 +2756,8 @@ Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
 //' g <- rCausalMGM::cpcStable(train_n10000_p10, rCausalMGM::cpdag(dag_n10000_p10))
 //' rCausalMGM::prMetricsSkeleton(g)
 // [[Rcpp::export]]
-Rcpp::NumericVector prMetricsSkeleton(const Rcpp::List& estimate,
-				      const Rcpp::List& groundTruth) {
+Rcpp::NumericVector prMetricsAdjacency(const Rcpp::List& estimate,
+				       const Rcpp::List& groundTruth) {
     EdgeListGraph est(estimate);
     EdgeListGraph truth(groundTruth);
     
@@ -2791,10 +2795,10 @@ Rcpp::NumericVector prMetricsSkeleton(const Rcpp::List& estimate,
     double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
 
     return Rcpp::NumericVector::create(
-	Rcpp::_["skeletonPrecision"] = precision,
-        Rcpp::_["skeletonRecall"] = recall,
-        Rcpp::_["skeletonF1"] = f1,
-        Rcpp::_["skeletonMCC"] = mcc);
+	Rcpp::_["adjPrecision"] = precision,
+        Rcpp::_["adjRecall"] = recall,
+        Rcpp::_["adjF1"] = f1,
+        Rcpp::_["adjMCC"] = mcc);
 }
 
 
@@ -2834,10 +2838,10 @@ Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 	    Rcpp::warning("The ground truth DAG is only needed for assessing the orientation accuracy of partial ancestral graphs.");
 	
 	return Rcpp::NumericVector::create(
-	    Rcpp::_["orientationPrecision"] = NA_REAL,
-	    Rcpp::_["orientationRecall"] = NA_REAL,
-	    Rcpp::_["orientationF1"] = NA_REAL,
-	    Rcpp::_["orientationMCC"] = NA_REAL);
+	    Rcpp::_["orientPrecision"] = NA_REAL,
+	    Rcpp::_["orientRecall"] = NA_REAL,
+	    Rcpp::_["orientF1"] = NA_REAL,
+	    Rcpp::_["orientMCC"] = NA_REAL);
 	
     } else if (est.getGraphType() == "completed partially directed acyclic graph") {
 	if (groundTruthDAG.isNotNull())
@@ -2902,10 +2906,10 @@ Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 	double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
 	
 	return Rcpp::NumericVector::create(
-	    Rcpp::_["orientationPrecision"] = precision,
-	    Rcpp::_["orientationRecall"] = recall,
-	    Rcpp::_["orientationF1"] = f1,
-	    Rcpp::_["orientationMCC"] = mcc);
+	    Rcpp::_["orientPrecision"] = precision,
+	    Rcpp::_["orientRecall"] = recall,
+	    Rcpp::_["orientF1"] = f1,
+	    Rcpp::_["orientMCC"] = mcc);
 	
     } else if (est.getGraphType() == "partial ancestral graph") {
 	
@@ -3037,15 +3041,261 @@ Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 	double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
 	
 	return Rcpp::NumericVector::create(
-	    Rcpp::_["orientationPrecision"] = precision,
-	    Rcpp::_["orientationRecall"] = recall,
-	    Rcpp::_["orientationF1"] = f1,
-	    Rcpp::_["orientationMCC"] = mcc);
+	    Rcpp::_["orientPrecision"] = precision,
+	    Rcpp::_["orientRecall"] = recall,
+	    Rcpp::_["orientF1"] = f1,
+	    Rcpp::_["orientMCC"] = mcc);
 	
     } else {
 	throw std::invalid_argument("Unrecognized graph type");
     }
 }
+
+
+//' Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
+//'
+//' @param estimate An estimated graph object
+//' @param groundTruth A ground truth graph object of the same type as the estimated graph object
+//' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
+//' @return The orientation precision, recall, F1, and MCC, between the two graph objects
+//' @export
+//' @examples
+//' data("train_n10000_p10")
+//' data("dag_n10000_p10")
+//' g <- rCausalMGM::cpcStable(train_n10000_p10)
+//' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
+// [[Rcpp::export]]
+Rcpp::NumericVector prMetricsOrientation2(const Rcpp::List& estimate,
+					  const Rcpp::List& groundTruthDAG) {
+    EdgeListGraph est(estimate);
+    EdgeListGraph truth(groundTruthDAG);
+    
+    std::vector<Node> nodesEst(est.getNodes());
+    std::vector<Node> nodesTruth(truth.getNodes());
+    std::set<Node> nodeSetEst(nodesEst.begin(), nodesEst.end());
+    std::set<Node> nodeSetTruth(nodesTruth.begin(), nodesTruth.end());
+    if (nodeSetEst != nodeSetTruth) {
+	throw std::invalid_argument("Estimate and ground truth graphs must be constructed over the same set of nodes.");
+    }
+
+    if (truth.getGraphType() != "directed acyclic graph") {
+	throw std::invalid_argument("Ground truth graph must be a directed acyclic graph.");
+    }
+
+    // if (est.getGraphType() != truth.getGraphType()) {
+    // 	throw std::invalid_argument("Estimate and ground truth graphs must be of the same type (undirected, completed partially directed acyclic graph, or partial ancestral graph).");
+    // }
+
+    if (est.getGraphType() == "undirected") {
+	// if (groundTruthDAG.isNotNull())
+	//     Rcpp::warning("The ground truth DAG is only needed for assessing the orientation accuracy of partial ancestral graphs.");
+	
+	return Rcpp::NumericVector::create(
+	    Rcpp::_["orientPrecision"] = NA_REAL,
+	    Rcpp::_["orientRecall"] = NA_REAL,
+	    Rcpp::_["orientF1"] = NA_REAL,
+	    Rcpp::_["orientMCC"] = NA_REAL);
+	
+    } else if (est.getGraphType() == "completed partially directed acyclic graph") {
+	// if (groundTruthDAG.isNotNull())
+	//     Rcpp::warning("The ground truth DAG is only needed for assessing the orientation accuracy of partial ancestral graphs.");
+	
+	double tp = 0, fp = 0, fn = 0, tn = 0;
+
+	for (Edge edge1 : est.getEdges()) {
+	    if (truth.isAdjacentTo(edge1.getNode1(), edge1.getNode2())) {
+	        Edge edge2 = truth.getEdge(edge1.getNode1(), edge1.getNode2());
+
+		if (edge1.isUndirected()) {
+		    fn++;
+		} else if (edge1.isDirected()) {
+		    if (edge1 == edge2) {
+			tp++;
+			tn++;
+		    } else {
+			fp++;
+			fn++;
+		    }
+		} else {
+		    throw std::runtime_error("Invalid edge endpoint for completed partially directed acyclic graphs");
+		}
+	    } else {
+		if (edge1.isDirected()) {
+		    fp++;
+		}
+	    }
+	}
+
+	for (Edge edge1 : truth.getEdges()) {
+	    if (!est.isAdjacentTo(edge1.getNode1(), edge1.getNode2())) {
+		fn++;
+	    }
+	}
+
+	// Rcpp::Rcout << "TP = " << tp << std::endl;
+	// Rcpp::Rcout << "FP = " << fp << std::endl;
+	// Rcpp::Rcout << "FN = " << fn << std::endl;
+	// Rcpp::Rcout << "TN = " << tn << std::endl;
+	// Rcpp::Rcout << "MCC numerator = " << (tp*tn - fp*fn) << std::endl;
+	// Rcpp::Rcout << "MCC denominator = " << std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn)) << std::endl;
+	
+	double precision = tp / ((double) (tp + fp));
+	double recall = tp / ((double) (tp + fn));
+	double f1 = 2 * precision * recall / (precision + recall);
+	double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
+	
+	return Rcpp::NumericVector::create(
+	    Rcpp::_["orientPrecision"] = precision,
+	    Rcpp::_["orientRecall"] = recall,
+	    Rcpp::_["orientF1"] = f1,
+	    Rcpp::_["orientMCC"] = mcc);
+	
+    } else if (est.getGraphType() == "partial ancestral graph") {
+
+	return Rcpp::NumericVector::create(
+	    Rcpp::_["orientPrecision"] = NA_REAL,
+	    Rcpp::_["orientRecall"] = NA_REAL,
+	    Rcpp::_["orientF1"] = NA_REAL,
+	    Rcpp::_["orientMCC"] = NA_REAL);
+	
+	// if (groundTruthDAG.isNull())
+	//     throw std::invalid_argument("The ground truth DAG is needed for assessing the orientation accuracy of partial ancestral graphs.");
+	
+	// EdgeListGraph dag(Rcpp::as<Rcpp::List>(groundTruthDAG));
+
+	// double tp = 0, fp = 0, fn = 0, tn = 0;
+
+	// for (Edge edge1 : est.getEdges()) {
+	//     Node node1 = edge1.getNode1();
+	//     Node node2 = edge1.getNode2();
+	//     if (truth.isAdjacentTo(node1, node2)) {
+	//         Edge edge2 = truth.getEdge(node1, node2);
+
+	// 	if (edge1.getDistalEndpoint(node1) ==
+	// 	    edge2.getDistalEndpoint(node1)) {
+	// 	    if (edge1.getDistalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 	    	tp += 1;
+	// 	    } else if (edge1.getDistalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 	    	tn += 1;
+	// 	    } else if (edge1.getDistalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 	    	tp += 0.5;
+	// 	    	tn += 0.5;
+	// 	    } else {
+	// 	    	throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 	    }
+	// 	    // tp++;
+	// 	} else {
+	// 	    if (edge2.getDistalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 		// check if node2 is ancestor of node1
+	// 		bool ancestor = dag.isAncestorOf(node2, node1);
+	// 		if (edge1.getDistalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 		    // node2 is estimated to be an ancestor of node1
+	// 		    tn += ancestor;
+	// 		    fn += !ancestor;
+	// 		} else if (edge1.getDistalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 		    // node2 is estimated to be a descendent of node1
+	// 		    tp += !ancestor;
+	// 		    fp += ancestor;
+	// 		} else {
+	// 		    throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 		}
+	// 	    } else if (edge2.getDistalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 		if (edge1.getDistalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 		    fp += 1;
+	// 		} else if (edge1.getDistalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 		    fp += 0.5;
+	// 		} else {
+	// 		    throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 		}
+	// 	    } else if (edge2.getDistalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 		if (edge1.getDistalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 		    fn += 1;
+	// 		} else if (edge1.getDistalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 		    fn += 0.5;
+	// 		} else {
+	// 		    throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 		}
+	// 	    } else {
+	// 		throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 	    }
+	// 	}
+
+		
+	// 	if (edge1.getProximalEndpoint(node1) ==
+	// 	    edge2.getProximalEndpoint(node1)) {
+	// 	    if (edge1.getProximalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 	    	tp += 1;
+	// 	    } else if (edge1.getProximalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 	    	tn += 1;
+	// 	    } else if (edge1.getProximalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 	    	tp += 0.5;
+	// 	    	tn += 0.5;
+	// 	    } else {
+	// 	    	throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 	    }
+	// 	    // tp++;
+	// 	} else {
+	// 	    if (edge2.getProximalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 		// check if node1 is ancestor of node2
+	// 		bool ancestor = dag.isAncestorOf(node1, node2);
+	// 		if (edge1.getProximalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 		    // node1 is estimated to be an ancestor of node2
+	// 		    tn += ancestor;
+	// 		    fn += !ancestor;
+	// 		} else if (edge1.getProximalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 		    // node1 is estimated to be a descendent of node2
+	// 		    tp += !ancestor;
+	// 		    fp += ancestor;
+	// 		} else {
+	// 		    throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 		}
+	// 	    } else if (edge2.getProximalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 		if (edge1.getProximalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 		    fp += 1;
+	// 		} else if (edge1.getProximalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 		    fp += 0.5;
+	// 		} else {
+	// 		    throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 		}
+	// 	    } else if (edge2.getProximalEndpoint(node1) == ENDPOINT_ARROW) {
+	// 		if (edge1.getProximalEndpoint(node1) == ENDPOINT_TAIL) {
+	// 		    fn += 1;
+	// 		} else if (edge1.getProximalEndpoint(node1) == ENDPOINT_CIRCLE) {
+	// 		    fn += 0.5;
+	// 		} else {
+	// 		    throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 		}
+	// 	    } else {
+	// 		throw std::runtime_error("Invalid edge endpoint for partial ancestral graphs");
+	// 	    }
+	// 	}
+	        
+	//     }
+	// }
+
+	// // Rcpp::Rcout << "TP = " << tp << std::endl;
+	// // Rcpp::Rcout << "FP = " << fp << std::endl;
+	// // Rcpp::Rcout << "FN = " << fn << std::endl;
+	// // Rcpp::Rcout << "TN = " << tn << std::endl;
+	// // Rcpp::Rcout << "MCC numerator = " << (tp*tn - fp*fn) << std::endl;
+	// // Rcpp::Rcout << "MCC denominator = " << std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn)) << std::endl;
+	
+	// double precision = tp / ((double) (tp + fp));
+	// double recall = tp / ((double) (tp + fn));
+	// double f1 = 2 * precision * recall / (precision + recall);
+	// double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
+	
+	// return Rcpp::NumericVector::create(
+	//     Rcpp::_["orientPrecision"] = precision,
+	//     Rcpp::_["orientRecall"] = recall,
+	//     Rcpp::_["orientF1"] = f1,
+	//     Rcpp::_["orientMCC"] = mcc);
+	
+    } else {
+	throw std::invalid_argument("Unrecognized graph type");
+    }
+}
+
 
 
 //' Calculate the precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the skeleton and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the skeleton PR metrics and the orientation PR metrics.
@@ -3067,17 +3317,17 @@ Rcpp::NumericVector prMetrics(const Rcpp::List& estimate,
     Rcpp::NumericVector orientationPR = prMetricsOrientation(estimate, groundTruth,
 							     groundTruthDAG);
 
-    Rcpp::NumericVector skeletonPR = prMetricsSkeleton(estimate, groundTruth);
+    Rcpp::NumericVector adjPR = prMetricsAdjacency(estimate, groundTruth);
     
     return Rcpp::NumericVector::create(
-	Rcpp::_["skeletonPrecision"] = skeletonPR["skeletonPrecision"],
-	Rcpp::_["skeletonRecall"] = skeletonPR["skeletonRecall"],
-	Rcpp::_["skeletonF1"] = skeletonPR["skeletonF1"],
-	Rcpp::_["skeletonMCC"] = skeletonPR["skeletonMCC"],
-	Rcpp::_["orientationPrecision"] = orientationPR["orientationPrecision"],
-	Rcpp::_["orientationRecall"] = orientationPR["orientationRecall"],
-	Rcpp::_["orientationF1"] = orientationPR["orientationF1"],
-	Rcpp::_["orientationMCC"] = orientationPR["orientationMCC"]);
+	Rcpp::_["adjPrecision"] = adjPR["adjPrecision"],
+	Rcpp::_["adjRecall"] = adjPR["adjRecall"],
+	Rcpp::_["adjF1"] = adjPR["adjF1"],
+	Rcpp::_["adjMCC"] = adjPR["adjMCC"],
+	Rcpp::_["orientPrecision"] = orientationPR["orientPrecision"],
+	Rcpp::_["orientRecall"] = orientationPR["orientRecall"],
+	Rcpp::_["orientF1"] = orientationPR["orientF1"],
+	Rcpp::_["orientMCC"] = orientationPR["orientMCC"]);
 }
 
 
@@ -3103,14 +3353,12 @@ Rcpp::NumericVector allMetrics(const Rcpp::List& estimate,
     
     return Rcpp::NumericVector::create(
 	Rcpp::_["SHD"] = shd["SHD"],
-        Rcpp::_["skeletonSHD"] = shd["skeletonSHD"],
-        Rcpp::_["orientationSHD"] = shd["orientationSHD"],
-	Rcpp::_["skeletonPrecision"] = pr["skeletonPrecision"],
-	Rcpp::_["skeletonRecall"] = pr["skeletonRecall"],
-	Rcpp::_["skeletonF1"] = pr["skeletonF1"],
-	Rcpp::_["skeletonMCC"] = pr["skeletonMCC"],
-	Rcpp::_["orientationPrecision"] = pr["orientationPrecision"],
-	Rcpp::_["orientationRecall"] = pr["orientationRecall"],
-	Rcpp::_["orientationF1"] = pr["orientationF1"],
-	Rcpp::_["orientationMCC"] = pr["orientationMCC"]);
+	Rcpp::_["adjPrecision"] = pr["adjPrecision"],
+	Rcpp::_["adjRecall"] = pr["adjRecall"],
+	Rcpp::_["adjF1"] = pr["adjF1"],
+	Rcpp::_["adjMCC"] = pr["adjMCC"],
+	Rcpp::_["orientPrecision"] = pr["orientPrecision"],
+	Rcpp::_["orientRecall"] = pr["orientRecall"],
+	Rcpp::_["orientF1"] = pr["orientF1"],
+	Rcpp::_["orientMCC"] = pr["orientMCC"]);
 }

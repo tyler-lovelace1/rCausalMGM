@@ -145,8 +145,8 @@ SHD <- function(graph1, graph2) {
 #' data("dag_n10000_p10")
 #' g <- rCausalMGM::cpcStable(train_n10000_p10, rCausalMGM::cpdag(dag_n10000_p10))
 #' rCausalMGM::prMetricsSkeleton(g)
-prMetricsSkeleton <- function(estimate, groundTruth) {
-    .Call(`_rCausalMGM_prMetricsSkeleton`, estimate, groundTruth)
+prMetricsAdjacency <- function(estimate, groundTruth) {
+    .Call(`_rCausalMGM_prMetricsAdjacency`, estimate, groundTruth)
 }
 
 #' Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
@@ -163,6 +163,22 @@ prMetricsSkeleton <- function(estimate, groundTruth) {
 #' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
 prMetricsOrientation <- function(estimate, groundTruth, groundTruthDAG = NULL) {
     .Call(`_rCausalMGM_prMetricsOrientation`, estimate, groundTruth, groundTruthDAG)
+}
+
+#' Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
+#'
+#' @param estimate An estimated graph object
+#' @param groundTruth A ground truth graph object of the same type as the estimated graph object
+#' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
+#' @return The orientation precision, recall, F1, and MCC, between the two graph objects
+#' @export
+#' @examples
+#' data("train_n10000_p10")
+#' data("dag_n10000_p10")
+#' g <- rCausalMGM::cpcStable(train_n10000_p10)
+#' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
+prMetricsOrientation2 <- function(estimate, groundTruthDAG) {
+    .Call(`_rCausalMGM_prMetricsOrientation2`, estimate, groundTruthDAG)
 }
 
 #' Calculate the precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the skeleton and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the skeleton PR metrics and the orientation PR metrics.
@@ -193,6 +209,18 @@ prMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
 #' rCausalMGM::allMetrics(g, rCausalMGM::cpdag(dag_n10000_p10))
 allMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
     .Call(`_rCausalMGM_allMetrics`, estimate, groundTruth, groundTruthDAG)
+}
+
+GrowShrinkSubSetTest <- function(df, target, numSub) {
+    .Call(`_rCausalMGM_GrowShrinkSubSetTest`, df, target, numSub)
+}
+
+GrowShrinkTreeTest <- function(df, target) {
+    .Call(`_rCausalMGM_GrowShrinkTreeTest`, df, target)
+}
+
+GrowShrinkTreeSubSetTest <- function(df, target, numSub) {
+    .Call(`_rCausalMGM_GrowShrinkTreeSubSetTest`, df, target, numSub)
 }
 
 RegrBicScoreTest <- function(df, targetName, regressorNames) {
@@ -321,6 +349,44 @@ steps <- function(data, lambdas = NULL, nLambda = 30L, gamma = 0.05, numSub = 20
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+pcStars <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alphas = NULL, gamma = 0.01, numSub = 20L, subSize = -1L, leaveOneOut = FALSE, computeStabs = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_pcStars`, data, initialGraph, knowledge, orientRule, alphas, gamma, numSub, subSize, leaveOneOut, computeStabs, threads, rank, verbose)
+}
+
+#' Runs the causal algorithm FCI-Stable on a dataset
+#'
+#' @param data The dataframe
+#' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+#' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+#' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' ig <- rCausalMGM::mgm(data.n100.p25)
+#' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+fciStars <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alphas = NULL, gamma = 0.01, numSub = 20L, subSize = -1L, leaveOneOut = FALSE, computeStabs = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_fciStars`, data, initialGraph, knowledge, orientRule, alphas, gamma, numSub, subSize, leaveOneOut, computeStabs, threads, rank, verbose)
+}
+
+#' Runs the causal algorithm PC-Stable on a dataset
+#'
+#' @param data The dataframe
+#' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
+#' @param alpha The p value below which results are considered significant. Defaults to 0.05.
+#' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
+#' @param fdr Whether or not to run with FDR correction for the adjacencies.
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The calculated search graph
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' ig <- rCausalMGM::mgm(data.n100.p25)
+#' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
 pcStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alpha = 0.05, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_pcStable`, data, initialGraph, knowledge, orientRule, alpha, threads, fdr, rank, verbose)
 }
@@ -340,7 +406,7 @@ pcStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = a
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-pcCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority", "maxp", "conservative")), alphas = as.numeric( c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2)), nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
+pcCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority", "maxp", "conservative")), alphas = NULL, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_pcCV`, data, initialGraph, knowledge, orientRule, alphas, nfolds, foldid, threads, fdr, rank, verbose)
 }
 
@@ -359,7 +425,7 @@ pcCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.ch
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
-fciCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority", "maxp", "conservative")), alphas = as.numeric( c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2)), nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
+fciCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority", "maxp", "conservative")), alphas = NULL, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_fciCV`, data, initialGraph, knowledge, orientRule, alphas, nfolds, foldid, threads, fdr, rank, verbose)
 }
 
@@ -378,7 +444,7 @@ fciCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.c
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-mgmpcCV <- function(data, knowledge = NULL, cvType = "grid", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = as.numeric( c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2)), numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
+mgmpcCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = NULL, numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmpcCV`, data, knowledge, cvType, orientRule, lambdas, nLambda, alphas, numPoints, nfolds, foldid, threads, fdr, rank, verbose)
 }
 
@@ -397,7 +463,7 @@ mgmpcCV <- function(data, knowledge = NULL, cvType = "grid", orientRule = as.cha
 #' data("data.n100.p25")
 #' ig <- rCausalMGM::mgm(data.n100.p25)
 #' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
-mgmfciCV <- function(data, knowledge = NULL, cvType = "grid", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = as.numeric( c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2)), numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
+mgmfciCV <- function(data, knowledge = NULL, cvType = "grid", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = NULL, numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmfciCV`, data, knowledge, cvType, orientRule, lambdas, nLambda, alphas, numPoints, nfolds, foldid, threads, fdr, rank, verbose)
 }
 
@@ -436,8 +502,8 @@ fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = 
 #' @examples
 #' data("data.n100.p25")
 #' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
-bootstrap <- function(data, algorithm = as.character( c("mgm", "pc", "fci", "mgm-pc", "mgm-fci")), knowledge = NULL, orientRule = as.character( c("majority", "maxp", 									"conservative", "sepsets")), lambda = as.numeric( c(0.2, 0.2, 0.2)), alpha = 0.05, numBoots = 20L, threads = -1L, replace = TRUE, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_bootstrap`, data, algorithm, knowledge, orientRule, lambda, alpha, numBoots, threads, replace, rank, verbose)
+bootstrap <- function(data, graph, knowledge = NULL, numBoots = 20L, threads = -1L, replace = FALSE, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_bootstrap`, data, graph, knowledge, numBoots, threads, replace, rank, verbose)
 }
 
 #' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
@@ -450,8 +516,8 @@ bootstrap <- function(data, algorithm = as.character( c("mgm", "pc", "fci", "mgm
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::growShrinkMB(data.n100.p25)
-growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, threads = -1L, verbose = FALSE) {
-    .Call(`_rCausalMGM_growShrinkMB`, data, target, penalty, rank, threads, verbose)
+growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_growShrinkMB`, data, target, penalty, rank, verbose)
 }
 
 #' Runs the GRaSP causal discovery algorithm on the dataset 

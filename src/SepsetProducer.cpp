@@ -70,7 +70,7 @@ void SepsetProducer::producer() {
         }
 
 	if (RcppThread::isInterrupted()) {
-	  break;
+	    break;
 	}
     }
 
@@ -123,28 +123,122 @@ void SepsetProducer::consumer() {
 
 }
 
-void SepsetProducer::fillMap() {
+
+void SepsetProducer::producerSepsetMap() {
+    for (auto&& b : graph.getNodes()) {
+        
+        std::vector<Node> adjacentNodes = graph.getAdjacentNodes(b);
+	Node nullNode;
+	std::vector<Node> possParents = possibleParents(b, adjacentNodes, nullNode);
+
+        if (possParents.size() < 2) {
+            continue;
+        }
+
+	// std::sort(possParents.begin(),
+	// 	  possParents.end(),
+	// 	  [] (const Node& a, const Node& b) {return a < b; }
+	//     );
+
+        ChoiceGenerator cg(possParents.size(), 2);
+        std::vector<int> *choice;
+
+        for (choice = cg.next(); choice != NULL; choice = cg.next()) {
+            Node a = possParents[(*choice)[0]];
+            Node c = possParents[(*choice)[1]];
+
+            // Skip triples that are shielded.
+            if (graph.isAdjacentTo(a, c) || (a.isCensored() && c.isCensored())) {
+                continue;
+            }
+
+	    if (sepsets.isInSepsetMap(a, c))
+		continue;
+	    
+	    std::vector<Node> adja = graph.getAdjacentNodes(a);
+	    std::vector<Node> adjc = graph.getAdjacentNodes(c);
+
+	    std::vector<Node> ppa = possibleParents(a, adja, c);
+	    std::vector<Node> ppc = possibleParents(c, adjc, a);
+
+	    DepthChoiceGenerator cg1(ppa.size(), depth);
+	    std::vector<int> *comb2;
+	    for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
+		std::vector<Node> s = GraphUtils::asList(*comb2, ppa);
+		taskQueue.push(IndependenceTask(a, b, c, s));
+	    }
+
+	    DepthChoiceGenerator cg2(ppc.size(), depth);
+	    std::vector<int> *comb3;
+	    for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
+		std::vector<Node> s = GraphUtils::asList(*comb3, ppc);
+		if (s.empty()) continue;
+		taskQueue.push(IndependenceTask(a, b, c, s));
+	    }
+        }
+
+	if (RcppThread::isInterrupted()) {
+	    break;
+	}
+    }
+
+    // Poison pill
+    for (int i = 0; i < parallelism; i++) {
+	taskQueue.push(IndependenceTask());
+    }
+}
+
+void SepsetProducer::consumerSepsetMap() {
+    while(true) {
+        IndependenceTask it = taskQueue.pop();
+
+        // Poison Pill
+        if (it.a.isNull() || it.b.isNull() || it.c.isNull()) break;
+
+	if (sepsets.isInSepsetMap(it.a, it.c))
+	    continue;
+
+	double score = 0.0;
+
+        bool indep = test->isIndependent(it.a, it.c, it.s, &score);
+
+	if (indep) {
+	    std::lock_guard<std::mutex> mapLock(mapMutex);
+	    sepsets.set(it.a, it.c, it.s, score);
+	}
+    }
+}
+
+
+void SepsetProducer::fillMap() {  
     if (!mapFilled) {
 	sepsetCount.clear();
 	maxP.clear();
 	maxPCollider.clear();
-    
-	if (rule == ORIENT_SEPSETS) {
-	    if (sepsets.size()==0)
-		throw std::runtime_error("Sepset Orientation rule selected but SepsetMap not in SepsetProducer.");
-	    return;
-	}
 
 	std::vector<RcppThread::Thread> threads;
+    
+	if (rule == ORIENT_SEPSETS) {
+	    threads.push_back(RcppThread::Thread( [this] { producerSepsetMap(); } ));
 
-	threads.push_back(RcppThread::Thread( [this] { producer(); } ));
+	    for (int i = 0; i < parallelism; i++) {
+		threads.push_back(RcppThread::Thread( [this] { consumerSepsetMap(); } ));
+	    }
 
-	for (int i = 0; i < parallelism; i++) {
-	    threads.push_back(RcppThread::Thread( [this] { consumer(); } ));
-	}
+	    for (int i = 0; i < threads.size(); i++) {
+		threads[i].join();
+	    }
+	} else {
 
-	for (int i = 0; i < threads.size(); i++) {
-	    threads[i].join();
+	    threads.push_back(RcppThread::Thread( [this] { producer(); } ));
+
+	    for (int i = 0; i < parallelism; i++) {
+		threads.push_back(RcppThread::Thread( [this] { consumer(); } ));
+	    }
+
+	    for (int i = 0; i < threads.size(); i++) {
+		threads[i].join();
+	    }
 	}
     }
 
@@ -320,7 +414,7 @@ std::vector<Node> SepsetProducer::possibleParents(const Node& x,
 }
 
 bool SepsetProducer::possibleParentOf(const Node& x, const Node& z) {
-  return !knowledge.isForbidden(z, x) && !knowledge.isRequired(x, z);
+    return !knowledge.isForbidden(z, x) && !knowledge.isRequired(x, z);
 }
 
 

@@ -13,15 +13,11 @@ private:
     int b;
     std::vector<double> lambda;
     double gamma;
-    // bool includeZeros = true;
     int iterLimit = 500;
     double origLambda;
-    // Graph pdGraph;
-    // Graph lastGraph;
     std::vector<double> lastLambda;
     bool leaveOneOut = false;
     arma::mat stabilities;
-    // arma::umat subs;
     bool computeStabs = false;
     bool verbose = false;
     int threads = -1;

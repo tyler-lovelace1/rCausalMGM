@@ -1,4 +1,6 @@
 #include "GrowShrink.hpp"
+#include "DegenerateGaussianScore.hpp"
+#include "RegressionBicScore.hpp"
 
 GrowShrink::GrowShrink(Score* scorer) {
     if (scorer == NULL) 
@@ -133,4 +135,59 @@ std::vector<Node> GrowShrink::search(const Node& target,
 
 std::vector<Node> GrowShrink::search(const Node& target, double* scoreReturn) {
     return search(target, scorer->getVariables(), scoreReturn);
+}
+
+
+//[[Rcpp::export]]
+Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    Node targetNode = ds.getVariable(target);
+
+    std::vector<Node> regressors(ds.getVariables());
+    auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
+
+    regressors.erase(it, regressors.end());
+
+    std::vector<Node> mb;
+    double score;
+
+    if (!ds.isCensored()) {
+	DegenerateGaussianScore scorer(ds, 1.0);
+	GrowShrink gs(&scorer);
+	gs.setVerbose(false);
+
+	for (int i = 0; i < numSub; i++) {
+	    std::vector<Node> candidates(regressors);
+	    std::random_shuffle(candidates.begin(), candidates.end(), randWrapper);
+	    candidates.erase(candidates.begin() + candidates.size() / 2,
+			     candidates.end());
+	    mb = gs.search(targetNode, candidates, &score);
+	}
+    } else {
+        RegressionBicScore scorer(ds, 1.0);
+        GrowShrink gs(&scorer);
+	gs.setVerbose(false);
+
+	for (int i = 0; i < numSub; i++) {
+	    std::vector<Node> candidates(regressors);
+	    std::random_shuffle(candidates.begin(), candidates.end(), randWrapper);
+	    candidates.erase(candidates.begin() + candidates.size() / 2,
+			     candidates.end());
+	    mb = gs.search(targetNode, candidates, &score);
+	}
+    }
+    
+    RcppThread::checkUserInterrupt();
+
+    Rcpp::StringVector _mb;
+
+    for (Node n : mb) {
+	_mb.push_back(n.getName());
+    }
+
+    _mb.attr("Score") = Rcpp::wrap(score);
+    
+    return _mb;
 }

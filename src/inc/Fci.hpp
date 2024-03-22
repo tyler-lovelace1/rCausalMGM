@@ -41,10 +41,17 @@ private:
      */
     EdgeListGraph graph;
 
+    EdgeListGraph fasGraph;
+
     /**
      * The SepsetMap being constructed.
      */
     SepsetMap sepsets;
+
+    /**
+     * The SepsetMap being constructed.
+     */
+    SepsetMap fasSepsets;
 
     /**
      * The background knowledge.
@@ -106,12 +113,12 @@ private:
     std::unordered_map<Node, int> hashIndices;   // must lock
     // ICovarianceMatrix covarianceMatrix;
     double penaltyDiscount = 2;
-    // SepsetMap possibleDsepSepsets ();
+    // SepsetMap possibleDsepSepsets, nullSepsets;
     EdgeListGraph *initialGraph = NULL;
     int possibleDsepDepth = -1;
 
-    SepsetProducer sp, mapSp;
-    SepsetMap possDsepSepsets;
+    SepsetProducer sp, mapSp, posDsp, posDmapSp;
+    SepsetMap possDsepSepsets, nullSepsets;
 
         //========================PRIVATE METHODS==========================//
 

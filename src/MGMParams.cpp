@@ -131,7 +131,7 @@ Rcpp::List MGMParams::toList() const {
 	);
 }
 
-std::ostream& operator<<(std::ostream& os, MGMParams& params) {
+std::ostream& operator<<(std::ostream& os, MGMParams params) {
     os << "alpha1:\n" << params.alpha1.t() << "\n";
     os << "alpha2:\n" << params.alpha2.t() << "\n";
     os << "beta:\n"   << params.beta       << "\n";

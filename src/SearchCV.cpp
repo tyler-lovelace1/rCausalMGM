@@ -14,7 +14,7 @@ SearchCV::SearchCV(DataSet& data, std::string alg, uint nfolds, int threads) {
         parallelism = std::thread::hardware_concurrency();
         if (parallelism == 0) {
             parallelism = 4;
-            Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+            RcppThread::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
         }
     }
     
@@ -27,7 +27,7 @@ SearchCV::SearchCV(DataSet& data, std::string alg, uint nfolds, int threads) {
 
     int N = data.getNumRows();
 
-    foldid = arma::linspace<arma::uvec>(1, N, N);
+    foldid = arma::linspace<arma::uvec>(1, N, N) - 1;
 
     foldid.transform([nfolds](arma::uword val) { return val % nfolds + 1; });
 
@@ -52,7 +52,7 @@ SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int
         parallelism = std::thread::hardware_concurrency();
         if (parallelism == 0) {
             parallelism = 4;
-            Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
+            RcppThread::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
         }
     }
     
@@ -365,17 +365,27 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 
     // OrientRule orientRule;
 
+    bool censFlag = originalData.isCensored();
+
     for (uint k = 1; k <= nfolds; k++) {
 	arma::uvec trainIdx = arma::find(foldid!=k);
 	DataSet train(originalData, trainIdx);
 
 	EdgeListGraph g, ig;
 
-	RcppThread::Rcout << "  Running Fold " << k << "...\n";
+	if (verbose) RcppThread::Rcout << "  Running Fold " << k << "...\n";
 	
 	if (initialGraph != NULL) {
-	    MGM mgm(train, lambda);
-	    ig = mgm.search();
+	    // MGM mgm(train, lambda);
+	    // ig = mgm.search();
+
+	    if (!censFlag) {
+	      MGM mgm(train, lambda);
+	      ig = mgm.search();	       
+	    } else {
+	      CoxMGM coxmgm(train, lambda);
+	      ig = coxmgm.search();
+	    }
 	}
 
 	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
@@ -495,13 +505,21 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
     EdgeListGraph ig, gMin, g1se;
 
     if (initialGraph != NULL) {
-	MGM mgm(originalData, lambda);
-	ig = mgm.search();
+	// MGM mgm(originalData, lambda);
+	// ig = mgm.search();
+
+	if (!censFlag) {
+	    MGM mgm(originalData, lambda);
+	    ig = mgm.search();	       
+	} else {
+	    CoxMGM coxmgm(originalData, lambda);
+	    ig = coxmgm.search();
+	}
     }
 
-    if (verbose) RcppThread::Rcout << "Min:    MB Size:  " << minResult.mbSize << "    Mean:  " << minResult.mean << "    SE:  " << minResult.se << "    Alpha:  " << minResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(minResult.rule) << std::endl;
+    if (verbose) RcppThread::Rcout << "\n  Min:    MB Size:  " << minResult.mbSize << "    Mean:  " << minResult.mean << "    SE:  " << minResult.se << "    Alpha:  " << minResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(minResult.rule) << std::endl;
     
-    if (verbose) RcppThread::Rcout << "1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
+    if (verbose) RcppThread::Rcout << "\n  1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
 
     IndTestMultiCox itmMin(originalData, minResult.alpha);
     IndTestMultiCox itm1se(originalData, seResult.alpha);
@@ -578,7 +596,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 
     // std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
     lambdas = arma::sort(lambdas, "descend");
-    std::vector<double> lambda = { lambdas[0], lambdas[0], lambdas[0] };
+    std::vector<double> lambda;
     
     std::vector<std::vector<std::vector<arma::vec>>> loglik;
     std::vector<std::vector<std::vector<arma::vec>>> mbSize;
@@ -595,22 +613,39 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 	}
     }
 
+    bool censFlag = originalData.isCensored();
+    MGM mgm;
+    CoxMGM coxmgm;
+
     for (uint k = 1; k <= nfolds; k++) {
 	arma::uvec trainIdx = arma::find(foldid!=k);
 	DataSet train(originalData, trainIdx);
 
 	EdgeListGraph g, ig;
 
-	RcppThread::Rcout << "  Running Fold " << k << "...\n";
+	if (verbose) RcppThread::Rcout << "  Running Fold " << k << "...\n";
 	
-	MGM mgm(train, lambda);
+	if (!censFlag) {
+	    lambda = { lambdas[0], lambdas[0], lambdas[0] };
+	    mgm = MGM(train, lambda);
+	} else {
+	    lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
+	    coxmgm = CoxMGM(train, lambda);
+	}
 
 	for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
 
-	    lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
+	    if (!censFlag) {
+		lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
 	    
-	    mgm.setLambda(lambda);
-	    ig = mgm.search();
+		mgm.setLambda(lambda);
+		ig = mgm.search();
+	    } else {
+		lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
+	    
+		coxmgm.setLambda(lambda);
+		ig = coxmgm.search();
+	    }
 	
 	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
 		IndTestMultiCox itm(train, alphas(aIdx));
@@ -725,16 +760,27 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 
     EdgeListGraph igMin, ig1se, gMin, g1se;
 
-    if (verbose) RcppThread::Rcout << "Min:    MB Size:  " << minResult.mbSize << "    Mean:  " << minResult.mean << "    SE:  " << minResult.se << "    Lambda:  " << minResult.lambda.at(0) << "    Alpha:  " << minResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(minResult.rule) << std::endl;
+    if (verbose) RcppThread::Rcout << "\n  Min:    MB Size:  " << minResult.mbSize << "    Mean:  " << minResult.mean << "    SE:  " << minResult.se << "    Lambda:  " << minResult.lambda.at(0) << "    Alpha:  " << minResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(minResult.rule) << std::endl;
     
-    if (verbose) RcppThread::Rcout << "1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Lambda:  " << seResult.lambda.at(0) << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
+    if (verbose) RcppThread::Rcout << "\n  1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Lambda:  " << seResult.lambda.at(0) << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
 
-    MGM mgm1se(originalData, seResult.lambda);
-    ig1se = mgm1se.search();
+    if (!censFlag) {
+	
+	mgm = MGM(originalData, seResult.lambda);
+	ig1se = mgm.search();
 
-    MGM mgmMin(originalData, minResult.lambda);
-    igMin = mgmMin.search();
+	mgm.setLambda(minResult.lambda);
+	igMin = mgm.search();
+	
+    } else {
+	
+	coxmgm = CoxMGM(originalData, seResult.lambda);
+	ig1se = coxmgm.search();
 
+	coxmgm.setLambda(minResult.lambda);
+	igMin = coxmgm.search();
+    }
+    
     IndTestMultiCox itmMin(originalData, minResult.alpha);
     IndTestMultiCox itm1se(originalData, seResult.alpha);
 
@@ -807,7 +853,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 
     // std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
     lambdas = arma::sort(lambdas, "descend");
-    std::vector<double> lambda = { lambdas[0], lambdas[0], lambdas[0] };
+    std::vector<double> lambda;
 
     int trials = lambdas.n_elem;
     
@@ -821,6 +867,10 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	    mbSize.at(orIdx).push_back(arma::vec(nfolds));
 	}
     }
+
+    bool censFlag = originalData.isCensored();
+    MGM mgm;
+    CoxMGM coxmgm;
     
     for (uint k = 1; k <= nfolds; k++) {
 	arma::uvec trainIdx = arma::find(foldid!=k);
@@ -828,16 +878,37 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 
 	EdgeListGraph g, ig;
 
-	RcppThread::Rcout << "  Running Fold " << k << "...\n";
+	if (verbose) RcppThread::Rcout << "  Running Fold " << k << "...\n";
 	
-	MGM mgm(train, lambda);
+	// MGM mgm(train, lambda);
+
+	if (!censFlag) {
+	    lambda = { lambdas[0], lambdas[0], lambdas[0] };
+	    mgm = MGM(train, lambda);
+	} else {
+	    lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
+	    coxmgm = CoxMGM(train, lambda);
+	}
+
 
 	for (int tIdx = 0; tIdx < trials; tIdx++) {
 
-	    lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	    // lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
 	    
-	    mgm.setLambda(lambda);
-	    ig = mgm.search();
+	    // mgm.setLambda(lambda);
+	    // ig = mgm.search();
+
+	    if (!censFlag) {
+		lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	    
+		mgm.setLambda(lambda);
+		ig = mgm.search();
+	    } else {
+		lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	    
+		coxmgm.setLambda(lambda);
+		ig = coxmgm.search();
+	    }
 	
 	    IndTestMultiCox itm(train, alphas(tIdx));
 
@@ -955,15 +1026,32 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 
     EdgeListGraph igMin, ig1se, gMin, g1se;
 
-    if (verbose) RcppThread::Rcout << "Min:    MB Size:  " << minResult.mbSize << "    Mean:  " << minResult.mean << "    SE:  " << minResult.se << "    Lambda:  " << minResult.lambda.at(0) << "    Alpha:  " << minResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(minResult.rule) << std::endl;
+    if (verbose) RcppThread::Rcout << "\n  Min:    MB Size:  " << minResult.mbSize << "    Mean:  " << minResult.mean << "    SE:  " << minResult.se << "    Lambda:  " << minResult.lambda.at(0) << "    Alpha:  " << minResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(minResult.rule) << std::endl;
     
-    if (verbose) RcppThread::Rcout << "1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Lambda:  " << seResult.lambda.at(0) << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
+    if (verbose) RcppThread::Rcout << "\n  1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Lambda:  " << seResult.lambda.at(0) << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
 
-    MGM mgm1se(originalData, seResult.lambda);
-    ig1se = mgm1se.search();
+    // MGM mgm1se(originalData, seResult.lambda);
+    // ig1se = mgm1se.search();
 
-    MGM mgmMin(originalData, minResult.lambda);
-    igMin = mgmMin.search();
+    // MGM mgmMin(originalData, minResult.lambda);
+    // igMin = mgmMin.search();
+
+    if (!censFlag) {
+	
+	mgm = MGM(originalData, seResult.lambda);
+	ig1se = mgm.search();
+
+	mgm.setLambda(minResult.lambda);
+	igMin = mgm.search();
+	
+    } else {
+	
+	coxmgm = CoxMGM(originalData, seResult.lambda);
+	ig1se = coxmgm.search();
+
+	coxmgm.setLambda(minResult.lambda);
+	igMin = coxmgm.search();
+    }
 
     IndTestMultiCox itmMin(originalData, minResult.alpha);
     IndTestMultiCox itm1se(originalData, seResult.alpha);

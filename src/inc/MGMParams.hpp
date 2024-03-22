@@ -57,7 +57,7 @@ public:
 
     Rcpp::List toList() const;
 
-    friend std::ostream& operator<<(std::ostream& os, MGMParams& params);
+    friend std::ostream& operator<<(std::ostream& os, MGMParams params);
 };
 
 #endif /* MGMPARAMS_HPP_ */

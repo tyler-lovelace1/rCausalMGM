@@ -224,60 +224,19 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
     // arma::umat samps;
     
     if (leaveOneOut) {
-      samps = StabilityUtils::subSampleLOO(d);
+	samps = StabilityUtils::subSampleLOO(d);
     } else {
-      samps = StabilityUtils::subSampleNoReplacement(d, b, N);
+	samps = StabilityUtils::subSampleNoReplacement(d, b, N);
     }
-
-    // Rcpp::Rcout << "Sample indices selected:\n" << samps << std::endl;
     
-    // BlockingQueue<int> taskQueue(samps.n_rows);
-    // Rcpp::Rcout << "taskQue constructed\n";
     int numVars = d.getNumColumns();
     std::vector<MGM> mgmList;
     std::vector<CoxMGM> coxmgmList;
-    // Rcpp::Rcout << "mgmList constructed\n";
     arma::mat thetaMat(numVars, numVars, arma::fill::zeros);
-    // Rcpp::Rcout << "thetaMat constructed\n";
     std::mutex matMutex; // For protecting thetaMat
-    // Rcpp::Rcout << "matMutex constructed\n";
-    // Rcpp::Rcout << "Number of threads: " << parallelism << std::endl;
     RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, N)));
-    // Rcpp::Rcout << "pool constructed\n";
     std::vector<double> lambdaCurr;
 
-    // auto mgmPath = [&](int sample) {
-		       
-    // 		       // if (RcppThread::isInterrupted()) {
-    // 		       // 	   return;
-    // 		       // }
-
-    // 		       RcppThread::Rcout << "Running sample " << sample << std::endl;
-		       
-    // 		       DataSet dataSubSamp(d, samps.row(sample));
-    // 		       MGM mgm(dataSubSamp);
-    // 		       std::vector<EdgeListGraph> mgmGraphs = mgm.searchPath(lambda);
-		       
-    // 		       for (int j = 0; j < lambda.size(); j++) {
-    // 			   arma::mat curAdj = StabilityUtils::skeletonToMatrix(mgmGraphs[j], dataSubSamp);
-    // 			   std::lock_guard<std::mutex> matLock(matMutex);
-    // 			   theta.slice(j) += curAdj;
-    // 		       }
-
-    // 		       return;
-    // 		   };
-
-    // RcppThread::ThreadPool pool(threads);
-
-    // for (int i = 0; i < samps.n_rows; i++) {
-    // 	pool.push(mgmPath, i);
-    // }
-
-    // pool.join();
-
-    // theta /= samps.n_rows;
-
-    // Rcpp::Rcout << "About to fill mgmList\n";
 
     if (r > 0) {
 	for (int i = 0; i < samps.n_rows; i++) {
@@ -289,60 +248,7 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
 	    DataSet dataSubSamp(d, samps.row(i));
 	    mgmList.push_back(MGM(dataSubSamp));
 	}
-    }
-
-    // Rcpp::Rcout << "mgmList Filled\n";
-
-    // auto producer = [&]() {
-    // 			for (int i = 0; i < samps.n_rows; i++) {
-    // 			    taskQueue.push(i);
-
-    // 			    if (RcppThread::isInterrupted()) {
-    // 				break;
-    // 			    }
-    // 			}
-
-    // 			// Poison pills
-    // 			for (int i = 0; i < threads; i++) {
-    // 			    taskQueue.push(-1);
-    // 			}
-    // 		    };
-
-    // auto consumer = [&]() {
-    // 			while (true) {
-    // 			    int sample = taskQueue.pop();
-
-    // 			    if (sample < 0) break; // Poison pill
-
-    // 			    if (RcppThread::isInterrupted()) {
-    // 				break;
-    // 			    }
-
-    // 			    mgmList[sample].setLambda(lambdaCurr);
-    // 			    EdgeListGraph g = mgmList[sample].search();
-    // 			    arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
-
-    // 			    {
-    // 				std::lock_guard<std::mutex> matLock(matMutex);
-    // 				thetaMat += curAdj;
-    // 			    }
-    // 			}
-    // 		    };
-
-    // Rcpp::Rcout << "producer/consumer defined\n";
-
-    // std::vector<RcppThread::Thread> threadList;
-
-    // for (int i = 0; i < threads; i++) {
-    // 	threadList.push_back(RcppThread::Thread( mgmPath, i ));
-    // }
-
-    // for (int i = 0; i < threads; i++) {
-    //     threadList[i].join();
-    // }
-
-    // thetaMat /= samps.n_rows;
-    
+    }    
 
     // go until we break by having instability better than threshold
     for (currIndex = 0; currIndex < lambda.size(); currIndex++) {
@@ -396,73 +302,7 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
 	
 	pool.wait();
 
-	// auto producer = [&]() {
-	// 		    for (int i = 0; i < samps.n_rows; i++) {
-	// 			taskQueue.push(i);
-
-	// 			if (RcppThread::isInterrupted()) {
-	// 			    break;
-	// 			}
-	// 		    }
-
-	// 		    // Poison pills
-	// 		    for (int i = 0; i < std::max(1, parallelism/2); i++) {
-	// 			taskQueue.push(-1);
-	// 		    }
-	// 		};
-
-	// auto consumer = [&]() {
-	// 		    while (true) {
-	// 			int sample = taskQueue.pop();
-
-	// 			if (sample < 0) break; // Poison pill
-
-	// 			if (RcppThread::isInterrupted()) {
-	// 			    break;
-	// 			}
-
-	// 			mgmList.at(sample).setLambda(lambdaCurr);
-	// 			EdgeListGraph g = mgmList.at(sample).search();
-	// 			arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
-
-	// 			{
-	// 			    std::lock_guard<std::mutex> matLock(matMutex);
-	// 			    thetaMat += curAdj;
-	// 			}
-	// 		    }
-	// 		};
-	
-	// pool.push(producer);
-
-	// for (int i = 0; i < parallelism; i++) {
-	//     pool.push(consumer);
-	// }
-
-	// pool.join();
-
-	// std::vector<RcppThread::Thread> threadList;
-
-	// threadList.push_back(RcppThread::Thread( producer ));
-	
-	// for (int i = 0; i < std::max(1, parallelism/2); i++) {
-	//     threadList.push_back(RcppThread::Thread( consumer ));
-	// }
-
-	// for (int i = 0; i < std::max(1, parallelism/2); i++) {
-	//     threadList[i].join();
-	// }
-
         arma::mat adjMat = thetaMat/samps.n_rows;
-
-	// arma::mat adjMat = theta.slice(currIndex);
-	
-        // if (leaveOneOut) {
-        //     adjMat = StabilityUtils::stabilitySearchPar(d, lambdaCurr, threads);
-        // } else {
-        //     adjMat = StabilityUtils::stabilitySearchPar(d, lambdaCurr, threads, N, b);
-        // }
-
-        // Rcpp::Rcout << "adjMat = " << adjMat << std::endl;
 
         double ccDestable = 0;
         double cdDestable = 0;
@@ -550,10 +390,6 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
 			    << ddDestable << "}" << std::endl;
 	    }
 	}
-
-	// if (verbose) Rcpp::Rcout << "    Instabilities for lambda = " << lambda[currIndex]
-	// 			 << ":  {" << ccDestable << ", " << cdDestable << ", "
-	// 			 << ddDestable << "}" << std::endl;
 
 	if (allDestable >= gamma && oneLamb == -1 && currIndex > 0) {
 	    oneLamb = lambda[currIndex-1];

@@ -107,6 +107,7 @@ public:
     bool updateNode(const Node& node);
 
     friend void DataSetTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+    friend arma::mat DataSetNPNTest(const Rcpp::DataFrame &df);
     friend std::ostream &operator<<(std::ostream &os, DataSet &ds);
 
 };

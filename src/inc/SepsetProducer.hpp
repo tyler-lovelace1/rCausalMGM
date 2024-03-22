@@ -81,10 +81,13 @@ private:
     void producer();
     void consumer();
 
+    void producerSepsetMap();
+    void consumerSepsetMap();
+
     static const int MAX_QUEUE_SIZE = 100;
     BlockingQueue<IndependenceTask> taskQueue;
 
-    int parallelism;
+    int parallelism = std::thread::hardware_concurrency();
     
     std::mutex mapMutex;
 
@@ -115,6 +118,7 @@ public:
                 Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
             }
         }
+	mapFilled = false;
     }
 
     SepsetProducer(const EdgeListGraph& _graph, SepsetMap& sepsets, IndependenceTest *test) : taskQueue(MAX_QUEUE_SIZE){
@@ -144,7 +148,7 @@ public:
     						  knowledge(other.knowledge),
     						  rule(other.rule),
     						  depth(other.depth),
-    						  // mapFilled(other.mapFilled),
+    						  mapFilled(other.mapFilled),
     						  verbose(other.verbose),
     						  parallelism(other.parallelism),
     						  taskQueue(other.taskQueue) {}
@@ -164,7 +168,7 @@ public:
     	knowledge = other.knowledge;
     	rule = other.rule;
     	depth = other.depth;
-    	// mapFilled = other.mapFilled;
+    	mapFilled = other.mapFilled;
     	verbose = other.verbose;
     	parallelism = other.parallelism;
     	taskQueue = other.taskQueue;

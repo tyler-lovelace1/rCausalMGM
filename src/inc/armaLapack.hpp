@@ -23,4 +23,6 @@
 // For compiler that do not know uint...
 typedef unsigned int uint;
 
+static int randWrapper(const int n) { return std::floor(R::unif_rand()*n); }
+
 #endif /* ARMALAPACK_HPP_ */

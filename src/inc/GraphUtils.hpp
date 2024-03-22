@@ -8,6 +8,7 @@
 class EdgeListGraph; // Forward declaration
 
 #include "EdgeListGraph.hpp"
+#include "SepsetMap.hpp"
 #include "RcppThread.h"
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
@@ -31,6 +32,10 @@ private:
 			  Node b, Node c);
 
     static bool existOnePathWithPossibleParents(std::unordered_map<Node, std::vector<Node>> previous, Node w, Node x, Node b, EdgeListGraph& graph);
+
+    static bool existOnePathWithPossibleParents(std::map<Node,std::set<Node>>& previous,
+						EdgeListGraph& graph, const Node& w,
+						const Node& x, const Node& b);
 
     static bool existsSemidirectedPath(Node from, Node to, EdgeListGraph& G);
     
@@ -102,6 +107,8 @@ public:
     static EdgeListGraph undirectedGraph(EdgeListGraph& graph);
 
     static std::unordered_set<Node> possibleDsep(Node x, Node y, EdgeListGraph& graph, int maxPathLength);
+
+    static std::set<Node> possibleDsep2(const Node& x, const Node& y, EdgeListGraph& graph, int maxPathLength);
 
     static bool existsPossibleColliderPath(Node from, Node to, std::unordered_set<Node> Z, EdgeListGraph& G);
 

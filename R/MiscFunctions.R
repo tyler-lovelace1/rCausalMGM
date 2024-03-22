@@ -120,6 +120,42 @@ print.graphSTEPS <- function(x, ...) {
 }
 
 
+#' A print override function for the graphSTEPS class
+#'
+#' @param x The graphSTEPS object
+#' @export
+print.graphSTARS <- function(x, ...) {
+    ## mgmFlag <- !is.null(x$lambdas)
+    ## if (is.null(gamma)) {
+    ## gamma <- x$gamma
+    ## }
+    ## cat("StEPS selected graph:\n\n")
+    ## print(x$graph.steps)
+    ## cat("\n\n")
+    ## cat("\n")
+    ## cat("StEPS selected lambda for gamma = ")
+    ## cat(gamma)
+    ## cat(":\n")
+    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
+    ## allIdx <- allIdx[length(allIdx)]
+    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
+    ## ccIdx <- ccIdx[length(ccIdx)]
+    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
+    ## cdIdx <- cdIdx[length(cdIdx)]
+    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
+    ## ddIdx <- ddIdx[length(ddIdx)]
+    ## cat(paste0("lambda = { ", as.numeric(x$graph.steps$lambda[1]), ", ", as.numeric(x$graph.steps$lambda[2]), ", ", as.numeric(x$graph.steps$lambda[3]), " }\n\n"))
+    cat("StARS selected graph:\n\n")
+    print(x$graph)
+    ## cat("\n")
+    ## cat("StARS selected lambda for gamma = ")
+    ## cat(gamma)
+    ## cat(":\n")
+    ## cat(paste0("lambda = ", as.numeric(x$graph.stars$lambda[1]) ,"\n"))
+    invisible(x)
+}
+
+
 
 #' A plot override function for the graph class
 #'
@@ -348,6 +384,54 @@ plot.graphSTEPS <- function(x, ...) {
            pch = c(19, 18, 17, 15), cex=0.7)
 }
 
+#' A plot override function for the graphSTEPS class
+#'
+#' @param x The graph object
+#' @export
+plot.graphSTARS <- function(x, ...) {
+    ## mgmFlag <- !is.null(x$lambdas)
+
+    ## if (is.null(gamma)) {
+    gamma <- x$gamma
+    ## }
+
+    ## if (mgmFlag) {
+    ##     log10params <- log10(x$lambdas)
+    ## } else {
+    log10params <- log10(x$alphas)
+    ## }
+
+    plot(x=log10params, y=x$instability[,1], col='black', pch=19,
+         xlab=expression(log10(alpha)),
+         ylab="Edge instability across subsamples", ylim=c(0,0.1))
+
+    ## points(x=log10params, y=x$instability[,1], col='red', pch=18)
+    ## points(x=log10params, y=x$instability[,2], col='blue', pch=17)
+    ## points(x=log10params, y=x$instability[,3], col='purple', pch=15)
+
+    abline(h=gamma, lty=2, col='gray', lw=2)
+
+    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
+    ## allIdx <- allIdx[length(allIdx)]
+    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
+    ## ccIdx <- ccIdx[length(ccIdx)]
+    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
+    ## cdIdx <- cdIdx[length(cdIdx)]
+    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
+    ## ddIdx <- ddIdx[length(ddIdx)]
+    
+    ## abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
+    ## abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
+    ## abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
+    abline(v=log10(x$graph$alpha),  col='black',  lty=3, lw=2)
+
+    ## legend(x = "topleft", title="Edge Type", 
+    ##        legend = c("All", "C-C", "C-D", "D-D"), 
+    ##        col = c("black","red", "blue", "purple"),
+    ##        pch = c(19, 18, 17, 15), cex=0.7)
+}
+
+
 #' A table to generate a data.frame for objects from graph class. It incorporates
 #' adjacency and orientation frequency if estimates of edge stability are available.
 #'
@@ -544,7 +628,14 @@ createKnowledge <- function(tiers = list(), forbidWithinTiers=NULL,
     return(knowledge)
 }
 
-simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.0, deg=3, coefMin=0.5, coefMax=1.5, snr=4) {
+simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
+                         coefMin=0.5, coefMax=1.5, noiseMin=1, noiseMax=2,
+                         seed=NULL) {
+
+    if (!is.null(seed)) {
+        set.seed(seed)
+    }
+    
     numCat <- floor(p * categoricalFrac)
     numCont <- p - numCat
     nodes <- c()
@@ -624,13 +715,13 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.0, deg=3, coefMin=0.5, 
 
                 ## print(paste("Beta: ", paste(beta, collapse=", ")))
 
-                varS <- var(pred)
+                ## varS <- var(pred)
                 ## print(paste("Signal Variance:", varS))
                 ## varN <- varS / snr
-                varN <- runif(1, 1, 4)
+                ## varN <- runif(1, 1, 4)
                 ## print(paste("Noise Variance:", varN))
                 ## print(paste("SNR:", varS / varN))
-                val <- as.vector(scale(pred + rnorm(n, sd=sqrt(varN))))
+                val <- as.vector(scale(pred + rnorm(n, sd=runif(1, noiseMin, noiseMax))))
             }
         } else if (grepl('Y', node)) {
             if (length(pa)==0) {
@@ -674,6 +765,11 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.0, deg=3, coefMin=0.5, 
 
     head(data)
 
-    result <- list(data=data[,nodes], graph=adjMat2Graph(adjMat, permNodes, directed=T))
+    graph <- adjMat2Graph(adjMat, permNodes, directed=T)
+
+    graph$algorithm <- "Ground Truth"
+    graph$type <- "directed acyclic graph"
+
+    result <- list(data=data[,nodes], graph=graph)
     return(result)
 }

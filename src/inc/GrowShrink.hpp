@@ -30,6 +30,8 @@ public:
 
     std::vector<Node> search(const Node& target, double* scoreReturn = NULL);
 
+    friend Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub);
+
 };
 
 #endif /* GROWSHRINK_HPP_ */

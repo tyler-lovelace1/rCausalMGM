@@ -163,7 +163,7 @@ MGM::MGM(DataSet ds) {
 
     arma::vec dDatSum = arma::sum(dDat, 0).t();
 
-    params.alpha2 = arma::log(dDatSum / (arma::vec(lsum, arma::fill::value(n)) - dDatSum));
+    params.alpha2 = arma::log(dDatSum + 1) - arma::log(arma::vec(lsum, arma::fill::value(n)) - dDatSum + 1);
     
 }
 
@@ -230,7 +230,7 @@ MGM::MGM(DataSet ds, std::vector<double> lambda) {
 
     arma::vec dDatSum = arma::sum(dDat, 0).t();
 
-    params.alpha2 = arma::log(dDatSum / (arma::vec(lsum, arma::fill::value(n)) - dDatSum));
+    params.alpha2 = arma::log(dDatSum + 1) - arma::log(arma::vec(lsum, arma::fill::value(n)) - dDatSum + 1);
 }
 
 
@@ -527,14 +527,15 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //end
     for (arma::uword i = 0; i < q; i++) {
         gradOut.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
-        for (arma::uword j = 0; j < p; j++) {
-	    // Rcpp::Rcout << "Theta(" << i << "," << j << ")\n"; 
-	    gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)) -= arma::mean(gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)));
-        }
-	for (arma::uword j = i+1; j < q; j++) {
-	    // Rcpp::Rcout << "Phi(" << i << "," << j << ")\n";
-	    gradOut.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])) -= arma::mean(gradOut.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])));
-        }
+	
+        // for (arma::uword j = 0; j < p; j++) {
+	//     // Rcpp::Rcout << "Theta(" << i << "," << j << ")\n"; 
+	//     gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)) -= arma::mean(gradOut.theta(lcumsum[i], j, arma::size(l[i], 1)));
+        // }
+	// for (arma::uword j = i+1; j < q; j++) {
+	//     // Rcpp::Rcout << "Phi(" << i << "," << j << ")\n";
+	//     gradOut.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])) -= arma::mean(gradOut.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])));
+        // }
     }
 
     // for (arma::uword i = 0; i < p; i++) {
@@ -1602,14 +1603,14 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
 	// Rcpp::Rcout << "smoothGradient: Centering Gradients\n";
 
-        for (arma::uword j = 0; j < p; j++) {
-	    // Rcpp::Rcout << "Theta(" << i << "," << j << ")\n"; 
-	    grad.theta(lcumsum[i], j, arma::size(l[i], 1)) -= arma::mean(grad.theta(lcumsum[i], j, arma::size(l[i], 1)));
-        }
-	for (arma::uword j = i+1; j < q; j++) {
-	    // Rcpp::Rcout << "Phi(" << i << "," << j << ")\n";
-	    grad.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])) -= arma::mean(grad.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])));
-        }
+        // for (arma::uword j = 0; j < p; j++) {
+	//     // Rcpp::Rcout << "Theta(" << i << "," << j << ")\n"; 
+	//     grad.theta(lcumsum[i], j, arma::size(l[i], 1)) -= arma::mean(grad.theta(lcumsum[i], j, arma::size(l[i], 1)));
+        // }
+	// for (arma::uword j = i+1; j < q; j++) {
+	//     // Rcpp::Rcout << "Phi(" << i << "," << j << ")\n";
+	//     grad.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])) -= arma::mean(grad.phi(lcumsum[j], lcumsum[i], arma::size(l[j], l[i])));
+        // }
     }
 
     // for (arma::uword i = 0; i < p; i++) {
@@ -1977,7 +1978,6 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
 
 
 std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
-					     int nfolds,
 					     arma::uvec& foldid,
 					     arma::mat& loglik,
 					     arma::uvec& index) {
@@ -1987,6 +1987,8 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
     // std::vector<MGM> testMGMs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
     std::vector<double> lambda = { lambdas[0], lambdas[0], lambdas[0] };
+
+    int nfolds = arma::max(foldid);
 
     for (int k = 1; k <= nfolds; k++) {
 	arma::uvec trainIdxs = arma::find(foldid != k);

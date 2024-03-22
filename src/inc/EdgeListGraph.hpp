@@ -738,8 +738,7 @@ public:
     friend bool operator>=(const EdgeListGraph& g1, const EdgeListGraph& g2);
     friend bool operator<=(const EdgeListGraph& g1, const EdgeListGraph& g2);
     friend bool operator>(const EdgeListGraph& g1, const EdgeListGraph& g2);
-    friend std::ostream& operator<<(std::ostream& os, EdgeListGraph& graph);
-
+    friend std::ostream& operator<<(std::ostream& os, EdgeListGraph graph);
 
 };
 

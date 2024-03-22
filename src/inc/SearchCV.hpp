@@ -5,6 +5,7 @@
 #include "RcppThread.h"
 #include "DataSet.hpp"
 #include "MGM.hpp"
+#include "CoxMGM.hpp"
 #include "PcStable.hpp"
 #include "Fci.hpp"
 #include "IndTestMultiCox.hpp"

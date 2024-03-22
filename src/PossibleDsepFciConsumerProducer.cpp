@@ -3,11 +3,11 @@
 //============================CONSTRUCTORS============================//
 
 /**
-* Creates a new SepSet and assumes that none of the variables have yet been checked.
-*
-* @param graph The GaSearchGraph on which to work
-* @param test  The IndependenceChecker to use as an oracle
-*/
+ * Creates a new SepSet and assumes that none of the variables have yet been checked.
+ *
+ * @param graph The GaSearchGraph on which to work
+ * @param test  The IndependenceChecker to use as an oracle
+ */
 PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(EdgeListGraph& graph, IndependenceTest *test, int threads) : PossibleDsepFciConsumerProducer(test, threads)
 {
     // Unable to compare EdgeListGraph to NULL
@@ -45,8 +45,8 @@ PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTes
 
 //This method is based on background knowledge aka IKnowledge which is not yet implemented
 /**
-* Removes from the list of nodes any that cannot be parents of x given the background knowledge.
-*/
+ * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
+ */
 std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(const Node& x, std::vector<Node>& nodes) {
 
     std::vector<Node> possibleParents;
@@ -65,15 +65,15 @@ bool PossibleDsepFciConsumerProducer::possibleParentOf(const Node& x, const Node
 }
 
 /**
-* A variable v is in Possible-D-Sep(A,B) iff
-* <pre>
-* 	(i) v != A & v != B
-* 	(ii) there is an undirected path U between A and v such that for every
-* 		 subpath <X,Y,Z> of U either:
-* 		(a) Y is a collider on the subpath, or
-* 		(b) X is adjacent to Z.
-* </pre>
-*/
+ * A variable v is in Possible-D-Sep(A,B) iff
+ * <pre>
+ * 	(i) v != A & v != B
+ * 	(ii) there is an undirected path U between A and v such that for every
+ * 		 subpath <X,Y,Z> of U either:
+ * 		(a) Y is a collider on the subpath, or
+ * 		(b) X is adjacent to Z.
+ * </pre>
+ */
 std::unordered_set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(const Node& node1, const Node& node2, int maxPathLength) {
 
     std::unordered_set<Node>  dsep = GraphUtils::possibleDsep(node1, node2, graph, maxPathLength);
@@ -87,12 +87,12 @@ std::unordered_set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(const 
 //========================PUBLIC METHODS==========================//
 
 /**
-* Performs pairwise comparisons of each variable in the graph with the variables that have not already been
-* checked. We get the Possible-D-Sep sets for the pair of variables, and we check to see if they are independent
-* conditional on some subset of the union of Possible-D-Sep sets. This method returns the SepSet passed in the
-* constructor (if any), possibly augmented by some edge removals in this step. The GaSearchGraph passed in the
-* constructor is directly changed.
-*/
+ * Performs pairwise comparisons of each variable in the graph with the variables that have not already been
+ * checked. We get the Possible-D-Sep sets for the pair of variables, and we check to see if they are independent
+ * conditional on some subset of the union of Possible-D-Sep sets. This method returns the SepSet passed in the
+ * constructor (if any), possibly augmented by some edge removals in this step. The GaSearchGraph passed in the
+ * constructor is directly changed.
+ */
 SepsetMap& PossibleDsepFciConsumerProducer::search() {
     std::unordered_map<Edge, std::vector<Node>> edgeCondsetMap;
 
@@ -105,7 +105,7 @@ SepsetMap& PossibleDsepFciConsumerProducer::search() {
         Node y = edge.getNode2();
 
         graph.removeEdge(x, y);
-        if (verbose) Rcpp::Rcout << "    Removed " << x.getName() << " --- " << y.getName() << "\n";
+        if (verbose) Rcpp::Rcout << "      Removed " << x.getName() << " --- " << y.getName() << "\n";
         sepset.set(x, y, condSet);
     }
     return sepset;
@@ -137,10 +137,10 @@ void PossibleDsepFciConsumerProducer::setDepth(int depth) {
 }
 
 void PossibleDsepFciConsumerProducer::setMaxPathLength(int maxReachablePathLength) {
-  if (maxReachablePathLength < -1) {
-      throw std::invalid_argument("Max path length must be -1 (unlimited) or >= 0");
-  }
-  this->maxReachablePathLength = maxReachablePathLength == std::numeric_limits<int>::max() ? -1 : maxReachablePathLength;
+    if (maxReachablePathLength < -1) {
+	throw std::invalid_argument("Max path length must be -1 (unlimited) or >= 0");
+    }
+    this->maxReachablePathLength = maxReachablePathLength == std::numeric_limits<int>::max() ? -1 : maxReachablePathLength;
 }
 
 void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges) {
@@ -150,10 +150,18 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
         Node x = edge.getNode1();
         Node y = edge.getNode2();
 
-        std::unordered_set<Node> possibleDsepSet = getPossibleDsep(x, y, maxReachablePathLength);
+        // std::unordered_set<Node> possibleDsepSet = getPossibleDsep(x, y, maxReachablePathLength);
+	std::set<Node> possibleDsepSet = GraphUtils::possibleDsep2(x, y, graph, maxReachablePathLength);
         std::vector<Node> possibleDsep;
 
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
+	std::sort(possibleDsep.begin(), possibleDsep.end());
+
+	std::vector<Node> adjx = graph.getAdjacentNodes(x);
+	adjx.erase(std::remove(adjx.begin(), adjx.end(), y), adjx.end());
+
+
+	// RcppThread::Rcout << ss.str();
 
         bool noEdgeRequired = knowledge.noEdgeRequired(x, y);
         // bool noEdgeRequired = true;
@@ -161,41 +169,95 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
         if (!noEdgeRequired)
             continue;
 
-        //possible parents is not fully implemented without background knowledge
-        std::vector<Node> possParents = possibleParents(x, possibleDsep);
-        int depth_ = getDepth() == -1 ? 1000 : getDepth();
+	int depth_ = getDepth() == -1 ? 1000 : getDepth();
+	std::vector<Node> possParents;
 
-        for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
-            ChoiceGenerator cg(possParents.size(), d);
-            std::vector<int> *combination;
+	if (adjx != possibleDsep) {
 
-            for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-                std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
-                PossibleDsepTask newTask(edge, condSet);
-                taskQueue.push(newTask);
-            }
-        }
+	    // RcppThread::Rcout << "      Possible-D-Sep(" << x << "," << y << ")  :  {"; // != Adj(" << x <<") \\ { " << y <<" }\n";
+	
+	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
+	    // for (Node node : possibleDsep) {
+	    // 	RcppThread::Rcout << node << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
 
-        possibleDsepSet = getPossibleDsep(y, x, maxReachablePathLength);
+	    // std::set<Node> adjSet(adjx.begin(), adjx.end());
+
+	    //possible parents is not fully implemented without background knowledge
+	    possParents = possibleParents(x, possibleDsep);
+
+	    for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
+		ChoiceGenerator cg(possParents.size(), d);
+		std::vector<int> *combination;
+
+		for (combination = cg.next(); combination != NULL; combination = cg.next()) {
+		    std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
+		    // bool allAdj = true;
+		    // for (const Node& n : condSet) {
+		    // 	if (adjSet.count(n)==0) {
+		    // 	    allAdj = false;
+		    // 	    break;
+		    // 	}
+		    // }
+		    
+		    // if (!allAdj) {
+		    PossibleDsepTask newTask(edge, condSet);
+		    taskQueue.push(newTask);
+		    // }
+		}
+	    }
+	}
+
+        // possibleDsepSet = getPossibleDsep(y, x, maxReachablePathLength);	
+	possibleDsepSet = GraphUtils::possibleDsep2(y, x, graph, maxReachablePathLength);
         possibleDsep.clear();
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
 
-        //possible parents is not fully implemented without background knowledge
-        possParents = possibleParents(y, possibleDsep);
+	std::sort(possibleDsep.begin(), possibleDsep.end());
 
-        for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
-            ChoiceGenerator cg (possParents.size(), d);
-            std::vector<int> *combination;
+	std::vector<Node> adjy = graph.getAdjacentNodes(y);
+	adjy.erase(std::remove(adjy.begin(), adjy.end(), x), adjy.end());
 
-            for (combination = cg.next(); combination != NULL; combination = cg.next()) {
-                std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
-                PossibleDsepTask newTask(edge, condSet);
-                taskQueue.push(newTask);
-            }
-        }
+	if (adjy != possibleDsep) {
+
+	    // RcppThread::Rcout << "      Possible-D-Sep(" << y << "," << x << ")  :  {"; // != Adj(" << y <<") \\ { " << x <<" }\n";
+	
+	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
+	    // for (Node node : possibleDsep) {
+	    // 	RcppThread::Rcout << node << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
+	    
+	    // std::set<Node> adjSet(adjy.begin(), adjy.end());
+
+	    //possible parents is not fully implemented without background knowledge
+	    possParents = possibleParents(y, possibleDsep);
+
+	    for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
+		ChoiceGenerator cg (possParents.size(), d);
+		std::vector<int> *combination;
+
+		for (combination = cg.next(); combination != NULL; combination = cg.next()) {
+		    std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
+		    // bool allAdj = true;
+		    // for (const Node& n : condSet) {
+		    // 	if (adjSet.count(n)==0) {
+		    // 	    allAdj = false;
+		    // 	    break;
+		    // 	}
+		    // }
+		    
+		    // if (!allAdj) {
+		    PossibleDsepTask newTask(edge, condSet);
+		    taskQueue.push(newTask);
+		    // }
+		}
+	    }
+	}
 
 	if (RcppThread::isInterrupted()) {
-	  break;
+	    break;
 	}
     }
 
@@ -225,6 +287,10 @@ void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::unordered_map<Ed
 	    }
         }
         task = taskQueue.pop();
+
+	if (RcppThread::isInterrupted()) {
+	    break;
+	}
     }
     return;
 }

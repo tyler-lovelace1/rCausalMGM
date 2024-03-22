@@ -234,7 +234,6 @@ public:
 					  arma::vec& nParams);
 
     std::vector<EdgeListGraph> searchPathCV(std::vector<double> lambdas,
-					    int nfolds,
 					    arma::uvec& foldid,
 					    arma::mat& loglik,
 					    arma::uvec& index);
@@ -243,7 +242,7 @@ public:
     
     // friend void MGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 
-    friend Rcpp::List AdaProxMGMTest(const Rcpp::DataFrame &df, double lambda);
+    // friend Rcpp::List AdaProxMGMTest(const Rcpp::DataFrame &df, double lambda);
 
 };
 

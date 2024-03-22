@@ -53,7 +53,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
     if (replace)   samps = StabilityUtils::subSampleWithReplacement(d, N, B);
     else           samps = StabilityUtils::subSampleNoReplacement(d, N, B);
 
-    if (verbose) Rcpp::Rcout << "  Bootstrapping...\n" << std::endl;
+    if (verbose) Rcpp::Rcout << "  Bootstrapping..." << std::endl;
 
     // EdgeListGraph g;
 
@@ -146,58 +146,17 @@ EdgeListGraph Bootstrap::runBootstrap() {
 
     std::string fullAlg = graphVec.at(0).getAlgorithm() + " Bootstrap Ensemble";
 
-    // if (alg == "mgm") {
-    // 	fullAlg = "MGM";
-    // } else if (mgmInit) {
-    // 	fullAlg = "MGM-";
-    // }
-    
-    // if (alg.find("pc") != std::string::npos) {
-    // 	if (rule==ORIENT_MAXP)
-    // 	    fullAlg += "PC-Max";
-    // 	else if (rule==ORIENT_CONSERVATIVE)  
-    // 	    fullAlg += "CPC-Stable";
-    // 	else if (rule==ORIENT_MAJORITY)
-    // 	    fullAlg += "MPC-Stable";
-    // } else if (alg.find("pc") != std::string::npos) {
-    // 	fullAlg += "PC-Stable";
-    // } else if (alg.find("fcim") != std::string::npos) {
-    // 	fullAlg += "FCI-Max";
-    // } else if (alg.find("cfci") != std::string::npos) {
-    // 	fullAlg += "CFCI-Stable";
-    // } else if (alg.find("fci50") != std::string::npos) {
-    // 	fullAlg += "FCI50";
-    // } else if (alg.find("fci") != std::string::npos) {
-    // 	fullAlg += "FCI-Stable";
-    // }
-
-    // if (verbose) {
-    // 	if (elapsedTime < 100*1000) {
-    // 	    Rcpp::Rcout.precision(2);
-    // 	} else {
-    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-    // 	}
-    //     Rcpp::Rcout << std::endl << "  Bootstraped " + fullAlg + " Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    // }
-
-    // fullAlg += " Bootstrap Ensemble";
-
     ensGraph.setAlgorithm(fullAlg);
 
     std::string graphType = graphVec.at(0).getGraphType();
-    // if (alg.find("pc") != std::string::npos) {
-    // 	graphType = "completed partially directed acyclic graph";
-    // } else if (alg.find("fci") != std::string::npos) {
-    // 	graphType = "partial ancestral graph";
-    // } else if (alg == "mgm") {
-    // 	graphType = "undirected";
-    // }
     
     ensGraph.setGraphType(graphType);
 
     if (mgmInit) {
 	ensGraph.setHyperParam("lambda", lambda);
-    } else if (alg != "mgm") {
+    }
+
+    if (alg != "mgm") {
 	ensGraph.setHyperParam("alpha", { alpha });
     }
 

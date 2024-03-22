@@ -73,6 +73,132 @@ EdgeListGraph GraphUtils::undirectedGraph(EdgeListGraph& graph) {
     return graph2;
 }
 
+std::set<Node> GraphUtils::possibleDsep2(const Node& x, const Node& y, EdgeListGraph& graph, int maxPathLength) {
+    std::set<Node> dsep;
+
+    // RcppThread::Rcout << "  Checking for Possible-D-Sep(" << x << "," << y << "):\n";
+
+    std::queue<NodePair> Q;
+    std::set<NodePair> V;
+
+    std::map<Node, std::set<Node>> previous;
+    previous[x] = {};
+
+    int distance = 0;
+
+    NodePair firstPairAtDepth = std::pair<Node,Node>(Node(),Node());
+
+    for (Node b : graph.getAdjacentNodes(x)) {
+	if (b == y) continue;
+
+	NodePair edge = std::pair<Node, Node>(x, b);
+
+	if (firstPairAtDepth.first.isNull() && firstPairAtDepth.second.isNull()) {
+	    firstPairAtDepth = edge;
+	}
+
+	Q.push(edge);
+	V.insert(edge);
+	
+	dsep.insert(b);
+
+	previous[x].insert(b);
+    }
+
+    while (!Q.empty()) {
+	NodePair edge = Q.front();
+	Q.pop();
+
+	if (firstPairAtDepth == edge) {
+	    firstPairAtDepth = std::pair<Node,Node>(Node(),Node());
+	    distance++;
+	    if (distance > 0 && distance > (maxPathLength == -1 ? 1000 : maxPathLength)) {
+		break;
+	    }
+	}
+
+	Node a = edge.first;
+	Node b = edge.second;
+
+	// RcppThread::Rcout << "    For b = " << b << " previous = { ";
+	// if (previous.count(b)>0) {
+	//     for (Node n : previous[b]) {
+	// 	RcppThread::Rcout << n << " ";
+	//     }
+	// }
+	// RcppThread::Rcout << "}\n";
+
+	// RcppThread::Rcout << "    Searching for semidirected paths from the above nodes to " << b << " or " << x << std::endl;
+
+	if (existOnePathWithPossibleParents(previous, graph, b, x, b)) {
+	    // RcppThread::Rcout << "      Paths found\n";
+	    dsep.insert(b);
+	}
+	
+	// dsep.insert(b);
+
+	for (Node c : graph.getAdjacentNodes(b)) {
+	    if (c == a) continue;
+	    if (c == x) continue;
+	    if (c == y) continue;
+
+	    if (previous.count(c)==0) {
+		previous[c] = { b };
+	    } else {
+		previous[c].insert(b);
+	    }
+
+	    if (graph.isDefCollider(a,b,c) || graph.isAdjacentTo(a,c)) {
+		NodePair newEdge = std::pair<Node, Node>(a, c);
+		
+		if (V.count(newEdge)!=0) continue;
+
+		V.insert(newEdge);
+		Q.push(newEdge);
+
+		if (firstPairAtDepth.first.isNull() && firstPairAtDepth.second.isNull()) {
+		    firstPairAtDepth = newEdge;
+		}
+	    }
+	}
+    }
+
+    // RcppThread::Rcout << "Poss-D-Sep(" << x << "," << y << ")\n";
+
+    // for (auto it = previous.begin(); it != previous.end(); it++) {
+    // 	RcppThread::Rcout << "    " << it->first << "  :  { ";
+    // 	for (Node n : it->second) {
+    // 	    RcppThread::Rcout << n << " ";
+    // 	}
+    // 	RcppThread::Rcout << "}\n";
+    // }
+
+    dsep.erase(x);
+    dsep.erase(y);
+
+    return dsep;
+}
+
+bool GraphUtils::existOnePathWithPossibleParents(std::map<Node,std::set<Node>>& previous,
+						 EdgeListGraph& graph, const Node& w,
+						 const Node& x, const Node& b) {
+    if (w == x) return true;
+
+    if (previous.count(w)==0) return false;
+    
+    for (Node r : previous[w]) {
+	if (r == b || r == x) continue;
+
+	if (graph.existsSemiDirectedPathFromTo(r, x) ||
+	    graph.existsSemiDirectedPathFromTo(r, b)) {
+	    
+	    return true;
+	}
+    }
+    
+    return false;
+}
+
 std::unordered_set<Node> GraphUtils::possibleDsep(Node x, Node y, EdgeListGraph& graph, int maxPathLength) {
     std::unordered_set<Node> dsep;
 

@@ -8,14 +8,7 @@
 #include "IndTestMultiCox.hpp"
 #include "PcStable.hpp"
 #include "Knowledge.hpp"
-// #include "CpcStable.hpp"
-// #include "PcMax.hpp"
-// #include "Pc50.hpp"
 #include "Fci.hpp"
-// #include "Cfci.hpp"
-// #include "FciMax.hpp"
-// #include "Fci50.hpp"
-// #include "armaLapack.hpp"
 
 class Bootstrap {
 
@@ -26,18 +19,13 @@ private:
     int B;
     int N;
     arma::umat samps;
-    // int sampsize;
     std::vector<double> lambda;
     double alpha;
-    // double thresh;
     int iterLimit = 500;
-    // EdgeListGraph* baseGraph = NULL;
-    // bool useNondirected = false;
+
     EdgeListGraph finalGraph;
     Rcpp::DataFrame stabs;
-    // arma::cube theta;
-    // arma::umat samps;
-    // bool fdr;
+    
     OrientRule orientRule;
     Knowledge knowledge;
     
@@ -62,11 +50,6 @@ public:
 
     EdgeListGraph runBootstrap();
 
-    // void setComputeStabs(bool cs) { computeStabs = cs; }
-    // bool getComputeStabs() { return computeStabs; }
-
-    // arma::mat getStabs() { return stabilities; }
-
     void setVerbose(bool v) { verbose = v; }
     void setThreads(int threads) { this->threads = threads; }
     void setAlpha(double a) { alpha = a; }
@@ -77,7 +60,8 @@ public:
 
 
     arma::umat getSubSamps() { return samps; }
-    //void setFdr(bool fdr) { this->fdr = fdr; }
+
+    // void setFdr(bool fdr) { this->fdr = fdr; }
     // void setBaseGraph(EdgeListGraph* bg) {
     // 	baseGraph = bg;
     // 	alg = bg->getAlgorithm();

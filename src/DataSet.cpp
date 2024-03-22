@@ -963,3 +963,11 @@ std::ostream &operator<<(std::ostream &os, DataSet &ds) {
     return os;
 }
 
+
+//no export //[[Rcpp::export]]
+arma::mat DataSetNPNTest(const Rcpp::DataFrame &df) {
+    DataSet ds = DataSet(df);
+    ds.npnTransform();
+
+    return ds.getData();
+}

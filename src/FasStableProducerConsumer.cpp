@@ -352,8 +352,24 @@ void FasStableProducerConsumer::producerDepth0() {
                 const Node& x2 = initialGraph->getNode(x.getName());
                 const Node& y2 = initialGraph->getNode(y.getName());
 
-                if (!initialGraph->isAdjacentTo(x2, y2))
+                if (!initialGraph->isAdjacentTo(x2, y2)) {
+		    // std::vector<Node> nodesCopy(nodes);
+		    // std::vector<Node> nodesXY = { x, y };
+		    
+		    // auto it = std::set_difference(nodesCopy.begin(), nodesCopy.end(),
+		    // 				  nodesXY.begin(), nodesXY.end(),
+		    // 				  nodesCopy.begin());
+
+		    // nodesCopy.resize(it-nodesCopy.begin());
+		    // // nodesCopy.erase(x);
+		    // // nodesCopy.erase(y);
+		  
+		    // std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
+		    // // if (!sepset.isReturnEmptyIfNotSet()) {
+		    // sepset.set(x, y, nodesCopy, 1.0);
+		    // // }
                     continue;
+		}
             }
 
             taskQueue.push(IndependenceTask(x, y, empty));
@@ -361,7 +377,7 @@ void FasStableProducerConsumer::producerDepth0() {
 
 	// RcppThread::checkUserInterrupt();
 	if (RcppThread::isInterrupted()) {
-	  break;
+	    break;
 	}
     }
 
@@ -518,12 +534,12 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Node
 	    
 	    // RcppThread::checkUserInterrupt();
 	    if (RcppThread::isInterrupted()) {
-	      break;
+		break;
 	    }
         }
 	
 	if (RcppThread::isInterrupted()) {
-	  break;
+	    break;
 	}
     }
 
