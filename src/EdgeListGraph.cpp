@@ -3065,8 +3065,8 @@ Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 //' g <- rCausalMGM::cpcStable(train_n10000_p10)
 //' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
 // [[Rcpp::export]]
-Rcpp::NumericVector prMetricsOrientation2(const Rcpp::List& estimate,
-					  const Rcpp::List& groundTruthDAG) {
+Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
+				    const Rcpp::List& groundTruthDAG) {
     EdgeListGraph est(estimate);
     EdgeListGraph truth(groundTruthDAG);
     
@@ -3076,6 +3076,10 @@ Rcpp::NumericVector prMetricsOrientation2(const Rcpp::List& estimate,
     std::set<Node> nodeSetTruth(nodesTruth.begin(), nodesTruth.end());
     if (nodeSetEst != nodeSetTruth) {
 	throw std::invalid_argument("Estimate and ground truth graphs must be constructed over the same set of nodes.");
+    }
+
+    if (est.getGraphType() != "completed partially directed acyclic graph") {
+	throw std::invalid_argument("This causal orientation precision and recall is only defined for completed partially directed acyclic graphs");
     }
 
     if (truth.getGraphType() != "directed acyclic graph") {
@@ -3093,8 +3097,7 @@ Rcpp::NumericVector prMetricsOrientation2(const Rcpp::List& estimate,
 	return Rcpp::NumericVector::create(
 	    Rcpp::_["orientPrecision"] = NA_REAL,
 	    Rcpp::_["orientRecall"] = NA_REAL,
-	    Rcpp::_["orientF1"] = NA_REAL,
-	    Rcpp::_["orientMCC"] = NA_REAL);
+	    Rcpp::_["orientF1"] = NA_REAL);
 	
     } else if (est.getGraphType() == "completed partially directed acyclic graph") {
 	// if (groundTruthDAG.isNotNull())
@@ -3142,21 +3145,19 @@ Rcpp::NumericVector prMetricsOrientation2(const Rcpp::List& estimate,
 	double precision = tp / ((double) (tp + fp));
 	double recall = tp / ((double) (tp + fn));
 	double f1 = 2 * precision * recall / (precision + recall);
-	double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
+	// double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
 	
 	return Rcpp::NumericVector::create(
 	    Rcpp::_["orientPrecision"] = precision,
 	    Rcpp::_["orientRecall"] = recall,
-	    Rcpp::_["orientF1"] = f1,
-	    Rcpp::_["orientMCC"] = mcc);
+	    Rcpp::_["orientF1"] = f1);
 	
     } else if (est.getGraphType() == "partial ancestral graph") {
 
 	return Rcpp::NumericVector::create(
 	    Rcpp::_["orientPrecision"] = NA_REAL,
 	    Rcpp::_["orientRecall"] = NA_REAL,
-	    Rcpp::_["orientF1"] = NA_REAL,
-	    Rcpp::_["orientMCC"] = NA_REAL);
+	    Rcpp::_["orientF1"] = NA_REAL);
 	
 	// if (groundTruthDAG.isNull())
 	//     throw std::invalid_argument("The ground truth DAG is needed for assessing the orientation accuracy of partial ancestral graphs.");

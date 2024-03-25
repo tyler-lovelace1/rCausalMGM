@@ -202,15 +202,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// prMetricsOrientation2
-Rcpp::NumericVector prMetricsOrientation2(const Rcpp::List& estimate, const Rcpp::List& groundTruthDAG);
-RcppExport SEXP _rCausalMGM_prMetricsOrientation2(SEXP estimateSEXP, SEXP groundTruthDAGSEXP) {
+// prMetricsCausal
+Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate, const Rcpp::List& groundTruthDAG);
+RcppExport SEXP _rCausalMGM_prMetricsCausal(SEXP estimateSEXP, SEXP groundTruthDAGSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const Rcpp::List& >::type estimate(estimateSEXP);
     Rcpp::traits::input_parameter< const Rcpp::List& >::type groundTruthDAG(groundTruthDAGSEXP);
-    rcpp_result_gen = Rcpp::wrap(prMetricsOrientation2(estimate, groundTruthDAG));
+    rcpp_result_gen = Rcpp::wrap(prMetricsCausal(estimate, groundTruthDAG));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -657,7 +657,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_SHD", (DL_FUNC) &_rCausalMGM_SHD, 2},
     {"_rCausalMGM_prMetricsAdjacency", (DL_FUNC) &_rCausalMGM_prMetricsAdjacency, 2},
     {"_rCausalMGM_prMetricsOrientation", (DL_FUNC) &_rCausalMGM_prMetricsOrientation, 3},
-    {"_rCausalMGM_prMetricsOrientation2", (DL_FUNC) &_rCausalMGM_prMetricsOrientation2, 2},
+    {"_rCausalMGM_prMetricsCausal", (DL_FUNC) &_rCausalMGM_prMetricsCausal, 2},
     {"_rCausalMGM_prMetrics", (DL_FUNC) &_rCausalMGM_prMetrics, 3},
     {"_rCausalMGM_allMetrics", (DL_FUNC) &_rCausalMGM_allMetrics, 3},
     {"_rCausalMGM_GrowShrinkSubSetTest", (DL_FUNC) &_rCausalMGM_GrowShrinkSubSetTest, 3},

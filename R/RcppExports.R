@@ -177,8 +177,8 @@ prMetricsOrientation <- function(estimate, groundTruth, groundTruthDAG = NULL) {
 #' data("dag_n10000_p10")
 #' g <- rCausalMGM::cpcStable(train_n10000_p10)
 #' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
-prMetricsOrientation2 <- function(estimate, groundTruthDAG) {
-    .Call(`_rCausalMGM_prMetricsOrientation2`, estimate, groundTruthDAG)
+prMetricsCausal <- function(estimate, groundTruthDAG) {
+    .Call(`_rCausalMGM_prMetricsCausal`, estimate, groundTruthDAG)
 }
 
 #' Calculate the precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the skeleton and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the skeleton PR metrics and the orientation PR metrics.

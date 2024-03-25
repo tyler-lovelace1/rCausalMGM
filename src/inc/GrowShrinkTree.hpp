@@ -119,6 +119,11 @@ public:
 
     std::vector<Node> search(double* scoreReturn = NULL);
 
+    void reset() {
+	childSet.clear();
+	children.clear();
+    }
+
     friend Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string target);
     friend Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub);
 

@@ -301,6 +301,8 @@ private:
 
     OrderGraph internalBOSS(Node n, OrderGraph tau);
 
+    OrderGraph internalBOSSv2(Node n, OrderGraph tau);
+
     std::list<Node> minDegreeAlgorithm(EdgeListGraph graph);
 
 public:
@@ -355,6 +357,14 @@ public:
     void setKnowledge(Knowledge& knowledge) { this->knowledge = knowledge; }
 
     double update(OrderGraph& tau);
+
+    double updateParallel(OrderGraph& tau);
+
+    void resetTrees() {
+	for (Node n : nodes) {
+	    gstMap[n].reset();
+	}
+    }
 
     // double update(OrderGraph& tau,
     // 		  std::list<Node>::iterator start,
