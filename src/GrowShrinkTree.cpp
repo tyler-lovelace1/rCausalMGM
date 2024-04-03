@@ -34,9 +34,7 @@ GrowShrinkNode GrowShrinkTree::grow(std::vector<Node> candidates,
 	}
 
 	for (Node n : candidateSet) {
-	    if (childSet[bestNode].count(n)==0) {
-		childSet[bestNode].insert(n);
-
+	    if (childSet[bestNode].count(n)==0) {		
 		GrowShrinkNode child(n, bestNode.condSet);
 
 		// if (verbose) {
@@ -50,10 +48,11 @@ GrowShrinkNode GrowShrinkTree::grow(std::vector<Node> candidates,
 		
 		child.score = scorer->localScore(target, child.condSet);
 
+		childSet[bestNode].insert(n);
 		if (child.score < bestNode.score) {	
 		    children[bestNode].insert(child);
 		}
-
+		
 		// if (verbose) Rcpp::Rcout << "      Inserting child = { " << child.node << ", " << child.score << " }\n";
 	    }
 	}

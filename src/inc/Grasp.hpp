@@ -21,9 +21,9 @@ class Grasp {
 private:
 
     /**
-     * The maximum depth for the DFS. The default it 2.
+     * The maximum depth for the DFS. The default it 1.
      */
-    int depth = 2;
+    int depth = 1;
 
     int numStarts = 3;
 
@@ -233,14 +233,6 @@ private:
 	    return true;
 	}
 
-	// std::unordered_set<Node> getAncestors(Node& node) {
-	//     std::unordered_set<Node> ancestors;
-	//     for (const Node& pa : parentMap[node]) {
-	// 	collectAncestorsVisit(pa, ancestors);
-	//     }
-	//     return ancestors;
-	// }
-
 	void getAncestors(const Node& node, std::unordered_set<Node>& ancestors) {
 	    if (ancestors.count(node)) return;
 
@@ -299,9 +291,9 @@ private:
 
     std::list<Node> initializeBOSS();
 
-    OrderGraph internalBOSS(Node n, OrderGraph tau);
+    // OrderGraph internalBOSS(Node n, OrderGraph tau);
 
-    OrderGraph internalBOSSv2(Node n, OrderGraph tau);
+    OrderGraph bestMove(Node n, OrderGraph tau);
 
     std::list<Node> minDegreeAlgorithm(EdgeListGraph graph);
 
@@ -383,7 +375,7 @@ public:
      * however, contain cycles or bidirected edges if this assumption is not born out, either due to the actual presence
      * of latent common causes, or due to statistical errors in conditional independence judgments.
      */
-    std::map<EdgeListGraph, std::pair<int, double>> search();
+    EdgeListGraph search();
 
     /**
      * Runs PC starting with a commplete graph over the given list of nodes, using the given independence test and
@@ -394,7 +386,7 @@ public:
      * <p>
      * All of the given nodes must be in the domain of the given conditional independence test.
      */
-  std::map<EdgeListGraph, std::pair<int,double>> search(const std::vector<Node>& nodes);
+    EdgeListGraph search(const std::vector<Node>& nodes);
 
 };
 

@@ -12,6 +12,7 @@
 #include "DegenerateGaussianScore.hpp"
 #include "RegressionBicScore.hpp"
 #include "Grasp.hpp"
+#include "Boss.hpp"
 #include "Knowledge.hpp"
 
 //' Calculate the MGM graph on a dataset
@@ -2747,20 +2748,20 @@ Rcpp::List bootstrap(
 
     // Rcpp::Rcout << rule << std::endl;
 
-    if (_method == "mgm") {
+    if (_method == "mgm" || _method == "coxmgm") {
 	alg = "mgm";
     } else if (_method.substr(0,2) == "pc") {
 	alg = "pc";
     } else if (_method.substr(0,3) == "fci") {
 	alg = "fci";
-    } else if (_method.substr(0,5) == "mgmpc") {
+    } else if (_method.substr(0,5) == "mgmpc" || _method.substr(0,8) == "coxmgmpc") {
 	alg = "mgmpc";
-    } else if (_method.substr(0,6) == "mgmfci") {
+    } else if (_method.substr(0,6) == "mgmfci" || _method.substr(0,9) == "coxmgmfci") {
 	alg = "mgmfci";
     } else {
 	throw std::invalid_argument("Invalid algorithm: " + _method
 				    + "\n   Algorithm must be in the list: "
-				    + "{ mgm, pc, fci, mgm-pc, mgm-fci }");
+				    + "{ mgm, coxmgm, pc, fci, mgmpc, mgmfci, coxmgmpc, coxmgmfci }");
     }
     
     DataSet ds = DataSet(data);
@@ -2919,11 +2920,9 @@ Rcpp::StringVector growShrinkMB(
 // [[Rcpp::export]]
 Rcpp::List grasp(
     const Rcpp::DataFrame& data,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
     const int depth = 2,
-    const int numStarts = 3,
-    const double penalty = 1,
+    const int numStarts = 1,
+    const double penalty = 2,
     const bool rank = false,
     const int threads = -1,
     const bool verbose = false
@@ -2947,7 +2946,8 @@ Rcpp::List grasp(
     if (!ds.isCensored()) {
 	scorer = new DegenerateGaussianScore(ds, penalty);
     } else {
-        scorer = new RegressionBicScore(ds, penalty);
+	throw std::runtime_error("BOSS is not able to handle censored variables.");
+        // scorer = new RegressionBicScore(ds, penalty);
     }	
 
     Grasp grasp(scorer, threads);
@@ -2956,37 +2956,120 @@ Rcpp::List grasp(
     grasp.setNumStarts(numStarts);
     // grasp.setPenalty(penalty);
 
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        grasp.setInitialGraph(&ig);
-    }
-    Knowledge k;
-    if (!knowledge.isNull()) {
-	Rcpp::List _knowledge(knowledge);
-	k = Knowledge(ds.getVariables(), _knowledge);
-	grasp.setKnowledge(k);
-    }
+    // EdgeListGraph ig;
+    // if (!initialGraph.isNull()) {
+    //     Rcpp::List _initialGraph(initialGraph);
+    //     ig = EdgeListGraph(_initialGraph, ds);
+    //     grasp.setInitialGraph(&ig);
+    // }
+    // Knowledge k;
+    // if (!knowledge.isNull()) {
+    // 	Rcpp::List _knowledge(knowledge);
+    // 	k = Knowledge(ds.getVariables(), _knowledge);
+    // 	grasp.setKnowledge(k);
+    // }
 
     RcppThread::checkUserInterrupt();
 
-    std::map<EdgeListGraph, std::pair<int, double>> cpdagMap = grasp.search();
+    // std::map<EdgeListGraph, std::pair<int, double>> cpdagMap = grasp.search();
 
-    Rcpp::List graphList;
-    std::vector<int> graphCounts;
-    std::vector<double> graphBICs;
+    // Rcpp::List graphList;
+    // std::vector<int> graphCounts;
+    // std::vector<double> graphBICs;
 
-    for(auto it = cpdagMap.begin(); it != cpdagMap.end(); ++it) {
-	graphList.push_back(it->first.toList());
-	graphCounts.push_back(it->second.first);
-	graphBICs.push_back(it->second.second);
-    }
+    // for(auto it = cpdagMap.begin(); it != cpdagMap.end(); ++it) {
+    // 	graphList.push_back(it->first.toList());
+    // 	graphCounts.push_back(it->second.first);
+    // 	graphBICs.push_back(it->second.second);
+    // }
     
-    Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
-					   Rcpp::_["count"]=graphCounts,
-					   Rcpp::_["BIC"]=graphBICs
-	);
+    // Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
+    // 					   Rcpp::_["count"]=graphCounts,
+    // 					   Rcpp::_["BIC"]=graphBICs
+    // 	);
+
+    EdgeListGraph g = grasp.search();
+
+    Rcpp::List result = g.toList();
+
+    double score = g.getScore();
+
+    result.attr("Score") = Rcpp::wrap(score);
+
+    delete scorer;
+
+    return result;
+}
+
+//' Runs the BOSS causal discovery algorithm on the dataset 
+//'
+//' @param data The dataframe
+//' @param rank Whether or not to use rank-based associations as opposed to linear
+//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @return The list of features in the Markov Blanket and the BIC score
+//' @export
+//' @examples
+//' data("data.n100.p25")
+//' g <- rCausalMGM::markovBlanket(data.n100.p25)
+// [[Rcpp::export]]
+Rcpp::List boss(
+    const Rcpp::DataFrame& data,
+    const int numStarts = 1,
+    const double penalty = 2,
+    const bool rank = false,
+    const int threads = -1,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
+    Score *scorer;
+
+    if (!ds.isCensored()) {
+	scorer = new DegenerateGaussianScore(ds, penalty);
+    } else {
+	throw std::runtime_error("BOSS is not able to handle censored variables.");
+        // scorer = new RegressionBicScore(ds, penalty);
+    }	
+
+    Boss boss(scorer, threads);
+    boss.setVerbose(verbose);
+    boss.setNumStarts(numStarts);
+    // boss.setPenalty(penalty);
+
+    // EdgeListGraph ig;
+    // if (!initialGraph.isNull()) {
+    //     Rcpp::List _initialGraph(initialGraph);
+    //     ig = EdgeListGraph(_initialGraph, ds);
+    //     boss.setInitialGraph(&ig);
+    // }
+    // Knowledge k;
+    // if (!knowledge.isNull()) {
+    // 	Rcpp::List _knowledge(knowledge);
+    // 	k = Knowledge(ds.getVariables(), _knowledge);
+    // 	boss.setKnowledge(k);
+    // }
+
+    RcppThread::checkUserInterrupt();
+
+    EdgeListGraph g = boss.search();
+
+    Rcpp::List result = g.toList();
+
+    double score = g.getScore();
+
+    result.attr("Score") = Rcpp::wrap(score);
 
     delete scorer;
 

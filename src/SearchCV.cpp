@@ -37,6 +37,21 @@ SearchCV::SearchCV(DataSet& data, std::string alg, uint nfolds, int threads) {
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
+
+    for (Node n : scoreNodes) {
+	if (n.isCensored()) {
+	    std::vector<Node> emptySet;
+	    CoxRegressionResult result = coxRegression.regress(n, emptySet);
+	    arma::vec WZ(result.getResid());
+	    n.setWZ(WZ);
+
+	    if (internalData.updateNode(n)) {
+		this->coxRegression = CoxRegression(internalData);
+		this->logisticRegression = LogisticRegression(internalData);
+		this->regression = LinearRegression(internalData);
+	    }
+	}
+    }
 }
 
 SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int threads) {
@@ -76,6 +91,21 @@ SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
+
+    for (Node n : scoreNodes) {
+	if (n.isCensored()) {
+	    std::vector<Node> emptySet;
+	    CoxRegressionResult result = coxRegression.regress(n, emptySet);
+	    arma::vec WZ(result.getResid());
+	    n.setWZ(WZ);
+
+	    if (internalData.updateNode(n)) {
+		this->coxRegression = CoxRegression(internalData);
+		this->logisticRegression = LogisticRegression(internalData);
+		this->regression = LinearRegression(internalData);
+	    }
+	}
+    }
 }
 
 bool SearchCV::checkFoldID(const arma::uvec& foldid) {
@@ -106,7 +136,7 @@ std::vector<Node> SearchCV::expandVariable(DataSet& dataSet, const Node& var) {
     }
 
     if (var.isCensored()) {
-	std::vector<Node> censList;
+	std::vector<Node> censList;	
 	censList.push_back(var);
 	return censList;
     }
@@ -206,6 +236,15 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
     // RcppThread::Rcout << "Scoring " << dep << " fold " << k << std::endl;
 
+    // for (int i = 0; i < indep.size(); i++) {
+    // 	if (indep[i].isCensored()) {
+    // 	    std::vector<Node> emptySet;
+    // 	    result = coxRegression.regress(n, emptySet, testRows);
+    // 	    arma::vec WZ(result.getResid());
+    // 	    indep[i].setWZ(WZ);
+    // 	}
+    // }
+
     if (dep.isContinuous()) {
 
 	RegressionResult result = regression.regress(dep, indep, trainRows);
@@ -229,6 +268,12 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 	    indepData = internalData.getSubsetData(testRows, indepIdx);
 	    indepData.insert_cols(0, arma::mat(N, 1, arma::fill::ones));
 	}
+
+	// for (int i = 0; i < indep.size(); i++) {
+	//     if (indep[i].isCensored()) {
+		
+	//     }
+	// }
 
 	arma::vec beta = result.getCoef();
 
@@ -255,6 +300,8 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
 	CoxRegressionResult result = coxRegression.regress(dep, indep, trainRows);
 
+	// RcppThread::Rcout << "Cox Regression Result:\n\n" << result << std::endl;
+
         arma::uvec depIdx(1);
 	depIdx[0] = internalData.getColumn(dep);
 
@@ -262,8 +309,10 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
 	Node depCopy(dep);
 
-	arma::uvec censor = depCopy.getCensorVec()(testRows);
-	arma::uvec strata = depCopy.getStrata()(testRows);
+	arma::uvec censor = depCopy.getCensorVec();
+	censor = censor(testRows);
+	arma::uvec strata = depCopy.getStrata();
+	strata = strata(testRows);
         depCopy.setCensor(depData, censor, strata);
 	
 	N = depData.n_elem; // returns number of rows
@@ -278,13 +327,13 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 	    indepData = arma::mat(N, 1, arma::fill::ones); // filling it with ones
 	else {
 	    indepData = internalData.getSubsetData(testRows, indepIdx);
-	    indepData.insert_cols(0, arma::mat(N, 1, arma::fill::ones));
+	    // indepData.insert_cols(0, arma::mat(N, 1, arma::fill::ones));
 	}
 
 	arma::vec beta = result.getCoef();
 
 	N = depCopy.getNEvents();
-    
+	
 	ll = coxRegression.loss(beta, indepData, depCopy);
 
     } else {
@@ -390,6 +439,15 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 
 	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
 	    IndTestMultiCox itm(train, alphas(aIdx));
+
+	    if (censFlag) {
+		std::vector<Node> emptySet;
+		for (Node n : scoreNodes) {
+		    if (n.isCensored()) {
+		        itm.resetWZ(n, emptySet);
+		    }
+		}
+	    }
 
 	    if (alg == "pc") {
 		PcStable causalAlg((IndependenceTest*) &itm);
@@ -631,6 +689,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 	} else {
 	    lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
 	    coxmgm = CoxMGM(train, lambda);
+	    // if (verbose) RcppThread::Rcout << "  CoxMGM initialized " << k << "...\n";
 	}
 
 	for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
@@ -644,7 +703,10 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 		lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
 	    
 		coxmgm.setLambda(lambda);
+		// if (verbose) RcppThread::Rcout << "  Learning CoxMGM " << k << "...\n";
 		ig = coxmgm.search();
+		// if (verbose) RcppThread::Rcout << "  Finished CoxMGM " << k << "\n";
+		// if (verbose) RcppThread::Rcout << ig << "\n";
 	    }
 	
 	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
@@ -687,13 +749,23 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 		    causalAlg.setOrientRule(orientRules.at(0));
 	    
 		    causalAlg.setInitialGraph(&ig);
+
+		    // if (verbose) RcppThread::Rcout << "  Learning FCI " << k << "...\n";
 		
 		    g = causalAlg.search();
-	    
+
+		    // if (verbose) RcppThread::Rcout << "  Finished FCI " << k << "\n";
+		    // if (verbose) RcppThread::Rcout << g << "\n";
+
+		    // if (verbose) RcppThread::Rcout << "  Scoring graph " << k << "...\n";
 		    std::vector<double> scoreOutput = scoreGraphTestLL(g, k);
+		    // if (verbose) RcppThread::Rcout << "  Finished scoring graph " << k << "\n";
+		    
 
 		    loglik[lIdx][0][aIdx][k-1] = scoreOutput[0];
 		    mbSize[lIdx][0][aIdx][k-1] = scoreOutput[1];
+
+		    // if (verbose) RcppThread::Rcout << "  Reorienting graph " << k << "...\n";
 
 		    for (int orIdx = 1; orIdx < orientRules.size(); orIdx++) {
 			g = causalAlg.reorientWithRule(orientRules.at(orIdx));
@@ -703,6 +775,8 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 			loglik[lIdx][orIdx][aIdx][k-1] = scoreOutput[0];
 			mbSize[lIdx][orIdx][aIdx][k-1] = scoreOutput[1];
 		    }
+
+		    // if (verbose) RcppThread::Rcout << "  Finished reorienting graph " << k << "\n";
 		} else {
 		    throw std::invalid_argument("Unknown causal algorithm " + alg + " provided. Must be pc or fci");
 		}

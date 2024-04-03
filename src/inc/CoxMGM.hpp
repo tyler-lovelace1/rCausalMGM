@@ -37,6 +37,9 @@ private:
     //Cox Data from z = eta - grad_eta / hess_eta
     arma::mat zDat;
 
+    //Cox Data from z = eta + grad_eta
+    arma::mat wzDat;
+
     //Cox variables number of strata
     arma::uvec numStrata;
 

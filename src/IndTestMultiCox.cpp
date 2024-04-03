@@ -971,9 +971,7 @@ void IndTestMultiCox::resetWZ(Node target, std::vector<Node>& neighbors) {
     if (internalData.updateNode(target)) {
 	this->coxRegression = CoxRegression(internalData);
 	this->logisticRegression = LogisticRegression(internalData);
-	// this->logisticRegression.setWZmap(WZmap);
 	this->regression = LinearRegression(internalData);
-	// this->regression.setWZmap(WZmap);
     }
 }
 

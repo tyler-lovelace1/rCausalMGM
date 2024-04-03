@@ -9,7 +9,7 @@
 #include "DataSet.hpp"
 #include "GraphUtils.hpp"
 #include "ChoiceGenerator.hpp"
-#include "MGMParams.hpp"
+// #include "MGMParams.hpp"
 #include <string.h>
 #include <fstream>
 #include <stdlib.h>
@@ -79,7 +79,9 @@ private:
 	{"penalty", arma::vec()}
     };
 
-    MGMParams modelParams;
+    double score = 0.0;
+
+    // MGMParams modelParams;
     // CausalMGMParams causalParams;
 
     // std::unordered_map<Node, std::unordered_set<Node>> ancestors;
@@ -692,7 +694,9 @@ public:
 
     std::vector<std::string> getNodeNames();
 
-    std::vector<Node> getCausalOrdering();
+    bool validSink(const Node& node);
+    
+    std::list<Node> getCausalOrdering();
 
     // void setHighlighted(Edge& edge, bool highlighted) { if (highlighted) highlightedEdges.insert(edge); else highlightedEdges.erase(edge); } ;
 
@@ -718,9 +722,13 @@ public:
     arma::vec getHyperParam(std::string param)
 	{ return hyperparamHash[param]; }
 
-    void setParams(const MGMParams& params) { this->modelParams = params; }
+    // void setParams(const MGMParams& params) { this->modelParams = params; }
 
-    MGMParams getParams() { return modelParams; }
+    // MGMParams getParams() { return modelParams; }
+
+    void setScore(double score) { this->score = score; }
+
+    double getScore() { return score; }
 
     // void setCausalMGMParams(const CausalMGMParams& params)
     // 	{ causalParams = CausalMGMParams(params); }

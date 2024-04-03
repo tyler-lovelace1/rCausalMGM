@@ -530,7 +530,21 @@ growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, verbose = FALS
 #' @examples
 #' data("data.n100.p25")
 #' g <- rCausalMGM::markovBlanket(data.n100.p25)
-grasp <- function(data, initialGraph = NULL, knowledge = NULL, depth = 2L, numStarts = 3L, penalty = 1, rank = FALSE, threads = -1L, verbose = FALSE) {
-    .Call(`_rCausalMGM_grasp`, data, initialGraph, knowledge, depth, numStarts, penalty, rank, threads, verbose)
+grasp <- function(data, depth = 2L, numStarts = 1L, penalty = 2, rank = FALSE, threads = -1L, verbose = FALSE) {
+    .Call(`_rCausalMGM_grasp`, data, depth, numStarts, penalty, rank, threads, verbose)
+}
+
+#' Runs the BOSS causal discovery algorithm on the dataset 
+#'
+#' @param data The dataframe
+#' @param rank Whether or not to use rank-based associations as opposed to linear
+#' @param verbose Whether or not to output additional information. Defaults to FALSE.
+#' @return The list of features in the Markov Blanket and the BIC score
+#' @export
+#' @examples
+#' data("data.n100.p25")
+#' g <- rCausalMGM::markovBlanket(data.n100.p25)
+boss <- function(data, numStarts = 1L, penalty = 2, rank = FALSE, threads = -1L, verbose = FALSE) {
+    .Call(`_rCausalMGM_boss`, data, numStarts, penalty, rank, threads, verbose)
 }
 

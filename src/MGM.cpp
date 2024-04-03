@@ -1900,25 +1900,25 @@ EdgeListGraph MGM::graphFromMGM() {
 
     g.setHyperParam("lambda", lambda);
 
-    std::vector<std::string> names;
+    // std::vector<std::string> names;
 
-    for (int i = 0; i < p; i++) {
-	// Rcpp::Rcout << variables[i].getName() << std::endl;
-	names.push_back(variables[i].getName());
-    }
+    // for (int i = 0; i < p; i++) {
+    // 	// Rcpp::Rcout << variables[i].getName() << std::endl;
+    // 	names.push_back(variables[i].getName());
+    // }
 
-    for (int i = 0; i < q; i++) {
-	// Rcpp::Rcout << variables[p+i].getName() << std::endl << "  ";
-	for (std::string cat : variables[p+i].getCategories()) {
-	    // Rcpp::Rcout << variables[p+i].getName() + "." + cat << " ";
-	    names.push_back(variables[p+i].getName() + ":" + cat);
-	}
-	// Rcpp::Rcout << std::endl;
-    }
+    // for (int i = 0; i < q; i++) {
+    // 	// Rcpp::Rcout << variables[p+i].getName() << std::endl << "  ";
+    // 	for (std::string cat : variables[p+i].getCategories()) {
+    // 	    // Rcpp::Rcout << variables[p+i].getName() + "." + cat << " ";
+    // 	    names.push_back(variables[p+i].getName() + ":" + cat);
+    // 	}
+    // 	// Rcpp::Rcout << std::endl;
+    // }
 
-    params.setNames(names);
+    // params.setNames(names);
 
-    g.setParams(params);
+    // g.setParams(params);
 
     return g;
 }

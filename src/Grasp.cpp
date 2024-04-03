@@ -78,19 +78,28 @@ std::list<Node> Grasp::initializeBOSS() {
     double bic = tau.bic;
     double score = tau.score;
 
-    if (verbose) Rcpp::Rcout << "  Running BOSS...\n";
+    if (verbose) Rcpp::Rcout << "  Initializing with BOSS...\n";
+
+    int iter = 0;
+    if (verbose) Rcpp::Rcout << "\r    Iter:  " << iter << "    Edges = " << tau.score << ", Score = " << tau.bic << "      ";
+	
 
     while (oldBic - bic > 1e-6) {
-	if (verbose) Rcpp::Rcout << "\r    Score = " << tau.score << ", BIC = " << tau.bic;
 	oldBic = bic;
 	oldScore = score;
+	nodeList = std::list<Node>(tau.order.begin(), tau.order.end());
 	for (Node n : nodeList) {
 	    // if (verbose) Rcpp::Rcout << "\n      Node " << n << "...";
-	    tau = internalBOSSv2(n, tau);
-	    if (verbose) Rcpp::Rcout << "\r    Score = " << tau.score << ", BIC = " << tau.bic;
+	    tau = bestMove(n, tau);
+	    // if (verbose) Rcpp::Rcout << "\r    Edges = " << tau.score << ", Score = " << tau.bic;
+	    RcppThread::checkUserInterrupt();
 	}
 	score = tau.score;
 	bic = tau.bic;
+	iter++;
+
+	if (verbose) Rcpp::Rcout << "\r    Iter:  " << iter << "    Edges = " << tau.score << ", Score = " << tau.bic << "      ";
+	// break;
     }
 
     if (verbose) Rcpp::Rcout << "\n";
@@ -99,124 +108,124 @@ std::list<Node> Grasp::initializeBOSS() {
 }
 
 
-Grasp::OrderGraph Grasp::internalBOSS(Node n, OrderGraph tau) {
-    // OrderGraph oldTau = tau;
+// Grasp::OrderGraph Grasp::internalBOSS(Node n, OrderGraph tau) {
+//     // OrderGraph oldTau = tau;
 
-    auto oldIt = std::find(tau.order.begin(), tau.order.end(), n);
+//     auto oldIt = std::find(tau.order.begin(), tau.order.end(), n);
 
-    // RcppThread::Rcout << "      Node n = " << *oldIt << "\n";
+//     // RcppThread::Rcout << "      Node n = " << *oldIt << "\n";
 
-    RcppThread::ThreadPool pool(parallelism);
+//     RcppThread::ThreadPool pool(parallelism);
 
-    auto bossTask = [this, &n, &tau] (int index) {
+//     auto bossTask = [this, &n, &tau] (int index) {
 
-	OrderGraph newTau(tau);
+// 	OrderGraph newTau(tau);
 
-	// RcppThread::Rcout << "      Node n = " << n << " index = " << index << "\n";
+// 	// RcppThread::Rcout << "      Node n = " << n << " index = " << index << "\n";
 
-	std::list<Node>::iterator oldIt = std::find(newTau.order.begin(), newTau.order.end(), n);
-	std::list<Node>::iterator newIt = newTau.order.begin();
+// 	std::list<Node>::iterator oldIt = std::find(newTau.order.begin(), newTau.order.end(), n);
+// 	std::list<Node>::iterator newIt = newTau.order.begin();
 
-	// RcppThread::Rcout << "Tau order: \n";
-	// for (auto node : newTau.order) {
-	//     RcppThread::Rcout << node << " ";
-	// }	
-	// RcppThread::Rcout << "\n";
+// 	// RcppThread::Rcout << "Tau order: \n";
+// 	// for (auto node : newTau.order) {
+// 	//     RcppThread::Rcout << node << " ";
+// 	// }	
+// 	// RcppThread::Rcout << "\n";
 
-	// RcppThread::Rcout << "      Node n = " << *oldIt << "\n";
+// 	// RcppThread::Rcout << "      Node n = " << *oldIt << "\n";
 		
-	bool beforeFlag = false;
-	for (int i = 0; i < index; i++) {
-	    if (newIt == oldIt) 
-		beforeFlag = true;
-	    newIt++;
-	}
+// 	bool beforeFlag = false;
+// 	for (int i = 0; i < index; i++) {
+// 	    if (newIt == oldIt) 
+// 		beforeFlag = true;
+// 	    newIt++;
+// 	}
 	
- 	// Node n2 = *newIt;
+//  	// Node n2 = *newIt;
 
-	// RcppThread::Rcout << "      Node at new position = " << *newIt << "\n";
+// 	// RcppThread::Rcout << "      Node at new position = " << *newIt << "\n";
 	
-	// RcppThread::Rcout << "      beforeFlag = " << beforeFlag << "\n";
+// 	// RcppThread::Rcout << "      beforeFlag = " << beforeFlag << "\n";
 	
-	if (oldIt == newIt) {
-	    return newTau;
-	} else if (beforeFlag) {
-	    newTau.start = newTau.order.erase(oldIt);
-	    // newIt = std::find(newTau.order.begin(), newTau.order.end(), n2);
-	    // newIt++;
-	    newTau.stop = newTau.order.insert(newIt, n);
-	    newTau.stop++;
-	    // newTau.stop--;
-	} else {
-	    newTau.stop = newTau.order.erase(oldIt);
-	    newTau.start = newTau.order.insert(newIt, n);
-	    // newTau.start++;
-	}
+// 	if (oldIt == newIt) {
+// 	    return newTau;
+// 	} else if (beforeFlag) {
+// 	    newTau.start = newTau.order.erase(oldIt);
+// 	    // newIt = std::find(newTau.order.begin(), newTau.order.end(), n2);
+// 	    // newIt++;
+// 	    newTau.stop = newTau.order.insert(newIt, n);
+// 	    newTau.stop++;
+// 	    // newTau.stop--;
+// 	} else {
+// 	    newTau.stop = newTau.order.erase(oldIt);
+// 	    newTau.start = newTau.order.insert(newIt, n);
+// 	    // newTau.start++;
+// 	}
 
-	// RcppThread::Rcout << "New tau order: \n";
-	// for (auto node : newTau.order) {
-	//     RcppThread::Rcout << node << " ";
-	// }	
-	// RcppThread::Rcout << "\n";
+// 	// RcppThread::Rcout << "New tau order: \n";
+// 	// for (auto node : newTau.order) {
+// 	//     RcppThread::Rcout << node << " ";
+// 	// }	
+// 	// RcppThread::Rcout << "\n";
 
-	// RcppThread::Rcout << "      Node at start position = " << *newTau.start << "\n";
+// 	// RcppThread::Rcout << "      Node at start position = " << *newTau.start << "\n";
 
-	// RcppThread::Rcout << "      Node at stop position = " << *newTau.stop << "\n";
+// 	// RcppThread::Rcout << "      Node at stop position = " << *newTau.stop << "\n";
 
-	// newTau.start = newTau.order.begin();
-	// newTau.stop = newTau.order.end();
+// 	// newTau.start = newTau.order.begin();
+// 	// newTau.stop = newTau.order.end();
 
-	// RcppThread::Rcout << "      Old BIC = " << newTau.bic << "\n";
+// 	// RcppThread::Rcout << "      Old Score = " << newTau.bic << "\n";
 
-	update(newTau);
+// 	update(newTau);
 
-	// RcppThread::Rcout << "      New BIC = " << newTau.bic << "\n";
+// 	// RcppThread::Rcout << "      New Score = " << newTau.bic << "\n";
 	
-	return newTau;
-    };
+// 	return newTau;
+//     };
 
-    // Rcpp::Rcout << "    Scoring new orders...\n";
+//     // Rcpp::Rcout << "    Scoring new orders...\n";
     
-    std::vector<std::future<OrderGraph>> futures(tau.order.size());
-    std::vector<OrderGraph> results(tau.order.size());
-    for (int i = 0; i < tau.order.size(); ++i)
-	futures[i] = pool.pushReturn(bossTask, i);
-    for (int i = 0; i < tau.order.size(); ++i)
-	results[i] = futures[i].get();
-    pool.join();
+//     std::vector<std::future<OrderGraph>> futures(tau.order.size());
+//     std::vector<OrderGraph> results(tau.order.size());
+//     for (int i = 0; i < tau.order.size(); ++i)
+// 	futures[i] = pool.pushReturn(bossTask, i);
+//     for (int i = 0; i < tau.order.size(); ++i)
+// 	results[i] = futures[i].get();
+//     pool.join();
 
-    // for (int i = 0; i < tau.order.size(); ++i)
-    //  	results[i] = bossTask(i);
+//     // for (int i = 0; i < tau.order.size(); ++i)
+//     //  	results[i] = bossTask(i);
 
-    // Rcpp::Rcout << "    Scoring of new orders complete\n";
+//     // Rcpp::Rcout << "    Scoring of new orders complete\n";
 
-    double minBic = tau.bic;
-    int minIdx = 0;
-    auto minIt = tau.order.begin();
-    for (int i = 0; i < tau.order.size(); i++) {
-	if (minIt == oldIt)
-	    break;
-	minIdx++;
-	minIt++;
-    }
+//     double minBic = tau.bic;
+//     int minIdx = 0;
+//     auto minIt = tau.order.begin();
+//     for (int i = 0; i < tau.order.size(); i++) {
+// 	if (minIt == oldIt)
+// 	    break;
+// 	minIdx++;
+// 	minIt++;
+//     }
     
-    for (int i = 0; i < tau.order.size(); ++i) {
-	if (results[i].bic < minBic) {
-	    minIdx = i;
-	    minBic = results[i].bic;
-	}
-    }
+//     for (int i = 0; i < tau.order.size(); ++i) {
+// 	if (results[i].bic < minBic) {
+// 	    minIdx = i;
+// 	    minBic = results[i].bic;
+// 	}
+//     }
 
-    return results.at(minIdx);
-}
+//     return results.at(minIdx);
+// }
 
 
-Grasp::OrderGraph Grasp::internalBOSSv2(Node n, OrderGraph tau) {
+Grasp::OrderGraph Grasp::bestMove(Node n, OrderGraph tau) {
     // OrderGraph oldTau = tau;
 
     auto oldIt = std::find(tau.order.begin(), tau.order.end(), n);
 
-    // RcppThread::Rcout << "      Node n = " << *oldIt << "\n";
+    // RcppThread::Rcout << "\n      Node n = " << *oldIt << "\n";
 
     RcppThread::ThreadPool pool(parallelism);
 
@@ -225,6 +234,8 @@ Grasp::OrderGraph Grasp::internalBOSSv2(Node n, OrderGraph tau) {
 	std::vector<Node> parents;
 
 	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+	RcppThread::checkUserInterrupt();
 
 	{
 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
@@ -288,6 +299,12 @@ Grasp::OrderGraph Grasp::internalBOSSv2(Node n, OrderGraph tau) {
     
     // Rcpp::Rcout << "  currIdx = " << currIdx << "\n";
 
+    // Rcpp::Rcout << "Original Order: ";
+    // for (Node n : tau.order) {
+    // 	Rcpp::Rcout << n << " ";
+    // }
+    // Rcpp::Rcout << "\n";
+    
     for (int i = tau.order.size() - 1; i >= 0; i--) {
 	if (i == currIdx) continue;
 	scores[i] += runningScore;
@@ -297,8 +314,8 @@ Grasp::OrderGraph Grasp::internalBOSSv2(Node n, OrderGraph tau) {
     runningScore = 0.0;
     for (int i = 0; i < tau.order.size(); i++) {
 	if (i == currIdx) continue;
-	scores[i] += runningScore;
 	runningScore += without[i];
+	scores[i] += runningScore;
     }
 
     scores[currIdx] = tau.bic;
@@ -319,15 +336,18 @@ Grasp::OrderGraph Grasp::internalBOSSv2(Node n, OrderGraph tau) {
 
     std::list<Node>::iterator newIt = std::next(tau.order.begin(), minIdx);
 
-    // Rcpp::Rcout << "    Best Score = " << scores[minIdx] << "\n";
+    // Rcpp::Rcout << "\n    Best Score = " << scores[minIdx] << "\n";
     // Rcpp::Rcout << "    Best Score Index = " << minIdx << "\n";
     // Rcpp::Rcout << "    Node at Index = " << *newIt << "\n";
 
     if (currIdx < minIdx) {
+	// Rcpp::Rcout << "currIdx < minIdx" << std::endl;
 	tau.start = tau.order.erase(oldIt);
+	newIt++;
 	tau.stop = tau.order.insert(newIt, n);
 	tau.stop++;
     } else {
+	// Rcpp::Rcout << "currIdx >= minIdx" << std::endl;
 	tau.stop = tau.order.erase(oldIt);
 	tau.start = tau.order.insert(newIt, n);
     }
@@ -337,17 +357,20 @@ Grasp::OrderGraph Grasp::internalBOSSv2(Node n, OrderGraph tau) {
     // 	Rcpp::Rcout << n << " ";
     // }
 
-    // Rcpp::Rcout << "\nstop = " << *tau.stop << std::endl;
+    // Rcpp::Rcout << "\nstart = " << *tau.start << std::endl;
 
-    // Rcpp::Rcout << "start = " << *tau.start << std::endl;
-
+    // if (tau.stop == tau.order.end()) {
+    // 	Rcpp::Rcout << "stop = END" << std::endl;
+    // } else {
+    // 	Rcpp::Rcout << "stop = " << *tau.stop << std::endl;
+    // }
+    
     updateParallel(tau);
 
     // Rcpp::Rcout << "    Best Score After Update = " << tau.bic << "\n";
 
     return tau;
 }
-
 
 std::list<Node> Grasp::initializeMinDegree() {
     std::vector<std::set<Node>> tiers = knowledge.getTiers();
@@ -619,12 +642,10 @@ double Grasp::updateParallel(OrderGraph& tau) {
 
 			  std::vector<Node> parents;
 
-			  {
-			      std::lock_guard<std::mutex> gstLock(gstMutexMap[*it]);
-			      parents = gstMap[*it].search(prefix, &localBic);
-			  }
-
-
+			  
+			  // std::lock_guard<std::mutex> gstLock(gstMutexMap[*it]);
+			  parents = gstMap[*it].search(prefix, &localBic);
+			  
 			  {
 			      std::lock_guard<std::mutex> scoreLock(scoreMutex);
 			      tau.parentMap[*it] = std::unordered_set<Node>(parents.begin(),
@@ -724,46 +745,46 @@ bool Grasp::graspDFS(int tier) {
 	    
 	    updateParallel(tau);
 
-	    if (scoreEdges) {
+	    // if (scoreEdges) {
 
-		if (tau.score < pi.score || (tau.score == pi.score && tau.bic < pi.bic)) {
-		    pi = tau;
-		    bestGraphs.clear();
-		    bestGraphs.insert(pi);
+	    // 	if (tau.score < pi.score || (tau.score == pi.score && tau.bic < pi.bic)) {
+	    // 	    pi = tau;
+	    // 	    // bestGraphs.clear();
+	    // 	    // bestGraphs.insert(pi);
 		
-		    // if (verbose) Rcpp::Rcout << "\n    Depth = " << curDepth << ", Score = " << pi.score << ", BIC = " << pi.bic;
-		    return true;
-		}
-		// 
-		if (tau.score > pi.score || (tau.score == pi.score && tau.bic - pi.bic > bicThresh)) continue;
-	    } else {
+	    // 	    // if (verbose) Rcpp::Rcout << "\n    Depth = " << curDepth << ", Score = " << pi.score << ", Score = " << pi.bic;
+	    // 	    return true;
+	    // 	}
+	    // 	// 
+	    // 	if (tau.score > pi.score || (tau.score == pi.score && tau.bic - pi.bic > bicThresh)) continue;
+	    // } else {
 		
-		if (tau.bic - pi.bic < -1e-6 || (tau.bic - pi.bic < 1e-6 && tau.score < pi.score)) {
-		    pi = tau;
-		    bestGraphs.clear();
-		    bestGraphs.insert(pi);
+	    if (tau.bic - pi.bic < -1e-6 || (tau.bic - pi.bic < 1e-6 && tau.score < pi.score)) {
+		pi = tau;
+		// bestGraphs.clear();
+		// bestGraphs.insert(pi);
 		
-		    // if (verbose) Rcpp::Rcout << "\n    Depth = " << curDepth << ", Score = " << pi.score << ", BIC = " << pi.bic;
-		    return true;
-		}
-
-		if (tau.bic - pi.bic > 1e-6) continue;
-
-		// double dBic = tau.bic - pi.bic;
-
-		// double acceptProb = std::exp(-dBic/2.0);
-
-		// // acceptProb /= (1 + acceptProb);
-
-		// if (acceptProb < Rcpp::runif(1)[0]) {
-		//     // Rcpp::Rcout << "\n    Branch Pruned:  Depth = " << curDepth << ", Score = " << tau.score << ", BIC = " << tau.bic << ", deltaBIC = " << dBic;
-		//     continue;
-		// }
+		// if (verbose) Rcpp::Rcout << "\n    Depth = " << curDepth << ", Score = " << pi.score << ", Score = " << pi.bic;
+		return true;
 	    }
 
-	    // if (verbose) Rcpp::Rcout << "\n    Depth = " << curDepth << ", Score = " << tau.score << ", BIC = " << tau.bic;
+	    if (tau.bic - pi.bic > bicThresh) continue;
 
-	    if (tau.bic == pi.bic) bestGraphs.insert(tau);
+	    // double dBic = tau.bic - pi.bic;
+
+	    // double acceptProb = std::exp(-dBic/2.0);
+
+	    // // acceptProb /= (1 + acceptProb);
+
+	    // if (acceptProb < Rcpp::runif(1)[0]) {
+	    //     // Rcpp::Rcout << "\n    Branch Pruned:  Depth = " << curDepth << ", Score = " << tau.score << ", Score = " << tau.bic << ", deltaScore = " << dBic;
+	    //     continue;
+	    // }
+	    // }
+
+	    // if (verbose) Rcpp::Rcout << "\n    Depth = " << curDepth << ", Score = " << tau.score << ", Score = " << tau.bic;
+
+	    // if (tau.bic == pi.bic) bestGraphs.insert(tau);
 	
 	}
 
@@ -1014,7 +1035,7 @@ bool Grasp::graspDFS(int tier) {
 //     return false;
 // }
 
-std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
+EdgeListGraph Grasp::search() {
 
     int inputDepth = depth;
 
@@ -1028,129 +1049,109 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
 
     OrderGraph bestOrder;
 
-    std::map<EdgeListGraph, std::pair<int, double>> cpdagMap;
+    // std::map<EdgeListGraph, std::pair<int, double>> cpdagMap;
 
     for (int i = 0; i < numStarts; i++) {
 	if (verbose) Rcpp::Rcout << "Run " << i+1 << "...\n";
 	
-	// if (i > 0) {
-	// std::vector<Node> _nodes(growShrink.getVariables());
-	// std::random_shuffle(_nodes.begin(), _nodes.end(), randWrapper);
-	// nodes = std::list<Node>(_nodes.begin(), _nodes.end());
-	nodes = initializeBOSS();
-	pi = OrderGraph(nodes);
-	score = update(pi);
+	// if (nodes.size() > 100) {
+	//     nodes = initializeBOSS();
+	// } else {
+	nodes = initializeRandom();
 	// }
-
-	double oldScore = nodes.size() * nodes.size();
-	double curScore = pi.score;
-	double oldBIC = 1e20;
-	double curBIC = pi.bic;
-
-	scoreEdges = false;
+	pi = OrderGraph(nodes);
+	score = updateParallel(pi);
 	
 	for (int tier = 0; tier < 3; tier++) {
 	    
-	    oldScore = nodes.size() * nodes.size();
-	    oldBIC = 1e20;
-
 	    if (tier==0)  depth = std::max(inputDepth, 4);
 	    else          depth = inputDepth;
 
 	    if (verbose) Rcpp::Rcout << "  Running GRaSP" << tier << "...\n";
 	    bool improved = true;
 	    while (improved) {
-		// oldScore = curScore;
-		// oldBIC = curBIC;
-		if (verbose) Rcpp::Rcout << "\r    Score = " << pi.score << ", BIC = " << pi.bic;
+
+		if (verbose) Rcpp::Rcout << "\r    Edges = " << pi.score << ", Score = " << pi.bic << "      ";
 		improved = graspDFS(tier);
-		// curScore = pi.score;
-		// curBIC = pi.bic;
 	    }
 	    if (verbose) Rcpp::Rcout << "\n";
 	}
 
-	// scoreEdges = false;
-
-	// for (int tier = 0; tier < 3; tier++) {
-
-	//     oldScore = nodes.size() * nodes.size();
-	//     oldBIC = 1e20;
-
-	//     if (tier==0)  depth = std::max(inputDepth, 10);
-	//     else          depth = inputDepth;
-
-	//     if (verbose) Rcpp::Rcout << "  Running GRaSP" << tier << "...\n";
-	//     while (curBIC < oldBIC) {
-	// 	oldScore = curScore;
-	// 	oldBIC = curBIC;
-	// 	graspDFS(tier);
-	// 	curScore = pi.score;
-	// 	curBIC = pi.bic;
-	//     }
-	//     if (verbose) Rcpp::Rcout << "\n";
-	// }
-
-	if (pi.bic < bestOrder.bic || (pi.bic == bestOrder.bic && pi.score < bestOrder.score)) {
+	if (pi.bic - bestOrder.bic < -1e-6 || (pi.bic - bestOrder.bic < 1e-6 && pi.score < bestOrder.score)) {
 	// if (pi.score < bestOrder.score || (pi.score == bestOrder.score && pi.bic < bestOrder.bic)) {
 	    bestOrder = pi;
 
-	    cpdagMap.clear();
+	//     cpdagMap.clear();
 
-	    // std::set<EdgeListGraph> runCpdagSet;
+	//     // std::set<EdgeListGraph> runCpdagSet;
 
-	    for (const OrderGraph order : bestGraphs) {
+	//     for (const OrderGraph order : bestGraphs) {
 
-		// Rcpp::Rcout << "Best Order:\n";
-		// for (const Node& n : order.order) Rcpp::Rcout << n << " ";
-		// Rcpp::Rcout << "\n\n";
+	// 	// Rcpp::Rcout << "Best Order:\n";
+	// 	// for (const Node& n : order.order) Rcpp::Rcout << n << " ";
+	// 	// Rcpp::Rcout << "\n\n";
 	    
-		graph = order.toGraph();
+	// 	graph = order.toGraph();
 
-		std::ostringstream alg;
-		if (initialGraph==NULL) {
-		    alg << "GRaSP";
-		} else {
-		    alg << initialGraph->getAlgorithm() << "-" << "GRaSP";
-		}
-		graph.setAlgorithm(alg.str());
+	// 	std::ostringstream alg;
+	// 	if (initialGraph==NULL) {
+	// 	    alg << "GRaSP";
+	// 	} else {
+	// 	    alg << initialGraph->getAlgorithm() << "-" << "GRaSP";
+	// 	}
+	// 	graph.setAlgorithm(alg.str());
 
-		if (cpdagMap.count(graph)>0) {
-		    cpdagMap[graph].first++;
-		    cpdagMap[graph].second = std::min(cpdagMap[graph].second, order.bic);
-		} else {
-		    cpdagMap[graph] = std::pair<int, double>(1, order.bic);
-		}
-	    }
-	} else if (pi.bic == bestOrder.bic) {
-	    for (const OrderGraph order : bestGraphs) {
+	// 	if (cpdagMap.count(graph)>0) {
+	// 	    cpdagMap[graph].first++;
+	// 	    cpdagMap[graph].second = std::min(cpdagMap[graph].second, order.bic);
+	// 	} else {
+	// 	    cpdagMap[graph] = std::pair<int, double>(1, order.bic);
+	// 	}
+	//     }
+	// } else if (pi.bic == bestOrder.bic) {
+	//     for (const OrderGraph order : bestGraphs) {
 
-		// Rcpp::Rcout << "Best Order:\n";
-		// for (const Node& n : order.order) Rcpp::Rcout << n << " ";
-		// Rcpp::Rcout << "\n\n";
+	// 	// Rcpp::Rcout << "Best Order:\n";
+	// 	// for (const Node& n : order.order) Rcpp::Rcout << n << " ";
+	// 	// Rcpp::Rcout << "\n\n";
 		
-		graph = order.toGraph();
+	// 	graph = order.toGraph();
 
-		std::ostringstream alg;
-		if (initialGraph==NULL) {
-		    alg << "GRaSP";
-		} else {
-		    alg << initialGraph->getAlgorithm() << "-" << "GRaSP";
-		}
-		graph.setAlgorithm(alg.str());
+	// 	std::ostringstream alg;
+	// 	if (initialGraph==NULL) {
+	// 	    alg << "GRaSP";
+	// 	} else {
+	// 	    alg << initialGraph->getAlgorithm() << "-" << "GRaSP";
+	// 	}
+	// 	graph.setAlgorithm(alg.str());
 
-		if (cpdagMap.count(graph)>0) {
-		    cpdagMap[graph].first++;
-		    cpdagMap[graph].second = std::min(cpdagMap[graph].second, order.bic);
-		} else {
-		    cpdagMap[graph] = std::pair<int, double>(1, order.bic);
-		}
-	    }
+	// 	if (cpdagMap.count(graph)>0) {
+	// 	    cpdagMap[graph].first++;
+	// 	    cpdagMap[graph].second = std::min(cpdagMap[graph].second, order.bic);
+	// 	} else {
+	// 	    cpdagMap[graph] = std::pair<int, double>(1, order.bic);
+	// 	}
+	//     }
 	}
 
-	bestGraphs.clear();
+	// bestGraphs.clear();
+	resetTrees();
 	// else if (pi.score == bestOrder.score && pi.bic < bestOrder.bic) bestOrder = pi;
     }
+
+    graph = bestOrder.toGraph();
+
+    std::ostringstream alg;
+    if (initialGraph==NULL) {
+	alg << "GRaSP";
+    } else {
+	alg << initialGraph->getAlgorithm() << "-" << "GRaSP";
+    }
+    graph.setAlgorithm(alg.str());
+
+    graph.setScore(bestOrder.bic);
+
+    graph.setHyperParam("penalty", arma::vec({ penalty }));
 
     // graph = bestOrder.toGraph();
 
@@ -1162,5 +1163,5 @@ std::map<EdgeListGraph, std::pair<int, double>> Grasp::search() {
     // }
     // graph.setAlgorithm(alg.str());
         
-    return cpdagMap;
+    return graph;
 }

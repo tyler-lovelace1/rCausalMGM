@@ -77,6 +77,8 @@ private:
 
 public:
 
+    DepthChoiceGenerator() {}
+
     /**
      * Constructs a new choice generator for a choose b. Once this
      * initialization has been performed, successive calls to next() will

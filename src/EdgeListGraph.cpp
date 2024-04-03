@@ -862,7 +862,6 @@ std::vector<Node> EdgeListGraph::getParents(const Node& node) const {
     return parents;
 }
 
-
 /**
  * @return the list of possible parents for a node.
  */
@@ -1638,6 +1637,53 @@ void EdgeListGraph::reorientAllWith(Endpoint endpoint) {
     }
 }
 
+
+bool EdgeListGraph::validSink(const Node& node) {
+    std::list<Node> neighbors;
+    
+    for (Edge edge : edgeLists[node]) {
+	if (edge.getDistalEndpoint(node) == ENDPOINT_ARROW)
+	    return false;
+	else if (edge.getProximalEndpoint(node) == ENDPOINT_TAIL)
+	    neighbors.push_back(edge.getDistalNode(node));
+    }
+
+    while (!neighbors.empty()) {
+	Node y = neighbors.front();
+	neighbors.pop_front();
+	for (Node z : neighbors)
+	    if (!isAdjacentTo(y,z))
+		return false;
+    }
+
+    return true;
+}
+
+
+std::list<Node> EdgeListGraph::getCausalOrdering() {
+    EdgeListGraph tempGraph(*this);
+    std::set<Node> nodeSet(nodes.begin(), nodes.end());
+    std::list<Node> order;
+
+    while (!nodeSet.empty()) {
+	for (Node n : nodeSet) {
+	    if (tempGraph.validSink(n)) {
+		order.push_front(n);
+		tempGraph.removeNode(n);
+		nodeSet.erase(n);
+		break;
+	    }
+	}
+    }
+
+    if (order.size() != nodes.size()) {
+	throw std::runtime_error("The number of nodes in causal ordering does not match number in graph");
+    }
+
+    return order;
+}
+
+
 Rcpp::List EdgeListGraph::toList() const {
     std::vector<std::string> nodeNames;
     Rcpp::List mbList = Rcpp::List::create();
@@ -1683,7 +1729,7 @@ Rcpp::List EdgeListGraph::toList() const {
         Rcpp::_["algorithm"] = algorithm,
 	Rcpp::_["lambda"] = hyperparamHash.at("lambda").is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash.at("lambda")),
 	Rcpp::_["alpha"] = hyperparamHash.at("alpha").is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash.at("alpha")),
-	// Rcpp::_["penalty"] = hyperparamHash["penalty"],
+	Rcpp::_["penalty"] = hyperparamHash.at("penalty").is_empty() ? R_NilValue : Rcpp::wrap(hyperparamHash.at("penalty")),
         Rcpp::_["type"] = graph_type,
         Rcpp::_["markov.blankets"] = mbList,
 	Rcpp::_["neighbors"] = nbList,
@@ -1856,6 +1902,12 @@ void streamGraph(const Rcpp::List& list, std::ostream& os, std::string ext) {
 	if (!alpha.isNull()) {
 	    os << "Alpha: " << Rcpp::as<Rcpp::NumericVector>(alpha) << "\n";
 	}
+
+	// Penalty
+	Rcpp::Nullable<Rcpp::NumericVector> penalty = list["penalty"];
+	if (!penalty.isNull()) {
+	    os << "Penalty: " << Rcpp::as<Rcpp::NumericVector>(penalty) << "\n";
+	}
 	
 	// Type
 	std::vector<std::string> t = list["type"];
@@ -1958,6 +2010,7 @@ Rcpp::List loadGraph(const std::string& filename) {
     std::string graph_type = "";
     Rcpp::Nullable<Rcpp::NumericVector> lambda = R_NilValue;
     Rcpp::Nullable<Rcpp::NumericVector> alpha = R_NilValue;
+    Rcpp::Nullable<Rcpp::NumericVector> penalty = R_NilValue;
     
     // Start the line after you read 'Graph Edges:'
     auto edgeStart = std::find(lines.begin(), lines.end(), "Graph Edges:");
@@ -2005,6 +2058,16 @@ Rcpp::List loadGraph(const std::string& filename) {
 		iss >> a;
 		Rcpp::NumericVector temp = {a};
 		alpha = wrap(Rcpp::clone(temp));
+                continue;
+            }
+
+	    if (edgeString.find("Penalty: ") != std::string::npos) {
+                edgeString = edgeString.substr(9);
+		std::istringstream iss(edgeString);
+		double p;
+		iss >> p;
+		Rcpp::NumericVector temp = {p};
+		penalty = wrap(Rcpp::clone(temp));
                 continue;
             }
 
@@ -2072,6 +2135,7 @@ Rcpp::List loadGraph(const std::string& filename) {
         Rcpp::_["algorithm"] = algorithm,
 	Rcpp::_["lambda"] = lambda,
 	Rcpp::_["alpha"] = alpha,
+	Rcpp::_["penalty"] = penalty,
         Rcpp::_["type"] = graph_type,
         Rcpp::_["markov.blankets"] = R_NilValue,
 	Rcpp::_["neighbors"] = R_NilValue,
@@ -3095,13 +3159,13 @@ Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 	//     Rcpp::warning("The ground truth DAG is only needed for assessing the orientation accuracy of partial ancestral graphs.");
 	
 	return Rcpp::NumericVector::create(
-	    Rcpp::_["orientPrecision"] = NA_REAL,
-	    Rcpp::_["orientRecall"] = NA_REAL,
-	    Rcpp::_["orientF1"] = NA_REAL);
+	    Rcpp::_["causalPrecision"] = NA_REAL,
+	    Rcpp::_["causalRecall"] = NA_REAL,
+	    Rcpp::_["causalF1"] = NA_REAL);
 	
     } else if (est.getGraphType() == "completed partially directed acyclic graph") {
 	// if (groundTruthDAG.isNotNull())
-	//     Rcpp::warning("The ground truth DAG is only needed for assessing the orientation accuracy of partial ancestral graphs.");
+	//     Rcpp::warning("The ground truth DAG is only needed for assessing the causalation accuracy of partial ancestral graphs.");
 	
 	double tp = 0, fp = 0, fn = 0, tn = 0;
 
@@ -3148,16 +3212,16 @@ Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 	// double mcc = (tp*tn - fp*fn) / std::sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn));
 	
 	return Rcpp::NumericVector::create(
-	    Rcpp::_["orientPrecision"] = precision,
-	    Rcpp::_["orientRecall"] = recall,
-	    Rcpp::_["orientF1"] = f1);
+	    Rcpp::_["causalPrecision"] = precision,
+	    Rcpp::_["causalRecall"] = recall,
+	    Rcpp::_["causalF1"] = f1);
 	
     } else if (est.getGraphType() == "partial ancestral graph") {
 
 	return Rcpp::NumericVector::create(
-	    Rcpp::_["orientPrecision"] = NA_REAL,
-	    Rcpp::_["orientRecall"] = NA_REAL,
-	    Rcpp::_["orientF1"] = NA_REAL);
+	    Rcpp::_["causalPrecision"] = NA_REAL,
+	    Rcpp::_["causalRecall"] = NA_REAL,
+	    Rcpp::_["causalF1"] = NA_REAL);
 	
 	// if (groundTruthDAG.isNull())
 	//     throw std::invalid_argument("The ground truth DAG is needed for assessing the orientation accuracy of partial ancestral graphs.");

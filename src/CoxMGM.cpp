@@ -71,6 +71,7 @@ CoxMGM::CoxMGM(DataSet& ds) {
     this->n = xDat.n_rows;
 
     this->zDat = arma::mat(n, r, arma::fill::zeros);
+    this->wzDat = arma::mat(n, r, arma::fill::zeros);
     this->coxgrad = arma::mat(n, r, arma::fill::zeros);
     this->diagHess = arma::mat(n, r, arma::fill::zeros);
     // this->orderMat = arma::umat(n, r, arma::fill::zeros);
@@ -124,6 +125,10 @@ CoxMGM::CoxMGM(DataSet& ds) {
 
     //Creates dummy variables for each category of discrete variables (stored in dDat)
     makeDummy();
+
+    arma::vec dDatSum = arma::sum(dDat, 0).t();
+
+    params.alpha2 = arma::log(dDatSum + 1) - arma::log(arma::vec(lsum, arma::fill::value(n)) - dDatSum + 1);
 }
 
 
@@ -168,6 +173,7 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
     this->n = xDat.n_rows;
 
     this->zDat = arma::mat(n, r, arma::fill::zeros);
+    this->wzDat = arma::mat(n, r, arma::fill::zeros);
     this->coxgrad = arma::mat(n, r, arma::fill::zeros);
     this->diagHess = arma::mat(n, r, arma::fill::zeros);
     // this->orderMat = arma::umat(n, r, arma::fill::zeros);
@@ -227,6 +233,10 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
 
     //Creates dummy variables for each category of discrete variables (stored in dDat)
     makeDummy();
+
+    arma::vec dDatSum = arma::sum(dDat, 0).t();
+    
+    params.alpha2 = arma::log(dDatSum + 1) - arma::log(arma::vec(lsum, arma::fill::value(n)) - dDatSum + 1);
 }
 
 // init all parameters to zeros except for betad which is set to 1s
@@ -789,7 +799,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //Dtheta=D*theta*diag(1./betad);
     arma::mat dTheta = dDat * par.theta * divBetaD;
 
-    arma::mat zGamma = (coxWeights % zDat) * par.gamma.t() * divBetaD;
+    arma::mat zGamma = wzDat * par.gamma.t() * divBetaD;
 
     // Rcpp::Rcout << "zGamma: \n" << zGamma << std::endl;
 
@@ -807,7 +817,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     arma::mat tempLoss(n, xDat.n_cols);
 
     //wxprod=X*(theta')+D*phi+e*alpha2';
-    arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi + (coxWeights % zDat) * par.psi.t();
+    arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi + wzDat * par.psi.t();
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < xDat.n_cols; j++) {
@@ -972,7 +982,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     gradOut.betad = arma::vec(xDat.n_cols);
     for(arma::uword i = 0; i < p; i++){
         gradOut.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(tempLoss.col(i), 2), 2) / 2.0 -
-	    arma::as_scalar(tempLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i) + zGamma.col(i)));
+	    arma::as_scalar(tempLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i) + zGamma.col(i) + par.alpha1(i) / par.betad(i)));
     }
 
     // Rcpp::Rcout << "beta grad:\n" << gradOut.beta;
@@ -1068,7 +1078,7 @@ double CoxMGM::smoothValue(arma::vec& parIn) {
     //Dtheta=D*theta*diag(1./betad);
     arma::mat xBeta = xDat * par.beta * divBetaD;
     arma::mat dTheta = dDat * par.theta * divBetaD;
-    arma::mat zGamma = (coxWeights % zDat) * par.gamma.t() * divBetaD;
+    arma::mat zGamma = wzDat * par.gamma.t() * divBetaD;
 
     // Rcpp::Rcout << "xBeta: \n" << xBeta << std::endl;
     // Rcpp::Rcout << "dTheta: \n" << dTheta << std::endl;
@@ -1080,7 +1090,7 @@ double CoxMGM::smoothValue(arma::vec& parIn) {
     arma::mat tempLoss(n, xDat.n_cols);
 
     //wxprod=X*(theta')+D*phi+e*alpha2';
-    arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi + (zDat % coxWeights) * par.psi.t();
+    arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi + wzDat * par.psi.t();
 
     for (arma::uword i = 0; i < n; i++) {
         for (arma::uword j = 0; j < xDat.n_cols; j++) {
@@ -2379,7 +2389,7 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     //Dtheta=D*theta*diag(1./betad);
     arma::mat xBeta = xDat * par.beta * divBetaD;
     arma::mat dTheta = dDat * par.theta * divBetaD;
-    arma::mat zGamma = (coxWeights % zDat) * par.gamma.t() * divBetaD;
+    arma::mat zGamma = wzDat * par.gamma.t() * divBetaD;
     // Rcpp::Rcout << "xBeta: \n" << xBeta << std::endl;
     // Rcpp::Rcout << "dTheta: \n" << dTheta << std::endl;
 
@@ -2398,7 +2408,7 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat negLoss(n, xDat.n_cols);
 
-    arma::mat wxProd = xDat*par.theta.t() + dDat*par.phi + (coxWeights % zDat) * par.psi.t();
+    arma::mat wxProd = xDat*par.theta.t() + dDat*par.phi + wzDat * par.psi.t();
     // Rcpp::Rcout << "wxProd1: \n" << wxProd << std::endl;
 
     for (arma::uword i = 0; i < n; i++) {
@@ -2577,7 +2587,7 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
         // Rcpp::Rcout << "BETA NORM (i = " << i << "):\n" << std::pow(arma::norm(negLoss.col(i), 2), 2) << std::endl;
         // Rcpp::Rcout << "BETA SCALAR (i = " << i << "):\n" << arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i))) << std::endl;
         grad.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(negLoss.col(i), 2), 2) / 2.0 -
-	    arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i) + zGamma.col(i)));
+	    arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i) + zGamma.col(i) + par.alpha1(i) / par.betad(i)));
     }
 
     grad.alpha1 /= (double) n;
@@ -2865,6 +2875,7 @@ void CoxMGM::iterUpdate(arma::vec& parIn) {
     coxWeights = -diagHess;
     diagHess.replace(0, -1e-10);
     zDat = eta - coxgrad / diagHess;
+    wzDat = eta + coxgrad; // coxWeights % zDat; 
 
     // fitWeight = ((nullCoxloss-oldCoxloss) / nullCoxloss).t();
 
@@ -2992,7 +3003,7 @@ void CoxMGM::iterUpdate(arma::vec& parIn) {
 
 std::string CoxMGM::printParameters(arma::vec& X) {
     std::stringstream ss;
-    MGMParams par(X, p, lsum);
+    CoxMGMParams par(X, p, lsum, r);
     ss << par;
     return ss.str();
 }
