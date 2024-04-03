@@ -390,7 +390,7 @@ Node RegressionBicScore::getVariable(std::string name) {
     return emptyVar;
 }
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 double RegrBicScoreTest(const Rcpp::DataFrame& df,
 		   std::string targetName,
 		   std::vector<std::string>& regressorNames) {
@@ -413,7 +413,7 @@ double RegrBicScoreTest(const Rcpp::DataFrame& df,
 }
 
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 void RegrBicScoreTest2(const Rcpp::DataFrame& df) {
     DataSet data = DataSet(df);
     data.dropMissing();

@@ -634,7 +634,7 @@ double CoxRegression::etaGradHess(arma::vec& eta, arma::vec& grad, arma::vec& di
 }
 
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 void CoxRegressionTest(const Rcpp::DataFrame& df, std::string targetName,
 		       std::vector<std::string>& regressorNames, int repetitions) {
     DataSet data = DataSet(df);

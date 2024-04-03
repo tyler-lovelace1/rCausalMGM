@@ -197,7 +197,7 @@ bool CensoredVariable::setCensor(arma::vec&& values, arma::uvec&& censor, arma::
 // }
 
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 void test_censored(const std::string& name, arma::vec& values, arma::uvec& censor, arma::uvec& strata) {
   CensoredVariable cv = CensoredVariable(name);
   Rcpp::Rcout << std::boolalpha;

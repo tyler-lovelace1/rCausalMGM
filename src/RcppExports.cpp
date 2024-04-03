@@ -12,69 +12,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// test_censored
-void test_censored(const std::string& name, arma::vec& values, arma::uvec& censor, arma::uvec& strata);
-RcppExport SEXP _rCausalMGM_test_censored(SEXP nameSEXP, SEXP valuesSEXP, SEXP censorSEXP, SEXP strataSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type name(nameSEXP);
-    Rcpp::traits::input_parameter< arma::vec& >::type values(valuesSEXP);
-    Rcpp::traits::input_parameter< arma::uvec& >::type censor(censorSEXP);
-    Rcpp::traits::input_parameter< arma::uvec& >::type strata(strataSEXP);
-    test_censored(name, values, censor, strata);
-    return R_NilValue;
-END_RCPP
-}
-// CoxIRLSRegressionTest
-void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames, int repetitions);
-RcppExport SEXP _rCausalMGM_CoxIRLSRegressionTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP, SEXP repetitionsSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
-    Rcpp::traits::input_parameter< int >::type repetitions(repetitionsSEXP);
-    CoxIRLSRegressionTest(df, targetName, regressorNames, repetitions);
-    return R_NilValue;
-END_RCPP
-}
-// CoxRegressionTest
-void CoxRegressionTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames, int repetitions);
-RcppExport SEXP _rCausalMGM_CoxRegressionTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP, SEXP repetitionsSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
-    Rcpp::traits::input_parameter< int >::type repetitions(repetitionsSEXP);
-    CoxRegressionTest(df, targetName, regressorNames, repetitions);
-    return R_NilValue;
-END_RCPP
-}
-// DGScoreTest
-double DGScoreTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames, double penalty);
-RcppExport SEXP _rCausalMGM_DGScoreTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP, SEXP penaltySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
-    Rcpp::traits::input_parameter< double >::type penalty(penaltySEXP);
-    rcpp_result_gen = Rcpp::wrap(DGScoreTest(df, targetName, regressorNames, penalty));
-    return rcpp_result_gen;
-END_RCPP
-}
-// DGScoreTest2
-void DGScoreTest2(const Rcpp::DataFrame& df);
-RcppExport SEXP _rCausalMGM_DGScoreTest2(SEXP dfSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    DGScoreTest2(df);
-    return R_NilValue;
-END_RCPP
-}
 // saveGraph
 void saveGraph(const Rcpp::List& graph, const std::string& filename);
 RcppExport SEXP _rCausalMGM_saveGraph(SEXP graphSEXP, SEXP filenameSEXP) {
@@ -237,83 +174,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::List& >::type groundTruth(groundTruthSEXP);
     Rcpp::traits::input_parameter< const Rcpp::Nullable<Rcpp::List>& >::type groundTruthDAG(groundTruthDAGSEXP);
     rcpp_result_gen = Rcpp::wrap(allMetrics(estimate, groundTruth, groundTruthDAG));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GrowShrinkSubSetTest
-Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame& df, std::string target, int numSub);
-RcppExport SEXP _rCausalMGM_GrowShrinkSubSetTest(SEXP dfSEXP, SEXP targetSEXP, SEXP numSubSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< int >::type numSub(numSubSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkSubSetTest(df, target, numSub));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GrowShrinkTreeTest
-Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame& df, std::string target);
-RcppExport SEXP _rCausalMGM_GrowShrinkTreeTest(SEXP dfSEXP, SEXP targetSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkTreeTest(df, target));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GrowShrinkTreeSubSetTest
-Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame& df, std::string target, int numSub);
-RcppExport SEXP _rCausalMGM_GrowShrinkTreeSubSetTest(SEXP dfSEXP, SEXP targetSEXP, SEXP numSubSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< int >::type numSub(numSubSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkTreeSubSetTest(df, target, numSub));
-    return rcpp_result_gen;
-END_RCPP
-}
-// RegrBicScoreTest
-double RegrBicScoreTest(const Rcpp::DataFrame& df, std::string targetName, std::vector<std::string>& regressorNames);
-RcppExport SEXP _rCausalMGM_RegrBicScoreTest(SEXP dfSEXP, SEXP targetNameSEXP, SEXP regressorNamesSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type targetName(targetNameSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string>& >::type regressorNames(regressorNamesSEXP);
-    rcpp_result_gen = Rcpp::wrap(RegrBicScoreTest(df, targetName, regressorNames));
-    return rcpp_result_gen;
-END_RCPP
-}
-// RegrBicScoreTest2
-void RegrBicScoreTest2(const Rcpp::DataFrame& df);
-RcppExport SEXP _rCausalMGM_RegrBicScoreTest2(SEXP dfSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    RegrBicScoreTest2(df);
-    return R_NilValue;
-END_RCPP
-}
-// causalMGMRandCvTest
-Rcpp::List causalMGMRandCvTest(const Rcpp::DataFrame& data, std::string alg, arma::vec lambdas, arma::vec alphas, uint nfolds, bool fdr);
-RcppExport SEXP _rCausalMGM_causalMGMRandCvTest(SEXP dataSEXP, SEXP algSEXP, SEXP lambdasSEXP, SEXP alphasSEXP, SEXP nfoldsSEXP, SEXP fdrSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< std::string >::type alg(algSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type lambdas(lambdasSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type alphas(alphasSEXP);
-    Rcpp::traits::input_parameter< uint >::type nfolds(nfoldsSEXP);
-    Rcpp::traits::input_parameter< bool >::type fdr(fdrSEXP);
-    rcpp_result_gen = Rcpp::wrap(causalMGMRandCvTest(data, alg, lambdas, alphas, nfolds, fdr));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -655,11 +515,6 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rCausalMGM_test_censored", (DL_FUNC) &_rCausalMGM_test_censored, 4},
-    {"_rCausalMGM_CoxIRLSRegressionTest", (DL_FUNC) &_rCausalMGM_CoxIRLSRegressionTest, 4},
-    {"_rCausalMGM_CoxRegressionTest", (DL_FUNC) &_rCausalMGM_CoxRegressionTest, 4},
-    {"_rCausalMGM_DGScoreTest", (DL_FUNC) &_rCausalMGM_DGScoreTest, 4},
-    {"_rCausalMGM_DGScoreTest2", (DL_FUNC) &_rCausalMGM_DGScoreTest2, 1},
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
     {"_rCausalMGM_loadGraph", (DL_FUNC) &_rCausalMGM_loadGraph, 1},
     {"_rCausalMGM_adjMat2Graph", (DL_FUNC) &_rCausalMGM_adjMat2Graph, 3},
@@ -674,12 +529,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_prMetricsCausal", (DL_FUNC) &_rCausalMGM_prMetricsCausal, 2},
     {"_rCausalMGM_prMetrics", (DL_FUNC) &_rCausalMGM_prMetrics, 3},
     {"_rCausalMGM_allMetrics", (DL_FUNC) &_rCausalMGM_allMetrics, 3},
-    {"_rCausalMGM_GrowShrinkSubSetTest", (DL_FUNC) &_rCausalMGM_GrowShrinkSubSetTest, 3},
-    {"_rCausalMGM_GrowShrinkTreeTest", (DL_FUNC) &_rCausalMGM_GrowShrinkTreeTest, 2},
-    {"_rCausalMGM_GrowShrinkTreeSubSetTest", (DL_FUNC) &_rCausalMGM_GrowShrinkTreeSubSetTest, 3},
-    {"_rCausalMGM_RegrBicScoreTest", (DL_FUNC) &_rCausalMGM_RegrBicScoreTest, 3},
-    {"_rCausalMGM_RegrBicScoreTest2", (DL_FUNC) &_rCausalMGM_RegrBicScoreTest2, 1},
-    {"_rCausalMGM_causalMGMRandCvTest", (DL_FUNC) &_rCausalMGM_causalMGMRandCvTest, 6},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_coxmgm", (DL_FUNC) &_rCausalMGM_coxmgm, 4},
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},

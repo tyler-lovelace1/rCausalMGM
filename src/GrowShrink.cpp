@@ -138,7 +138,7 @@ std::vector<Node> GrowShrink::search(const Node& target, double* scoreReturn) {
 }
 
 
-//[[Rcpp::export]]
+// no export //[[Rcpp::export]]
 Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
     DataSet ds = DataSet(df);
     ds.dropMissing();

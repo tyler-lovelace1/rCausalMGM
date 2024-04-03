@@ -198,7 +198,7 @@ std::vector<Node> GrowShrinkTree::search(double* scoreReturn) {
     return search(scorer->getVariables(), scoreReturn);
 }
 
-//[[Rcpp::export]]
+// no export //[[Rcpp::export]]
 Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string target) {
     DataSet ds = DataSet(df);
     ds.dropMissing();
@@ -241,7 +241,7 @@ Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string tar
 }
 
 
-//[[Rcpp::export]]
+// no export // [[Rcpp::export]]
 Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
     DataSet ds = DataSet(df);
     ds.dropMissing();

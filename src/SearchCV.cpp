@@ -1391,7 +1391,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 // }
 
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 Rcpp::List causalMGMRandCvTest(const Rcpp::DataFrame& data,
 			       std::string alg,
 			       arma::vec lambdas,

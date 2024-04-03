@@ -766,7 +766,7 @@ void CoxIRLSRegression::infoMat(arma::vec& beta, arma::mat& hess,
     }
 }
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 void CoxIRLSRegressionTest(const Rcpp::DataFrame& df, std::string targetName,
 			   std::vector<std::string>& regressorNames, int repetitions) {
     DataSet data = DataSet(df);

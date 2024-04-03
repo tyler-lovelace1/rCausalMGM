@@ -185,7 +185,7 @@ Node DegenerateGaussianScore::getVariable(std::string name)
     return emptyVar;
 }
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 double DGScoreTest(const Rcpp::DataFrame& df,
 		   std::string targetName,
 		   std::vector<std::string>& regressorNames,
@@ -209,7 +209,7 @@ double DGScoreTest(const Rcpp::DataFrame& df,
 }
 
 
-// [[Rcpp::export]]
+// no export // [[Rcpp::export]]
 void DGScoreTest2(const Rcpp::DataFrame& df) {
     DataSet data = DataSet(df);
     data.dropMissing();
