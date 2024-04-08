@@ -488,7 +488,7 @@ bool Boss::bossForward() {
     while (oldBic - bic > 1e-6) {
 	oldBic = bic;
 	// oldScore = score;
-	std::vector<Node> nodeList(tau.order.begin(), tau.order.end());
+	std::vector<Node> nodeList(tau.getShuffledNodes());
 	for (Node n : nodeList) {
 	    tau = bestMove(n, tau);
 	    // if (verbose) Rcpp::Rcout << "\r    Score = " << tau.score << ", BIC = " << tau.bic;
@@ -761,8 +761,11 @@ bool Boss::bestDelete(EdgeListGraph& graph) {
 	}
     }
 
-    Rcpp::Rcout << "      Deletion: " << bestTask.x
-		<< " --> " << bestTask.y << " : Score = " << graph.getScore() + bestScoreChange << std::endl;
+    if (verbose) {
+	Rcpp::Rcout << "      Deletion: " << bestTask.x
+		    << " --> " << bestTask.y << " : Score = "
+		    << graph.getScore() + bestScoreChange << std::endl;
+    }
 	    
 
     graph.removeEdge(bestTask.x, bestTask.y);
@@ -805,7 +808,7 @@ bool Boss::bossBES() {
 
     if (verbose) Rcpp::Rcout << "      Edges = " << pi.score << ", Score = " << pi.bic << "\n";
     
-    return (piGraph.getScore() - oldBic < -1e-6) || (pi.score - oldBic < -1e-6); // std::abs(pi.bic - oldBic) > 1e-6; //
+    return (piGraph.getScore() - oldBic < -1e-6) || (pi.bic - oldBic < -1e-6); // std::abs(pi.bic - oldBic) > 1e-6; //  || (pi.score - piGraph.getNumEdges() < -0.5)
 }
 
 
@@ -857,7 +860,7 @@ EdgeListGraph Boss::search() {
 		
 	if (verbose) Rcpp::Rcout << "\n";
         
-	if (pi.bic - bestOrder.bic < -1e-6 || (pi.bic - bestOrder.bic < 1e-6 && pi.score < bestOrder.score)) {
+	if (piGraph.getScore() - graph.getScore() < -1e-6 || (piGraph.getScore() - graph.getScore() < 1e-6 && piGraph.getNumEdges() - graph.getNumEdges() < -0.5)) {
 	    bestOrder = pi;
 	    graph = piGraph;
 	    

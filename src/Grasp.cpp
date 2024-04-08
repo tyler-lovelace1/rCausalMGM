@@ -759,7 +759,7 @@ bool Grasp::graspDFS(int tier) {
 	    // 	if (tau.score > pi.score || (tau.score == pi.score && tau.bic - pi.bic > bicThresh)) continue;
 	    // } else {
 		
-	    if (tau.bic - pi.bic < -1e-6 || (tau.bic - pi.bic < 1e-6 && tau.score < pi.score)) {
+	    if (tau.bic - pi.bic < -1e-6 || (tau.bic - pi.bic < 1e-6 && tau.score - pi.score < -0.5)) {
 		pi = tau;
 		// bestGraphs.clear();
 		// bestGraphs.insert(pi);
@@ -768,13 +768,13 @@ bool Grasp::graspDFS(int tier) {
 		return true;
 	    }
 
-	    if (tau.bic - pi.bic > bicThresh) continue;
+	    if (tau.bic - pi.bic > 1e-6) continue;
 
-	    // double dBic = tau.bic - pi.bic;
+	    // double dBic = tau.bic - pi.bic; //  + 1e-6
 
 	    // double acceptProb = std::exp(-dBic/2.0);
 
-	    // // acceptProb /= (1 + acceptProb);
+	    // // // acceptProb /= (1 + acceptProb);
 
 	    // if (acceptProb < Rcpp::runif(1)[0]) {
 	    //     // Rcpp::Rcout << "\n    Branch Pruned:  Depth = " << curDepth << ", Score = " << tau.score << ", Score = " << tau.bic << ", deltaScore = " << dBic;
@@ -803,8 +803,9 @@ bool Grasp::graspDFS(int tier) {
 	// }
 	// Rcpp::Rcout << std::endl;
 
+	std::vector<Node> nodeList(tau.getShuffledNodes());
 	
-	for (const Node& y : tau.getShuffledNodes()) {
+	for (const Node& y : nodeList) {
 	    if (tau.parentMap[y].size()==0) continue;
 	    std::unordered_set<Node> parents(tau.parentMap[y]);
 	    std::unordered_set<Node> ancestors;
@@ -1077,7 +1078,7 @@ EdgeListGraph Grasp::search() {
 	    if (verbose) Rcpp::Rcout << "\n";
 	}
 
-	if (pi.bic - bestOrder.bic < -1e-6 || (pi.bic - bestOrder.bic < 1e-6 && pi.score < bestOrder.score)) {
+	if (pi.bic - bestOrder.bic < -1e-6 || (pi.bic - bestOrder.bic < 1e-6 && pi.score - bestOrder.score < -0.5)) {
 	// if (pi.score < bestOrder.score || (pi.score == bestOrder.score && pi.bic < bestOrder.bic)) {
 	    bestOrder = pi;
 
