@@ -86,7 +86,7 @@ control graph sparsity.
 
     plot(ig)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/mgm-1.png)
+![](plots/figure-markdown_strict/mgm-1.png)
 
 ## Recovering the Completed Partially Directed Acyclic Graph (CPDAG) with PC-Stable
 
@@ -126,7 +126,7 @@ for it to be oriented as such.
 
     plot(g)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/pcstable-1.png)
+![](plots/figure-markdown_strict/pcstable-1.png)
 
 ### Structural Hamming Distance (SHD) as a measure of causal structure recovery
 
@@ -153,7 +153,7 @@ identical.
 
     plot(sim$cpdag)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/cpdag-1.png)
+![](plots/figure-markdown_strict/cpdag-1.png)
 
     print(paste0('SHD: ', SHD(g, sim$cpdag)))
 
@@ -172,7 +172,7 @@ later, as shown below:
     plot(g)
     plot(g2)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/saveTxt-1.png)
+![](plots/figure-markdown_strict/saveTxt-1.png)
 
 ### Saving the learned graph as a `.sif` file for visualization in Cytoscape
 
@@ -214,7 +214,7 @@ the BIC score can be used to select an undirected MGM model.
     plot(ig.path$graph.aic)
     plot(ig.path$graph.bic)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/mgmPath-1.png)
+![](plots/figure-markdown_strict/mgmPath-1.png)
 
     print(t(sapply(ig.path[1:2], prMetricsAdjacency, moral(sim$graph))))
 
@@ -241,7 +241,7 @@ by supplying a list of desired rules to the `pcStable` function.
     plot(g.list$maxp)
     plot(g.list$conservative)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/orientation-1.png)
+![](plots/figure-markdown_strict/orientation-1.png)
 
     print(t(sapply(g.list, allMetrics, sim$cpdag)))
 
@@ -274,7 +274,7 @@ algorithm at `alpha = 0.01`, `alpha = 0.05`, and `alpha = 0.15`.
     g3 <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, orientRule="maxp", alpha=0.15)
     plot(g3)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/alpha-1.png)
+![](plots/figure-markdown_strict/alpha-1.png)
 
     g.list <- list(a01=g1, a05=g2, a15=g3)
 
@@ -318,7 +318,7 @@ for each edge according to the bootstrap.
 
     plot(g.boot)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/bootstrap-1.png)
+![](plots/figure-markdown_strict/bootstrap-1.png)
 
     print(head(g.boot$stabilities))
 
@@ -400,7 +400,7 @@ each of the edges in the original graph.
         theme_classic()
       )
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/bootstrap_out-1.png)
+![](plots/figure-markdown_strict/bootstrap_out-1.png)
 
     knitr::include_graphics(c('pcmax_graph_stabs_adj.png', 'pcmax_graph_stabs_orient.png'))
 
@@ -456,7 +456,7 @@ in three ways:
     plot(g.list$maxp)
     plot(g.list$conservative)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/knowledge-1.png)
+![](plots/figure-markdown_strict/knowledge-1.png)
 
     print(t(sapply(g.list, allMetrics, sim$cpdag)))
 
@@ -674,7 +674,7 @@ minima of the information criteria.
 
     plot(ig.path)
 
-<img src="plots/rCausalMGM-demo_files/figure-markdown_strict/bic_aic_figures-1.png" style="display: block; margin: auto;" />
+<img src="plots/figure-markdown_strict/bic_aic_figures-1.png" style="display: block; margin: auto;" />
 
     print(t(sapply(ig.path[1:2], prMetricsAdjacency, moral(sim50$graph))))
 
@@ -725,7 +725,7 @@ minima of the information criteria.
 
     plot(ig.cv)
 
-<img src="plots/rCausalMGM-demo_files/figure-markdown_strict/mgm_cv_figures-1.png" style="display: block; margin: auto;" />
+<img src="plots/figure-markdown_strict/mgm_cv_figures-1.png" style="display: block; margin: auto;" />
 
     print(t(sapply(ig.cv[1:2], prMetricsAdjacency, moral(sim50$graph))))
 
@@ -820,7 +820,7 @@ The `steps` method returns both the graph selected by StEPS and StARS.
 
     plot(ig.steps)
 
-<img src="plots/rCausalMGM-demo_files/figure-markdown_strict/mgm_steps_figures-1.png" style="display: block; margin: auto;" />
+<img src="plots/figure-markdown_strict/mgm_steps_figures-1.png" style="display: block; margin: auto;" />
 
     print(t(sapply(ig.steps[1:2], prMetricsAdjacency, moral(sim50$graph))))
 
@@ -1015,7 +1015,7 @@ prevents the graph from becoming overly dense at high values of `alpha`.
     plot(g.cv)
     plot(g.stepscv)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/pcCV-1.png)
+![](plots/figure-markdown_strict/pcCV-1.png)
 
     g.list <- list(NoMGM.Min=g.cv$graph.min, NoMGM.1SE=g.cv$graph.1se, StEPS.Min=g.stepscv$graph.min, StEPS.1SE=g.stepscv$graph.1se)
 
@@ -1072,7 +1072,7 @@ model selection results on simulated datasets.
 
     plot(g.mgmpc.cv)
 
-![](plots/rCausalMGM-demo_files/figure-markdown_strict/mgmpcCV-1.png)
+![](plots/figure-markdown_strict/mgmpcCV-1.png)
 
     print(t(sapply(g.mgmpc.cv[1:2], allMetrics, sim50$cpdag)))
 
