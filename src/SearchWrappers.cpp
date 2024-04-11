@@ -17,15 +17,16 @@
 
 //' Calculate the MGM graph on a dataset
 //'
-//' @param data The dataframe
-//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param lambda A numeric vector of three values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print updates on the progress of opti-\mizing MGM. The default is FALSE.
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgm(data.n100.p25)
+//' sim <- rCausalMGM::simRandomDAG(200, 25)
+//' g <- rCausalMGM::mgm(sim$data)
+//` print(g)
 // [[Rcpp::export]]
 Rcpp::List mgm(
     const Rcpp::DataFrame &data, 
@@ -61,20 +62,9 @@ Rcpp::List mgm(
 
     MGM mgm(ds, l);
     mgm.setVerbose(verbose);
-    // mgm.calcLambdaMax();
     EdgeListGraph mgmGraph = mgm.search();
     
-    // mgmGraph.setHyperParam("lambda", Rcpp::NumericVector(l.begin(), l.end()));
-
     RcppThread::checkUserInterrupt();
-
-    // double elapsedTime = mgm.getElapsedTime();
-
-    // if (verbose) {
-    // 	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
-    // 	elapsedTime = std::round(elapsedTime * factor) / factor;
-    //     Rcpp::Rcout << "  MGM Elapsed Time =  " << elapsedTime << " s" << std::endl;
-    // }
 
     Rcpp::List result = mgmGraph.toList();
 
@@ -82,17 +72,23 @@ Rcpp::List mgm(
 }
 
 
-//' Calculate the CoxMGM graph on a dataset
+//' Calculate the CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package.
 //'
-//' @param data The dataframe
-//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
+//' @param lambda A numeric vector of five values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, the third for discrete-discrete, the fourth for continuous-survival, and the fifth for discrete-survival. Defaults to c(0.2, 0.2, 0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print updates on the progress of opti-\mizing MGM. The default is FALSE.
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::coxmgm(data.n100.p25)
+//' sim <- rCausalMGM::simRandomDAG(200, 25)
+//' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
+//' censtime1 <- sample(time1)
+//' event1 <- as.integer(time1 < censtime1)
+//' time1 <- pmin(time1, censtime1)
+//' sim$data$Survival1 <- survival::Surv(time1, event1)
+//' ig <- rCausalMGM::coxmgm(sim$data)
+//` print(ig)
 // [[Rcpp::export]]
 Rcpp::List coxmgm(
     const Rcpp::DataFrame &data, 
@@ -114,7 +110,7 @@ Rcpp::List coxmgm(
 	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
     
-    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+    bool v = verbose; 
 
     std::vector<double> l(lambda.begin(), lambda.end());
 
@@ -133,20 +129,18 @@ Rcpp::List coxmgm(
     // mgm.calcLambdaMax();
     EdgeListGraph mgmGraph = mgm.search();
     
-    // mgmGraph.setHyperParam("lambda", Rcpp::NumericVector(l.begin(), l.end()));
-
     RcppThread::checkUserInterrupt();
 
-    auto elapsedTime = mgm.getElapsedTime();
+    // auto elapsedTime = mgm.getElapsedTime();
 
-    if (v) {
-	if (elapsedTime < 100*1000) {
-	    Rcpp::Rcout.precision(2);
-	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-	}
-        Rcpp::Rcout << "CoxMGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    }
+    // if (v) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "CoxMGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
 
     Rcpp::List result = mgmGraph.toList();
 
@@ -156,16 +150,17 @@ Rcpp::List coxmgm(
 
 //' Calculate the solution path for an MGM graph on a dataset
 //'
-//' @param data The dataframe
-//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
-//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated MGM graph
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The a graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgmPath(data.n100.p25)
+//' sim <- rCausalMGM::simRandomDAG(200, 25)
+//' ig <- rCausalMGM::mgm(sim$data)
+//` print(ig.path)
 // [[Rcpp::export]]
 Rcpp::List mgmPath(
     const Rcpp::DataFrame &data,
@@ -188,10 +183,8 @@ Rcpp::List mgmPath(
 	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
     }
 
-    // bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
-
     arma::vec _lambda;
-    std::vector<double> l; // = {0.2, 0.2, 0.2};
+    std::vector<double> l; 
 
     int n = ds.getNumRows();
     int p = ds.getNumColumns();
@@ -218,31 +211,11 @@ Rcpp::List mgmPath(
 	}
     }
 
-    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
     arma::vec loglik(l.size(), arma::fill::zeros);
     arma::vec nParams(l.size(), arma::fill::zeros);
     std::vector<EdgeListGraph> mgmGraphs = mgm.searchPath(l, loglik, nParams);
 
     RcppThread::checkUserInterrupt();
-
-    // auto elapsedTime = mgm.getElapsedTime();
-
-    // if (v) {
-    // 	if (elapsedTime < 100*1000) {
-    // 	    Rcpp::Rcout.precision(2);
-    // 	} else {
-    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-    // 	}
-    //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    // }
-
-    // double elapsedTime = mgm.getElapsedTime();
-
-    // if (verbose) {
-    // 	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
-    // 	elapsedTime = std::round(elapsedTime * factor) / factor;
-    //     Rcpp::Rcout << "  MGM Path Elapsed Time =  " << elapsedTime << " s" << std::endl;
-    // }
 
     Rcpp::List graphList;
     
@@ -275,15 +248,22 @@ Rcpp::List mgmPath(
 
 //' Calculate the solution path for a CoxMGM graph on a dataset
 //'
-//' @param data The dataframe
-//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
-//' @param maxDiscrete The maximum number of unique values a variable can have before being considered continuous. Defaults to 5
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated MGM graph
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
+//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The a graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::coxmgmPath(data.n100.p25)
+//' sim <- rCausalMGM::simRandomDAG(200, 25)
+//' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
+//' censtime1 <- sample(time1)
+//' event1 <- as.integer(time1 < censtime1)
+//' time1 <- pmin(time1, censtime1)
+//' sim$data$Survival1 <- survival::Surv(time1, event1)
+//' ig.path <- rCausalMGM::coxmgmPath(sim$data)
+//' print(ig.path)
 // [[Rcpp::export]]
 Rcpp::List coxmgmPath(
     const Rcpp::DataFrame& data,
@@ -346,16 +326,16 @@ Rcpp::List coxmgmPath(
 
     RcppThread::checkUserInterrupt();
 
-    auto elapsedTime = mgm.getElapsedTime();
+    // auto elapsedTime = mgm.getElapsedTime();
 
-    if (v) {
-	if (elapsedTime < 100*1000) {
-	    Rcpp::Rcout.precision(2);
-	} else {
-	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-	}
-        Rcpp::Rcout << "CoxMGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    }
+    // if (v) {
+    // 	if (elapsedTime < 100*1000) {
+    // 	    Rcpp::Rcout.precision(2);
+    // 	} else {
+    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
+    // 	}
+    //     Rcpp::Rcout << "CoxMGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
+    // }
 
     Rcpp::List graphList;
     

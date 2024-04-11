@@ -3215,7 +3215,13 @@ EdgeListGraph CoxMGM::search() {
 			  << lambda[4] << " }\n";
     }
     learn(1e-5, 500);
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    // elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    double elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-start).count();
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  CoxMGM Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
     return graphFromCoxMGM();
 }
 
@@ -3284,6 +3290,11 @@ std::vector<EdgeListGraph> CoxMGM::searchPath(std::vector<double> lambdas) {
 	// pathGraphs[i].setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
 	// pathGraphs[i].setHyperParam("lambda", Rcpp::NumericVector(lambda.begin(), lambda.end()));
     }
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    double elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-start).count();
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  CoxMGM Path Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
     return pathGraphs;
 }
