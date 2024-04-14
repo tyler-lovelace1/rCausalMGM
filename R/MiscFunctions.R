@@ -380,7 +380,7 @@ plot.graphSTARS <- function(x, ...) {
 #'
 #' @return A data.frame containing source, target, and interaction
 #'     columns for each edge in the graph. If stabilities are
-#'     available, then the adjacency frequency and orientation
+#'     available, then the adjFrequency and orientation
 #'     frequencies (if applicable) are returned for each edge.
 #' @export
 graphTable <- function(graph, stabilities = NULL) {
@@ -422,7 +422,7 @@ graphTable <- function(graph, stabilities = NULL) {
         graph.table <- data.frame(source=c(),
                                   target=c(),
                                   interaction=c(),            
-                                  adjacency.freq=c())
+                                  adjFreq=c())
         
         if ((ncol(stabilities) == nrow(stabilities)) &&
             all(colnames(stabilities) == rownames(stabilities))) {
@@ -435,7 +435,7 @@ graphTable <- function(graph, stabilities = NULL) {
                     source=c(edge[1]),
                     target=c(edge[3]),
                     interaction=c("undir"),
-                    adjacency.freq=c(stabilities[edge[1], edge[3]]))
+                    adjFreq=c(stabilities[edge[1], edge[3]]))
                 
                 graph.table <- rbind(graph.table, tempRow)
             }
@@ -456,7 +456,7 @@ graphTable <- function(graph, stabilities = NULL) {
                             source=c(edge[1]),
                             target=c(edge[3]),
                             interaction=c("undir"),
-                            adjacency.freq=c(adj.freq))
+                            adjFreq=c(adj.freq))
                         
                         graph.table <- rbind(graph.table, tempRow)
                         
@@ -470,8 +470,8 @@ graphTable <- function(graph, stabilities = NULL) {
         graph.table <- data.frame(source=c(),
                                   target=c(),
                                   interaction=c(),            
-                                  adjacency.freq=c(),
-                                  orientation.freq=c())
+                                  adjFreq=c(),
+                                  orientFreq=c())
         idx <- 1
         for (edge in graph$edges) {
             edge <- strsplit(edge, " ")[[1]]
@@ -501,8 +501,8 @@ graphTable <- function(graph, stabilities = NULL) {
                     tempRow <- data.frame(source=c(edge[1]),
                                           target=c(edge[3]),
                                           interaction=c(inter),
-                                          adjacency.freq=c(adj.freq),
-                                          orientation.freq=c(orient.freq))
+                                          adjFreq=c(adj.freq),
+                                          orientFreq=c(orient.freq))
                     
                     graph.table <- rbind(graph.table, tempRow)
 
