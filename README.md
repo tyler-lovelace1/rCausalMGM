@@ -14,8 +14,23 @@ repository by executing the following code:
 
     devtools::install_github("tyler-lovelace1/rCausalMGM")
 
-    ## Skipping install of 'rCausalMGM' from a github remote, the SHA1 (13909e47) has not changed since last install.
-    ##   Use `force = TRUE` to force installation
+    ## Downloading GitHub repo tyler-lovelace1/rCausalMGM@HEAD
+
+    ## Skipping 2 packages not available: graph, Rgraphviz
+
+    ## ── R CMD build ─────────────────────────────────────────────────────────────────
+    ##      checking for file ‘/tmp/RtmpNnLlVl/remotesdcf8258888fed/tyler-lovelace1-rCausalMGM-b48a21a/DESCRIPTION’ ...  ✔  checking for file ‘/tmp/RtmpNnLlVl/remotesdcf8258888fed/tyler-lovelace1-rCausalMGM-b48a21a/DESCRIPTION’
+    ## ─  preparing ‘rCausalMGM’:
+    ##    checking DESCRIPTION meta-information ...  ✔  checking DESCRIPTION meta-information
+    ## ─  cleaning src
+    ##   ─  checking for LF line-endings in source and make files and shell scripts
+    ##   ─  checking for empty or unneeded directories
+    ##   ─  building ‘rCausalMGM_1.0.tar.gz’
+    ##      
+    ## 
+
+    ## Installing package into '/home/tyler/R/x86_64-pc-linux-gnu-library/4.1'
+    ## (as 'lib' is unspecified)
 
 ## Loading the rCausalMGM package and generating a toy dataset
 
@@ -70,11 +85,11 @@ control graph sparsity.
     ##     Iter: 40 ||dx||/||x||: 0.000790968 loss: 5.48729
     ##     Iter: 50 ||dx||/||x||: 0.000263371 loss: 5.48728
     ##     Iter: 60 ||dx||/||x||: 0.000115939 loss: 5.48728
-    ##     Iter: 70 ||dx||/||x||: 2.65419e-05 loss: 5.48728
-    ##     Iter: 80 ||dx||/||x||: 2.91651e-05 loss: 5.48728
-    ##     Iter: 90 ||dx||/||x||: 3.56134e-05 loss: 5.48728
-    ##     Iter: 100 ||dx||/||x||: 1.53027e-05 loss: 5.48728
-    ##     Iter: 102 ||dx||/||x||: 9.69167e-07 loss: 5.48728
+    ##     Iter: 70 ||dx||/||x||: 2.65418e-05 loss: 5.48728
+    ##     Iter: 80 ||dx||/||x||: 2.91426e-05 loss: 5.48728
+    ##     Iter: 90 ||dx||/||x||: 3.55957e-05 loss: 5.48728
+    ##     Iter: 100 ||dx||/||x||: 1.53546e-05 loss: 5.48728
+    ##     Iter: 102 ||dx||/||x||: 9.85928e-07 loss: 5.48728
     ##   MGM Elapsed Time =  8.7 s
 
     print(ig)
@@ -100,7 +115,8 @@ colliders, which requires the majority of conditional independence tests
 performed for a given unshielded triple to agree that it is a collider
 for it to be oriented as such.
 
-    g <- pcStable(sim$data, initialGraph=ig, orientRule="majority", alpha = 0.05, verbose=T)
+    g <- pcStable(sim$data, initialGraph=ig, 
+                  orientRule="majority", alpha = 0.05, verbose=T)
 
     ## Starting PC-Stable algorithm...
     ##   Starting FAS Stable...
@@ -108,11 +124,11 @@ for it to be oriented as such.
     ##     Searching at depth 1...
     ##     Searching at depth 2...
     ##     Searching at depth 3...
-    ##   FAS Stable Elapsed Time =  0.25 s
+    ##   FAS Stable Elapsed Time =  0.3 s
     ##     Filling Triple Map...
     ##   Orienting colliders...
     ##   Orienting implied edges...
-    ##   PC-Stable Elapsed Time =  0.8 s
+    ##   PC-Stable Elapsed Time =  0.96 s
 
     print(g)
 
@@ -234,7 +250,8 @@ utilize this fact to avoid performing unnecessary additional conditional
 independence tests when learning a graph with multiple orientation rules
 by supplying a list of desired rules to the `pcStable` function.
 
-    g.list <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, orientRule=c("majority", "maxp", "conservative"))
+    g.list <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, 
+                       orientRule=c("majority", "maxp", "conservative"))
 
     par(mfrow=c(1,3))
     plot(g.list$majority)
@@ -267,11 +284,14 @@ algorithm at `alpha = 0.01`, `alpha = 0.05`, and `alpha = 0.15`.
 
     par(mfrow=c(1,3))
 
-    g1 <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, orientRule="maxp", alpha=0.01)
+    g1 <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, 
+                   orientRule="maxp", alpha=0.01)
     plot(g1)
-    g2 <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, orientRule="maxp", alpha=0.05)
+    g2 <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, 
+                   orientRule="maxp", alpha=0.05)
     plot(g2)
-    g3 <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, orientRule="maxp", alpha=0.15)
+    g3 <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, 
+                   orientRule="maxp", alpha=0.15)
     plot(g3)
 
 ![](plots/figure-markdown_strict/alpha-1.png)
@@ -312,7 +332,8 @@ that a given edge appears in the causal graph given our dataset. The
 stabilities, returning a graph consisting of the most likely orientation
 for each edge according to the bootstrap.
 
-    g <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, orientRule="maxp", alpha=0.05)
+    g <- pcStable(sim$data[1:300,], initialGraph = ig.path$graph.bic, 
+                  orientRule="maxp", alpha=0.05)
 
     g.boot <- bootstrap(sim$data[1:300,], graph = g, numBoots = 200)
 
@@ -376,26 +397,26 @@ each of the edges in the original graph.
 
     print(head(g.table))
 
-    ##   source target interaction adjacency.freq orientation.freq
-    ## 1     X1     X3         dir          0.970            0.735
-    ## 2     X2     X3       undir          0.995            0.045
-    ## 3     X2     Y3       undir          0.370            0.040
-    ## 4     X2     Y4       undir          0.935            0.060
-    ## 5     X2     Y5         dir          1.000            0.565
-    ## 6     X4     Y3       undir          1.000            0.625
+    ##   source target interaction adjFreq orientFreq
+    ## 1     X1     X3         dir   0.970      0.735
+    ## 2     X2     X3       undir   0.995      0.045
+    ## 3     X2     Y3       undir   0.370      0.040
+    ## 4     X2     Y4       undir   0.935      0.060
+    ## 5     X2     Y5         dir   1.000      0.565
+    ## 6     X4     Y3       undir   1.000      0.625
 
     g.table$Edge <- g$edges
 
-    g.table <- g.table[order(g.table$adjacency.freq, g.table$orientation.freq),]
+    g.table <- g.table[order(g.table$adjFreq, g.table$orientFreq),]
 
     g.table$Edge <- factor(g.table$Edge, levels=g.table$Edge)
 
     library(ggplot2)
 
     print(
-      ggplot(g.table, aes(adjacency.freq, Edge)) + 
+      ggplot(g.table, aes(adjFreq, Edge)) + 
         geom_bar(stat="identity") +
-        geom_bar(mapping=aes(orientation.freq, Edge), stat="identity", fill="red") +
+        geom_bar(mapping=aes(orientFreq, Edge), stat="identity", fill="red") +
         xlab("Frequency") + 
         theme_classic()
       )
@@ -435,7 +456,7 @@ in three ways:
 -   Tiers: ordered sets of variables where variables in tier t can only
     be ancestors of variables in tier t+1 and descendants of variables
     in tier t-1. Tiers may be modified so that they can not form edges
-    within a given tier using the `forbiddenWithinTier` argument.
+    within a given tier using the `forbidWithinTier` argument.
 -   Forbidden Edges: Directly forbid certain directed edges. If the
     adjacency is completely impossible, the user must forbid both
     directions.
@@ -449,7 +470,9 @@ in three ways:
       required = list(c("Y3", "X2"))
     )
 
-    g.list <- pcStable(sim$data[1:300,], knowledge=K, initialGraph = ig.path$graph.bic, orientRule=c("majority", "maxp", "conservative"))
+    g.list <- pcStable(sim$data[1:300,], knowledge=K, 
+                       initialGraph = ig.path$graph.bic, 
+                       orientRule=c("majority", "maxp", "conservative"))
 
     par(mfrow=c(1,3))
     plot(g.list$majority)
@@ -498,7 +521,7 @@ the performance of `rCausalMGM` in the high-dimensional setting.
     print(system.time(g1 <- pcStable(sim$data[1:300,], orientRule="maxp", alpha=0.01)))
 
     ##    user  system elapsed 
-    ##   0.052   0.187   0.022
+    ##   0.057   0.169   0.021
 
     print(g1)
 
@@ -516,7 +539,7 @@ the performance of `rCausalMGM` in the high-dimensional setting.
     print(system.time(g2 <- pcStable(simLarge$data, orientRule="maxp", alpha=0.01)))
 
     ##    user  system elapsed 
-    ##  65.271 112.708  13.461
+    ##  84.515 118.093  15.184
 
     print(g2)
 
@@ -550,32 +573,23 @@ when learning the adjacencies of the causal graph. This can be applied
 in conjunction with using MGM to learn an initial estimate of the graph
 skeleton, or on its own.
 
-    print("FDR = 0.05")
-
-    ## [1] "FDR = 0.05"
-
+    #### FDR < 0.05
     print(system.time(g1 <- pcStable(simLarge$data, orientRule="maxp", alpha=0.05, fdr=T)))
 
     ##    user  system elapsed 
-    ##  53.435  80.070  11.131
+    ##  63.170  82.501  12.216
 
-    print("FDR = 0.1")
-
-    ## [1] "FDR = 0.1"
-
+    #### FDR < 0.1
     print(system.time(g2 <- pcStable(simLarge$data, orientRule="maxp", alpha=0.1, fdr=T)))
 
     ##    user  system elapsed 
-    ##  57.866  89.254  12.440
+    ##  70.247  84.243  13.486
 
-    print("FDR = 0.2")
-
-    ## [1] "FDR = 0.2"
-
+    #### FDR < 0.2
     print(system.time(g3 <- pcStable(simLarge$data, orientRule="maxp", alpha=0.2, fdr=T)))
 
     ##    user  system elapsed 
-    ##  72.766 115.723  15.187
+    ##  87.753 103.386  16.846
 
     g.list <- list(fdr05=g1, fdr1=g2, fdr2=g3)
 
@@ -607,12 +621,13 @@ graph. It can also result in more accurate causal graphical models.
     system.time(ig <- mgm(simLarge$data, lambda=0.27))
 
     ##    user  system elapsed 
-    ##  37.666  51.681   5.822
+    ##  50.199  66.906   7.984
 
-    system.time(g.mgmpcm <- pcStable(simLarge$data, orientRule="maxp", initialGraph = ig, alpha = 0.01))
+    system.time(g.mgmpcm <- pcStable(simLarge$data, orientRule="maxp", 
+                                     initialGraph = ig, alpha = 0.01))
 
     ##    user  system elapsed 
-    ##  13.914  28.346   3.503
+    ##  15.393  30.210   3.749
 
     print(g.mgmpcm)
 
@@ -851,7 +866,8 @@ sparsity and the accuracy of graph recovery.
     ##   Undirected:  6 
     ## alpha =  0.01
 
-    g.bic <- pcStable(sim50$data, initialGraph = ig.path$graph.bic, orientRule="maxp", alpha = 0.01)
+    g.bic <- pcStable(sim50$data, initialGraph = ig.path$graph.bic, 
+                      orientRule="maxp", alpha = 0.01)
     print(g.bic)
 
     ## Algorithm:  MGM-PC-Max 
@@ -862,7 +878,8 @@ sparsity and the accuracy of graph recovery.
     ## lambda = {0.2178587, 0.2178587, 0.2178587}
     ## alpha =  0.01
 
-    g.aic <- pcStable(sim50$data, initialGraph = ig.path$graph.aic, orientRule="maxp", alpha = 0.01)
+    g.aic <- pcStable(sim50$data, initialGraph = ig.path$graph.aic,
+                      orientRule="maxp", alpha = 0.01)
     print(g.aic)
 
     ## Algorithm:  MGM-PC-Max 
@@ -873,7 +890,8 @@ sparsity and the accuracy of graph recovery.
     ## lambda = {0.1771939, 0.1771939, 0.1771939}
     ## alpha =  0.01
 
-    g.min <- pcStable(sim50$data, initialGraph = ig.cv$graph.min, orientRule="maxp", alpha = 0.01)
+    g.min <- pcStable(sim50$data, initialGraph = ig.cv$graph.min, 
+                      orientRule="maxp", alpha = 0.01)
     print(g.min)
 
     ## Algorithm:  MGM-PC-Max 
@@ -884,7 +902,8 @@ sparsity and the accuracy of graph recovery.
     ## lambda = {0.1057142, 0.1057142, 0.1057142}
     ## alpha =  0.01
 
-    g.1se <- pcStable(sim50$data, initialGraph = ig.cv$graph.1se, orientRule="maxp", alpha = 0.01)
+    g.1se <- pcStable(sim50$data, initialGraph = ig.cv$graph.1se, 
+                      orientRule="maxp", alpha = 0.01)
     print(g.1se)
 
     ## Algorithm:  MGM-PC-Max 
@@ -895,7 +914,8 @@ sparsity and the accuracy of graph recovery.
     ## lambda = {0.1598033, 0.1598033, 0.1598033}
     ## alpha =  0.01
 
-    g.steps <- pcStable(sim50$data, initialGraph = ig.steps$graph.steps, orientRule="maxp", alpha = 0.01)
+    g.steps <- pcStable(sim50$data, initialGraph = ig.steps$graph.steps, 
+                        orientRule="maxp", alpha = 0.01)
     print(g.steps)
 
     ## Algorithm:  MGM-PC-Max 
@@ -906,7 +926,8 @@ sparsity and the accuracy of graph recovery.
     ## lambda = {0.2678559, 0.2678559, 0.2415673}
     ## alpha =  0.01
 
-    g.stars <- pcStable(sim50$data, initialGraph = ig.steps$graph.stars, orientRule="maxp", alpha = 0.01)
+    g.stars <- pcStable(sim50$data, initialGraph = ig.steps$graph.stars,
+                        orientRule="maxp", alpha = 0.01)
     print(g.stars)
 
     ## Algorithm:  MGM-PC-Max 
@@ -917,7 +938,8 @@ sparsity and the accuracy of graph recovery.
     ## lambda = {0.2678559, 0.2678559, 0.2678559}
     ## alpha =  0.01
 
-    g.list <- list(NoMGM=g, AIC=g.aic, BIC=g.bic, CVMin=g.min, CV1SE=g.1se, StARS=g.stars, StEPS=g.steps)
+    g.list <- list(NoMGM=g, AIC=g.aic, BIC=g.bic, CVMin=g.min, 
+                   CV1SE=g.1se, StARS=g.stars, StEPS=g.steps)
 
     print(t(sapply(g.list, allMetrics, sim50$cpdag)))
 
@@ -959,7 +981,8 @@ MGM. We allow the range of `alpha` values to go higher when using the
 StEPS selected MGM because the sparsity of the StEPS selected MGM
 prevents the graph from becoming overly dense at high values of `alpha`.
 
-    g.cv <- pcCV(sim50$data, alphas = c(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1))
+    alphas <- c(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1)
+    g.cv <- pcCV(sim50$data, alphas = alphas)
     print(g.cv)
 
     ## Minimum cross-validation log(pseudo-likelihood) graph:
@@ -984,7 +1007,9 @@ prevents the graph from becoming overly dense at high values of `alpha`.
     ##   Undirected:  37 
     ## alpha =  1e-04
 
-    g.stepscv <- pcCV(sim50$data, initialGraph = ig.steps$graph.steps, alphas = c(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2))
+    alphas <- c(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2)
+    g.stepscv <- pcCV(sim50$data, initialGraph = ig.steps$graph.steps, 
+                      alphas = alphas)
     print(g.stepscv)
 
     ## Minimum cross-validation log(pseudo-likelihood) graph:
@@ -1017,7 +1042,8 @@ prevents the graph from becoming overly dense at high values of `alpha`.
 
 ![](plots/figure-markdown_strict/pcCV-1.png)
 
-    g.list <- list(NoMGM.Min=g.cv$graph.min, NoMGM.1SE=g.cv$graph.1se, StEPS.Min=g.stepscv$graph.min, StEPS.1SE=g.stepscv$graph.1se)
+    g.list <- list(NoMGM.Min=g.cv$graph.min, NoMGM.1SE=g.cv$graph.1se, 
+                   StEPS.Min=g.stepscv$graph.min, StEPS.1SE=g.stepscv$graph.1se)
 
     print(t(sapply(g.list, allMetrics, sim50$cpdag)))
 
