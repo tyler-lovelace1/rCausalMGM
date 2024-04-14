@@ -1,6 +1,7 @@
 #' A print override function for the graph class
 #'
 #' @param x The graph object
+#' @param ... Additional print arguments
 #' @export
 print.graph <- function(x, ...) {
     cat("Algorithm: ", x[["algorithm"]], "\n")
@@ -16,8 +17,6 @@ print.graph <- function(x, ...) {
             cat("  Directed: ", sum(grepl("-->", x[["edges"]], fixed=TRUE)), "\n")
             cat("  Undirected: ", sum(grepl("---", x[["edges"]], fixed=TRUE)), "\n")
         }
-        ## cat("  Directed: ", sum(grepl("-->", x[["edges"]], fixed=TRUE)), "\n")
-        ## cat("  Bidirected: ", sum(grepl("<->", x[["edges"]], fixed=TRUE)), "\n")
     }
 
     if (!is.null(x[["lambda"]])) {
@@ -31,16 +30,22 @@ print.graph <- function(x, ...) {
     if (!is.null(x[["alpha"]])) {
         cat("alpha = ", as.numeric(x[["alpha"]]), "\n")
     }
+
+    if (!is.null(x[["penalty"]])) {
+        cat("penalty = ", as.numeric(x[["penalty"]]), "\n")
+    }
     
-    ## if (!is.null(x[["stabilities"]])) {
-    ##     cat("Average instability: ", mean( 2 * x[["stabilities"]] * (1 - x[["stabilities"]]) ), "\n")
-    ## }
+    if (!is.null(attr(x, "Score"))) {
+        cat("score = ", as.numeric(attr(x, "Score")), "\n")
+    }
+    
     invisible(x)
 }
 
 #' A print override function for the graphCV class
 #'
 #' @param x The graphCV object
+#' @param ... Additional print arguments
 #' @export
 print.graphCV <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -66,6 +71,7 @@ print.graphCV <- function(x, ...) {
 #' A print override function for the graphPath class
 #'
 #' @param x The graphPath object
+#' @param ... Additional print arguments
 #' @export
 print.graphPath <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -87,71 +93,30 @@ print.graphPath <- function(x, ...) {
 #' A print override function for the graphSTEPS class
 #'
 #' @param x The graphSTEPS object
+#' @param ... Additional print arguments
 #' @export
 print.graphSTEPS <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
-    ## if (is.null(gamma)) {
-    gamma <- x$gamma
-    ## }
+    
     cat("StEPS selected graph:\n\n")
     print(x$graph.steps)
     cat("\n\n")
-    ## cat("\n")
-    ## cat("StEPS selected lambda for gamma = ")
-    ## cat(gamma)
-    ## cat(":\n")
-    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
-    ## allIdx <- allIdx[length(allIdx)]
-    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
-    ## ccIdx <- ccIdx[length(ccIdx)]
-    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
-    ## cdIdx <- cdIdx[length(cdIdx)]
-    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
-    ## ddIdx <- ddIdx[length(ddIdx)]
-    ## cat(paste0("lambda = { ", as.numeric(x$graph.steps$lambda[1]), ", ", as.numeric(x$graph.steps$lambda[2]), ", ", as.numeric(x$graph.steps$lambda[3]), " }\n\n"))
+
     cat("StARS selected graph:\n\n")
     print(x$graph.stars)
-    ## cat("\n")
-    ## cat("StARS selected lambda for gamma = ")
-    ## cat(gamma)
-    ## cat(":\n")
-    ## cat(paste0("lambda = ", as.numeric(x$graph.stars$lambda[1]) ,"\n"))
+
     invisible(x)
 }
 
 
-#' A print override function for the graphSTEPS class
+#' A print override function for the graphSTARS class
 #'
-#' @param x The graphSTEPS object
+#' @param x The graphSTARS object
+#' @param ... Additional print arguments
 #' @export
 print.graphSTARS <- function(x, ...) {
-    ## mgmFlag <- !is.null(x$lambdas)
-    ## if (is.null(gamma)) {
-    ## gamma <- x$gamma
-    ## }
-    ## cat("StEPS selected graph:\n\n")
-    ## print(x$graph.steps)
-    ## cat("\n\n")
-    ## cat("\n")
-    ## cat("StEPS selected lambda for gamma = ")
-    ## cat(gamma)
-    ## cat(":\n")
-    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
-    ## allIdx <- allIdx[length(allIdx)]
-    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
-    ## ccIdx <- ccIdx[length(ccIdx)]
-    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
-    ## cdIdx <- cdIdx[length(cdIdx)]
-    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
-    ## ddIdx <- ddIdx[length(ddIdx)]
-    ## cat(paste0("lambda = { ", as.numeric(x$graph.steps$lambda[1]), ", ", as.numeric(x$graph.steps$lambda[2]), ", ", as.numeric(x$graph.steps$lambda[3]), " }\n\n"))
     cat("StARS selected graph:\n\n")
     print(x$graph)
-    ## cat("\n")
-    ## cat("StARS selected lambda for gamma = ")
-    ## cat(gamma)
-    ## cat(":\n")
-    ## cat(paste0("lambda = ", as.numeric(x$graph.stars$lambda[1]) ,"\n"))
     invisible(x)
 }
 
@@ -160,13 +125,21 @@ print.graphSTARS <- function(x, ...) {
 #' A plot override function for the graph class
 #'
 #' @param x The graph object
+#' @param nodes A subset of nodes in the graph to plot. If only a
+#'     single node is supplied, then that node and its Markov blanket
+#'     will be plotted.
+#' @param nodeAttr A list of options to modify graph nodes
+#'     (e.g. fontsize).
+#' @param edgeAttr A list of options to modify graph edges.
+#' @param ... Additional plot arguments
 #' @export
 plot.graph <- function(x,
                        nodes = c(),
                        nodeAttr = list(),
                        edgeAttr = list(),
                        ...) {
-    ## require("Rgraphviz")
+    ## if (!require(Rgraphviz, quietly = TRUE))
+    ##     install.packages("Rgraphviz")
 
     dotParams <- list(...)
     
@@ -254,12 +227,12 @@ plot.graph <- function(x,
 
     Rgraphviz::renderGraph(rgraph)
     
-    ## Rgraphviz::plot(rgraph)
 }
 
 #' A plot override function for the graphCV class
 #'
 #' @param x The graph object
+#' @param ... Additional plot arguments
 #' @export
 plot.graphCV <- function(x, ...) {
     mgmFlag <- x$graph.min$type=="undirected"
@@ -277,8 +250,8 @@ plot.graphCV <- function(x, ...) {
     llMeans <- x$mean
     llSe <- x$se
 
-    upperVal <- quantile(llMeans+llSe, probs=0.75)
-    lowerVal <- quantile(llMeans-llSe, probs=0.25)
+    upperVal <- stats::quantile(llMeans+llSe, probs=0.75)
+    lowerVal <- stats::quantile(llMeans-llSe, probs=0.25)
 
     iqr <- upperVal - lowerVal
     ll.lims <- c(lowerVal - 1.5 * iqr,
@@ -288,19 +261,20 @@ plot.graphCV <- function(x, ...) {
          xlab=ifelse(mgmFlag, expression(log10(lambda)), "Average Markov Blanket Size"),
          ylab="-log(Pseudo-Likelihood)", ylim=ll.lims)
     
-    arrows(x0=log10params, x1=log10params, y0=llMeans-llSe, code=3, angle=90,
-           length=0.05, y1=llMeans+llSe, col='darkgray')
+    graphics::arrows(x0=log10params, x1=log10params, y0=llMeans-llSe, code=3, angle=90,
+                     length=0.05, y1=llMeans+llSe, col='darkgray')
     
-    abline(v=minParam,
-           col='black', lty=3, lw=2)
+    graphics::abline(v=minParam,
+                     col='black', lty=3, lw=2)
     
-    abline(v=seParam,
-           col='black', lty=3, lw=2)
+    graphics::abline(v=seParam,
+                     col='black', lty=3, lw=2)
 }
 
 #' A plot override function for the graphCV class
 #'
 #' @param x The graph object
+#' @param ... Additional plot arguments
 #' @export
 plot.graphPath <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -319,34 +293,33 @@ plot.graphPath <- function(x, ...) {
          xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
          ylab="Sample Averaged Score", ylim=score.lims)
 
-    points(x=log10params, y=x$AIC / (2 * x$n), col='blue', pch=19)
+    graphics::points(x=log10params, y=x$AIC / (2 * x$n), col='blue', pch=19)
 
-    legend(x = "bottomright", title="Scores", 
-           legend=c("AIC", "BIC"), 
-           col = c("blue","red"),
-           pch=19, cex=0.7)
+    graphics::legend(x = "bottomright", title="Scores", 
+                     legend=c("AIC", "BIC"), 
+                     col = c("blue","red"),
+                     pch=19, cex=0.7)
 
-    abline(v=ifelse(mgmFlag,
-                    log10(x$lambdas[which.min(x$AIC)]),
-                    log10(x$alphas[which.min(x$AIC)])),
-           col='blue', lty=3, lw=2)
+    graphics::abline(v=ifelse(mgmFlag,
+                              log10(x$lambdas[which.min(x$AIC)]),
+                              log10(x$alphas[which.min(x$AIC)])),
+                     col='blue', lty=3, lw=2)
     
-    abline(v=ifelse(mgmFlag,
-                    log10(x$lambdas[which.min(x$BIC)]),
-                    log10(x$alphas[which.min(x$BIC)])),
-           col='red', lty=3, lw=2)
+    graphics::abline(v=ifelse(mgmFlag,
+                              log10(x$lambdas[which.min(x$BIC)]),
+                              log10(x$alphas[which.min(x$BIC)])),
+                     col='red', lty=3, lw=2)
 }
 
 #' A plot override function for the graphSTEPS class
 #'
 #' @param x The graph object
+#' @param ... Additional plot arguments
 #' @export
 plot.graphSTEPS <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
 
-    ## if (is.null(gamma)) {
     gamma <- x$gamma
-    ## }
 
     if (mgmFlag) {
         log10params <- log10(x$lambdas)
@@ -358,87 +331,57 @@ plot.graphSTEPS <- function(x, ...) {
          xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
          ylab="Edge instability across subsamples", ylim=c(0,0.5))
 
-    points(x=log10params, y=x$instability[,1], col='red', pch=18)
-    points(x=log10params, y=x$instability[,2], col='blue', pch=17)
-    points(x=log10params, y=x$instability[,3], col='purple', pch=15)
+    graphics::points(x=log10params, y=x$instability[,1], col='red', pch=18)
+    graphics::points(x=log10params, y=x$instability[,2], col='blue', pch=17)
+    graphics::points(x=log10params, y=x$instability[,3], col='purple', pch=15)
 
-    abline(h=gamma, lty=2, col='gray', lw=2)
-
-    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
-    ## allIdx <- allIdx[length(allIdx)]
-    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
-    ## ccIdx <- ccIdx[length(ccIdx)]
-    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
-    ## cdIdx <- cdIdx[length(cdIdx)]
-    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
-    ## ddIdx <- ddIdx[length(ddIdx)]
+    graphics::abline(h=gamma, lty=2, col='gray', lw=2)
     
-    abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
-    abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
-    abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
-    abline(v=log10(x$graph.stars$lambda[1]),  col='black',  lty=3, lw=2)
+    graphics::abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
+    graphics::abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
+    graphics::abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
+    graphics::abline(v=log10(x$graph.stars$lambda[1]),  col='black',  lty=3, lw=2)
 
-    legend(x = "topleft", title="Edge Type", 
-           legend = c("All", "C-C", "C-D", "D-D"), 
-           col = c("black","red", "blue", "purple"),
-           pch = c(19, 18, 17, 15), cex=0.7)
+    graphics::legend(x = "topleft", title="Edge Type", 
+                     legend = c("All", "C-C", "C-D", "D-D"), 
+                     col = c("black","red", "blue", "purple"),
+                     pch = c(19, 18, 17, 15), cex=0.7)
 }
 
-#' A plot override function for the graphSTEPS class
+#' A plot override function for the graphSTARS class
 #'
 #' @param x The graph object
+#' @param ... Additional plot arguments
 #' @export
 plot.graphSTARS <- function(x, ...) {
-    ## mgmFlag <- !is.null(x$lambdas)
-
-    ## if (is.null(gamma)) {
     gamma <- x$gamma
-    ## }
-
-    ## if (mgmFlag) {
-    ##     log10params <- log10(x$lambdas)
-    ## } else {
     log10params <- log10(x$alphas)
-    ## }
-
+    
     plot(x=log10params, y=x$instability[,1], col='black', pch=19,
          xlab=expression(log10(alpha)),
          ylab="Edge instability across subsamples", ylim=c(0,0.1))
 
-    ## points(x=log10params, y=x$instability[,1], col='red', pch=18)
-    ## points(x=log10params, y=x$instability[,2], col='blue', pch=17)
-    ## points(x=log10params, y=x$instability[,3], col='purple', pch=15)
+    graphics::abline(h=gamma, lty=2, col='gray', lw=2)
 
-    abline(h=gamma, lty=2, col='gray', lw=2)
-
-    ## allIdx <- c(1, which(x$instability[1:which.max(x$instability[,4]),4]<gamma))
-    ## allIdx <- allIdx[length(allIdx)]
-    ## ccIdx <- c(1, which(x$instability[1:which.max(x$instability[,1]),1]<gamma))
-    ## ccIdx <- ccIdx[length(ccIdx)]
-    ## cdIdx <- c(1, which(x$instability[1:which.max(x$instability[,2]),2]<gamma))
-    ## cdIdx <- cdIdx[length(cdIdx)]
-    ## ddIdx <- c(1, which(x$instability[1:which.max(x$instability[,3]),3]<gamma))
-    ## ddIdx <- ddIdx[length(ddIdx)]
-    
-    ## abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
-    ## abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
-    ## abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
-    abline(v=log10(x$graph$alpha),  col='black',  lty=3, lw=2)
-
-    ## legend(x = "topleft", title="Edge Type", 
-    ##        legend = c("All", "C-C", "C-D", "D-D"), 
-    ##        col = c("black","red", "blue", "purple"),
-    ##        pch = c(19, 18, 17, 15), cex=0.7)
+    graphics::abline(v=log10(x$graph$alpha),  col='black',  lty=3, lw=2)
 }
 
 
-#' A table to generate a data.frame for objects from graph class. It incorporates
-#' adjacency and orientation frequency if estimates of edge stability are available.
+#' A function to generate a data.frame for objects from graph
+#' class. It incorporates adjacency and orientation frequency if
+#' estimates of edge stability are available.
 #'
 #' @param graph The graph object
-#' @param stabilities The stability data.frame from bootstrapping or StEPS. If NULL,
-#' the stabilities entry of the graph object is used. If that is also NULL, only edge
-#' interactions are returned. The default is NULL
+#' 
+#' @param stabilities The stability data.frame from bootstrapping or
+#'     StEPS. If NULL, the stabilities entry of the graph object is
+#'     used. If that is also NULL, only edge interactions are
+#'     returned. The default is NULL
+#'
+#' @return A data.frame containing source, target, and interaction
+#'     columns for each edge in the graph. If stabilities are
+#'     available, then the adjacency frequency and orientation
+#'     frequencies (if applicable) are returned for each edge.
 #' @export
 graphTable <- function(graph, stabilities = NULL) {
 
@@ -470,10 +413,10 @@ graphTable <- function(graph, stabilities = NULL) {
             tempRow <- data.frame(source=c(edge[1]),
                                   target=c(edge[3]),
                                   interaction=c(inter))
-                    
+            
             graph.table <- rbind(graph.table, tempRow)
         }
-            
+        
     } else if (graph[["type"]] == "undirected") {
         
         graph.table <- data.frame(source=c(),
@@ -493,7 +436,7 @@ graphTable <- function(graph, stabilities = NULL) {
                     target=c(edge[3]),
                     interaction=c("undir"),
                     adjacency.freq=c(stabilities[edge[1], edge[3]]))
-                    
+                
                 graph.table <- rbind(graph.table, tempRow)
             }
         } else {
@@ -514,7 +457,7 @@ graphTable <- function(graph, stabilities = NULL) {
                             target=c(edge[3]),
                             interaction=c("undir"),
                             adjacency.freq=c(adj.freq))
-                
+                        
                         graph.table <- rbind(graph.table, tempRow)
                         
                         break
@@ -589,8 +532,8 @@ graphTable <- function(graph, stabilities = NULL) {
                     tempRow <- data.frame(source=c(edge[1]),
                                           target=c(edge[3]),
                                           interaction=c(inter),
-                                          adjacency.freq=c(adj.freq),
-                                          orientation.freq=c(orient.freq))
+                                          adjFreq=c(adj.freq),
+                                          orientFreq=c(orient.freq))
                     
                     graph.table <- rbind(graph.table, tempRow)
 
@@ -604,15 +547,28 @@ graphTable <- function(graph, stabilities = NULL) {
     
 }
 
-#' A as.data.frame override function for the graph class
+
+#' A function to create a prior knowledge object for use with causal
+#' discovery algorithms
 #'
-#' @param x The graph object
+#' @param tiers A list containing ordered vectors of variables where
+#'     variables in tier t can only be ancestors of variables in tiers
+#'     t+1 ... T and descendants of variables in tiers (1 .. t-1). If
+#'     tiers are used, all variables must be in a tier, and no
+#'     variable can be in multiple tiers.
+#' @param forbidWithinTiers A vector of logical values indicating
+#'     whether edges are allowed between variables in a given
+#'     tier. The value is NULL by default, which results in
+#'     forbidWithinTiers being set to FALSE for each tier.
+#' @param forbidden A list containing vectors of node pairs that
+#'     forbid a specific directed edge. For example, to forbid 
+#'     A --> B, add c("A", "B") to forbidden.
+#' @param required A list containing vectors of node pairs that
+#'     require the presence of a specific directed edge. For example,
+#'     to require B --> A, add c("B", "A") to required.
+#' @return A knowledge object that can be passed to causal discovery
+#'     algorithms.
 #' @export
-as.data.frame.graph <- function(x, ...) {
-    return(graphTable(x))
-}
-
-
 createKnowledge <- function(tiers = list(), forbidWithinTiers=NULL,
                             forbidden=list(), required=list()) {
     if (is.null(forbidWithinTiers)) {
@@ -628,7 +584,35 @@ createKnowledge <- function(tiers = list(), forbidWithinTiers=NULL,
     return(knowledge)
 }
 
-simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
+
+#' A function to simulate a random forward DAG from a SEM model.
+#'
+#' @param n The sample size of the generated dataset. The default is
+#'     1000.
+#' @param p The number of features in the generated dataset. The
+#'     default is 50.
+#' @param discFrac The fraction of variables in the dataset that are
+#'     discrete. The default is 0.5.
+#' @param deg The average graph degree for the simulated graph. The
+#'     default is 3.
+#' @param coefMin The lower bound on the magnitude of the effect
+#'     size. The default is 0.5.
+#' @param coefMax The upper bound on the magnitude of the effect
+#'     size. The default is 1.5.
+#' @param noiseMin The lower bound on the standard deviation of the
+#'     Gaussian noise for continuous variables. The default is 1.
+#' @param noiseMax The upper bound on the standard deviation of the
+#'     Gaussian noise for continuous variables. The default is 2.
+#' @param seed The random seed for generating the simulated DAG. The
+#'     default is NULL.
+#' @return A list containing the simulated dataset and the
+#'     corresponding ground truth causal DAG.
+#' @examples
+#' sim <- simRandomDAG(200, 25)
+#' print(sim$graph)
+#' print(sim$data[1:6,])
+#' @export
+simRandomDAG <- function(n=1000, p=50, discFrac=0.5, deg=3,
                          coefMin=0.5, coefMax=1.5, noiseMin=1, noiseMax=2,
                          seed=NULL) {
 
@@ -636,7 +620,7 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
         set.seed(seed)
     }
     
-    numCat <- floor(p * categoricalFrac)
+    numCat <- floor(p * discFrac)
     numCont <- p - numCat
     nodes <- c()
     if (numCont > 0) {
@@ -671,12 +655,9 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
     idx <- 1
     for (node in permNodes) {
         pa <- permNodes[adjMat[idx,]==1]
-        ## print(node)
-        ## print(idx)
-        ## print(pa)
         if (length(pa) > 0) {
-            f <- as.formula(paste('~', paste(pa, collapse=' + '), sep=' + '))
-            mod.mat <- as.matrix(model.matrix(f, data)[,-1])
+            f <- stats::as.formula(paste('~', paste(pa, collapse=' + '), sep=' + '))
+            mod.mat <- as.matrix(stats::model.matrix(f, data)[,-1])
             if (ncol(mod.mat)==1) {
                 colnames(mod.mat) <- pa
             }
@@ -684,44 +665,25 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
         
         if (grepl('X', node)) {
             if (length(pa)==0) {
-                val <- rnorm(n)
+                val <- stats::rnorm(n)
             } else {
-                ## print(head(mod.mat))
-                ## print(ncol(mod.mat))
-                ## beta <- sample(c(-1, 1), ncol(mod.mat), replace=T) * runif(ncol(mod.mat), coefMin, coefMax)
-                betaScale <- runif(length(pa), coefMin, coefMax)
+                betaScale <- stats::runif(length(pa), coefMin, coefMax)
                 names(betaScale) <- pa
-                beta <- matrix(runif(ncol(mod.mat), -1, 1), 1)
+                beta <- matrix(stats::runif(ncol(mod.mat), -1, 1), 1)
                 colnames(beta) <- colnames(mod.mat)
                 for (paNode in pa) {
                     paIdx <- grep(paNode, colnames(beta))
-                    ## print(paNode)
-                    ## print(paIdx)
                     if (grepl('X', paNode)) {
                         beta[,paIdx] <- sign(beta[,paIdx]) * betaScale[paNode]
                     } else {
-                        ## print(beta[,paIdx])
                         beta[,paIdx] <- beta[,paIdx] - mean(beta[,paIdx])
                         beta[,paIdx] <- betaScale[paNode] * beta[,paIdx] / sqrt(sum(beta[,paIdx]^2))
-                        ## print(betaScale[paNode])
-                        ## print(sqrt(sum(beta[,paIdx]^2)))
-                        ## print(beta[,paIdx])
                     }
                 }
-
-                ## print(beta)
                 
                 pred <- mod.mat %*% t(beta)
 
-                ## print(paste("Beta: ", paste(beta, collapse=", ")))
-
-                ## varS <- var(pred)
-                ## print(paste("Signal Variance:", varS))
-                ## varN <- varS / snr
-                ## varN <- runif(1, 1, 4)
-                ## print(paste("Noise Variance:", varN))
-                ## print(paste("SNR:", varS / varN))
-                val <- as.vector(scale(pred + rnorm(n, sd=runif(1, noiseMin, noiseMax))))
+                val <- as.vector(scale(pred + stats::rnorm(n, sd=stats::runif(1, noiseMin, noiseMax))))
             }
         } else if (grepl('Y', node)) {
             if (length(pa)==0) {
@@ -731,12 +693,10 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
                     levels=c('A','B','C')
                 )
             } else {
-                ## mod.mat <- as.matrix(model.matrix(f, data)[,-1])
-
-                betaScale <- runif(length(pa), coefMin, coefMax)
+                betaScale <- stats::runif(length(pa), coefMin, coefMax)
                 names(betaScale) <- pa
                 
-                beta <- matrix(runif(3 * ncol(mod.mat), -1, 1), 3)
+                beta <- matrix(stats::runif(3 * ncol(mod.mat), -1, 1), 3)
                 colnames(beta) <- colnames(mod.mat)
                 for (paNode in pa) {
                     paIdx <- grep(paNode, colnames(beta))
@@ -744,8 +704,6 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
                     beta[,paIdx] <- betaScale[paNode] * beta[,paIdx] / sqrt(sum(beta[,paIdx]^2))
                 }
 
-                ## print(beta)
-                
                 logprobs <- mod.mat %*% t(beta)
 
                 val <- factor(
@@ -762,9 +720,7 @@ simRandomDAG <- function(n=1000, p=50, categoricalFrac=0.5, deg=3,
         }
         idx <- idx + 1
     }
-
-    head(data)
-
+    
     graph <- adjMat2Graph(adjMat, permNodes, directed=T)
 
     graph$algorithm <- "Ground Truth"

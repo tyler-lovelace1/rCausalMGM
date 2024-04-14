@@ -1328,8 +1328,8 @@ bool EdgeListGraph::validateGraphList(Rcpp::List& l) {
 // //' @examples
 // //' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
 // //' nodes <- c("X1", "X2", "X3", "X4")
-// //' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
-// //' g[["markov.blankets"]] <- rCausalMGM::calculateMarkovBlankets(g)
+// //' g <- adjMat2Graph(mat, nodes, directed=TRUE)
+// //' g[["markov.blankets"]] <- calculateMarkovBlankets(g)
 // Rcpp::List calculateMarkovBlankets(const Rcpp::List& graph) {
 //     EdgeListGraph g(graph);
 //     Rcpp::List list(graph);
@@ -1927,15 +1927,11 @@ void streamGraph(const Rcpp::List& list, std::ostream& os, std::string ext) {
     }
 }
 
-//' Save a graph to a file
+//' Save a graph to a file. Supported file types are ".txt" and ".sif". 
 //'
-//' @param list The graph object
-//' @param filename The graph file
+//' @param graph The graph object
+//' @param filename The graph filename
 //' @export
-//' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgm(data.n100.p25)
-//' rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
 // [[Rcpp::export]]
 void saveGraph(const Rcpp::List& graph, const std::string& filename) {
     Rcpp::List list(graph);
@@ -1961,11 +1957,10 @@ void saveGraph(const Rcpp::List& graph, const std::string& filename) {
     outfile.close();
 }
 
-//TODO - Include example graphs and example use of loadGraph()
-//' Load a graph from a file
+//' Load a graph from a ".txt" file
 //'
 //' @param filename The graph file
-//' @return The graph as a List object, which can be passed into search functions
+//' @return The graph as a graph object, which can be passed into search functions
 //' @export
 // [[Rcpp::export]]
 Rcpp::List loadGraph(const std::string& filename) {
@@ -2152,16 +2147,16 @@ Rcpp::List loadGraph(const std::string& filename) {
 
 //' Convert an adjacency matrix into a graph
 //'
-//' @param adj The adjacency matrix, NxN
-//' @param nodes The names of the nodes, length N
-//' @param directed TRUE if the graph should be directed, default FALSE
-//' @return The graph representation of the adjacency list
+//' @param adj The adjacency matrix, p x p, with non-zero values indicating the presence of an adjacency.
+//' @param nodes The names of the nodes, length p.
+//' @param directed TRUE if the graph should be directed. This default is  FALSE.
+//' @return A graph object representing the adjacency matrix.
 //' @export
 //' @examples
 //' mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
-//' mat[upper.tri(mat)] <- 0
+//' mat <- mat + t(mat)
 //' nodes <- c("X1", "X2", "X3", "X4")
-//' g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
+//' g <- adjMat2Graph(mat, nodes)
 // [[Rcpp::export]]
 Rcpp::List adjMat2Graph(arma::mat adj, Rcpp::StringVector nodes, bool directed = false) {
     std::vector<std::string> nodeNames(nodes.begin(), nodes.end());
@@ -2211,14 +2206,16 @@ Rcpp::List adjMat2Graph(arma::mat adj, Rcpp::StringVector nodes, bool directed =
     return result;
 }
 
-//' Display a graph object as text
+//' Display a graph object as text.
+//'
+//' @description Display a graph object as text. This is the same format as written in ".txt" save files.
 //'
 //' @param graph The graph object
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgm(data.n100.p25)
-//' rCausalMGM::printGraph(g)
+//' sim <- simRandomDAG(200, 25)
+//' g <- mgm(sim$data)
+//' printGraph(g)
 // [[Rcpp::export]]
 void printGraph(const Rcpp::List& graph) {
     streamGraph(graph, Rcpp::Rcout);
@@ -2549,15 +2546,17 @@ EdgeListGraph EdgeListGraph::getPAG(std::vector<Node>& latent) {
     return pag;
 }
 
-
-//' Create the completed partially directed acyclic graph (CPDAG) for the input directed acyclic graph (DAG). The CPDAG represents the Markov equivalence class of the true cauasl DAG. The PC algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the CPDAG rather than the causal DAG.
+//' Calculate the CPDAG for a given DAG
+//'
+//' @description Create the completed partially directed acyclic graph (CPDAG) for the input directed acyclic graph (DAG). The CPDAG represents the Markov equivalence class of the true cauasl DAG. The PC algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the CPDAG rather than the causal DAG.
 //'
 //' @param graph The graph object used to generate the CPDAG. Should be the ground-truth causal DAG
 //' @return The CPDAG corresponding to the input DAG
 //' @export
 //' @examples
-//' data(dag_n10000_p10)
-//' cpdag <- rCausalMGM::cpdag(dag_n10000_p10)
+//' sim <- simRandomDAG(200, 25)
+//' sim$cpdag <- cpdag(sim$graph)
+//' print(sim$cpdag)
 // [[Rcpp::export]]
 Rcpp::List cpdag(const Rcpp::List& graph) {
     EdgeListGraph dag(graph);
@@ -2568,14 +2567,17 @@ Rcpp::List cpdag(const Rcpp::List& graph) {
 }
 
 
-//' Create the moral graph for the input directed acyclic graph (DAG). The moral graph is the equivalent undirected representation corresponding to the input DAG.
+//' Calculate the moral graph for a given DAG
+//'
+//' @description Create the moral graph for the input directed acyclic graph (DAG). The moral graph is the undirected graphical model that is equivalent to the input DAG.
 //'
 //' @param graph The graph object used to generate the moral graph. Should be the ground-truth causal DAG
 //' @return The moral graph corresponding to the input DAG
 //' @export
 //' @examples
-//' data(dag_n10000_p10)
-//' moral <- rCausalMGM::moral(dag_n10000_p10)
+//' sim <- simRandomDAG(200, 25)
+//' sim$moral <- moral(sim$graph)
+//' print(sim$moral)
 // [[Rcpp::export]]
 Rcpp::List moral(const Rcpp::List& graph) {
     EdgeListGraph dag(graph);
@@ -2586,14 +2588,17 @@ Rcpp::List moral(const Rcpp::List& graph) {
 }
 
 
-//' Create the skeleton graph for the input directed acyclic graph (DAG). The skeleton graph is the undirected graph that contains the same adjacencies as the input DAG.
+//' Calculate the undirected skeleton for a given DAG
+//'
+//' @description Create the skeleton graph for the input directed acyclic graph (DAG). The skeleton graph is the undirected graph that contains the same adjacencies as the input DAG.
 //'
 //' @param graph The graph object used to generate the skeleton graph. Should be the ground-truth causal DAG
 //' @return The skeleton graph corresponding to the input DAG
 //' @export
 //' @examples
-//' data(dag_n10000_p10)
-//' moral <- rCausalMGM::skeleton(dag_n10000_p10)
+//' sim <- simRandomDAG(200, 25)
+//' sim$skeleton <- skeleton(sim$graph)
+//' print(sim$skeleton)
 // [[Rcpp::export]]
 Rcpp::List skeleton(const Rcpp::List& graph) {
     EdgeListGraph skeleton(graph);
@@ -2608,15 +2613,18 @@ Rcpp::List skeleton(const Rcpp::List& graph) {
 }
 
 
-//' Create the partial ancestral graph (PAG) for the input directed acyclic graph (DAG). The PAG represents the Markov equivalence class of the true cauasl MAG. The FCI algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the PAG rather than the causal MAG.
+//' Calculate the PAG for a given DAG and set of latent variables
+//'
+//' @description Create the partial ancestral graph (PAG) for the input directed acyclic graph (DAG). The PAG represents the Markov equivalence class of the true cauasl MAG. The FCI algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the PAG rather than the causal MAG.
 //'
 //' @param graph The graph object used to generate the PAG. Should be the ground-truth causal DAG
 //' @param latent The names of latent (unobserved) variables in the causal DAG. The default is NULL.
 //' @return The PAG corresponding to the input DAG
 //' @export
 //' @examples
-//' data(dag_n10000_p10)
-//' cpdag <- rCausalMGM::pag(dag_n10000_p10)
+//' sim <- simRandomDAG(200, 25)
+//' sim$pag <- pag(sim$graph)
+//' print(sim$pag)
 // [[Rcpp::export]]
 Rcpp::List pag(const Rcpp::List& graph,
 	       Rcpp::Nullable<Rcpp::StringVector> latent = R_NilValue) {
@@ -2644,8 +2652,8 @@ Rcpp::List pag(const Rcpp::List& graph,
 // //' @export
 // //' @examples
 // //' data("data.n100.p25")
-// //' g <- rCausalMGM::mgm(data.n100.p25)
-// //' rCausalMGM::printGraph(g)
+// //' g <- mgm(data.n100.p25)
+// //' printGraph(g)
 // // [[Rcpp::export]]
 // double skeletonSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
 //     double shd = 0.0;
@@ -2689,8 +2697,8 @@ Rcpp::List pag(const Rcpp::List& graph,
 // //' @export
 // //' @examples
 // //' data("data.n100.p25")
-// //' g <- rCausalMGM::mgm(data.n100.p25)
-// //' rCausalMGM::printGraph(g)
+// //' g <- mgm(data.n100.p25)
+// //' printGraph(g)
 // // [[Rcpp::export]]
 // double orientationSHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
 //     double shd = 0.0;
@@ -2729,17 +2737,18 @@ Rcpp::List pag(const Rcpp::List& graph,
 //     return shd;
 // }
 
-
-//' Calculate the Structural Hamming Distance (SHD) between two graphs. This is the sum of the skeleton SHD and the orientation SHD.
+//' Structural Hamming Distance (SHD)
+//'
+//' @description Calculate the Structural Hamming Distance (SHD) between two graphs.
 //'
 //' @param graph1 A graph object
 //' @param graph2 A graph object
 //' @return The SHD btween the two graph objects
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgm(data.n100.p25)
-//' rCausalMGM::printGraph(g)
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' SHD(g, cpdag(sim$graph))
 // [[Rcpp::export]]
 Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
     double SHD=0.0, orientSHD=0.0, skelSHD=0.0;
@@ -2807,18 +2816,18 @@ Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
     return Rcpp::NumericVector::create(Rcpp::_["SHD"] = SHD);
 }
 
-
-//' Calculate the skeleton precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
+//' Adjacency Precision-Recall Metrics
+//'
+//' @description Calculate the skeleton precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
 //'
 //' @param estimate An estimated graph object
 //' @param groundTruth A ground truth graph object
 //' @return The skeleton precision, recall, F1, and MCC, between the two graph objects
 //' @export
 //' @examples
-//' data("train_n10000_p10")
-//' data("dag_n10000_p10")
-//' g <- rCausalMGM::cpcStable(train_n10000_p10, rCausalMGM::cpdag(dag_n10000_p10))
-//' rCausalMGM::prMetricsSkeleton(g)
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' prMetricsAdjacency(g, cpdag(sim$graph))
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetricsAdjacency(const Rcpp::List& estimate,
 				       const Rcpp::List& groundTruth) {
@@ -2866,7 +2875,9 @@ Rcpp::NumericVector prMetricsAdjacency(const Rcpp::List& estimate,
 }
 
 
-//' Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
+//' Orientation Precision-Recall Metrics
+//'
+//' @description Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
 //'
 //' @param estimate An estimated graph object
 //' @param groundTruth A ground truth graph object of the same type as the estimated graph object
@@ -2875,9 +2886,9 @@ Rcpp::NumericVector prMetricsAdjacency(const Rcpp::List& estimate,
 //' @export
 //' @examples
 //' data("train_n10000_p10")
-//' data("dag_n10000_p10")
-//' g <- rCausalMGM::cpcStable(train_n10000_p10)
-//' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' prMetricsOrientation(g, cpdag(sim$graph))
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 					 const Rcpp::List& groundTruth,
@@ -3116,18 +3127,18 @@ Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 }
 
 
-//' Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
+//' Causal Orientaion Precision-Recall Metrics for CPDAGs
 //'
-//' @param estimate An estimated graph object
-//' @param groundTruth A ground truth graph object of the same type as the estimated graph object
-//' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
-//' @return The orientation precision, recall, F1, and MCC, between the two graph objects
+//' @description Calculate the causal orientation precision, recall, and F1 between an estimated CPDAG and ground truth graph causal DAG.
+//'
+//' @param estimate An estimated graph object.
+//' @param groundTruthDAG A ground truth graph object of the type "directed acyclic graph".
+//' @return The causal orientation precision, recall, and F1 between the two graph objects
 //' @export
 //' @examples
-//' data("train_n10000_p10")
-//' data("dag_n10000_p10")
-//' g <- rCausalMGM::cpcStable(train_n10000_p10)
-//' rCausalMGM::prMetricsOrientation(g, rCausalMGM::cpdag(dag_n10000_p10))
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' prMetricsCausal(g, sim$graph)
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 				    const Rcpp::List& groundTruthDAG) {
@@ -3362,18 +3373,18 @@ Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 }
 
 
-
-//' Calculate the precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the skeleton and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the skeleton PR metrics and the orientation PR metrics.
+//' Combined adjaceny and orientation precision-recall metrics
+//'
+//' @description Calculate the precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the adjacencies and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the adjacency PR metrics and the orientation PR metrics.
 //' @param estimate An estimated graph object
 //' @param groundTruth A ground truth graph object of the same type as the estimated graph object
 //' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
 //' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 //' @export
 //' @examples
-//' data("train_n10000_p10")
-//' data("dag_n10000_p10")
-//' g <- rCausalMGM::cpcStable(train_n10000_p10)
-//' rCausalMGM::prMetrics(g, rCausalMGM::cpdag(dag_n10000_p10))
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' prMetrics(g, cpdag(sim$graph))
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetrics(const Rcpp::List& estimate,
 			      const Rcpp::List& groundTruth,
@@ -3396,17 +3407,18 @@ Rcpp::NumericVector prMetrics(const Rcpp::List& estimate,
 }
 
 
-//' Calculate the SHD, precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the skeleton and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the skeleton PR metrics and the orientation PR metrics.
+//' Combined graph recovery metrics
+//'
+//' @description Calculate the SHD, precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the adjacencies and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the SHD, adjacency PR metrics, and the orientation PR metrics.
 //' @param estimate An estimated graph object
 //' @param groundTruth A ground truth graph object of the same type as the estimated graph object
 //' @param groundTruthDAG A ground truth graph object containing the true causal DAG. Only necessary for calculating the or precision, recall, F1, and MCC for partial ancestral graphs (PAGs)
 //' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 //' @export
 //' @examples
-//' data("train_n10000_p10")
-//' data("dag_n10000_p10")
-//' g <- rCausalMGM::cpcStable(train_n10000_p10)
-//' rCausalMGM::allMetrics(g, rCausalMGM::cpdag(dag_n10000_p10))
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' allMetrics(g, cpdag(sim$graph))
 // [[Rcpp::export]]
 Rcpp::NumericVector allMetrics(const Rcpp::List& estimate,
 			       const Rcpp::List& groundTruth,

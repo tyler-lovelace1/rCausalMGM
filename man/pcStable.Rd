@@ -2,11 +2,13 @@
 % Please edit documentation in R/RcppExports.R
 \name{pcStable}
 \alias{pcStable}
-\title{Runs the causal algorithm PC-Stable on a dataset}
+\title{Runs the causal discovery algorithm PC-Stable on a dataset.}
 \usage{
 pcStable(
-  df,
+  data,
   initialGraph = NULL,
+  knowledge = NULL,
+  orientRule = as.character(c("majority")),
   alpha = 0.05,
   threads = -1L,
   fdr = FALSE,
@@ -15,28 +17,32 @@ pcStable(
 )
 }
 \arguments{
-\item{df}{The dataframe}
+\item{data}{A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.}
 
-\item{initialGraph}{An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.}
+\item{initialGraph}{An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.}
 
-\item{alpha}{The p value below which results are considered significant. Defaults to 0.05.}
+\item{knowledge}{A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.}
 
-\item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
+\item{orientRule}{Determines which of the four possible orientation rules will be utilized to orient colliders in the PC-Stable algorithm. Possible options are "majority", "maxp", "conservative", and "sepsets". The default value is "majority". Additionally, a vector of valid orientation rules can be provided, and pcStable will return a list containing the graphs learned with each.}
 
-\item{fdr}{Whether or not to run with FDR correction for the adjacencies.}
+\item{alpha}{A numeric value containing the significance threshold alpha for the conditional independence tests used during constraint-based causal discovery. This parameter directly controls graph sparsity, with low values of alpha yielding sparse graphs and high values yielding dense graphs. The default value is 0.05.}
 
-\item{rank}{Whether or not to use rank-based associations as opposed to linear}
+\item{threads}{An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.}
 
-\item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
+\item{fdr}{A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.}
+
+\item{rank}{A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.}
+
+\item{verbose}{A logical value indicating whether to print progress updates. The default is FALSE.}
 }
 \value{
-The calculated search graph
+The CPDAG learned by PC-Stable.
 }
 \description{
-Runs the causal algorithm PC-Stable on a dataset
+Runs the causal discovery algorithm PC-Stable on a dataset. The PC-Stable algorithm is designed to recover the Markov equivalence class of causal DAGs that could give rise to the observed conditional independence relationships under the assumption of causal sufficiency. A dataset is said to be causally sufficient if all variables relevant to the causal process are observed (i.e. there are no latent confounders). The resulting graph is a completed partially directed acyclic graph (CPDAG) containing directed edges where the causal orientation can be uniquely determined and an undirected edge where multiple orientations are possible.
 }
 \examples{
-data("data.n100.p25")
-ig <- rCausalMGM::mgm(data.n100.p25)
-g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+sim <- simRandomDAG(200, 25)
+g <- pcStable(sim$data)
+print(g)
 }

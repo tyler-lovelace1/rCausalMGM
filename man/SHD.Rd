@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{SHD}
 \alias{SHD}
-\title{Calculate the Structural Hamming Distance (SHD) between two graphs. This is the sum of the skeleton SHD and the orientation SHD.}
+\title{Structural Hamming Distance (SHD)}
 \usage{
 SHD(graph1, graph2)
 }
@@ -15,10 +15,10 @@ SHD(graph1, graph2)
 The SHD btween the two graph objects
 }
 \description{
-Calculate the Structural Hamming Distance (SHD) between two graphs. This is the sum of the skeleton SHD and the orientation SHD.
+Calculate the Structural Hamming Distance (SHD) between two graphs.
 }
 \examples{
-data("data.n100.p25")
-g <- rCausalMGM::mgm(data.n100.p25)
-rCausalMGM::printGraph(g)
+sim <- simRandomDAG(200, 25)
+g <- pcStable(sim$data)
+SHD(g, cpdag(sim$graph))
 }

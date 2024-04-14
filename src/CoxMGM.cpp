@@ -651,7 +651,7 @@ double CoxMGM::calcLambdaMax() {
     arma::mat betaNorms = arma::abs(nullGrad.beta) / arma::mat(weightMat.submat(0, 0, p-1, p-1));
     double lambdaMax = betaNorms.max();
 
-    Rcpp::Rcout << "lambdaMax after beta = " << lambdaMax << std::endl;
+    // Rcpp::Rcout << "lambdaMax after beta = " << lambdaMax << std::endl;
 
     // Rcpp::Rcout << "NSV betaNorms = " << betaNorms << std::endl;
 
@@ -673,7 +673,7 @@ double CoxMGM::calcLambdaMax() {
     }
     // Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
 
-    Rcpp::Rcout << "lambdaMax after theta = " << lambdaMax << std::endl;
+    // Rcpp::Rcout << "lambdaMax after theta = " << lambdaMax << std::endl;
 
     /*
     for r=1:q
@@ -697,13 +697,13 @@ double CoxMGM::calcLambdaMax() {
 
     // Rcpp::Rcout << "Independent Gamma^2 for Survival0:\n" << arma::square(nullGrad.gamma.col(0).t());
 
-    Rcpp::Rcout << "lambdaMax after phi = " << lambdaMax << std::endl;
+    // Rcpp::Rcout << "lambdaMax after phi = " << lambdaMax << std::endl;
 
     double gammaMax = (abs(nullGrad.gamma) / weightMat.submat(0, p+q, p-1, p+q+r-1)).max();
 
     lambdaMax = std::max(lambdaMax, gammaMax);
 
-    Rcpp::Rcout << "lambdaMax after gamma = " << lambdaMax << std::endl;
+    // Rcpp::Rcout << "lambdaMax after gamma = " << lambdaMax << std::endl;
 
 
     // Rcpp::Rcout << "Independent Psi^2 for Survival0:\n";
@@ -717,7 +717,7 @@ double CoxMGM::calcLambdaMax() {
     }
     // Rcpp::Rcout << "\n";
 
-    Rcpp::Rcout << "lambdaMax after psi = " << lambdaMax << std::endl;
+    // Rcpp::Rcout << "lambdaMax after psi = " << lambdaMax << std::endl;
 
     // Rcpp::Rcout << "Finished\n";
 
@@ -3272,6 +3272,12 @@ std::vector<EdgeListGraph> CoxMGM::searchPath(std::vector<double> lambdas,
     }
     if (verbose) RcppThread::Rcout << std::endl;;
     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-start).count();
+    double elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-start).count();
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  CoxMGM Path Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
     return pathGraphs;
 }
 

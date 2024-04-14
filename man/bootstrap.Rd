@@ -2,48 +2,43 @@
 % Please edit documentation in R/RcppExports.R
 \name{bootstrap}
 \alias{bootstrap}
-\title{Runs bootstrapping for a selected causal discovery algorithm on the dataset.}
+\title{Runs bootstrapping for a causal graph on the dataset.}
 \usage{
 bootstrap(
-  df,
-  algorithm = as.character(c("mgm-pc50", "mgm", "pc", "cpc", "pcm", "pc50", "fci",
-    "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-fci", "mgm-cfci", "mgm-fcim",
-    "mgm-fci50")),
-  ensemble = as.character(c("highest", "majority")),
-  lambda = as.numeric(c(0.2, 0.2, 0.2)),
-  alpha = 0.05,
+  data,
+  graph,
+  knowledge = NULL,
   numBoots = 20L,
   threads = -1L,
+  replace = FALSE,
   rank = FALSE,
   verbose = FALSE
 )
 }
 \arguments{
-\item{df}{The dataframe}
+\item{data}{A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.}
 
-\item{algorithm}{string indicating the name of the causal discovery algorithm to bootstrap. Causal discovery algorithms can be run alone or with mgm to learn an initial graph. Options include "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-pc50", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50." The default value is set to "mgm-pc50."}
+\item{graph}{A graph object containing the graph to estimate the stability of through bootstrapping.}
 
-\item{ensemble}{Method for construncting an ensemble graph from bootstrapped graphs. Options include "highest", which orients edges according to the orientation with the highest bootstrap probability, or "majority", which only orients edges if they have an orientation with a bootstrap probability > 0.5. Otherwise, the adjacency is included but the edge is left unoreineted. The default value is "highest."}
+\item{knowledge}{A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.}
 
-\item{lambda}{A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.}
+\item{numBoots}{The number of bootstrap samples to run. The default is 20.}
 
-\item{alpha}{The p value below which results are considered significant. Defaults to 0.05.}
+\item{threads}{An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.}
 
-\item{numBoots}{The number of bootstrap samples to run. Defaults to 20.}
+\item{replace}{A logical value indicating whether to use sampling with replacement or to draw subsamples of size floor(0.632 * N). The default value is FALSE.}
 
-\item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
+\item{rank}{A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.}
 
-\item{rank}{Whether or not to use rank-based associations as opposed to linear}
-
-\item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
-}
-\value{
-The calculated search graph with a table of edge stabilities
+\item{verbose}{A logical value indicating whether to print progress updates. The default is FALSE.}
 }
 \description{
-Runs bootstrapping for a selected causal discovery algorithm on the dataset.
+Runs bootstrapping for a causal graph on the dataset. This function can be used to estimate the stability of edge adjacencies and orientations in the causal graph. It returns an ensemble graph which consists of the most common edges accross bootstrap samples. The ensemble graph is constructed based on edge-wise probabilities, so it is not guaranteed to be a valid CPDAG or PAG. The ensemble graph's stabilites entry contains information about the frequency of each possible orientation for each edge that appears at least once across bootstrap samples.
 }
 \examples{
-data("data.n100.p25")
-g.boot <- rCausalMGM::bootstrap(data.n100.p25)
+sim <- simRandomDAG(200, 25)
+g <- pcStable(sim$data)
+g.boot <- bootstrap(sim$data, g)
+print(g.boot)
+print(g.boot$stabilities[1:6,])
 }

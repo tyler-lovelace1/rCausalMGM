@@ -1,16 +1,22 @@
 Package: rCausalMGM
 Type: Package
-Title: What the Package Does Using Title Case
+Title: Scalable Causal Discovery and Model Selection on Mixed Datasets
 Version: 1.0
-Date: 2019-12-12
-Author: Your Name
-Maintainer: Takis Benos <benos@pitt.edu>
-Description: More details about what the package does. See
-              <http://cran.r-project.org/doc/manuals/r-release/R-exts.html#The-DESCRIPTION-file> for details on how to write this
-              part.
+Date: 2024-04-14
+Author: Tyler C Lovelace, Panayiotis V Benos
+Maintainer: Panayiotis V Benos <pbenos@ufl.edu>
+Description: rCasualMGM is a scalable implementation of CausalMGM, a method for learning causal graphical models over mixed (continuous and discrete) data. rCausalMGM scales to high-dimensional mixed datasets by utilizing a convex score-based method for learning the initial (moralized) graph and a producer-consumer scheme that efficiently performs the conditional independence tests in constraint-based causal discovery algorithms in parallel. Each individual component of the CausalMGM procedure, such as MGM and the causal discovery algorithms PC-Stable and FCI-Stable, are also available individually. Finally, in real-world applications, model selection is essential. As such, rCausalMGM implements three approaches to model selection: (1) information criteria based on model likelihood and complexity, (2) a cross-validation approach to estimating model likelihood on out-of-sample data, and (3) stability-based approaches that assesses how stable a graphical model is across subsamples of the dataset.
 License: GPL (>= 2)
-Imports: Rcpp (>= 1.0.3)
-LinkingTo: Rcpp, RcppArmadillo, BH, RcppThread
+Imports:
+	Rcpp (>= 1.0.3),
+	survival,
+	Rgraphviz,
+	graph
+LinkingTo:
+	BH,
+	Rcpp,
+	RcppArmadillo,
+	RcppThread
 SystemRequirements: C++14
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Encoding: UTF-8

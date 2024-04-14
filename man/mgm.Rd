@@ -4,16 +4,16 @@
 \alias{mgm}
 \title{Calculate the MGM graph on a dataset}
 \usage{
-mgm(df, lambda = as.numeric(c(0.2, 0.2, 0.2)), rank = FALSE, verbose = FALSE)
+mgm(data, lambda = as.numeric(c(0.2, 0.2, 0.2)), rank = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{df}{The dataframe}
+\item{data}{A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.}
 
-\item{lambda}{A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.}
+\item{lambda}{A numeric vector of three values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.}
 
-\item{rank}{Whether or not to use rank-based associations as opposed to linear}
+\item{rank}{A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.}
 
-\item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
+\item{verbose}{A logical value indicating whether to print updates on the progress of optimizing MGM. The default is FALSE.}
 }
 \value{
 The calculated MGM graph
@@ -22,6 +22,7 @@ The calculated MGM graph
 Calculate the MGM graph on a dataset
 }
 \examples{
-data("data.n100.p25")
-g <- rCausalMGM::mgm(data.n100.p25)
+sim <- simRandomDAG(200, 25)
+g <- mgm(sim$data)
+print(g)
 }

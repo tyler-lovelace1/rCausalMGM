@@ -2,20 +2,15 @@
 % Please edit documentation in R/RcppExports.R
 \name{saveGraph}
 \alias{saveGraph}
-\title{Save a graph to a file}
+\title{Save a graph to a file. Supported file types are ".txt" and ".sif".}
 \usage{
-saveGraph(list, filename)
+saveGraph(graph, filename)
 }
 \arguments{
-\item{list}{The graph object}
+\item{graph}{The graph object}
 
-\item{filename}{The graph file}
+\item{filename}{The graph filename}
 }
 \description{
-Save a graph to a file
-}
-\examples{
-data("data.n100.p25")
-g <- rCausalMGM::mgm(data.n100.p25)
-rCausalMGM::saveGraph(g, "graphs/mgm_graph.txt")
+Save a graph to a file. Supported file types are ".txt" and ".sif".
 }

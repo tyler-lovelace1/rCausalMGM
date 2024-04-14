@@ -20,13 +20,13 @@
 //' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
 //' @param lambda A numeric vector of three values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-//' @param verbose A logical value indicating whether to print updates on the progress of opti-\mizing MGM. The default is FALSE.
+//' @param verbose A logical value indicating whether to print updates on the progress of optimizing MGM. The default is FALSE.
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' sim <- rCausalMGM::simRandomDAG(200, 25)
-//' g <- rCausalMGM::mgm(sim$data)
-//` print(g)
+//' sim <- simRandomDAG(200, 25)
+//' g <- mgm(sim$data)
+//' print(g)
 // [[Rcpp::export]]
 Rcpp::List mgm(
     const Rcpp::DataFrame &data, 
@@ -71,24 +71,25 @@ Rcpp::List mgm(
     return result;
 }
 
-
-//' Calculate the CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package.
+//' Calculate the CoxMGM graph on a dataset.
+//'
+//' @description Calculate the CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package.
 //'
 //' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
 //' @param lambda A numeric vector of five values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, the third for discrete-discrete, the fourth for continuous-survival, and the fifth for discrete-survival. Defaults to c(0.2, 0.2, 0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-//' @param verbose A logical value indicating whether to print updates on the progress of opti-\mizing MGM. The default is FALSE.
-//' @return The calculated MGM graph
+//' @param verbose A logical value indicating whether to print updates on the progress of optimizing MGM. The default is FALSE.
+//' @return The calculated CoxMGM graph
 //' @export
 //' @examples
-//' sim <- rCausalMGM::simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25)
 //' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
 //' censtime1 <- sample(time1)
 //' event1 <- as.integer(time1 < censtime1)
 //' time1 <- pmin(time1, censtime1)
 //' sim$data$Survival1 <- survival::Surv(time1, event1)
-//' ig <- rCausalMGM::coxmgm(sim$data)
-//` print(ig)
+//' ig <- coxmgm(sim$data)
+//' print(ig)
 // [[Rcpp::export]]
 Rcpp::List coxmgm(
     const Rcpp::DataFrame &data, 
@@ -147,20 +148,21 @@ Rcpp::List coxmgm(
     return result;
 }
 
-
-//' Calculate the solution path for an MGM graph on a dataset
+//' Estimates a solution path for MGM
+//'
+//' @description Calculate the solution path for an MGM graph on a dataset. It also returns the models selected by the BIC and AIC scores.
 //'
 //' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
 //' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
-//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-//' @return The a graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
+//' @return A graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
 //' @export
 //' @examples
-//' sim <- rCausalMGM::simRandomDAG(200, 25)
-//' ig <- rCausalMGM::mgm(sim$data)
-//` print(ig.path)
+//' sim <- simRandomDAG(200, 25)
+//' ig.path <- mgmPath(sim$data)
+//' print(ig.path)
 // [[Rcpp::export]]
 Rcpp::List mgmPath(
     const Rcpp::DataFrame &data,
@@ -246,23 +248,25 @@ Rcpp::List mgmPath(
 }
 
 
-//' Calculate the solution path for a CoxMGM graph on a dataset
+//' Estimates a solution path for CoxMGM
+//'
+//' @description Calculate the solution path for a CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package. It also returns the models selected by the BIC and AIC scores.
 //'
 //' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
 //' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
-//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-//' @return The a graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
+//' @return A graphPath object that contains CoxMGM graphs learned by the solution path, as well as the BIC and AIC selected models
 //' @export
 //' @examples
-//' sim <- rCausalMGM::simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25)
 //' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
 //' censtime1 <- sample(time1)
 //' event1 <- as.integer(time1 < censtime1)
 //' time1 <- pmin(time1, censtime1)
 //' sim$data$Survival1 <- survival::Surv(time1, event1)
-//' ig.path <- rCausalMGM::coxmgmPath(sim$data)
+//' ig.path <- coxmgmPath(sim$data)
 //' print(ig.path)
 // [[Rcpp::export]]
 Rcpp::List coxmgmPath(
@@ -298,10 +302,6 @@ Rcpp::List coxmgmPath(
 
     double logLambdaMax = std::log10(mgm.calcLambdaMax());
 
-    Rcpp::Rcout << "LambdaMax: " << std::pow(10, logLambdaMax) << std::endl;
-
-    // return Rcpp::List::create();
-
     logLambdaMax = std::min(logLambdaMax,
     			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
     						      ((double) ds.getNumRows()))));
@@ -319,23 +319,11 @@ Rcpp::List coxmgmPath(
 	}
     }
 
-    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
     arma::vec loglik(l.size(), arma::fill::zeros);
     arma::vec nParams(l.size(), arma::fill::zeros);
     std::vector<EdgeListGraph> mgmGraphs = mgm.searchPath(l, loglik, nParams);
 
     RcppThread::checkUserInterrupt();
-
-    // auto elapsedTime = mgm.getElapsedTime();
-
-    // if (v) {
-    // 	if (elapsedTime < 100*1000) {
-    // 	    Rcpp::Rcout.precision(2);
-    // 	} else {
-    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-    // 	}
-    //     Rcpp::Rcout << "CoxMGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    // }
 
     Rcpp::List graphList;
     
@@ -362,30 +350,27 @@ Rcpp::List coxmgmPath(
 
     result.attr("class") = "graphPath";
     
-    // Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
-    // 					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
-    // 					   Rcpp::_["loglik"] = loglik,
-    // 					   Rcpp::_["nParams"] = nParams,
-    // 					   Rcpp::_["AIC"] = 2*nParams - 2*loglik,
-    // 					   Rcpp::_["BIC"] = std::log(n)*nParams - 2*loglik);
-    
-
     return result;
 }
 
 
-//' Calculate the solution path for an MGM graph on a dataset with k-fold cross-validation
+//' Implements k-fold cross-validation for MGM
 //'
-//' @param data The dataframe
-//' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
-//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated MGM graph
+//' @description Calculate the solution path for an MGM graph on a dataset with k-fold cross-validation. This function returns the graph that minimizes negative log(pseudolikelihood) and the graph selected by the one standard error rule.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
+//' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
+//' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphCV object that contains the minimum and one standard error rule selected graphs.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::mgmCV(data.n100.p25)
+//' sim <- simRandomDAG(200, 25)
+//' ig.cv <- mgmCV(sim$data)
+//' print(ig.cv)
 // [[Rcpp::export]]
 Rcpp::List mgmCV(
     const Rcpp::DataFrame &data,
@@ -442,11 +427,6 @@ Rcpp::List mgmCV(
     arma::uvec _foldid;
     
     if (foldid.isNull()) {
-	// Rcpp::NumericVector folds = Rcpp::as<Rcpp::NumericVector>(arma::linspace(1, nfolds));
-	// folds = Rcpp::rep_len(folds, n);
-	// arma::vec folds = arma::linspace(1, nfolds, nfolds);
-	// folds = arma::repmat(folds, 1, std::ceil(n/((double)nfolds)));
-	// _foldid = arma::conv_to<arma::uvec>::from(folds(Rcpp::as<arma::uvec>(Rcpp::sample(n,n))-1));
 	_foldid = arma::linspace<arma::uvec>(1, n, n) - 1;
 	_foldid.transform([nfolds](arma::uword val) { return val % nfolds + 1; });
 	_foldid = arma::shuffle(_foldid);
@@ -462,46 +442,12 @@ Rcpp::List mgmCV(
 	throw std::invalid_argument("Invalid input for foldid. Values must be in the range 1:nfolds, with folds of approximately equal size.");
     }
 
-    // Rcpp::Rcout << "Fold ids: " << _foldid.t() << std::endl;
-    // Rcpp::Rcout << "Beginning path search for lambdas " << _lambda.t() << std::endl;
     arma::mat loglik(l.size(), arma::max(_foldid), arma::fill::zeros);
     arma::uvec index(2, arma::fill::zeros);
-    // arma::vec nParams(l.size(), arma::fill::zeros);
     std::vector<EdgeListGraph> cvGraphs = mgm.searchPathCV(l, _foldid, loglik, index);
 
     RcppThread::checkUserInterrupt();
 
-    // double elapsedTime = mgm.getElapsedTime();
-
-    // if (verbose) {
-    // 	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
-    // 	elapsedTime = std::round(elapsedTime * factor) / factor;
-    //     Rcpp::Rcout << "  MGM Cross-Validation Elapsed Time =  " << elapsedTime << " s" << std::endl;
-    // }
-
-
-    // auto elapsedTime = mgm.getElapsedTime();
-
-    // if (v) {
-    // 	if (elapsedTime < 100*1000) {
-    // 	    Rcpp::Rcout.precision(2);
-    // 	} else {
-    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-    // 	}
-    //     Rcpp::Rcout << "MGM Cross-Validation Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    // }
-
-    // Rcpp::List graphList;
-    
-    // for (int i = 0; i < l.size(); i++) {
-    //     graphList.push_back(mgmGraphs[i].toList());
-
-    // }
-
-    // uint minIdx = arma::find(lambdas == cvGraphs[0].getHyperParam("lambda")[1])[0];
-    // uint seIdx = arma::find(lambdas == cvGraphs[1].getHyperParam("lambda")[1])[0];
-
-    // Rcpp::List result;
     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
 					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
     					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
@@ -521,24 +467,26 @@ Rcpp::List mgmCV(
 
 
 
-//' Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed
+//' Implements StEPS and StARS for MGM
 //'
-//' @param data The dataframe
-//' @param lambdas A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
-//' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
-//' @param g The gamma parameter for STEPS. Defaults to 0.05
-//' @param numSub The number of subsets to split the data into. Defaults to 20
-//' @param subSize The size of the subsamples used for STEPS. If the value is -1, the size of the subsamples is set to floor(10*sqrt(n)). If the value is in the range (0,1), the size of the subsamples is set to floor(subSize * n). Otherwise, if subSize is in the range [1,n), the size of the subsamples is set to subSize. Defaults to -1.
+//' @description Calculates the optimal lambda values for the MGM algorithm using StEPS and StARS. Returns a graphSTEPS object that contains the MGMs selected by StEPS and StARS as well as the instability at each value of lambda.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
+//' @param gamma The threshold for edge instability. The default value is 0.05, and it is not recommended to change this value.
+//' @param numSub The number of subsamples of the dataset used to estimate edge instability. The default value is 20.
+//' @param subSize The number of samples to be drawn without replacement for each subsample. The default value is -1. When subSize is -1, it is set to min(floor(0.75 * N), floor(10*sqrt(N))), where N is the number of samples.
 //' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
-//' @param computeStabs If TRUE, stability values are calculated. Defaults to FALSE.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated MGM graph
+//' @param threads An integer value denoting the number of threads to use for parallelization of learning MGMs across subsamples. The default value is -1, which will all available CPUs.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphSTEPS object containing the MGMs selected by StEPS and StARS, as well as the instability of each edge type at each value of lambda.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::steps(data.n100.p25)
+//' sim <- simRandomDAG(200, 25)
+//' ig.steps <- steps(sim$data)
+//' print(ig.steps)
 // [[Rcpp::export]]
 Rcpp::List steps(
     const Rcpp::DataFrame &data, 
@@ -548,7 +496,6 @@ Rcpp::List steps(
     const int numSub = 20,
     const int subSize = -1,
     const bool leaveOneOut = false,
-    const bool computeStabs = false,
     const int threads = -1,
     const bool rank = false,
     const bool verbose = false
@@ -599,7 +546,7 @@ Rcpp::List steps(
 	steps = STEPS(ds, l, gamma, numSub, subSize, leaveOneOut);
       
     if (threads > 0) steps.setThreads(threads);
-    steps.setComputeStabs(computeStabs);
+    // steps.setComputeStabs(false);
     steps.setVerbose(verbose);
 
     arma::mat instabs;
@@ -615,12 +562,12 @@ Rcpp::List steps(
     std::vector<EdgeListGraph> graphs = steps.runStepsPath(instabs, samps);
     Rcpp::List graphSteps = graphs.at(0).toList();
 
-    if (computeStabs) {
-        graphSteps["stabilities"] = steps.getStabs();
-        std::vector<std::string> names = ds.getVariableNames();
-        Rcpp::rownames(graphSteps["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-        Rcpp::colnames(graphSteps["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-    }
+    // if (computeStabs) {
+    //     graphSteps["stabilities"] = steps.getStabs();
+    //     std::vector<std::string> names = ds.getVariableNames();
+    //     Rcpp::rownames(graphSteps["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    //     Rcpp::colnames(graphSteps["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    // }
 
     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.steps"]=graphSteps,
 					   Rcpp::_["graph.stars"]=graphs.at(1).toList(),
@@ -635,21 +582,29 @@ Rcpp::List steps(
 
 }
 
-//' Runs the causal algorithm PC-Stable on a dataset
+
+//' Implements StARS for PC-Stable
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs StARS to select the value of alpha for PC-Stable based on adjacency stability. Returns a graphSTARS object containing the CPDAG selected by StARS and the adjacency instabilities for each alpha.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param orientRule Determines which of the four possible orientation rules will be utilized to orient colliders in the PC-Stable algorithm. Possible options are "majority", "maxp", "conservative", and "sepsets". The default value is "majority". 
+//' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
+//' @param gamma The threshold for edge instability. The default value is 0.01, and it is not recommended to change this value.
+//' @param numSub The number of subsamples of the dataset used to estimate edge instability. The default value is 20.
+//' @param subSize The number of samples to be drawn without replacement for each subsample. The default value is -1. When subSize is -1, it is set to min(floor(0.75 * N), floor(10*sqrt(N))), where N is the number of samples.
+//' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphSTARS object containing the CPDAG selected by StARS and the instabilities at each value of alpha.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+//' sim <- simRandomDAG(200, 25)
+//' g.stars <- pcStars(sim$data)
+//' print(g.stars)
 // [[Rcpp::export]]
 Rcpp::List pcStars(
     const Rcpp::DataFrame& data,
@@ -661,7 +616,6 @@ Rcpp::List pcStars(
     const int numSub = 20,
     const int subSize = -1,
     const bool leaveOneOut = false,
-    const bool computeStabs = false,
     const int threads = -1,
     const bool rank = false,
     const bool verbose = false
@@ -731,12 +685,12 @@ Rcpp::List pcStars(
 
     Rcpp::List graphStars = stars.runStarsPar(instabs, samps).toList();
 
-    if (computeStabs) {
-        graphStars["stabilities"] = stars.getStabs();
-        std::vector<std::string> names = ds.getVariableNames();
-        Rcpp::rownames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-        Rcpp::colnames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-    }
+    // if (computeStabs) {
+    //     graphStars["stabilities"] = stars.getStabs();
+    //     std::vector<std::string> names = ds.getVariableNames();
+    //     Rcpp::rownames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    //     Rcpp::colnames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    // }
 
     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph"]=graphStars,
     					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
@@ -749,22 +703,28 @@ Rcpp::List pcStars(
     return result;
 }
 
-
-//' Runs the causal algorithm FCI-Stable on a dataset
+//' Implements StARS for FCI-Stable
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs StARS to select the value of alpha for FCI-Stable based on adjacency stability. Returns a graphSTARS object containing the PAG selected by StARS and the adjacency instabilities for each alpha.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param orientRule Determines which of the four possible orientation rules will be utilized to orient colliders in the FCI-Stable algorithm. Possible options are "majority", "maxp", "conservative", and "sepsets". The default value is "majority". 
+//' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
+//' @param gamma The threshold for edge instability. The default value is 0.01, and it is not recommended to change this value.
+//' @param numSub The number of subsamples of the dataset used to estimate edge instability. The default value is 20.
+//' @param subSize The number of samples to be drawn without replacement for each subsample. The default value is -1. When subSize is -1, it is set to min(floor(0.75 * N), floor(10*sqrt(N))), where N is the number of samples.
+//' @param leaveOneOut If TRUE, performs leave-one-out subsampling. Defaults to FALSE.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphSTARS object containing the PAG selected by StARS and the instabilities at each value of alpha.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+//' sim <- simRandomDAG(200, 25)
+//' g.stars <- fciStars(sim$data)
+//' print(g.stars)
 // [[Rcpp::export]]
 Rcpp::List fciStars(
     const Rcpp::DataFrame& data,
@@ -776,7 +736,6 @@ Rcpp::List fciStars(
     const int numSub = 20,
     const int subSize = -1,
     const bool leaveOneOut = false,
-    const bool computeStabs = false,
     const int threads = -1,
     const bool rank = false,
     const bool verbose = false
@@ -846,12 +805,12 @@ Rcpp::List fciStars(
 
     Rcpp::List graphStars = stars.runStarsPar(instabs, samps).toList();
 
-    if (computeStabs) {
-        graphStars["stabilities"] = stars.getStabs();
-        std::vector<std::string> names = ds.getVariableNames();
-        Rcpp::rownames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-        Rcpp::colnames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-    }
+    // if (computeStabs) {
+    //     graphStars["stabilities"] = stars.getStabs();
+    //     std::vector<std::string> names = ds.getVariableNames();
+    //     Rcpp::rownames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    //     Rcpp::colnames(graphStars["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
+    // }
 
     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph"]=graphStars,
     					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
@@ -865,85 +824,25 @@ Rcpp::List fciStars(
 }
 
 
-// //' Runs the causal algorithm PC-Stable on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List pcStable(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-//     const double alpha = 0.05,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-
-//     IndTestMultiCox itm(ds, alpha);
-
-//     PcStable pcs((IndependenceTest*) &itm);
-//     if (threads > 0) pcs.setThreads(threads);
-//     pcs.setVerbose(verbose);
-//     pcs.setFDR(fdr);
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         pcs.setInitialGraph(&ig);
-//     }
-//     Knowledge k;
-//     if (!knowledge.isNull()) {
-// 	Rcpp::List _knowledge(knowledge);
-// 	k = Knowledge(ds.getVariables(), _knowledge);
-// 	pcs.setKnowledge(k);
-//     }
-
-//     Rcpp::List result = pcs.search().toList();
-
-//     // ds.deleteVariables();
-
-//     return result;
-// }
-
-//' Runs the causal algorithm PC-Stable on a dataset
+//' Runs the causal discovery algorithm PC-Stable on a dataset.
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs the causal discovery algorithm PC-Stable on a dataset. The PC-Stable algorithm is designed to recover the Markov equivalence class of causal DAGs that could give rise to the observed conditional independence relationships under the assumption of causal sufficiency. A dataset is said to be causally sufficient if all variables relevant to the causal process are observed (i.e. there are no latent confounders). The resulting graph is a completed partially directed acyclic graph (CPDAG) containing directed edges where the causal orientation can be uniquely determined and an undirected edge where multiple orientations are possible.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param orientRule Determines which of the four possible orientation rules will be utilized to orient colliders in the PC-Stable algorithm. Possible options are "majority", "maxp", "conservative", and "sepsets". The default value is "majority". Additionally, a vector of valid orientation rules can be provided, and pcStable will return a list containing the graphs learned with each.
+//' @param alpha A numeric value containing the significance threshold alpha for the conditional independence tests used during constraint-based causal discovery. This parameter directly controls graph sparsity, with low values of alpha yielding sparse graphs and high values yielding dense graphs. The default value is 0.05.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The CPDAG learned by PC-Stable.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' print(g)
 // [[Rcpp::export]]
 Rcpp::List pcStable(
     const Rcpp::DataFrame& data,
@@ -1018,21 +917,119 @@ Rcpp::List pcStable(
 }
 
 
-//' Runs the causal algorithm PC-Stable on a dataset
+//' Runs the causal discovery algorithm FCI-Stable on a dataset.
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs the causal discovery algorithm FCI-Stable on a dataset. The FCI-Stable algorithm is designed to recover the Markov equivalence class of causal MAGs that could give rise to the observed conditional independence relationships in the causally insufficient case. This means that FCI-Stable can still learn the Markov equivalence class of the true MAG even in the presence of latent confounders and/or selection bias. The resulting graph is a partial ancestral graph (PAG).
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param orientRule Determines which of the four possible orientation rules will be utilized to orient colliders in the FCI-Stable algorithm. Possible options are "majority", "maxp", "conservative", and "sepsets". The default value is "majority". Additionally, a vector of valid orientation rules can be provided, and fciStable will return a list containing the graphs learned with each.
+//' @param alpha A numeric value containing the significance threshold alpha for the conditional independence tests used during constraint-based causal discovery. This parameter directly controls graph sparsity, with low values of alpha yielding sparse graphs and high values yielding dense graphs. The default value is 0.05.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The PAG learned by FCI-Stable.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+//' sim <- simRandomDAG(200, 25)
+//' g <- fciStable(sim$data)
+//' print(g)
+// [[Rcpp::export]]
+Rcpp::List fciStable(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority"),
+    const double alpha = 0.05,
+    const int threads = -1,
+    const bool fdr = false,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
+    
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    
+    IndTestMultiCox itm(ds, alpha);
+    
+    Fci fci((IndependenceTest*) &itm);
+    if (threads > 0) fci.setThreads(threads);
+    fci.setVerbose(verbose);
+    fci.setFDR(fdr);
+    fci.setOrientRule(SepsetProducer::str2rule(_orientRule.at(0)));
+    
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        fci.setInitialGraph(&ig);
+    }
+    
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	fci.setKnowledge(k);
+    }
+
+    EdgeListGraph g = fci.search();
+    Rcpp::List result;
+    if (_orientRule.size() == 1) {
+	result = g.toList();
+    } else {
+	bool first = true;
+	for (std::string rule : _orientRule) {
+	    if (first) {
+		first = false;
+	    } else {
+		g = fci.reorientWithRule(SepsetProducer::str2rule(rule));
+	    }
+	    result.push_back(g.toList(), rule);
+	}
+    }
+    
+    return result;
+}
+
+//' Implements k-fold cross-validation for PC-Stable
+//'
+//' @description Runs k-fold cross-validation to select the value of alpha and orientation rule for PC-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param orientRule A vector of strings to determine which of the orientation rules to test in the cross-validation procedure to select the optimal model. The default is a vector that contains the "majority", "maxp", and "conservative" orientation rules.
+//' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
+//' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
+//' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
+//' @export
+//' @examples
+//' sim <- simRandomDAG(200, 25)
+//' g.cv <- pcCV(sim$data)
+//' print(g.cv)
 // [[Rcpp::export]]
 Rcpp::List pcCV(
     const Rcpp::DataFrame& data,
@@ -1164,21 +1161,27 @@ Rcpp::List pcCV(
 }
 
 
-//' Runs the causal algorithm FCI-Stable on a dataset
+//' Implements k-fold cross-validation for FCI-Stable
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs k-fold cross-validation to select the value of alpha and orientation rule for FCI-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param orientRule A vector of strings to determine which of the orientation rules to test in the cross-validation procedure to select the optimal model. The default is a vector that contains the "majority", "maxp", and "conservative" orientation rules.
+//' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
+//' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
+//' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+//' sim <- simRandomDAG(200, 25)
+//' g.cv <- fciCV(sim$data)
+//' print(g.cv)
 // [[Rcpp::export]]
 Rcpp::List fciCV(
     const Rcpp::DataFrame& data,
@@ -1310,21 +1313,30 @@ Rcpp::List fciCV(
 }
 
 
-//' Runs the causal algorithm PC-Stable on a dataset
+//' Implements k-fold cross-validation for MGM-PC-Stable
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs k-fold cross-validation to select the value of lambda, alpha, and the orientation rule for MGM-PC-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param cvType A string determining whether to perform random search or grid search cross-validation, indicated by "random" or "grid" respectively. The default value is "random".
+//' @param orientRule A vector of strings to determine which of the orientation rules to test in the cross-validation procedure to select the optimal model. The default is a vector that contains the "majority", "maxp", and "conservative" orientation rules.
+//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 20.
+//' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
+//' @param numPoints An integer value containing indicating the number of samples to draw uniformly from the search space if performing random search cross-validation. The default is 60, the number of points required to have a 5\% chance of sampling a model in the top 5\% of the search space.
+//' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
+//' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
+//' sim <- simRandomDAG(200, 25)
+//' g.cv <- mgmpcCV(sim$data)
+//' print(g.cv)
 // [[Rcpp::export]]
 Rcpp::List mgmpcCV(
     const Rcpp::DataFrame& data,
@@ -1502,21 +1514,30 @@ Rcpp::List mgmpcCV(
 }
 
 
-//' Runs the causal algorithm FCI-Stable on a dataset
+//' Implements k-fold cross-validation for MGM-FCI-Stable
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs k-fold cross-validation to select the value of lambda, alpha, and the orientation rule for MGM-FCI-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param cvType A string determining whether to perform random search or grid search cross-validation, indicated by "random" or "grid" respectively. The default value is "random".
+//' @param orientRule A vector of strings to determine which of the orientation rules to test in the cross-validation procedure to select the optimal model. The default is a vector that contains the "majority", "maxp", and "conservative" orientation rules.
+//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 20.
+//' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
+//' @param numPoints An integer value containing indicating the number of samples to draw uniformly from the search space if performing random search cross-validation. The default is 60, the number of points required to have a 5\% chance of sampling a model in the top 5\% of the search space.
+//' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
+//' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
+//' sim <- simRandomDAG(200, 25)
+//' g.cv <- mgmfciCV(sim$data)
+//' print(g.cv)
 // [[Rcpp::export]]
 Rcpp::List mgmfciCV(
     const Rcpp::DataFrame& data,
@@ -1695,972 +1716,25 @@ Rcpp::List mgmfciCV(
 
 
 
-// //' Runs the causal algorithm PC-Stable on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List pcStableBSC(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-//     const int N = 250,
-//     const int threads = -1,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-
-//     std::string rule;
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
-
-//     // std::vector<std::string> validNames = {"majority", "maxp", "conservative", "sepsets"};
-
-//     // rule = "sepsets"; // orientRule[0];
-
-//     // std::transform(rule.begin(), rule.end(), rule.begin(),
-//     // 		   [](unsigned char c){ return std::tolower(c); });
-
-//     // if (std::find(validNames.begin(), validNames.end(), rule) == validNames.end())
-//     // 	throw std::invalid_argument("Orientation rule must be one of {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
-    
-//     BayesIndTestMultiCox itm(ds, 0.05);
-    
-//     PcStable pc((IndependenceTest*) &itm);
-//     if (threads > 0) pc.setThreads(threads);
-//     pc.setVerbose(verbose);
-//     pc.setOrientRule(ORIENT_SEPSETS);
-//     // pc.setFDR(fdr);
-//     // if (rule == "majority")
-//     // 	pc.setOrientRule(ORIENT_MAJORITY);
-//     // if (rule == "maxp")
-//     // 	pc.setOrientRule(ORIENT_MAXP);
-//     // if (rule == "conservative")
-//     // 	pc.setOrientRule(ORIENT_CONSERVATIVE);
-//     // if (rule == "sepsets")
-//     // 	pc.setOrientRule(ORIENT_SEPSETS);
-    
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         pc.setInitialGraph(&ig);
-//     }
-//     Knowledge k;
-//     if (!knowledge.isNull()) {
-// 	Rcpp::List _knowledge(knowledge);
-// 	k = Knowledge(ds.getVariables(), _knowledge);
-// 	pc.setKnowledge(k);
-//     }
-
-//     std::vector<EdgeListGraph> sampledGraphs;
-//     arma::vec scores(N);
-
-//     for (int i = 0; i < N; i++) {
-// 	sampledGraphs.push_back(pc.search());
-// 	scores(i) = pc.getScore();
-//     }
-
-//     Rcpp::List graphList;
-    
-//     for (int i = 0; i < N; i++) {
-//         graphList.push_back(sampledGraphs[i].toList());
-//     }
-
-//     arma::vec probs = arma::exp(scores - arma::max(scores));
-
-//     probs /= arma::accu(probs);
-
-//     arma::uword mapIdx = arma::index_max(scores);
-    
-//     Rcpp::List result = Rcpp::List::create(
-// 	Rcpp::_["graph.map"]=sampledGraphs[mapIdx].toList(),
-// 	Rcpp::_["graphs"]=graphList,
-// 	Rcpp::_["scores"]=scores,
-// 	Rcpp::_["graphPosterior"]=probs);
-    
-//     // ds.deleteVariables();
-    
-//     return result;
-// }
-
-
-
-
-// //' Calculate the solution path for an PC graph on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
-// //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated MGM graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' g <- rCausalMGM::pcPath(data.n100.p25)
-// // [[Rcpp::export]]
-// Rcpp::List pcPath(
-//     const Rcpp::DataFrame& data,
-//     Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
-//     Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("max", "conservative", "majority", "none"),
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-
-//     int n = ds.getNumRows();
-//     int p = ds.getNumColumns();
-
-//     std::vector<double> a(alphas.begin(), alphas.end());
-
-//     arma::vec _alphas(a);
-
-//     _alphas = arma::sort(_alphas, "ascend");
-
-//     arma::vec loglik(_alphas.size(), arma::fill::zeros);
-//     arma::vec nParams(_alphas.size(), arma::fill::zeros);
-//     std::vector<EdgeListGraph> pcGraphs;
-//     std::vector<CausalMGMParams> pcParams;
-//     std::vector<double> l = { 0.5, 0.5, 0.5 };
-
-//     for (arma::uword i = 0; i < _alphas.n_elem; i++) {
-
-// 	IndTestMultiCox itm(ds, _alphas(i));
-
-// 	if (orientRule[0]=="none") {
-
-// 	    PcStable pcs((IndependenceTest*) &itm);
-// 	    if (threads > 0) pcs.setThreads(threads);
-// 	    pcs.setVerbose(verbose);
-// 	    pcs.setFDR(fdr);
-// 	    pcGraphs.push_back(pcs.search());
-
-// 	} else if (orientRule[0]=="max") {
-
-// 	    PcMax pcm((IndependenceTest*) &itm);
-// 	    if (threads > 0) pcm.setThreads(threads);
-// 	    pcm.setVerbose(verbose);
-// 	    pcm.setFDR(fdr);
-// 	    pcGraphs.push_back(pcm.search());
-
-// 	} else if (orientRule[0]=="conservative") {
-
-// 	    CpcStable cpc((IndependenceTest*) &itm);
-// 	    if (threads > 0) cpc.setThreads(threads);
-// 	    cpc.setVerbose(verbose);
-// 	    cpc.setFDR(fdr);
-// 	    pcGraphs.push_back(cpc.search());
-
-// 	} else if (orientRule[0]=="majority") {
-
-// 	    Pc50 pc50((IndependenceTest*) &itm);
-// 	    if (threads > 0) pc50.setThreads(threads);
-// 	    pc50.setVerbose(verbose);
-// 	    pc50.setFDR(fdr);
-// 	    pcGraphs.push_back(pc50.search());
-
-// 	}
-
-// 	CausalMGM causalMGM(ds, pcGraphs.at(i));
-// 	causalMGM.setVerbose(verbose);
-// 	causalMGM.setLambda(l);
-// 	pcParams.push_back(causalMGM.search());
-
-// 	arma::vec par(pcParams.at(i).toMatrix1D());
-// 	loglik(i) = -n * causalMGM.smoothValue(par);
-// 	nParams(i) = causalMGM.getNParams();
-	
-// 	RcppThread::checkUserInterrupt();
-//     }
-
-//     // auto elapsedTime = mgm.getElapsedTime();
-
-//     // if (v) {
-//     // 	if (elapsedTime < 100*1000) {
-//     // 	    Rcpp::Rcout.precision(2);
-//     // 	} else {
-//     // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-//     // 	}
-//     //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-//     // }
-
-//     Rcpp::List graphList;
-    
-//     for (int i = 0; i < a.size(); i++) {
-// 	Rcpp::List pcGraph = pcGraphs[i].toList();
-// 	pcGraph["parameters"] = pcParams[i].toList();
-//         graphList.push_back(pcGraph);
-//     }
-
-//     arma::vec aic = 2*nParams - 2*loglik;
-//     arma::vec bic = std::log(n)*nParams - 2*loglik;
-
-//     arma::uword aicIdx = arma::index_min(aic);
-//     arma::uword bicIdx = arma::index_min(bic);
-    
-//     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=graphList[bicIdx],
-// 					   Rcpp::_["graph.aic"]=graphList[aicIdx],
-// 					   Rcpp::_["graphs"]=graphList,
-// 					   Rcpp::_["lambdas"]=R_NilValue,
-// 					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
-// 					   Rcpp::_["AIC"] = aic,
-// 					   Rcpp::_["BIC"] = bic,
-// 					   Rcpp::_["loglik"] = loglik,
-// 					   Rcpp::_["nParams"] = nParams,
-// 					   Rcpp::_["n"] = n);
-    
-//     result.attr("class") = "graphPath";
-
-//     return result;
-// }
-
-
-// //' Calculate the solution path for an PC graph on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param lambdas A range of lambda values used to calculate a solution path for MGM. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.
-// //' @param nLambda The number of lambda values to fit an MGM for when lambdas is NULL
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated MGM graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' g <- rCausalMGM::pcPath(data.n100.p25)
-// // [[Rcpp::export]]
-// Rcpp::List pcCV(
-//     const Rcpp::DataFrame& data,
-//     Rcpp::NumericVector alphas = Rcpp::NumericVector::create(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05, 0.1),
-//     Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("max", "conservative", "majority", "none"),
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-
-//     int n = ds.getNumRows();
-//     int p = ds.getNumColumns();
-
-//     std::vector<double> a(alphas.begin(), alphas.end());
-
-//     arma::vec _alphas(a);
-
-//     _alphas = arma::sort(_alphas, "ascend");
-
-//     arma::vec loglik(_alphas.size(), arma::fill::zeros);
-//     arma::vec nParams(_alphas.size(), arma::fill::zeros);
-//     std::vector<EdgeListGraph> pcGraphs;
-//     std::vector<CausalMGMParams> pcParams;
-//     std::vector<double> l = { 0.5, 0.5, 0.5 };
-
-//     for (arma::uword i = 0; i < _alphas.n_elem; i++) {
-
-// 	IndTestMultiCox itm(ds, _alphas(i));
-
-// 	if (orientRule[0]=="none") {
-
-// 	    PcStable pcs((IndependenceTest*) &itm);
-// 	    if (threads > 0) pcs.setThreads(threads);
-// 	    pcs.setVerbose(verbose);
-// 	    pcs.setFDR(fdr);
-// 	    pcGraphs.push_back(pcs.search());
-
-// 	} else if (orientRule[0]=="max") {
-
-// 	    PcMax pcm((IndependenceTest*) &itm);
-// 	    if (threads > 0) pcm.setThreads(threads);
-// 	    pcm.setVerbose(verbose);
-// 	    pcm.setFDR(fdr);
-// 	    pcGraphs.push_back(pcm.search());
-
-// 	} else if (orientRule[0]=="conservative") {
-
-// 	    CpcStable cpc((IndependenceTest*) &itm);
-// 	    if (threads > 0) cpc.setThreads(threads);
-// 	    cpc.setVerbose(verbose);
-// 	    cpc.setFDR(fdr);
-// 	    pcGraphs.push_back(cpc.search());
-
-// 	} else if (orientRule[0]=="majority") {
-
-// 	    Pc50 pc50((IndependenceTest*) &itm);
-// 	    if (threads > 0) pc50.setThreads(threads);
-// 	    pc50.setVerbose(verbose);
-// 	    pc50.setFDR(fdr);
-// 	    pcGraphs.push_back(pc50.search());
-
-// 	}
-
-// 	CausalMGM causalMGM(ds, pcGraphs.at(i));
-// 	causalMGM.setVerbose(verbose);
-// 	causalMGM.setLambda(l);
-// 	pcParams.push_back(causalMGM.search());
-
-// 	arma::vec par(pcParams.at(i).toMatrix1D());
-// 	loglik(i) = -n * causalMGM.smoothValue(par);
-// 	nParams(i) = causalMGM.getNParams();
-	
-// 	RcppThread::checkUserInterrupt();
-//     }
-
-//     // auto elapsedTime = mgm.getElapsedTime();
-
-//     // if (v) {
-//     // 	if (elapsedTime < 100*1000) {
-//     // 	    Rcpp::Rcout.precision(2);
-//     // 	} else {
-//     // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-//     // 	}
-//     //     Rcpp::Rcout << "MGM Path Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-//     // }
-
-//     Rcpp::List graphList;
-    
-//     for (int i = 0; i < a.size(); i++) {
-// 	Rcpp::List pcGraph = pcGraphs[i].toList();
-// 	pcGraph["parameters"] = pcParams[i].toList();
-//         graphList.push_back(pcGraph);
-//     }
-
-//     arma::vec aic = 2*nParams - 2*loglik;
-//     arma::vec bic = std::log(n)*nParams - 2*loglik;
-
-//     arma::uword aicIdx = arma::index_min(aic);
-//     arma::uword bicIdx = arma::index_min(bic);
-    
-//     // Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=graphList[bicIdx],
-//     // 					   Rcpp::_["graph.aic"]=graphList[aicIdx],
-//     // 					   Rcpp::_["graphs"]=graphList,
-//     // 					   Rcpp::_["lambdas"]=R_NilValue,
-//     // 					   Rcpp::_["alphas"]=arma::sort(_alphas, "ascend"),
-//     // 					   Rcpp::_["AIC"] = aic,
-//     // 					   Rcpp::_["BIC"] = bic,
-//     // 					   Rcpp::_["loglik"] = loglik,
-//     // 					   Rcpp::_["nParams"] = nParams,
-//     // 					   Rcpp::_["n"] = n);
-
-//     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[1].toList(),
-// 					   Rcpp::_["graph.1se"]=cvGraphs[0].toList(),
-//     					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
-// 					   Rcpp::_["lambda.min"]=cvGraphs[1].getHyperParam("lambda"),
-// 					   Rcpp::_["lambda.1se"]=cvGraphs[0].getHyperParam("lambda"),
-// 					   Rcpp::_["alphas"]=R_NilValue,
-// 					   Rcpp::_["alpha.min"]=R_NilValue,
-// 					   Rcpp::_["alpha.1se"]=R_NilValue,
-// 					   Rcpp::_["foldid"]=_foldid,
-//     					   Rcpp::_["loglik"] = loglik);
-    
-//     result.attr("class") = "graphCV";
-
-//     return result;
-// }
-
-
-// //' Runs the causal algorithm CPC-Stable on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::cpcStable(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List cpcStable(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     const double alpha = 0.05,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-
-//     IndTestMultiCox itm(ds, alpha);
-
-//     CpcStable cpc((IndependenceTest*) &itm);
-//     if (threads > 0) cpc.setThreads(threads);
-//     cpc.setVerbose(verbose);
-//     cpc.setFDR(fdr);
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         cpc.setInitialGraph(&ig);
-//     }
-//     Rcpp::List result = cpc.search().toList();
-
-//     // ds.deleteVariables();
-
-//     return result;
-// }
-
-// //' Runs the causal algorithm PC-Max on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::pcMax(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List pcMax(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     const double alpha = 0.05,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-
-//     IndTestMultiCox itm(ds, alpha);
-
-//     PcMax pcm((IndependenceTest*) &itm);
-//     if (threads > 0) pcm.setThreads(threads);
-//     pcm.setVerbose(verbose);
-//     pcm.setFDR(fdr);
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         pcm.setInitialGraph(&ig);
-//     }
-//     Rcpp::List result = pcm.search().toList();
-
-//     return result;
-// }
-
-
-// //' Runs the causal algorithm PC50 on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::pc50(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List pc50(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     const double alpha = 0.05,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-
-//     IndTestMultiCox itm(ds, alpha);
-
-//     Pc50 pc50((IndependenceTest*) &itm);
-//     if (threads > 0) pc50.setThreads(threads);
-//     pc50.setVerbose(verbose);
-//     pc50.setFDR(fdr);
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         pc50.setInitialGraph(&ig);
-//     }
-//     Rcpp::List result = pc50.search().toList();
-
-//     // ds.deleteVariables();
-
-//     return result;
-// }
-
-
-
-//' Runs the causal algorithm FCI-Stable on a dataset
+//' Runs bootstrapping for a causal graph on the dataset.
 //'
-//' @param data The dataframe
-//' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param fdr Whether or not to run with FDR correction for the adjacencies.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph
+//' @description Runs bootstrapping for a causal graph on the dataset. This function can be used to estimate the stability of edge adjacencies and orientations in the causal graph. It returns an ensemble graph which consists of the most common edges accross bootstrap samples. The ensemble graph is constructed based on edge-wise probabilities, so it is not guaranteed to be a valid CPDAG or PAG. The ensemble graph's stabilites entry contains information about the frequency of each possible orientation for each edge that appears at least once across bootstrap samples.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param graph A graph object containing the graph to estimate the stability of through bootstrapping.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param numBoots The number of bootstrap samples to run. The default is 20.
+//' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
+//' @param replace A logical value indicating whether to use sampling with replacement or to draw subsamples of size floor(0.632 * N). The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' ig <- rCausalMGM::mgm(data.n100.p25)
-//' g <- rCausalMGM::fciStable(data.n100.p25, initialGraph = ig)
-// [[Rcpp::export]]
-Rcpp::List fciStable(
-    const Rcpp::DataFrame& data,
-    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority"),
-    const double alpha = 0.05,
-    const int threads = -1,
-    const bool fdr = false,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(data);
-    ds.dropMissing();
-
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
-
-    int varIdx = StabilityUtils::checkForVariance(ds);
-    if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
-    }
-
-    if (orientRule.size()==0) {
-	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
-    }
-    
-    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
-    
-    IndTestMultiCox itm(ds, alpha);
-    
-    Fci fci((IndependenceTest*) &itm);
-    if (threads > 0) fci.setThreads(threads);
-    fci.setVerbose(verbose);
-    fci.setFDR(fdr);
-    fci.setOrientRule(SepsetProducer::str2rule(_orientRule.at(0)));
-    
-    EdgeListGraph ig;
-    if (!initialGraph.isNull()) {
-        Rcpp::List _initialGraph(initialGraph);
-        ig = EdgeListGraph(_initialGraph, ds);
-        fci.setInitialGraph(&ig);
-    }
-    
-    Knowledge k;
-    if (!knowledge.isNull()) {
-	Rcpp::List _knowledge(knowledge);
-	k = Knowledge(ds.getVariables(), _knowledge);
-	fci.setKnowledge(k);
-    }
-
-    EdgeListGraph g = fci.search();
-    Rcpp::List result;
-    if (_orientRule.size() == 1) {
-	result = g.toList();
-    } else {
-	bool first = true;
-	for (std::string rule : _orientRule) {
-	    if (first) {
-		first = false;
-	    } else {
-		g = fci.reorientWithRule(SepsetProducer::str2rule(rule));
-	    }
-	    result.push_back(g.toList(), rule);
-	}
-    }
-    
-    return result;
-}
-
-
-// //' Runs the causal algorithm CFCI-Stable on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::cfci(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List cfci(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     const double alpha = 0.05,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-    
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-    
-//     IndTestMultiCox itm(ds, alpha);
-    
-//     Cfci cfci((IndependenceTest*) &itm);
-//     if (threads > 0) cfci.setThreads(threads);
-//     cfci.setVerbose(verbose);
-//     cfci.setFDR(fdr);
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         cfci.setInitialGraph(&ig);
-//     }
-    
-//     Rcpp::List result = cfci.search().toList();
-    
-//     // ds.deleteVariables();
-    
-//     return result;
-// }
-
-
-// //' Runs the causal algorithm FCI-Max on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::fciMax(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List fciMax(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     const double alpha = 0.05,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-    
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-    
-//     IndTestMultiCox itm(ds, alpha);
-    
-//     FciMax fcimax((IndependenceTest*) &itm);
-//     if (threads > 0) fcimax.setThreads(threads);
-//     fcimax.setVerbose(verbose);
-//     fcimax.setFDR(fdr);
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         fcimax.setInitialGraph(&ig);
-//     }
-
-//     Rcpp::List result;
-//     try {
-// 	result = fcimax.search().toList();
-//     } catch(std::exception& e) {
-// 	Rcpp::Rcout << e.what() << std::endl;
-//     }
-        
-//     return result;
-// }
-
-
-// //' Runs the causal algorithm FCI50 Stable on a dataset
-// //'
-// //' @param data The dataframe
-// //' @param initialGraph An initial undirected graph to use as a starting point. If NULL, a full graph will be used. Defaults to NULL.
-// //' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-// //' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-// //' @param fdr Whether or not to run with FDR correction for the adjacencies.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::fci50(data.n100.p25, initialGraph = ig)
-// // [[Rcpp::export]]
-// Rcpp::List fci50(
-//     const Rcpp::DataFrame &data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-//     const double alpha = 0.05,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-//     // bool v = Rcpp::is_true(Rcpp::all(verbose));
-//     // bool _fdr = Rcpp::is_true(Rcpp::all(fdr));
-    
-//     IndTestMultiCox itm(ds, alpha);
-    
-//     Fci50 fci50((IndependenceTest*) &itm);
-//     if (threads > 0) fci50.setThreads(threads);
-//     fci50.setVerbose(verbose);
-//     fci50.setFDR(fdr);
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         fci50.setInitialGraph(&ig);
-//     }
-//     Knowledge k;
-//     if (!knowledge.isNull()) {
-// 	Rcpp::List _knowledge(knowledge);
-// 	k = Knowledge(ds.getVariables(), _knowledge);
-// 	fci50.setKnowledge(k);
-//     }
-    
-//     Rcpp::List result = fci50.search().toList();
-    
-//     // ds.deleteVariables();
-    
-//     return result;
-// }
-
-
-// // no export // [[Rcpp::export]]
-// Rcpp::List stars(
-//     const Rcpp::DataFrame& data,
-//     const std::string method, 
-//     Rcpp::Nullable<Rcpp::NumericVector> params = R_NilValue,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     const int maxDiscrete = 5,
-//     const double g = 0.05,
-//     const int numSub = 20,
-//     const bool adjacency = true,
-//     const bool leaveOneOut = false,
-//     const int threads = -1,
-//     const bool verbose = false
-//     ) {
-
-//     // Rcpp::Rcout << "running stars...\n";
-
-//     std::string alg, _method;
-//     std::vector<double> par;
-//     bool adj = Rcpp::is_true(Rcpp::all(adjacency));
-//     bool loo = Rcpp::is_true(Rcpp::all(leaveOneOut));
-//     // bool cs = Rcpp::is_true(Rcpp::all(computeStabs));
-//     bool v = Rcpp::is_true(Rcpp::all(verbose));
-
-//     _method = method;
-
-//     Rcpp::Rcout << _method << std::endl;
-//     std::transform(_method.begin(), _method.end(), _method.begin(),
-// 		   [](unsigned char c){ return std::tolower(c); });
-//     Rcpp::Rcout << _method << std::endl;
-
-//     if (_method == "mgm") {
-// 	alg = "mgm";
-//     } else if (_method == "pc" || _method == "pcs" || _method == "pcstable") {
-// 	alg = "pc";
-//     } else if (_method == "cpc" || _method == "cpcstable") {
-// 	alg = "cpc";
-//     } else if (_method == "pcm" || _method == "pcmax") {
-// 	alg = "pcm";
-//     } else if (_method == "fci" || _method == "fcistable") {
-// 	alg = "fci";
-//     } else if (_method == "cfci" || _method == "cfcistable") {
-// 	alg = "cfci";
-//     } else if (_method == "fcim" || _method == "fcimax") {
-// 	alg = "fcim";
-//     } else {
-// 	throw std::invalid_argument("Invalid algorithm: " + _method
-// 				    + "\n   Algorithm must be in the list: "
-// 				    + "{ mgm, pc, cpc, pcm, fci, cfci, fcim }");
-//     }
-    
-//     DataSet ds(data, maxDiscrete);
-
-//     if (params.isNotNull()) {
-//         Rcpp::NumericVector _params(params); 
-// 	par = std::vector<double>(_params.begin(), _params.end());
-//     } else {
-// 	if (alg == "mgm") {
-// 	    if (ds.getNumRows() > ds.getNumColumns()) {
-// 		arma::vec _params = arma::logspace(std::log10(0.05), std::log10(0.8), 20); 
-// 		par = std::vector<double>(_params.begin(), _params.end());
-// 	    } else {
-// 		arma::vec _params = arma::logspace(std::log10(0.1), std::log10(0.8), 20); 
-// 		par = std::vector<double>(_params.begin(), _params.end());
-// 	    }
-// 	} else {
-// 	    par = { 0.001, 0.005, 0.01, 0.05, 0.1 };
-// 	}
-//     }
-
-//     // Rcpp::Rcout << "params vector filled\n";
-//     STARS stars(ds, alg, par, g, numSub, adj, loo);
-//     // Rcpp::Rcout << "stars object created\n";
-//     if (threads > 0) stars.setThreads(threads);
-//     // stars.setComputeStabs(cs);
-//     stars.setVerbose(v);
-
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         stars.setInitialGraph(&ig);
-//     }
-
-//     Rcpp::List result = stars.runStarsPar().toList();
-
-//     // if (cs) {
-//     //     result["stabilities"] = steps.getStabs();
-//     //     std::vector<std::string> names = ds.getVariableNames();
-//     //     Rcpp::rownames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-//     //     Rcpp::colnames(result["stabilities"]) = Rcpp::CharacterVector::import(names.begin(), names.end());
-//     // } 
-
-//     // ds.deleteVariables();
-
-//     return result;
-
-// }
-
-
-// Rcpp::List bootstrap(
-//     const Rcpp::DataFrame& data,
-//     Rcpp::StringVector algorithm = Rcpp::CharacterVector::create("mgm", "pc", "fci", "mgm-pc", "mgm-fci"),
-//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-//     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp",
-// 									"conservative", "sepsets"),
-//     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
-//     const double alpha = 0.05,
-//     const int numBoots = 20,
-//     const int threads = -1,
-//     const bool replace = true,
-//     const bool rank = false,
-//     const bool verbose = false
-//     )
-
-//' Runs bootstrapping for a selected causal discovery algorithm on the dataset.
-//'
-//' @param data The dataframe
-//' @param algorithm string indicating the name of the causal discovery algorithm to bootstrap. Causal discovery algorithms can be run alone or with mgm to learn an initial graph. Options include "mgm", "pc", "cpc", "pcm", "pc50", "fci", "cfci", "fcim", "mgm-pc", "mgm-cpc", "mgm-pcm", "mgm-pc50", "mgm-fci", "mgm-cfci", "mgm-fcim", "mgm-fci50." The default value is set to "mgm-pc50."
-//' @param ensemble Method for construncting an ensemble graph from bootstrapped graphs. Options include "highest", which orients edges according to the orientation with the highest bootstrap probability, or "majority", which only orients edges if they have an orientation with a bootstrap probability > 0.5. Otherwise, the adjacency is included but the edge is left unoreineted. The default value is "highest."
-//' @param lambda A vector of three lambda values - the first for continuous-continuous interaction, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-//' @param alpha The p value below which results are considered significant. Defaults to 0.05.
-//' @param numBoots The number of bootstrap samples to run. Defaults to 20.
-//' @param threads The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The calculated search graph with a table of edge stabilities
-//' @export
-//' @examples
-//' data("data.n100.p25")
-//' g.boot <- rCausalMGM::bootstrap(data.n100.p25)
+//' sim <- simRandomDAG(200, 25)
+//' g <- pcStable(sim$data)
+//' g.boot <- bootstrap(sim$data, g)
+//' print(g.boot)
+//' print(g.boot$stabilities[1:6,])
 // [[Rcpp::export]]
 Rcpp::List bootstrap(
     const Rcpp::DataFrame& data,
@@ -2804,16 +1878,21 @@ Rcpp::List bootstrap(
 }
 
 
-//' Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
+//' Implements Grow-Shrink algorithm for Markov blanket identification
 //'
-//' @param data The dataframe
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
+//' @description Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param target A string denoting the name of the target variable to identify the Markov blanket of.
+//' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 1, which corresponds to the BIC score.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
 //' @return The list of features in the Markov Blanket and the BIC score
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::growShrinkMB(data.n100.p25)
+//' sim <- simRandomDAG(200, 25)
+//' mb <- growShrinkMB(sim$data, "X1")
+//' print(mb)
 // [[Rcpp::export]]
 Rcpp::StringVector growShrinkMB(
     const Rcpp::DataFrame& data,
@@ -2889,22 +1968,27 @@ Rcpp::StringVector growShrinkMB(
 
 //' Runs the GRaSP causal discovery algorithm on the dataset 
 //'
-//' @param data The dataframe
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The list of features in the Markov Blanket and the BIC score
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param depth The maximum search depth used in the depth-first search in GRaSP.
+//' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
+//' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
+//' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The CPDAG learned by GRaSP
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::markovBlanket(data.n100.p25)
+//' sim <- simRandomDAG(200, 25)
+//' g <- grasp(sim$data)
+//' print(g)
 // [[Rcpp::export]]
 Rcpp::List grasp(
     const Rcpp::DataFrame& data,
     const int depth = 2,
-    const int numStarts = 1,
+    const int numStarts = 3,
     const double penalty = 2,
-    const bool rank = false,
     const int threads = -1,
+    const bool rank = false,
     const bool verbose = false
 ) {
     DataSet ds = DataSet(data);
@@ -2926,7 +2010,7 @@ Rcpp::List grasp(
     if (!ds.isCensored()) {
 	scorer = new DegenerateGaussianScore(ds, penalty);
     } else {
-	throw std::runtime_error("BOSS is not able to handle censored variables.");
+	throw std::runtime_error("GRaSP is not able to handle censored variables.");
         // scorer = new RegressionBicScore(ds, penalty);
     }	
 
@@ -2934,8 +2018,7 @@ Rcpp::List grasp(
     grasp.setVerbose(verbose);
     grasp.setDepth(depth);
     grasp.setNumStarts(numStarts);
-    // grasp.setPenalty(penalty);
-
+    
     // EdgeListGraph ig;
     // if (!initialGraph.isNull()) {
     //     Rcpp::List _initialGraph(initialGraph);
@@ -2950,23 +2033,6 @@ Rcpp::List grasp(
     // }
 
     RcppThread::checkUserInterrupt();
-
-    // std::map<EdgeListGraph, std::pair<int, double>> cpdagMap = grasp.search();
-
-    // Rcpp::List graphList;
-    // std::vector<int> graphCounts;
-    // std::vector<double> graphBICs;
-
-    // for(auto it = cpdagMap.begin(); it != cpdagMap.end(); ++it) {
-    // 	graphList.push_back(it->first.toList());
-    // 	graphCounts.push_back(it->second.first);
-    // 	graphBICs.push_back(it->second.second);
-    // }
-    
-    // Rcpp::List result = Rcpp::List::create(Rcpp::_["graphs"]=graphList,
-    // 					   Rcpp::_["count"]=graphCounts,
-    // 					   Rcpp::_["BIC"]=graphBICs
-    // 	);
 
     EdgeListGraph g = grasp.search();
 
@@ -2983,21 +2049,25 @@ Rcpp::List grasp(
 
 //' Runs the BOSS causal discovery algorithm on the dataset 
 //'
-//' @param data The dataframe
-//' @param rank Whether or not to use rank-based associations as opposed to linear
-//' @param verbose Whether or not to output additional information. Defaults to FALSE.
-//' @return The list of features in the Markov Blanket and the BIC score
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
+//' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
+//' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The CPDAG learned by BOSS
 //' @export
 //' @examples
-//' data("data.n100.p25")
-//' g <- rCausalMGM::markovBlanket(data.n100.p25)
+//' sim <- simRandomDAG(200, 25)
+//' g <- boss(sim$data)
+//' print(g)
 // [[Rcpp::export]]
 Rcpp::List boss(
     const Rcpp::DataFrame& data,
-    const int numStarts = 1,
+    const int numStarts = 3,
     const double penalty = 2,
-    const bool rank = false,
     const int threads = -1,
+    const bool rank = false,
     const bool verbose = false
 ) {
     DataSet ds = DataSet(data);
@@ -3026,7 +2096,6 @@ Rcpp::List boss(
     Boss boss(scorer, threads);
     boss.setVerbose(verbose);
     boss.setNumStarts(numStarts);
-    // boss.setPenalty(penalty);
 
     // EdgeListGraph ig;
     // if (!initialGraph.isNull()) {
@@ -3056,60 +2125,3 @@ Rcpp::List boss(
     return result;
 }
 
-
-
-// //' Parameterize a graph using the MGM framework
-// //'
-// //' @param data The dataframe
-// //' @param graph An graph to parameterize.
-// //' @param rank Whether or not to use rank-based associations as opposed to linear
-// //' @param verbose Whether or not to output additional information. Defaults to FALSE.
-// //' @return The calculated search graph
-// //' @export
-// //' @examples
-// //' data("data.n100.p25")
-// //' ig <- rCausalMGM::mgm(data.n100.p25)
-// //' g <- rCausalMGM::pcStable(data.n100.p25, initialGraph = ig)
-// //' g <- parameterize(data.n100.p25, g)
-// // [[Rcpp::export]]
-// Rcpp::List parameterize(
-//     const Rcpp::DataFrame& data,
-//     Rcpp::List graph,
-//     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.5, 0.5, 0.5),
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
-
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
-
-//     std::vector<double> l(lambda.begin(), lambda.end());
-
-//     int lamLength = 3;
-
-//     if (l.size() == 1) {
-// 	for (int i = 1; i < lamLength; i++) {
-// 	    l.push_back(l[0]);
-// 	}
-//     } else if (l.size() != lamLength) {
-// 	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
-//     }
-
-//     EdgeListGraph g(graph, ds);
-//     CausalMGM causalMGM(ds, g);
-//     causalMGM.setVerbose(verbose);
-//     causalMGM.setLambda(l);
-
-//     Rcpp::List result = g.toList();
-
-//     result["parameters"] = causalMGM.search().toList();
-
-//     // ds.deleteVariables();
-
-//     return result;
-// }

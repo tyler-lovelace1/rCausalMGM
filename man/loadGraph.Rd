@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{loadGraph}
 \alias{loadGraph}
-\title{Load a graph from a file}
+\title{Load a graph from a ".txt" file}
 \usage{
 loadGraph(filename)
 }
@@ -10,8 +10,8 @@ loadGraph(filename)
 \item{filename}{The graph file}
 }
 \value{
-The graph as a List object, which can be passed into search functions
+The graph as a graph object, which can be passed into search functions
 }
 \description{
-Load a graph from a file
+Load a graph from a ".txt" file
 }

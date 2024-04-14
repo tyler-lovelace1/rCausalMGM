@@ -2,13 +2,15 @@
 % Please edit documentation in R/MiscFunctions.R
 \name{print.graph}
 \alias{print.graph}
-\title{A print override function for the graph}
+\title{A print override function for the graph class}
 \usage{
 \method{print}{graph}(x, ...)
 }
 \arguments{
 \item{x}{The graph object}
+
+\item{...}{Additional print arguments}
 }
 \description{
-A print override function for the graph
+A print override function for the graph class
 }

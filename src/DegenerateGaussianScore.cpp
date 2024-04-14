@@ -3,54 +3,56 @@
 #include "DegenerateGaussianScore.hpp"
 #include "RcppThread.h"
 
-DegenerateGaussianScore::DegenerateGaussianScore(DataSet& data, double penalty) {
+DegenerateGaussianScore::DegenerateGaussianScore(DataSet data, double penalty) {
     if (data.isCensored()) {
 	throw std::invalid_argument("The Degenerate Gaussian Score is not supported for censored variables.");
     }
     
     this->searchVariables = data.getVariables();
-    this->originalData = DataSet(data);
-    this->internalData = DataSet(data);
+    // this->originalData = DataSet(data);
+    // DataSet internalData(data);
     this->penalty = penalty;
-    this->N = originalData.getNumRows();
+    this->N = data.getNumRows();
     this->logN = std::log(this->N);
 
-    std::vector<Node> variables = internalData.getVariables();
+    std::vector<Node> variables = data.getVariables();
 
     for (const Node& var : variables) {
-        std::vector<Node> vars = expandVariable(internalData, var);
+        std::vector<Node> vars = expandVariable(data, var);
         variablesPerNode.insert(std::pair<Node, std::vector<Node>>(var, vars));
 	if (vars.size()>1) {
-	    internalData.removeVariable(var);
+	    data.removeVariable(var);
 	}
+    }
+
+    variables = data.getVariables();
+    
+    for (int i = 0; i < variables.size(); i++) {
+	indexMap.insert(std::pair<Node, int>(variables[i], i));
     }
 
     this->verbose = false;
 
-    this->covMat = arma::cov(internalData.getData());
+    this->covMat = arma::cov(data.getData());
 
     // Rcpp::Rcout << "covMat:\n" << covMat << std::endl;
 }
 
-std::vector<Node> DegenerateGaussianScore::expandVariable(DataSet& dataSet, const Node& var)
-{
-    if (var.isContinuous())
-    {
-        std::vector<Node> contList;
-        contList.push_back(var);
-        return contList;
+std::vector<Node> DegenerateGaussianScore::expandVariable(DataSet& dataSet, const Node& var) {
+    if (var.isContinuous()) {
+	std::vector<Node> contList;
+	contList.push_back(var);
+	return contList;
     }
 
-    if (var.isDiscrete() && var.getNumCategories() < 3)
-    {
-        std::vector<Node> discList;
-        discList.push_back(var);
-        return discList;
+    if (var.isDiscrete() && var.getNumCategories() < 3)	{
+	std::vector<Node> discList;
+	discList.push_back(var);
+	return discList;
     }
 
-    if (!var.isDiscrete())
-    {
-        throw std::invalid_argument("*Invalid variable type*");
+    if (!var.isDiscrete()) {
+	throw std::invalid_argument("*Invalid variable type*");
     }
 
     std::vector<std::string> varCats = var.getCategories();
@@ -58,31 +60,27 @@ std::vector<Node> DegenerateGaussianScore::expandVariable(DataSet& dataSet, cons
     std::vector<Node> variables;
     /*********************************************************************/
     std::string temp = var.getName();
-    for (auto it = varCats.begin() + 1; it != varCats.end(); it++)
-    {
+    for (auto it = varCats.begin() + 1; it != varCats.end(); it++) {
 	const Node& newVar = Node(new DiscreteVariable(temp + "MULTINOM." + *it, 2));
 
-        /*********************************************************************/
+	/*********************************************************************/
 
-        variables.push_back(newVar);
+	variables.push_back(newVar);
 
-        dataSet.addVariable(newVar);
+	dataSet.addVariable(newVar);
 
-        int newVarIndex = dataSet.getColumn(newVar);
-        int numCases = dataSet.getNumRows();
+	int newVarIndex = dataSet.getColumn(newVar);
+	int numCases = dataSet.getNumRows();
 
-        for (int l = 0; l < numCases; l++)
-        {
-            int dataCellIndex = dataSet.getInt(l, dataSet.getColumn(var));
-            if (dataCellIndex == var.getIndex(*it))
-            {
-                dataSet.set(l, newVarIndex, 1);
-            }
-            else
-            {
-                dataSet.set(l, newVarIndex, 0);
-            }
-        }
+	for (int l = 0; l < numCases; l++) {
+	    int dataCellIndex = dataSet.getInt(l, dataSet.getColumn(var));
+	    if (dataCellIndex == var.getIndex(*it)) {
+		dataSet.set(l, newVarIndex, 1);
+	    }
+	    else {
+		dataSet.set(l, newVarIndex, 0);
+	    }
+	}
     }
 
     return variables;
@@ -93,7 +91,7 @@ arma::uvec DegenerateGaussianScore::getIndices(const std::vector<Node>& nodes) {
     arma::uvec idx(nodes.size(), arma::fill::zeros);
 
     for (arma::uword i = 0; i < nodes.size(); i++) {
-	idx(i) = internalData.getColumn(nodes.at(i));
+	idx(i) = (uint) indexMap[nodes.at(i)];
     }
 
     return idx;
@@ -165,22 +163,22 @@ std::vector<std::string> DegenerateGaussianScore::getVariableNames()
     std::vector<std::string> variableNames;
 
     for (const Node& var1 : variables)
-    {
-        variableNames.push_back(var1.getName());
-    }
+	{
+	    variableNames.push_back(var1.getName());
+	}
     return variableNames;
 }
 
 Node DegenerateGaussianScore::getVariable(std::string name)
 {
     for (int i = 0; i < getVariables().size(); i++)
-    {
-        const Node& var = getVariables().at(i);
-        if (var.getName() == name)
-        {
-            return var;
-        }
-    }
+	{
+	    const Node& var = getVariables().at(i);
+	    if (var.getName() == name)
+		{
+		    return var;
+		}
+	}
     Node emptyVar;
     return emptyVar;
 }

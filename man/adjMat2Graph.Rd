@@ -7,20 +7,21 @@
 adjMat2Graph(adj, nodes, directed = FALSE)
 }
 \arguments{
-\item{adj}{The adjacency matrix, NxN}
+\item{adj}{The adjacency matrix, p x p, with non-zero values indicating the presence of an adjacency.}
 
-\item{nodes}{The names of the nodes, length N}
+\item{nodes}{The names of the nodes, length p.}
 
-\item{directed}{TRUE if the graph should be directed, default FALSE}
+\item{directed}{TRUE if the graph should be directed. This default is  FALSE.}
 }
 \value{
-The graph representation of the adjacency list
+A graph object representing the adjacency matrix.
 }
 \description{
 Convert an adjacency matrix into a graph
 }
 \examples{
 mat <- matrix(sample(c(0,1), 16, replace=TRUE), nrow=4)
+mat <- mat + t(mat)
 nodes <- c("X1", "X2", "X3", "X4")
-g <- rCausalMGM::adjMat2Graph(mat, nodes, directed=TRUE)
+g <- adjMat2Graph(mat, nodes)
 }

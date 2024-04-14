@@ -45,15 +45,32 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
     this->var2idx = std::unordered_map<Node, int>();
     int numUnique;
     std::string val, curName;
-    std::ostringstream contWarning, catWarning;
+    std::ostringstream contWarning, catWarning; //, nameWarning;
     bool contWarnFlag = false;
     bool catWarnFlag = false;
+    // bool nameWarnFlag = false;
     contWarning << "Continuous Variable(s) { ";
     catWarning << "Categorical Variable(s) { ";
+    // nameWarning << "The Variable(s) { ";
 
     for (int i = 0; i < m; i++) {
 	
 	curName = (std::string) names[i];
+
+	std::size_t found = curName.find(" ");
+
+	if (found != std::string::npos) {
+	    Rcpp::Rcout << "WARNING : The variable " << curName << " was renamed to ";
+	    while (found != std::string::npos) {
+		curName.replace(found, 1, ".");
+		found = curName.find(" ");
+	    }
+	    Rcpp::Rcout << curName << "\n";
+	}
+
+	if (name2idx.count(curName)>0) {
+	    Rcpp::stop("The variable name " + curName + " is not unique; all variables in the dataset must have unique names.");
+	}
 
 	// Rcpp::CharacterVector xVec = Rcpp::clone(df[i]);
 	Rcpp::RObject x = df[i];
@@ -99,7 +116,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 
 				// Categorical feature warning
 				if (levels.size() >= 10) {
-				    Rcpp::warning("Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.");
+				    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
 				}
 			    } else {
 				arma::vec values = Rcpp::as<arma::vec>(st);
@@ -113,7 +130,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 				}
 
 				if (uniqVals.size() >= 10) {
-				    Rcpp::warning("Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.");
+				    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
 				}
 			    }
 			} else if (Rcpp::is<Rcpp::CharacterVector>(st)) {
@@ -131,7 +148,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 			    }
 
 			    if (levels.size() >= 10) {
-				Rcpp::warning("Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.");
+			        Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
 			    }
 			}
 		    }
@@ -248,9 +265,9 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 
     catWarning << "} have 10 or more categories. Fitting models with large numbers of categories is not recommended. If any variables(s) are intended to be continuous, convert them to numeric.";
 
-    if (contWarnFlag) Rcpp::warning(contWarning.str());
+    if (contWarnFlag) Rcpp::Rcout << "WARNING : " << contWarning.str() << "\n";
 
-    if (catWarnFlag) Rcpp::warning(catWarning.str());
+    if (catWarnFlag) Rcpp::Rcout << "WARNING : " << catWarning.str() << "\n";
 
     // Rcpp::Rcout << data << std::endl;
 
@@ -350,7 +367,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 
 void DataSet::dropMissing() {
     if (arma::accu(missing) > 0) {
-	Rcpp::warning("Missing values detected. Samples with missing values will be dropped.");
+        Rcpp::Rcout << "WARNING : Missing values detected. Samples with missing values will be dropped.\n";
 
 	arma::uvec missingByRow = arma::sum(missing, 1);
 	arma::uvec completeSamples = arma::find(missingByRow == 0);
@@ -381,12 +398,20 @@ void DataSet::npnTransform() {
 
 	    for (int i = 0; i < n; i++) {
 		if (vals(indices(i)) > vals(indices(marker))) {
-		    vals(indices.subvec(marker, i-1)).fill(i);
+		    vals(indices.subvec(marker, i-1)).fill((marker + 1 + i) / 2.0);
 		    marker = i;
 		}
 	    }
-	    vals(indices.subvec(marker, n-1)).fill(n);
+	    vals(indices.subvec(marker, n-1)).fill((marker + 1 + n) / 2.0);
+
+	    // Rcpp::Rcout << variables[j] << ":\n";
+	    
+	    // Rcpp::Rcout << vals(indices).t() << std::endl;
+	    // Rcpp::Rcout << vals.t() << std::endl;
+	    // Rcpp::Rcout << data.col(j).t() << std::endl;
+	    
 	    vals /= ((double) (n+1));
+
 	    // Rcpp::Rcout << vals(indices).t() << std::endl;
 	    // Rcpp::Rcout << vals.t() << std::endl;
 	    // Rcpp::Rcout << data.col(j).t() << std::endl;

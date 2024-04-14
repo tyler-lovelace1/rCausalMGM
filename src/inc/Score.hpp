@@ -69,9 +69,9 @@ public:
      */
     virtual void setPenalty(double penalty) = 0;
 
-    virtual std::vector<DataSet*> getDataSets() = 0;
+    // virtual std::vector<DataSet*> getDataSets() = 0;
 
-    virtual DataSet getData() = 0;
+    // virtual DataSet getData() = 0;
 
     virtual int getSampleSize() = 0;
 

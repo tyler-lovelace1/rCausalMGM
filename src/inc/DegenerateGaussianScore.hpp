@@ -8,11 +8,12 @@
 class DegenerateGaussianScore : public Score {
 private:
 
-    DataSet originalData;
+    // DataSet originalData;
     std::vector<Node> searchVariables;
-    DataSet internalData;
+    // DataSet internalData;
     double penalty;
     std::map<Node, std::vector<Node>> variablesPerNode;
+    std::map<Node, int> indexMap; 
     bool verbose = false;
 
     double N, logN;
@@ -27,7 +28,7 @@ public:
 
     DegenerateGaussianScore() {}
 
-    DegenerateGaussianScore(DataSet& data, double penalty);
+    DegenerateGaussianScore(DataSet data, double penalty);
 
     DegenerateGaussianScore(const DegenerateGaussianScore& other) = default;
     DegenerateGaussianScore& operator=(const DegenerateGaussianScore& other) = default;
@@ -50,15 +51,15 @@ public:
 
     void setPenalty(double penalty) { this->penalty = penalty; }
 
-    DataSet getData() { return this->originalData; }
+    // DataSet getData() { return DataSet(); }
 
     bool isVerbose() { return this->verbose; }
 
     void setVerbose(bool verbose) { this->verbose = verbose; }
 
-    int getSampleSize() { return originalData.getNumRows(); }
+    int getSampleSize() { return N; }
 
-    std::vector<DataSet*> getDataSets() { return { &originalData }; }
+    // std::vector<DataSet*> getDataSets() { return { NULL }; }
 
     friend double DGScoreTest(const Rcpp::DataFrame& df,
 			      std::string targetName,

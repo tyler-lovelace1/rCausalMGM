@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{printGraph}
 \alias{printGraph}
-\title{Display a graph object as text}
+\title{Display a graph object as text.}
 \usage{
 printGraph(graph)
 }
@@ -10,10 +10,10 @@ printGraph(graph)
 \item{graph}{The graph object}
 }
 \description{
-Display a graph object as text
+Display a graph object as text. This is the same format as written in ".txt" save files.
 }
 \examples{
-data("data.n100.p25")
-g <- rCausalMGM::mgm(data.n100.p25)
-rCausalMGM::printGraph(g)
+sim <- simRandomDAG(200, 25)
+g <- mgm(sim$data)
+printGraph(g)
 }

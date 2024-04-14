@@ -2,52 +2,50 @@
 % Please edit documentation in R/RcppExports.R
 \name{steps}
 \alias{steps}
-\title{Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed}
+\title{Implements StEPS and StARS for MGM}
 \usage{
 steps(
-  df,
+  data,
   lambdas = NULL,
-  nLambda = 20L,
-  g = 0.05,
+  nLambda = 30L,
+  gamma = 0.05,
   numSub = 20L,
   subSize = -1L,
   leaveOneOut = FALSE,
-  computeStabs = FALSE,
   threads = -1L,
   rank = FALSE,
   verbose = FALSE
 )
 }
 \arguments{
-\item{df}{The dataframe}
+\item{data}{A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.}
 
-\item{lambdas}{A range of lambda values assessed for stability by the StEPS algorithm. If NULL, lambdas is set to nLambda logarithmically spaced values from 10*sqrt(log10(p)/n) to sqrt(log10(p)/n). Defaults to NULL.}
+\item{lambdas}{A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.}
 
-\item{nLambda}{The number of lambda values to fit an MGM for when lambdas is NULL}
+\item{nLambda}{A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.}
 
-\item{g}{The gamma parameter for STEPS. Defaults to 0.05}
+\item{gamma}{The threshold for edge instability. The default value is 0.05, and it is not recommended to change this value.}
 
-\item{numSub}{The number of subsets to split the data into. Defaults to 20}
+\item{numSub}{The number of subsamples of the dataset used to estimate edge instability. The default value is 20.}
 
-\item{subSize}{The size of the subsamples used for STEPS. If the value is -1, the size of the subsamples is set to floor(10*sqrt(n)). If the value is in the range (0,1), the size of the subsamples is set to floor(subSize * n). Otherwise, if subSize is in the range [1,n), the size of the subsamples is set to subSize. Defaults to -1.}
+\item{subSize}{The number of samples to be drawn without replacement for each subsample. The default value is -1. When subSize is -1, it is set to min(floor(0.75 * N), floor(10*sqrt(N))), where N is the number of samples.}
 
 \item{leaveOneOut}{If TRUE, performs leave-one-out subsampling. Defaults to FALSE.}
 
-\item{computeStabs}{If TRUE, stability values are calculated. Defaults to FALSE.}
+\item{threads}{An integer value denoting the number of threads to use for parallelization of learning MGMs across subsamples. The default value is -1, which will all available CPUs.}
 
-\item{threads}{The number of consumer threads to create during multi-threaded steps. If -1, defaults to number of availible processors.}
+\item{rank}{A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.}
 
-\item{rank}{Whether or not to use rank-based associations as opposed to linear}
-
-\item{verbose}{Whether or not to output additional information. Defaults to FALSE.}
+\item{verbose}{A logical value indicating whether to print progress updates. The default is FALSE.}
 }
 \value{
-The calculated MGM graph
+A graphSTEPS object containing the MGMs selected by StEPS and StARS, as well as the instability of each edge type at each value of lambda.
 }
 \description{
-Calculates the optimal lambda values for the MGM algorithm using StEPS and run the algorithm using those values. Optimal values are printed
+Calculates the optimal lambda values for the MGM algorithm using StEPS and StARS. Returns a graphSTEPS object that contains the MGMs selected by StEPS and StARS as well as the instability at each value of lambda.
 }
 \examples{
-data("data.n100.p25")
-g <- rCausalMGM::steps(data.n100.p25)
+sim <- simRandomDAG(200, 25)
+ig.steps <- steps(sim$data)
+print(ig.steps)
 }
