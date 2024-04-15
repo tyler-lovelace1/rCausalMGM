@@ -428,7 +428,7 @@ each of the edges in the original graph.
 <img src="plots/pcmax_graph_stabs_adj.png" width="50%" /><img src="plots/pcmax_graph_stabs_orient.png" width="50%" />
 
 **Figure 2:** A pair of representations of the original causal graph
-learned by PC-Max on the full `train_n300_p10` dataset. Edge thickness
+learned by PC-Max on the simulated dataset. Edge thickness
 represents adjacency frequency from 0 to 1 (left), and orientation
 frequency from 0 to 1 (right).
 
@@ -454,8 +454,8 @@ integrated with our causal discovery methods. Knowledge can be provided
 in three ways:
 
 -   Tiers: ordered sets of variables where variables in tier t can only
-    be ancestors of variables in tier t+1 and descendants of variables
-    in tier t-1. Tiers may be modified so that they can not form edges
+    be ancestors of variables in tier t+1, ..., T and descendants of variables
+    in tier 1, ..., t-1. Tiers may be modified so that they can not form edges
     within a given tier using the `forbidWithinTier` argument.
 -   Forbidden Edges: Directly forbid certain directed edges. If the
     adjacency is completely impossible, the user must forbid both
