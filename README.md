@@ -454,8 +454,8 @@ integrated with our causal discovery methods. Knowledge can be provided
 in three ways:
 
 -   Tiers: ordered sets of variables where variables in tier t can only
-    be ancestors of variables in tier t+1 and descendants of variables
-    in tier t-1. Tiers may be modified so that they can not form edges
+    be ancestors of variables in tier t+1, ..., T and descendants of variables
+    in tier 1, ..., t-1. Tiers may be modified so that they can not form edges
     within a given tier using the `forbidWithinTier` argument.
 -   Forbidden Edges: Directly forbid certain directed edges. If the
     adjacency is completely impossible, the user must forbid both
