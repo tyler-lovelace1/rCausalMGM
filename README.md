@@ -428,7 +428,7 @@ each of the edges in the original graph.
 <img src="plots/pcmax_graph_stabs_adj.png" width="50%" /><img src="plots/pcmax_graph_stabs_orient.png" width="50%" />
 
 **Figure 2:** A pair of representations of the original causal graph
-learned by PC-Max on the full `train_n300_p10` dataset. Edge thickness
+learned by PC-Max on the simulated dataset. Edge thickness
 represents adjacency frequency from 0 to 1 (left), and orientation
 frequency from 0 to 1 (right).
 
