@@ -1,10 +1,10 @@
 ---
-title: "rCausalMGM-demo"
+title: "rCausalMGM Demo"
 author: "Tyler Lovelace"
 date: "`r Sys.Date()`"
 output:
-  pdf_document: default
-  html_document: null
+  pdf_document:
+    keep_md: true
 ---
 
 ```{r setup, include=FALSE}
@@ -245,7 +245,7 @@ While the adjacencies for the original graph are mostly quite stable, with only 
 
 In some settings, there may be sufficient domain knowledge available to put some constraints on our causal discovery algorithms. In some cases, it may be possible forbid or require the presence of certain directed edges. In others, we could have partial information about the causal order of variables in a dataset, such as when they are measured at different time steps or reflect variables determined well before other measurements in the dataset (such as gender, race, or SNPs). Using our simulated dataset, we'll demonstrate how prior knowledge can be integrated with our causal discovery methods. Knowledge can be provided in three ways:
 
-* Tiers: ordered sets of variables where variables in tier t can only be ancestors of variables in tiers t+1, ..., T and descendants of variables in tiers 1, ..., t-1. Tiers may be modified so that they can not form edges within a given tier using the `forbidWithinTier` argument.
+* Tiers: ordered sets of variables where variables in tier t can only be ancestors of variables in tiers t+1, ..., T and descendants of variables in tiers 1, ..., t-1. Tiers may be modified so that they can not form edges within a given tier using the `forbiddenWithinTier` argument.
 * Forbidden Edges: Directly forbid certain directed edges. If the adjacency is completely impossible, the user must forbid both directions.
 * Required Edges: Explicitly require the presence of a directed edge.
 
@@ -256,6 +256,8 @@ K <- createKnowledge(
   forbidden = list(c("X2", "X5"), c("X5", "X2")),
   required = list(c("Y3", "X2"))
 )
+
+print(K)
 
 g.list <- pcStable(sim$data[1:300,], knowledge=K, 
                    initialGraph = ig.path$graph.bic, 
@@ -281,11 +283,11 @@ Many biomedical datasets involve large numbers of features and relatively small 
 simLarge <- simRandomDAG(n=300, p=500, seed=43)
 simLarge$cpdag <- cpdag(simLarge$graph)
 
-print("Small dataset (n=300, p=10)")
+#### Small dataset (n=300, p=10)
 print(system.time(g1 <- pcStable(sim$data[1:300,], orientRule="maxp", alpha=0.01)))
 print(g1)
 
-print("Large dataset (n=300, p=500)")
+#### Large dataset (n=300, p=500)
 print(system.time(g2 <- pcStable(simLarge$data, orientRule="maxp", alpha=0.01)))
 print(g2)
 
