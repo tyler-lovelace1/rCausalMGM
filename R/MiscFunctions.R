@@ -120,7 +120,35 @@ print.graphSTARS <- function(x, ...) {
     invisible(x)
 }
 
-
+#' A print override function for the knowledge class
+#'
+#' @param x The knowledge object
+#' @param ... Additional print arguments
+#' @export
+print.knowledge <- function(x, ...) {
+    cat("Prior Knowledge:\n")
+    if (length(x$tiers) > 0) {
+        cat("  Tiers:\n")
+        for (t in 1:length(x$tiers)) {
+            cat(paste0("    ", t,
+                       ifelse(x$forbiddenWithinTier[t], '*: ', ': '),
+                       paste(x$tiers[[t]], collapse=" "), "\n"))
+        }
+    }
+    if (length(x$forbidden) > 0 ) {
+        cat("  Forbidden:\n")
+        for (pair in x$forbidden) {
+            cat(paste0("    ", pair[1], " --> ", pair[2], "\n"))
+        }
+    }
+    if (length(x$required) > 0 ) {
+        cat("  Required:\n")
+        for (pair in x$required) {
+            cat(paste0("    ", pair[1], " --> ", pair[2], "\n"))
+        }
+    }
+    invisible(x)
+}
 
 #' A plot override function for the graph class
 #'
@@ -556,10 +584,10 @@ graphTable <- function(graph, stabilities = NULL) {
 #'     t+1 ... T and descendants of variables in tiers (1 .. t-1). If
 #'     tiers are used, all variables must be in a tier, and no
 #'     variable can be in multiple tiers.
-#' @param forbidWithinTiers A vector of logical values indicating
+#' @param forbiddenWithinTier A vector of logical values indicating
 #'     whether edges are allowed between variables in a given
 #'     tier. The value is NULL by default, which results in
-#'     forbidWithinTiers being set to FALSE for each tier.
+#'     forbiddenWithinTier being set to FALSE for each tier.
 #' @param forbidden A list containing vectors of node pairs that
 #'     forbid a specific directed edge. For example, to forbid 
 #'     A --> B, add c("A", "B") to forbidden.
@@ -569,16 +597,16 @@ graphTable <- function(graph, stabilities = NULL) {
 #' @return A knowledge object that can be passed to causal discovery
 #'     algorithms.
 #' @export
-createKnowledge <- function(tiers = list(), forbidWithinTiers=NULL,
+createKnowledge <- function(tiers = list(), forbiddenWithinTier=NULL,
                             forbidden=list(), required=list()) {
-    if (is.null(forbidWithinTiers)) {
+    if (is.null(forbiddenWithinTier)) {
         if (length(tiers) != 0) {
-            forbidWithinTiers <- rep(FALSE, length(tiers))
+            forbiddenWithinTier <- rep(FALSE, length(tiers))
         } else {
-            forbidWithinTiers <- as.logical(c())
+            forbiddenWithinTier <- as.logical(c())
         }
     }
-    knowledge <- list(tiers=tiers, forbidWithinTiers=forbidWithinTiers,
+    knowledge <- list(tiers=tiers, forbiddenWithinTier=forbiddenWithinTier,
                       forbidden=forbidden, required=required)
     class(knowledge) <- 'knowledge'
     return(knowledge)

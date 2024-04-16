@@ -7,7 +7,7 @@ discovery algorithms}
 \usage{
 createKnowledge(
   tiers = list(),
-  forbidWithinTiers = NULL,
+  forbiddenWithinTier = NULL,
   forbidden = list(),
   required = list()
 )
@@ -19,10 +19,10 @@ t+1 ... T and descendants of variables in tiers (1 .. t-1). If
 tiers are used, all variables must be in a tier, and no
 variable can be in multiple tiers.}
 
-\item{forbidWithinTiers}{A vector of logical values indicating
+\item{forbiddenWithinTier}{A vector of logical values indicating
 whether edges are allowed between variables in a given
 tier. The value is NULL by default, which results in
-forbidWithinTiers being set to FALSE for each tier.}
+forbiddenWithinTier being set to FALSE for each tier.}
 
 \item{forbidden}{A list containing vectors of node pairs that
 forbid a specific directed edge. For example, to forbid 

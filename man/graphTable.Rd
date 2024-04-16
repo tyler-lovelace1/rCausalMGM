@@ -19,7 +19,7 @@ returned. The default is NULL}
 \value{
 A data.frame containing source, target, and interaction
     columns for each edge in the graph. If stabilities are
-    available, then the adjacency frequency and orientation
+    available, then the adjFrequency and orientation
     frequencies (if applicable) are returned for each edge.
 }
 \description{
