@@ -73,7 +73,7 @@ private:
     /**
      * True iff the possible dsep search is done.
      */
-    bool possibleDsepSearchDone = false;
+    bool possibleDsepSearchDone = true;
 
     /** 
      * Orientation rule for identifying colliders

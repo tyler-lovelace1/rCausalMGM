@@ -608,10 +608,7 @@ public:
      */
     int getNumEdges(const Node& node);
 
-    std::vector<Node> getNodes() {
-	std::set<Node> nodeSet(nodes.begin(), nodes.end());
-	return std::vector<Node>(nodeSet.begin(), nodeSet.end());
-    }
+    std::vector<Node> getNodes() { return nodes; }
 
     /**
      * Removes all nodes (and therefore all edges) from the graph.

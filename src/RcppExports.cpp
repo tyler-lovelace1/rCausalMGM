@@ -177,71 +177,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// GrowShrinkSubSetTest
-Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame& df, std::string target, int numSub);
-RcppExport SEXP _rCausalMGM_GrowShrinkSubSetTest(SEXP dfSEXP, SEXP targetSEXP, SEXP numSubSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< int >::type numSub(numSubSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkSubSetTest(df, target, numSub));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GrowShrinkDeprecatedSubSetTest
-Rcpp::StringVector GrowShrinkDeprecatedSubSetTest(const Rcpp::DataFrame& df, std::string target, int numSub);
-RcppExport SEXP _rCausalMGM_GrowShrinkDeprecatedSubSetTest(SEXP dfSEXP, SEXP targetSEXP, SEXP numSubSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< int >::type numSub(numSubSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkDeprecatedSubSetTest(df, target, numSub));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GrowShrinkTreeTest
-Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame& df, std::string target);
-RcppExport SEXP _rCausalMGM_GrowShrinkTreeTest(SEXP dfSEXP, SEXP targetSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkTreeTest(df, target));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GrowShrinkTreeSubSetTest
-Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame& df, std::string target, int numSub);
-RcppExport SEXP _rCausalMGM_GrowShrinkTreeSubSetTest(SEXP dfSEXP, SEXP targetSEXP, SEXP numSubSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< int >::type numSub(numSubSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkTreeSubSetTest(df, target, numSub));
-    return rcpp_result_gen;
-END_RCPP
-}
-// GrowShrinkTreeParallelSubSetTest
-std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame& df, std::string target, int numSub, int threads);
-RcppExport SEXP _rCausalMGM_GrowShrinkTreeParallelSubSetTest(SEXP dfSEXP, SEXP targetSEXP, SEXP numSubSEXP, SEXP threadsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type df(dfSEXP);
-    Rcpp::traits::input_parameter< std::string >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< int >::type numSub(numSubSEXP);
-    Rcpp::traits::input_parameter< int >::type threads(threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(GrowShrinkTreeParallelSubSetTest(df, target, numSub, threads));
-    return rcpp_result_gen;
-END_RCPP
-}
 // mgm
 Rcpp::List mgm(const Rcpp::DataFrame& data, Rcpp::NumericVector lambda, const bool rank, const bool verbose);
 RcppExport SEXP _rCausalMGM_mgm(SEXP dataSEXP, SEXP lambdaSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
@@ -542,25 +477,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// growShrinkMBDeprecated
-Rcpp::StringVector growShrinkMBDeprecated(const Rcpp::DataFrame& data, const std::string& target, Rcpp::Nullable<Rcpp::List> graph, const double penalty, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_growShrinkMBDeprecated(SEXP dataSEXP, SEXP targetSEXP, SEXP graphSEXP, SEXP penaltySEXP, SEXP rankSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type target(targetSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::List> >::type graph(graphSEXP);
-    Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
-    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
-    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(growShrinkMBDeprecated(data, target, graph, penalty, rank, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
 // grasp
-Rcpp::List grasp(const Rcpp::DataFrame& data, const int depth, const int numStarts, const double penalty, const bool bossInit, const int threads, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_grasp(SEXP dataSEXP, SEXP depthSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP bossInitSEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+Rcpp::List grasp(const Rcpp::DataFrame& data, const int depth, const int numStarts, const double penalty, const int threads, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_grasp(SEXP dataSEXP, SEXP depthSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -568,11 +487,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type depth(depthSEXP);
     Rcpp::traits::input_parameter< const int >::type numStarts(numStartsSEXP);
     Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
-    Rcpp::traits::input_parameter< const bool >::type bossInit(bossInitSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(grasp(data, depth, numStarts, penalty, bossInit, threads, rank, verbose));
+    rcpp_result_gen = Rcpp::wrap(grasp(data, depth, numStarts, penalty, threads, rank, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -608,11 +526,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_prMetricsCausal", (DL_FUNC) &_rCausalMGM_prMetricsCausal, 2},
     {"_rCausalMGM_prMetrics", (DL_FUNC) &_rCausalMGM_prMetrics, 3},
     {"_rCausalMGM_allMetrics", (DL_FUNC) &_rCausalMGM_allMetrics, 3},
-    {"_rCausalMGM_GrowShrinkSubSetTest", (DL_FUNC) &_rCausalMGM_GrowShrinkSubSetTest, 3},
-    {"_rCausalMGM_GrowShrinkDeprecatedSubSetTest", (DL_FUNC) &_rCausalMGM_GrowShrinkDeprecatedSubSetTest, 3},
-    {"_rCausalMGM_GrowShrinkTreeTest", (DL_FUNC) &_rCausalMGM_GrowShrinkTreeTest, 2},
-    {"_rCausalMGM_GrowShrinkTreeSubSetTest", (DL_FUNC) &_rCausalMGM_GrowShrinkTreeSubSetTest, 3},
-    {"_rCausalMGM_GrowShrinkTreeParallelSubSetTest", (DL_FUNC) &_rCausalMGM_GrowShrinkTreeParallelSubSetTest, 4},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
     {"_rCausalMGM_coxmgm", (DL_FUNC) &_rCausalMGM_coxmgm, 4},
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
@@ -629,8 +542,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_mgmfciCV", (DL_FUNC) &_rCausalMGM_mgmfciCV, 14},
     {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 8},
     {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 5},
-    {"_rCausalMGM_growShrinkMBDeprecated", (DL_FUNC) &_rCausalMGM_growShrinkMBDeprecated, 6},
-    {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 8},
+    {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 7},
     {"_rCausalMGM_boss", (DL_FUNC) &_rCausalMGM_boss, 6},
     {NULL, NULL, 0}
 };

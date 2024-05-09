@@ -65,7 +65,7 @@ private:
 
     bool verbose = false;
 
-    bool bossInit = false;
+    bool scoreEdges = true;
 
     std::list<Node> nodes;
 
@@ -73,7 +73,7 @@ private:
 
     Score* scorer;
 
-    std::map<Node, std::unique_ptr<GrowShrinkTree>> gstMap;
+    std::map<Node, GrowShrinkTree> gstMap;
 
     std::map<Node, std::mutex> gstMutexMap;
 
@@ -309,13 +309,6 @@ public:
 
     Grasp(Score* scorer, int threads = -1);
 
-    // ~Grasp() {
-    // 	for (Node n : nodes) {
-    // 	    delete gstMap[n];
-    // 	}
-    // }
-
-
     /**
      * @return the elapsed time of the search, in milliseconds.
      */
@@ -349,8 +342,6 @@ public:
 	this->scorer->setPenalty(penalty);
     }
 
-    void setBossInit(bool bossInit) { this->bossInit = bossInit; }
-
     void setThreads(int threads) { this->threads = threads; }
 
     Knowledge getKnowledge() { return this->knowledge; }
@@ -363,7 +354,7 @@ public:
 
     void resetTrees() {
 	for (Node n : nodes) {
-	    gstMap[n]->reset();
+	    gstMap[n].reset();
 	}
     }
 
