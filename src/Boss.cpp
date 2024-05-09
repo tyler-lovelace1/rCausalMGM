@@ -82,7 +82,7 @@ Boss::Boss(Score *scorer, int threads) : taskQueue(MAX_QUEUE_SIZE) {
     nodes = std::list<Node>(_nodes.begin(), _nodes.end());
 
     for (Node node : nodes) {
-	gstMap[node] = GrowShrinkTree(scorer, node);
+	gstMap[node] = std::make_unique<GrowShrinkTree>(scorer, node);
 	gstMutexMap[node];
     }
     
@@ -127,7 +127,7 @@ double Boss::update(OrderGraph& tau) {
 
 	{
 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[*it]);
-	    parents = gstMap[*it].search(prefix, &localBic);
+	    parents = gstMap[*it]->search(prefix, &localBic);
 	}
 	
 	tau.parentMap[*it] = std::set<Node>(parents.begin(), parents.end());
@@ -180,7 +180,7 @@ double Boss::updateParallel(OrderGraph& tau) {
 
 			  // {
 			  //     std::lock_guard<std::mutex> gstLock(gstMutexMap[*it]);
-			  parents = gstMap[*it].search(prefix, &localBic);
+			  parents = gstMap[*it]->search(prefix, &localBic);
 			  // }
 
 
@@ -337,7 +337,7 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
 
 	{
 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
-	    parents = gstMap[node].search(prefix, &localBic);
+	    parents = gstMap[node]->search(prefix, &localBic);
 	}
 	
 	return localBic;

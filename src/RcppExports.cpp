@@ -478,8 +478,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // grasp
-Rcpp::List grasp(const Rcpp::DataFrame& data, const int depth, const int numStarts, const double penalty, const int threads, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_grasp(SEXP dataSEXP, SEXP depthSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+Rcpp::List grasp(const Rcpp::DataFrame& data, const int depth, const int numStarts, const double penalty, const bool bossInit, const int threads, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_grasp(SEXP dataSEXP, SEXP depthSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP bossInitSEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -487,10 +487,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int >::type depth(depthSEXP);
     Rcpp::traits::input_parameter< const int >::type numStarts(numStartsSEXP);
     Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
+    Rcpp::traits::input_parameter< const bool >::type bossInit(bossInitSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
     Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(grasp(data, depth, numStarts, penalty, threads, rank, verbose));
+    rcpp_result_gen = Rcpp::wrap(grasp(data, depth, numStarts, penalty, bossInit, threads, rank, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -542,7 +543,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_mgmfciCV", (DL_FUNC) &_rCausalMGM_mgmfciCV, 14},
     {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 8},
     {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 5},
-    {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 7},
+    {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 8},
     {"_rCausalMGM_boss", (DL_FUNC) &_rCausalMGM_boss, 6},
     {NULL, NULL, 0}
 };

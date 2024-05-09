@@ -1542,7 +1542,7 @@ Rcpp::List mgmpcCV(
 Rcpp::List mgmfciCV(
     const Rcpp::DataFrame& data,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-    const std::string cvType = "grid",
+    const std::string cvType = "random",
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 20,
@@ -1972,6 +1972,7 @@ Rcpp::StringVector growShrinkMB(
 //' @param depth The maximum search depth used in the depth-first search in GRaSP.
 //' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
 //' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
+//' @param bossInit A logical value indicating whether to initialize the causal order for GRaSP with the forward search procedure of BOSS.
 //' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
@@ -1987,6 +1988,7 @@ Rcpp::List grasp(
     const int depth = 2,
     const int numStarts = 3,
     const double penalty = 2,
+    const bool bossInit = false,
     const int threads = -1,
     const bool rank = false,
     const bool verbose = false
@@ -2018,6 +2020,7 @@ Rcpp::List grasp(
     grasp.setVerbose(verbose);
     grasp.setDepth(depth);
     grasp.setNumStarts(numStarts);
+    grasp.setBossInit(bossInit);
     
     // EdgeListGraph ig;
     // if (!initialGraph.isNull()) {

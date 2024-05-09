@@ -8,82 +8,128 @@ GrowShrinkTree::GrowShrinkTree(Score* scorer, Node target) : target(target) {
 
     this->scorer = scorer;
 
-    children[root] = {};
-    childSet[root] = {};
+    int idx = 0;
+    for (Node n : scorer->getVariables()) {
+	if (n == target) continue;
+	node2idx[n] = idx;
+	idx++;
+    }
+
+    // RcppThread::Rcout << scorer->getVariables().size()-1 << std::endl;
+
+    // RcppThread::Rcout << idx << std::endl;
+
+    numNodes = idx;
+
+    // root = new GrowShrinkNode(numNodes);
+    root.reset(new GrowShrinkNode(numNodes));
 }
 
-GrowShrinkNode GrowShrinkTree::grow(std::vector<Node> candidates,
-				    GrowShrinkNode& parent) {
-    // std::vector<Node> active = root.condSet;
-    double oldScore = 1e20, curScore = root.score, score;
-    GrowShrinkNode bestNode = root;
+std::vector<Node> GrowShrinkTree::growShrink(std::vector<Node>& candidates, double* scoreReturn) {
+
+    if (verbose) RcppThread::Rcout << "  Growing...\n";
+
+    double oldScore = 1e20, curScore = root->score, score;
+    GrowShrinkNode* bestNode = root.get();
     bool changeFlag = false;
 
     std::set<Node> candidateSet(candidates.begin(), candidates.end());
     // std::set<Node> activeCandidateSet(candidates.begin(), candidates.end());
 
-    if (verbose) Rcpp::Rcout << "    Score = " << bestNode.score << " : { }\n";
+    // std::set<std::shared_ptr<GrowShrinkNode>,GrowShrinkNode::cmp_ptr> candidateChildren;
 
-    while (bestNode.score < oldScore) {
+    if (verbose) RcppThread::Rcout << "    Score = " << bestNode->score << " : { }\n";
+
+    while (bestNode->score < oldScore) {
 	changeFlag = false;
-	oldScore = bestNode.score;
+	oldScore = bestNode->score;
 
-	if (childSet.count(bestNode)==0) {
-	    childSet[bestNode] = {};
-	    children[bestNode] = {};
-	}
+	// if (childSet.count(bestNode)==0) {
+	//     childSet[bestNode] = {};
+	//     children[bestNode] = {};
+	// }
+
+	// newChildren[bestNode] = {};
 
 	for (Node n : candidateSet) {
-	    if (childSet[bestNode].count(n)==0) {		
-		GrowShrinkNode child(n, bestNode.condSet);
+	    if (!bestNode->visited[node2idx[n]].load()) {		
+		GrowShrinkNode* child = new GrowShrinkNode(n, bestNode->condSet, numNodes);
 
 		// if (verbose) {
-		//     Rcpp::Rcout << "      Scoring child " << child.node << " = { ";
+		//     RcppThread::Rcout << "      Scoring child " << child->node << " = { ";
 
-		//     for (Node n2 : child.condSet) {
-		// 	Rcpp::Rcout << n2 << " ";
+		//     for (Node n2 : child->condSet) {
+		// 	RcppThread::Rcout << n2 << " ";
 		//     }
-		//     Rcpp::Rcout << "}\n";
+		//     RcppThread::Rcout << "}\n";
 		// }
 		
-		child.score = scorer->localScore(target, child.condSet);
+		child->score = scorer->localScore(target, child->condSet);
 
-		childSet[bestNode].insert(n);
-		if (child.score < bestNode.score) {	
-		    children[bestNode].insert(child);
+		// childSet[bestNode].insert(n);
+		if (child->score < bestNode->score) {
+		    // std::lock_guard<std::mutex> treeLock(treeMutex);
+		    // newChildren[bestNode].insert(child);
+		    bestNode->addChild(child);
+		    // if (verbose) RcppThread::Rcout << "      Inserting child = { " << child->node << ", " << child->score << " }\n";
+		} else {
+		    // child.reset();
+		    delete child;
 		}
-		
-		// if (verbose) Rcpp::Rcout << "      Inserting child = { " << child.node << ", " << child.score << " }\n";
+
+		bestNode->visited[node2idx[n]].store(true);
+		// bestNode->visited[node2idx[n]] = true;
+		// 
 	    }
 	}
 
-	for (auto it = children[bestNode].begin(); it != children[bestNode].end(); it++) {
-	    // if (verbose) Rcpp::Rcout << "      Checking child = { " << it->node << ", " << it->score << " }\n";
-	    if (candidateSet.count(it->node)>0) {
-		// if (verbose) Rcpp::Rcout << "        In candidate set\n";
-		if (it->score < bestNode.score) {
-		    // if (verbose) Rcpp::Rcout << "        Child has a better score\n";
-		    changeFlag = true;
-		    parent = bestNode;
-		    bestNode = *it;
-		    candidateSet.erase(it->node);
-		}
+	// std::set<Node> candidateChildren;
+	// {
+	//     std::lock_guard<std::mutex> treeLock(treeMutex);
+	//     candidateChildren = std::move(std::set<Node>(children[bestNode].begin(), children[bestNode].end()));
+	// }
+
+	// candidateChildren.insert(newChildren[bestNode].begin(), newChildren[bestNode].end());
+	// {
+	//     std::lock_guard<std::mutex> treeLock(treeMutex);
+	// candidateChildren = bestNode->getChildren();
+	// }
+
+	for (auto it = bestNode->children.begin(); it != bestNode->children.end(); it++) {
+	    // if (verbose) RcppThread::Rcout << "      Checking child = { " << (*it)->node << ", " << (*it)->score << " }\n";
+	    if (candidateSet.count((*it)->node)>0) {
+		// if (verbose) RcppThread::Rcout << "        In candidate set\n";
+		// if ((*it)->score < bestNode->score) {
+		//     if (verbose) RcppThread::Rcout << "        Child has a better score\n";
+		changeFlag = true;
+		// parent = bestNode;
+		bestNode = *it;
+		candidateSet.erase((*it)->node);
+		// }
 		break;
 	    }
 	}
 	
 	if (changeFlag) {
 	    if (verbose) {
-		Rcpp::Rcout << "    Score = " << bestNode.score << " : { ";
-		for (Node n : bestNode.condSet) {
-		    Rcpp::Rcout << n << " ";
+		RcppThread::Rcout << "    Score = " << bestNode->score << " : { ";
+		for (Node n : bestNode->condSet) {
+		    RcppThread::Rcout << n << " ";
 		}
-		Rcpp::Rcout << "}\n";
+		RcppThread::Rcout << "}\n";
 	    }
 	}
     }
+
+    if (verbose) RcppThread::Rcout << "  Shrinking...\n";
+
+    bestNode->shrink(scorer, target, verbose);
+
+    if (scoreReturn != NULL) {
+	*scoreReturn = bestNode->shrinkScore.load();
+    }
     
-    return bestNode;
+    return bestNode->shrinkCondSet;
 }
 
 
@@ -94,11 +140,11 @@ GrowShrinkNode GrowShrinkTree::grow(std::vector<Node> candidates,
 // 	bool changeFlag = false;
 
 // 	if (verbose) {
-// 	    Rcpp::Rcout << "    Score = " << score << " : { ";
+// 	    RcppThread::Rcout << "    Score = " << score << " : { ";
 // 	    for (Node n : condSet) {
-// 		Rcpp::Rcout << n << " ";
+// 		RcppThread::Rcout << n << " ";
 // 	    }
-// 	    Rcpp::Rcout << "}\n";
+// 	    RcppThread::Rcout << "}\n";
 // 	}
     
 // 	std::list<Node> activeList(condSet.begin(), condSet.end());
@@ -127,11 +173,11 @@ GrowShrinkNode GrowShrinkTree::grow(std::vector<Node> candidates,
 // 	    if (changeFlag) {
 // 		activeList.erase(removeIt);
 // 		if (verbose) {
-// 		    Rcpp::Rcout << "    Score = " << curScore << " : { ";
+// 		    RcppThread::Rcout << "    Score = " << curScore << " : { ";
 // 		    for (Node n : activeList) {
-// 			Rcpp::Rcout << n << " ";
+// 			RcppThread::Rcout << n << " ";
 // 		    }
-// 		    Rcpp::Rcout << "}\n";
+// 		    RcppThread::Rcout << "}\n";
 // 		}
 // 	    }
 // 	}
@@ -160,32 +206,49 @@ std::vector<Node> GrowShrinkTree::search(std::vector<Node> candidates,
 	candidates.erase(it, candidates.end());
     }
         
-    if (verbose) {
-	Rcpp::Rcout << "Searching for Markov Boundary of " << target.getName() << "...\n";
-	Rcpp::Rcout << "  Growing...\n";
-    }
+    if (verbose)
+	RcppThread::Rcout << "Searching for Markov Boundary of " << target << "...\n";
 
-    GrowShrinkNode parent(root);
-    GrowShrinkNode gsNode = grow(candidates, parent);
+    // std::set<GrowShrinkNode> newChildren;
+    // std::shared_ptr<GrowShrinkNode> gsNode = grow(candidates);
     
-    if (verbose) Rcpp::Rcout << "  Shrinking...\n";
+    // if (verbose) RcppThread::Rcout << "  Shrinking...\n";
 
-    bool shrinkFlag = gsNode.shrinkFlag;
+    std::vector<Node> condSet = growShrink(candidates, scoreReturn);    
 
-    gsNode.shrink(scorer, target, verbose);
+    // {
+    // 	std::lock_guard<std::mutex> treeLock(treeMutex);
+	
+    // 	for (auto it = newChildren.begin(); it != newChildren.end(); it++) {
+    // 	    children[it->first].insert(it->second.begin(), it->second.end());
+    // 	}
 
-    if (!shrinkFlag) {
-	children[parent].erase(gsNode);
-	children[parent].insert(gsNode);
-    }
+    // 	auto bestIt = children[growOut[0]].find(growOut[1]);
+    // 	bestIt->shrink(scorer, target, verbose);
+    // 	if (scoreReturn != NULL) {
+    // 	    *scoreReturn = bestIt->shrinkScore;
+    // 	}
+    // 	condSet = bestIt->shrinkCondSet;
+    // }
 
-    if (scoreReturn != NULL) {
-	*scoreReturn = gsNode.shrinkScore;
-    }
+    // bool shrinkFlag = gsNode.shrinkFlag;
+
+    // gsNode->shrink(scorer, target, verbose);
+
+    // if (!shrinkFlag) {
+    // 	children[parent].erase(gsNode);
+    // 	children[parent].insert(gsNode);
+    // }
+
+    // if (scoreReturn != NULL) {
+    // 	*scoreReturn = gsNode->shrinkScore.load();
+    // }
+
+    // condSet = gsNode->shrinkCondSet;
 
     if (verbose) RcppThread::Rcout << "Finished. \n";
 
-    return gsNode.shrinkCondSet;
+    return condSet;
 }
 
 std::vector<Node> GrowShrinkTree::search(double* scoreReturn) {
@@ -198,7 +261,7 @@ std::vector<Node> GrowShrinkTree::search(double* scoreReturn) {
     return search(scorer->getVariables(), scoreReturn);
 }
 
-// no export //[[Rcpp::export]]
+// no export [[Rcpp::export]]
 Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string target) {
     DataSet ds = DataSet(df);
     ds.dropMissing();
@@ -241,7 +304,7 @@ Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string tar
 }
 
 
-// no export // [[Rcpp::export]]
+// no export  [[Rcpp::export]]
 Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
     DataSet ds = DataSet(df);
     ds.dropMissing();
@@ -262,6 +325,9 @@ Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::stri
 	gst.setVerbose(false);
 
 	for (int i = 0; i < numSub; i++) {
+	    // if ((i+1) % 50 == 0) {
+	    // 	gst.reset();
+	    // }
 	    std::vector<Node> candidates(regressors);
 	    std::random_shuffle(candidates.begin(), candidates.end(), randWrapper);
 	    candidates.erase(candidates.begin() + candidates.size() / 2,
@@ -293,4 +359,55 @@ Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::stri
     _mb.attr("Score") = Rcpp::wrap(score);
     
     return _mb;
+}
+
+
+//  no export [[Rcpp::export]]
+std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub, int threads) {
+    DataSet ds = DataSet(df);
+    ds.dropMissing();
+
+    Node targetNode = ds.getVariable(target);
+
+    std::vector<Node> regressors(ds.getVariables());
+    auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
+
+    regressors.erase(it, regressors.end());
+
+    std::vector<Node> mb;
+    double score;
+
+    RcppThread::ThreadPool pool(std::max(1, threads));
+
+    DegenerateGaussianScore scorer(ds, 1.0);
+    GrowShrinkTree* gst = new GrowShrinkTree(&scorer, targetNode);
+    gst->setVerbose(true);
+
+    auto gsTask = [&](std::vector<Node> candidates) {
+	double score;
+	RcppThread::checkUserInterrupt();
+	gst->search(candidates, &score);
+	return score;
+    };
+
+    std::vector<std::future<double>> futures(numSub);
+    std::vector<double> scores;
+
+    for (int i = 0; i < numSub; i++) {
+	std::vector<Node> candidates(regressors);
+	std::random_shuffle(candidates.begin(), candidates.end(), randWrapper);
+	candidates.erase(candidates.begin() + candidates.size() / 2,
+			 candidates.end());
+	futures[i] = pool.pushReturn(gsTask, candidates);
+    }
+
+    for (int i = 0; i < numSub; i++) {
+	scores[i] = futures[i].get();
+    }
+
+    pool.join();
+    
+    delete gst;
+    
+    return scores;
 }
