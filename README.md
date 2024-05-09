@@ -750,9 +750,7 @@ print(ig.path)
 plot(ig.path)
 ```
 
-
-
-\begin{center}\includegraphics{plots/figure-markdown_strict/bic_aic_figures-1} \end{center}
+![](plots/figure-markdown_strict/bic_aic_figures-1.png)<!-- --> 
 
 ```r
 print(t(sapply(ig.path[1:2], prMetricsAdjacency, moral(sim50$graph))))
@@ -806,9 +804,7 @@ print(ig.cv)
 plot(ig.cv)
 ```
 
-
-
-\begin{center}\includegraphics{plots/figure-markdown_strict/mgm_cv_figures-1} \end{center}
+![](plots/figure-markdown_strict/mgm_cv_figures-1.png)<!-- --> 
 
 ```r
 print(t(sapply(ig.cv[1:2], prMetricsAdjacency, moral(sim50$graph))))
@@ -904,9 +900,7 @@ print(ig.steps)
 plot(ig.steps)
 ```
 
-
-
-\begin{center}\includegraphics{plots/figure-markdown_strict/mgm_steps_figures-1} \end{center}
+![](plots/figure-markdown_strict/mgm_steps_figures-1.png)<!-- --> 
 
 ```r
 print(t(sapply(ig.steps[1:2], prMetricsAdjacency, moral(sim50$graph))))
