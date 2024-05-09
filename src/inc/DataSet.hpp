@@ -55,6 +55,7 @@ public:
 
     void dropMissing();
     void npnTransform();
+    void npnTransformDeprecated();
 
     int getNumRows() { return n; }
     int getNumColumns() { return m; }

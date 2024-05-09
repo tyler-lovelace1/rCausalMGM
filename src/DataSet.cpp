@@ -425,6 +425,45 @@ void DataSet::npnTransform() {
 }
 
 
+void DataSet::npnTransformDeprecated() {
+    for (int j = 0; j < m; j++) {
+	if (variables[j].isContinuous()) {
+	    arma::vec vals(data.col(j));
+	    double mu = arma::mean(vals);
+	    double sd = arma::stddev(vals);
+	    
+	    arma::uvec indices = arma::sort_index(vals);
+	    int marker = 0;
+
+	    for (int i = 0; i < n; i++) {
+		if (vals(indices(i)) > vals(indices(marker))) {
+		    vals(indices.subvec(marker, i-1)).fill(marker+1);
+		    marker = i;
+		}
+	    }
+	    vals(indices.subvec(marker, n-1)).fill(marker+1);
+
+	    // Rcpp::Rcout << variables[j] << ":\n";
+	    
+	    // Rcpp::Rcout << vals(indices).t() << std::endl;
+	    // Rcpp::Rcout << vals.t() << std::endl;
+	    // Rcpp::Rcout << data.col(j).t() << std::endl;
+	    
+	    vals /= ((double) (n+1));
+
+	    // Rcpp::Rcout << vals(indices).t() << std::endl;
+	    // Rcpp::Rcout << vals.t() << std::endl;
+	    // Rcpp::Rcout << data.col(j).t() << std::endl;
+
+	    vals = Rcpp::qnorm(Rcpp::NumericVector(vals.begin(), vals.end()), mu, sd);
+	    data.col(j) = vals;
+	    
+	    // Rcpp::Rcout << vals.t() << std::endl;
+	}
+    }
+}
+
+
 void DataSet::addVariable(Node v) {
     // Rcpp::Rcout << "adding variable " << v->getName() << "..." << std::endl;
     variables.push_back(v);

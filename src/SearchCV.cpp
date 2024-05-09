@@ -517,10 +517,12 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 
     // std::set<CvResult> results;
 
+    // Nadeau and Bengio (2003) K-CV standard error correction
+
     for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
 	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
 	    results.insert(CvResult(arma::mean(loglik[orIdx][aIdx]),
-				    arma::stddev(loglik[orIdx][aIdx]),
+				    arma::stddev(loglik[orIdx][aIdx]) * std::sqrt(1.0 / (double) nfolds + 1.0 / (double) (nfolds-1)),
 				    arma::mean(mbSize[orIdx][aIdx]),
 				    alphas(aIdx),
 				    orientRules.at(orIdx)));
@@ -784,12 +786,14 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 	}
     }
 
+    // Nadeau and Bengio (2003) K-CV standard error correction
+
     for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
 	lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
 	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
 	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
 		results.insert(CvResult(arma::mean(loglik[lIdx][orIdx][aIdx]),
-					arma::stddev(loglik[lIdx][orIdx][aIdx]),
+					arma::stddev(loglik[lIdx][orIdx][aIdx]) * std::sqrt(1.0 / (double) nfolds + 1.0 / (double) (nfolds-1)),
 					arma::mean(mbSize[lIdx][orIdx][aIdx]),
 					alphas(aIdx),
 					lambda,
@@ -1046,13 +1050,15 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	}
     }
 
+    // Nadeau and Bengio (2003) K-CV standard error correction
+
     int count = 0;
     for (int tIdx = 0; tIdx < trials; tIdx++) {
 	lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
 	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
 	    count++;
 	    results.insert(CvResult(arma::mean(loglik[orIdx][tIdx]),
-				    arma::stddev(loglik[orIdx][tIdx]),
+				    arma::stddev(loglik[orIdx][tIdx]) * std::sqrt(1.0 / (double) nfolds + 1.0 / (double) (nfolds-1)),
 				    arma::mean(mbSize[orIdx][tIdx]),
 				    alphas(tIdx),
 				    lambda,

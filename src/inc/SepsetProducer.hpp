@@ -51,6 +51,8 @@ private:
 
     bool mapFilled = false;
 
+    // bool rfci = false;
+
     // Concurrency
     /**
      * Represents testing if a and c are independent

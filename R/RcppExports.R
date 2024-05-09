@@ -208,6 +208,26 @@ allMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
     .Call(`_rCausalMGM_allMetrics`, estimate, groundTruth, groundTruthDAG)
 }
 
+GrowShrinkSubSetTest <- function(df, target, numSub) {
+    .Call(`_rCausalMGM_GrowShrinkSubSetTest`, df, target, numSub)
+}
+
+GrowShrinkDeprecatedSubSetTest <- function(df, target, numSub) {
+    .Call(`_rCausalMGM_GrowShrinkDeprecatedSubSetTest`, df, target, numSub)
+}
+
+GrowShrinkTreeTest <- function(df, target) {
+    .Call(`_rCausalMGM_GrowShrinkTreeTest`, df, target)
+}
+
+GrowShrinkTreeSubSetTest <- function(df, target, numSub) {
+    .Call(`_rCausalMGM_GrowShrinkTreeSubSetTest`, df, target, numSub)
+}
+
+GrowShrinkTreeParallelSubSetTest <- function(df, target, numSub, threads) {
+    .Call(`_rCausalMGM_GrowShrinkTreeParallelSubSetTest`, df, target, numSub, threads)
+}
+
 #' Calculate the MGM graph on a dataset
 #'
 #' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
@@ -535,7 +555,7 @@ mgmpcCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.c
 #' sim <- simRandomDAG(200, 25)
 #' g.cv <- mgmfciCV(sim$data)
 #' print(g.cv)
-mgmfciCV <- function(data, knowledge = NULL, cvType = "grid", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = NULL, numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
+mgmfciCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = NULL, numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmfciCV`, data, knowledge, cvType, orientRule, lambdas, nLambda, alphas, numPoints, nfolds, foldid, threads, fdr, rank, verbose)
 }
 
@@ -581,12 +601,32 @@ growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, verbose = FALS
     .Call(`_rCausalMGM_growShrinkMB`, data, target, penalty, rank, verbose)
 }
 
+#' Implements Grow-Shrink algorithm for Markov blanket identification
+#'
+#' @description Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
+#'
+#' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+#' @param target A string denoting the name of the target variable to identify the Markov blanket of.
+#' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 1, which corresponds to the BIC score.
+#' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+#' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+#' @return The list of features in the Markov Blanket and the BIC score
+#' @export
+#' @examples
+#' sim <- simRandomDAG(200, 25)
+#' mb <- growShrinkMB(sim$data, "X1")
+#' print(mb)
+growShrinkMBDeprecated <- function(data, target, graph = NULL, penalty = 1, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_growShrinkMBDeprecated`, data, target, graph, penalty, rank, verbose)
+}
+
 #' Runs the GRaSP causal discovery algorithm on the dataset 
 #'
 #' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
 #' @param depth The maximum search depth used in the depth-first search in GRaSP.
 #' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
 #' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
+#' @param bossInit A logical value whether to initialize the causal order for GRaSP with the forward search procedure of BOSS.
 #' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
 #' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
 #' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
@@ -596,8 +636,8 @@ growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, verbose = FALS
 #' sim <- simRandomDAG(200, 25)
 #' g <- grasp(sim$data)
 #' print(g)
-grasp <- function(data, depth = 2L, numStarts = 3L, penalty = 2, threads = -1L, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_grasp`, data, depth, numStarts, penalty, threads, rank, verbose)
+grasp <- function(data, depth = 2L, numStarts = 3L, penalty = 2, bossInit = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
+    .Call(`_rCausalMGM_grasp`, data, depth, numStarts, penalty, bossInit, threads, rank, verbose)
 }
 
 #' Runs the BOSS causal discovery algorithm on the dataset 

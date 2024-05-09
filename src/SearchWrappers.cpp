@@ -9,6 +9,7 @@
 #include "IndTestMultiCox.hpp"
 #include "SearchCV.hpp"
 #include "GrowShrink.hpp"
+#include "GrowShrinkDeprecated.hpp"
 #include "DegenerateGaussianScore.hpp"
 #include "RegressionBicScore.hpp"
 #include "Grasp.hpp"
@@ -448,6 +449,8 @@ Rcpp::List mgmCV(
 
     RcppThread::checkUserInterrupt();
 
+    // Nadeau and Bengio (2003) K-CV standard error correction
+
     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
 					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
     					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
@@ -456,7 +459,7 @@ Rcpp::List mgmCV(
 					   Rcpp::_["idx.min"]=index(0) + 1,
 					   Rcpp::_["idx.1se"]=index(1) + 1,
 					   Rcpp::_["mean"] = arma::mean(loglik, 1),
-					   Rcpp::_["se"] = arma::stddev(loglik, 0, 1),
+					   Rcpp::_["se"] = arma::stddev(loglik, 0, 1) * std::sqrt(1.0 / (double) nfolds + 1.0 / (double) (nfolds-1)),
 					   Rcpp::_["size"] = R_NilValue,
 					   Rcpp::_["foldid"]=_foldid);
 
@@ -1542,7 +1545,7 @@ Rcpp::List mgmpcCV(
 Rcpp::List mgmfciCV(
     const Rcpp::DataFrame& data,
     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-    const std::string cvType = "grid",
+    const std::string cvType = "random",
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
     Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
     const int nLambda = 20,
@@ -1966,12 +1969,110 @@ Rcpp::StringVector growShrinkMB(
 }
 
 
+//' Implements Grow-Shrink algorithm for Markov blanket identification
+//'
+//' @description Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param target A string denoting the name of the target variable to identify the Markov blanket of.
+//' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 1, which corresponds to the BIC score.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The list of features in the Markov Blanket and the BIC score
+//' @export
+//' @examples
+//' sim <- simRandomDAG(200, 25)
+//' mb <- growShrinkMB(sim$data, "X1")
+//' print(mb)
+// [[Rcpp::export]]
+Rcpp::StringVector growShrinkMBDeprecated(
+    const Rcpp::DataFrame& data,
+    const std::string& target,
+    Rcpp::Nullable<Rcpp::List> graph = R_NilValue,
+    const double penalty = 1,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    // Rcpp::Nullable<Rcpp::List> graph = R_NilValue,
+   
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransformDeprecated();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
+    Node targetNode = ds.getVariable(target);
+
+    std::vector<Node> regressors(ds.getVariables());
+    auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
+
+    regressors.erase(it, regressors.end());
+
+    double score = 0;
+    
+    std::vector<Node> mb;
+
+    if (!ds.isCensored()) {
+	DegenerateGaussianScore scorer(ds, penalty);
+	GrowShrinkDeprecated gs(&scorer);
+	gs.setVerbose(verbose);
+	
+	EdgeListGraph g;
+	if (!graph.isNull()) {
+	    Rcpp::List _graph(graph);
+	    g = EdgeListGraph(_graph, ds);
+	    gs.setGraph(g);
+	}
+	
+	mb = gs.search(targetNode, regressors, &score);
+    } else {
+        RegressionBicScore scorer(ds, penalty);
+	GrowShrinkDeprecated gs(&scorer);
+	gs.setVerbose(verbose);
+
+	EdgeListGraph g;
+	if (!graph.isNull()) {
+	    Rcpp::List _graph(graph);
+	    g = EdgeListGraph(_graph, ds);
+	    gs.setGraph(g);
+	}
+
+	mb = gs.search(targetNode, regressors, &score);
+    }
+    
+    RcppThread::checkUserInterrupt();
+
+    Rcpp::StringVector _mb;
+
+    for (Node n : mb) {
+	_mb.push_back(n.getName());
+    }
+
+    // Rcpp::List result = Rcpp::List::create(Rcpp::_["markov.blanket"]=_mb,
+    // 					   Rcpp::_["SCORE"]=score);
+    
+    _mb.attr("Score") = Rcpp::wrap(score);
+    
+    return _mb;
+}
+
+
+
 //' Runs the GRaSP causal discovery algorithm on the dataset 
 //'
 //' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
 //' @param depth The maximum search depth used in the depth-first search in GRaSP.
 //' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
 //' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
+//' @param bossInit A logical value whether to initialize the causal order for GRaSP with the forward search procedure of BOSS.
 //' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
@@ -1987,6 +2088,7 @@ Rcpp::List grasp(
     const int depth = 2,
     const int numStarts = 3,
     const double penalty = 2,
+    const bool bossInit = false,
     const int threads = -1,
     const bool rank = false,
     const bool verbose = false
@@ -2018,6 +2120,7 @@ Rcpp::List grasp(
     grasp.setVerbose(verbose);
     grasp.setDepth(depth);
     grasp.setNumStarts(numStarts);
+    grasp.setBossInit(bossInit);
     
     // EdgeListGraph ig;
     // if (!initialGraph.isNull()) {

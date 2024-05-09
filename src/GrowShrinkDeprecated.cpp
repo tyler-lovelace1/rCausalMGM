@@ -1,29 +1,44 @@
-#include "GrowShrink.hpp"
+#include "GrowShrinkDeprecated.hpp"
 #include "DegenerateGaussianScore.hpp"
 #include "RegressionBicScore.hpp"
 
-GrowShrink::GrowShrink(Score* scorer) {
+GrowShrinkDeprecated::GrowShrinkDeprecated(Score* scorer) {
     if (scorer == NULL) 
-        throw std::invalid_argument("scorer may not be NULL.");
+	throw std::invalid_argument("scorer may not be NULL.");
 
     this->scorer = scorer;
 }
 
-std::vector<Node> GrowShrink::grow(const Node& target,
-				   std::vector<Node> regressors,
-				   double* scoreReturn) {
+std::vector<Node> GrowShrinkDeprecated::grow(const Node& target,
+					     std::vector<Node> regressors,
+					     double* scoreReturn) {
     std::vector<Node> active;
     double oldScore = 1e20, curScore = 0.0, score;
     Node bestNode;
     bool changeFlag = false;
+
+    if (!graph.isEmpty()) {
+	active = graph.getAdjacentNodes(target);
+    }
 
     if (verbose) Rcpp::Rcout << "    Score = " << curScore << " : { }\n";
 
     while (curScore < oldScore) {
 	changeFlag = false;
 	oldScore = curScore;
+
+	std::unordered_set<Node> Z;
+	if (!graph.isEmpty()) {
+	    Z.insert(active.begin(), active.end());
+	}
+	
 	for (auto it = regressors.begin(); it != regressors.end(); it++) {
 	    if (std::find(active.begin(), active.end(), *it)==active.end()) {
+		if (!graph.isEmpty()) {
+		    if (!GraphUtils::existsPossibleColliderPath(target, *it, Z, graph)) {
+			continue;
+		    }
+		}
 		active.push_back(*it);
 		score = scorer->localScore(target, active);
 		if (score < curScore) {
@@ -52,11 +67,15 @@ std::vector<Node> GrowShrink::grow(const Node& target,
 }
 
 
-std::vector<Node> GrowShrink::shrink(const Node& target, std::vector<Node> active,
-				     double curScore, double* scoreReturn) {
+std::vector<Node> GrowShrinkDeprecated::shrink(const Node& target, std::vector<Node> active,
+					       double curScore, double* scoreReturn) {
     double oldScore = 1e20, score;
     // Node bestNode;
     bool changeFlag = false;
+
+    std::vector<Node> neighbors;
+    if (!graph.isEmpty())
+	neighbors = graph.getAdjacentNodes(target);
 
     if (verbose) {
 	Rcpp::Rcout << "    Score = " << curScore << " : { ";
@@ -74,6 +93,28 @@ std::vector<Node> GrowShrink::shrink(const Node& target, std::vector<Node> activ
 	changeFlag = false;
 	oldScore = curScore;
 	for (auto it = activeList.begin(); it != activeList.end(); it++) {
+
+	    if (!graph.isEmpty()) {		
+		if (std::find(neighbors.begin(), neighbors.end(), *it) == neighbors.end()) {
+		    bool validRemoval = true;
+		    std::unordered_set<Node> Z(active.begin(), active.end());
+		    Z.erase(*it);
+		    for (const Node& n : Z) {
+			validRemoval = GraphUtils::existsPossibleColliderPath(target, n, Z, graph);
+			if (!validRemoval) {
+			    RcppThread::Rcout << "  " << n << " cannot be reached when " << *it << " is removed.\n";
+			    break;
+			}
+		    }
+		    if (!validRemoval) {
+			continue;
+		    }
+		} else {
+		    RcppThread::Rcout << *it << " is a neighbor of " << target << std::endl;
+		    continue;
+		}
+	    }
+	    
 	    std::vector<Node> tempActive;
 	    for (auto jt = activeList.begin(); jt != activeList.end(); jt++) {
 		if (jt != it) {
@@ -106,9 +147,9 @@ std::vector<Node> GrowShrink::shrink(const Node& target, std::vector<Node> activ
     return std::vector<Node>(activeList.begin(), activeList.end());
 }
 
-std::vector<Node> GrowShrink::search(const Node& target,
-				     std::vector<Node> regressors,
-				     double* scoreReturn) {
+std::vector<Node> GrowShrinkDeprecated::search(const Node& target,
+					       std::vector<Node> regressors,
+					       double* scoreReturn) {
     
     auto it = std::remove(regressors.begin(), regressors.end(), target);
     regressors.erase(it, regressors.end());
@@ -133,13 +174,13 @@ std::vector<Node> GrowShrink::search(const Node& target,
     return active;
 }
 
-std::vector<Node> GrowShrink::search(const Node& target, double* scoreReturn) {
+std::vector<Node> GrowShrinkDeprecated::search(const Node& target, double* scoreReturn) {
     return search(target, scorer->getVariables(), scoreReturn);
 }
 
 
 //[[Rcpp::export]]
-Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
+Rcpp::StringVector GrowShrinkDeprecatedSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
     DataSet ds = DataSet(df);
     ds.dropMissing();
 
@@ -155,7 +196,7 @@ Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame &df, std::string t
 
     if (!ds.isCensored()) {
 	DegenerateGaussianScore scorer(ds, 1.0);
-	GrowShrink gs(&scorer);
+	GrowShrinkDeprecated gs(&scorer);
 	gs.setVerbose(false);
 
 	for (int i = 0; i < numSub; i++) {
@@ -166,8 +207,8 @@ Rcpp::StringVector GrowShrinkSubSetTest(const Rcpp::DataFrame &df, std::string t
 	    mb = gs.search(targetNode, candidates, &score);
 	}
     } else {
-        RegressionBicScore scorer(ds, 1.0);
-        GrowShrink gs(&scorer);
+	RegressionBicScore scorer(ds, 1.0);
+	GrowShrinkDeprecated gs(&scorer);
 	gs.setVerbose(false);
 
 	for (int i = 0; i < numSub; i++) {

@@ -323,8 +323,10 @@ double RegressionBicScore::localScore(const Node& x, const std::vector<Node>& z)
 	    + penalty * logN * K;
     } else if (x.isCensored()) {
 	K = regressors.size();
+	// score = - 2 * (logLikCoxRegression(x, regressors) - nullLL.at(x))
+	//     + penalty * logNevents.at(x) * K;
 	score = - 2 * (logLikCoxRegression(x, regressors) - nullLL.at(x))
-	    + penalty * logNevents.at(x) * K;
+	    + penalty * logN * K;
     } else {
 	throw std::invalid_argument(x.getName() + " is an unrecognized variable type");
     }

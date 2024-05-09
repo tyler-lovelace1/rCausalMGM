@@ -75,7 +75,7 @@ private:
 
     Score* scorer;
 
-    std::map<Node, GrowShrinkTree> gstMap;
+    std::map<Node, std::unique_ptr<GrowShrinkTree>> gstMap;
 
     std::map<Node, std::mutex> gstMutexMap;
 
@@ -355,6 +355,12 @@ public:
 
     Boss(Score* scorer, int threads = -1);
 
+    // ~Boss() {
+    // 	for (Node n : nodes) {
+    // 	    delete gstMap[n];
+    // 	}
+    // }
+
     /**
      * @return the elapsed time of the search, in milliseconds.
      */
@@ -400,7 +406,7 @@ public:
 
     void resetTrees() {
 	for (Node n : nodes) {
-	    gstMap[n].reset();
+	    gstMap[n]->reset();
 	}
     }
 

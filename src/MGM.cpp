@@ -445,7 +445,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi;
 
-    gradOut.betad = -n / (2.0 * par.betad);
+    // gradOut.betad = -n / (2.0 * par.betad);
     for (arma::uword i = 0; i < n; i++) {
 	for (arma::uword j = 0; j < xDat.n_cols; j++) {
 	    // xPred(i,j) = par.alpha1(j) / par.betad(j) + xBeta(i,j) + dTheta(i,j);
@@ -453,7 +453,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 	    // xPred.col(j) = par.alpha1(j) / par.betad(j) + xBeta.col(j) + dTheta.col(j);
 	    // tempLoss.col(j) = xDat.col(j) - xPred.col(j);
 	    // tempLoss.col(j) = xDat.col(j) - par.alpha1(j) / par.betad(j) - xBeta.col(j) - dTheta.col(j);
-	    gradOut.betad(j) += std::pow(tempLoss(i,j), 2) / 2.0 + tempLoss(i,j) * (xBeta(i,j) + dTheta(i,j) + par.alpha1(j) / par.betad(j));
+	    // gradOut.betad(j) += std::pow(tempLoss(i,j), 2) / 2.0 + tempLoss(i,j) * (xBeta(i,j) + dTheta(i,j) + par.alpha1(j) / par.betad(j));
 	}
 	for (arma::uword j = 0; j < dDat.n_cols; j++) {
 	    wxProd(i,j) += par.alpha2(j);
@@ -567,11 +567,11 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
         gradbetad(s)=-n/(2*betad(s))+1/2*norm(res(:,s))^2-res(:,s)'*(Xbeta(:,s)+Dtheta(:,s));
     end
     */
-    // gradOut.betad = arma::vec(xDat.n_cols);
-    // for(arma::uword i = 0; i < p; i++){
-    // 	gradOut.betad(i) = -n / (2.0 * par.betad(i)) + arma::dot(tempLoss.col(i), tempLoss.col(i)) / 2.0 - arma::dot(tempLoss.col(i),  par.alpha1(i) / par.betad(i) + xBeta.col(i) + dTheta.col(i));
-    // 	// gradOut.betad(i) = -n / (2.0 * par.betad(i)) - arma::dot(xPred.col(i), xPred.col(i)) / (2.0 * std::pow(par.betad(i), 2)) + arma::dot(xDat.col(i), xDat.col(i)) / 2.0;
-    // }
+    gradOut.betad = arma::vec(xDat.n_cols);
+    for(arma::uword i = 0; i < p; i++){
+	gradOut.betad(i) = -n / (2.0 * par.betad(i)) + arma::dot(tempLoss.col(i), tempLoss.col(i)) / 2.0 - arma::dot(tempLoss.col(i),  par.alpha1(i) / par.betad(i) + xBeta.col(i) + dTheta.col(i));
+	// gradOut.betad(i) = -n / (2.0 * par.betad(i)) - arma::dot(xPred.col(i), xPred.col(i)) / (2.0 * std::pow(par.betad(i), 2)) + arma::dot(xDat.col(i), xDat.col(i)) / 2.0;
+    }
 
     gradOut.alpha1 /= (double) n;
     gradOut.alpha2 /= (double) n;
@@ -1535,7 +1535,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     // double pred;
 
-    grad.betad = -n / (2.0 * par.betad);    
+    // grad.betad = -n / (2.0 * par.betad);    
     for (arma::uword i = 0; i < n; i++) {
 	for (arma::uword j = 0; j < p; j++) {
 	    // xPred(i,j) = xBeta(i,j) + dTheta(i,j) + par.alpha1(j) / par.betad(j);
@@ -1543,7 +1543,7 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 	    // xPred.col(j) = par.alpha1(j) / par.betad(j) + xBeta.col(j) + dTheta.col(j);
 	    // negLoss.col(j) = xPred.col(j) - xDat.col(j);
 	    // negLoss.col(j) = par.alpha1(j) / par.betad(j) + xBeta.col(j) + dTheta.col(j) - xDat.col(j);
-	    grad.betad(j) += std::pow(negLoss(i,j), 2) / 2.0 - negLoss(i,j) * (xBeta(i,j) + dTheta(i,j) + par.alpha1(j) / par.betad(j));
+	    // grad.betad(j) += std::pow(negLoss(i,j), 2) / 2.0 - negLoss(i,j) * (xBeta(i,j) + dTheta(i,j) + par.alpha1(j) / par.betad(j));
 	}
 	for (arma::uword j = 0; j < dDat.n_cols; j++) {
 	    wxProd(i, j) += par.alpha2(j);
@@ -1656,16 +1656,16 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
         gradbetad(s)=-n/(2*betad(s))+1/2*norm(res(:,s))^2-res(:,s)'*(Xbeta(:,s)+Dtheta(:,s));
     end
         */
-    // grad.betad = arma::vec(xDat.n_cols);
-    // for(arma::uword i = 0; i < p; i++){
-    //     // Rcpp::Rcout << "BETA NORM (i = " << i << "):\n" << std::pow(arma::norm(negLoss.col(i), 2), 2) << std::endl;
-    //     // Rcpp::Rcout << "BETA SCALAR (i = " << i << "):\n" << arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i))) << std::endl;
-    //     // grad.betad(i) = -n / (2.0 * par.betad(i)) + arma::dot(negLoss.col(i), negLoss.col(i)) / 2.0 - arma::dot(negLoss.col(i), xPred.col(i));
+    grad.betad = arma::vec(xDat.n_cols);
+    for(arma::uword i = 0; i < p; i++){
+        // Rcpp::Rcout << "BETA NORM (i = " << i << "):\n" << std::pow(arma::norm(negLoss.col(i), 2), 2) << std::endl;
+        // Rcpp::Rcout << "BETA SCALAR (i = " << i << "):\n" << arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i))) << std::endl;
+        // grad.betad(i) = -n / (2.0 * par.betad(i)) + arma::dot(negLoss.col(i), negLoss.col(i)) / 2.0 - arma::dot(negLoss.col(i), xPred.col(i));
 
-    // 	grad.betad(i) = -n / (2.0 * par.betad(i)) + arma::dot(negLoss.col(i), negLoss.col(i)) / 2.0 - arma::dot(negLoss.col(i), par.alpha1(i) / par.betad(i) + xBeta.col(i) + dTheta.col(i));
+	grad.betad(i) = -n / (2.0 * par.betad(i)) + arma::dot(negLoss.col(i), negLoss.col(i)) / 2.0 - arma::dot(negLoss.col(i), par.alpha1(i) / par.betad(i) + xBeta.col(i) + dTheta.col(i));
 
-    // 	// grad.betad(i) = -n / (2.0 * par.betad(i)) - arma::dot(xPred.col(i), xPred.col(i)) / (2.0 * std::pow(par.betad(i), 2)) + arma::dot(xDat.col(i), xDat.col(i)) / 2.0;
-    // }
+	// grad.betad(i) = -n / (2.0 * par.betad(i)) - arma::dot(xPred.col(i), xPred.col(i)) / (2.0 * std::pow(par.betad(i), 2)) + arma::dot(xDat.col(i), xDat.col(i)) / 2.0;
+    }
 
     grad.alpha1 /= (double) n;
     grad.alpha2 /= (double) n;
@@ -2072,7 +2072,10 @@ std::vector<EdgeListGraph> MGM::searchPathCV(std::vector<double> lambdas,
     // Rcpp::Rcout << "Test LogLiks:\n" << loglik << std::endl;
 
     arma::vec meanLoglik = arma::mean(loglik, 1);
-    arma::vec seLoglik = arma::stddev(loglik, 0, 1);
+
+    // Nadeau and Bengio (2003) K-CV standard error correction
+    
+    arma::vec seLoglik = arma::stddev(loglik, 0, 1) * std::sqrt(1.0 / (double) nfolds + 1.0 / (double) (nfolds-1));
 
     // Rcpp::Rcout << "Mean Test LogLiks:\n" << meanLoglik.t() << std::endl;
     // Rcpp::Rcout << "SE Test LogLiks:\n" << seLoglik.t() << std::endl;

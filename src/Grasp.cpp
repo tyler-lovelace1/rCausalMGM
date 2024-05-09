@@ -239,7 +239,7 @@ Grasp::OrderGraph Grasp::bestMove(Node n, OrderGraph tau) {
 
 	{
 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
-	    parents = gstMap[node].search(prefix, &localBic);
+	    parents = gstMap[node]->search(prefix, &localBic);
 	}
 	
 	return localBic;
@@ -372,6 +372,8 @@ Grasp::OrderGraph Grasp::bestMove(Node n, OrderGraph tau) {
     return tau;
 }
 
+
+
 std::list<Node> Grasp::initializeMinDegree() {
     std::vector<std::set<Node>> tiers = knowledge.getTiers();
 
@@ -392,7 +394,7 @@ std::list<Node> Grasp::initializeMinDegree() {
 	    EdgeListGraph tierUndir(_tier);
 
 	    for (int i = 0; i < _tier.size(); i++) {
-		std::vector<Node> parents = gstMap[_tier.at(i)].search(_tier);
+		std::vector<Node> parents = gstMap[_tier.at(i)]->search(_tier);
 		for (Node n : parents) {
 		    tierUndir.addUndirectedEdge(_tier.at(i), n);
 		}
@@ -512,7 +514,7 @@ Grasp::Grasp(Score *scorer, int threads) {
     nodes = std::list<Node>(_nodes.begin(), _nodes.end());
 
     for (Node node : nodes) {
-	gstMap[node] = GrowShrinkTree(scorer, node);
+	gstMap[node] = std::make_unique<GrowShrinkTree>(scorer, node);
 	gstMutexMap[node];
     }
     
@@ -583,7 +585,7 @@ double Grasp::update(OrderGraph& tau) {
 
 	{
 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[*it]);
-	    parents = gstMap[*it].search(prefix, &localBic);
+	    parents = gstMap[*it]->search(prefix, &localBic);
 	}
 	
 	tau.parentMap[*it] = std::unordered_set<Node>(parents.begin(), parents.end());
@@ -644,7 +646,7 @@ double Grasp::updateParallel(OrderGraph& tau) {
 
 			  
 			  // std::lock_guard<std::mutex> gstLock(gstMutexMap[*it]);
-			  parents = gstMap[*it].search(prefix, &localBic);
+			  parents = gstMap[*it]->search(prefix, &localBic);
 			  
 			  {
 			      std::lock_guard<std::mutex> scoreLock(scoreMutex);
@@ -1055,11 +1057,11 @@ EdgeListGraph Grasp::search() {
     for (int i = 0; i < numStarts; i++) {
 	if (verbose) Rcpp::Rcout << "Run " << i+1 << "...\n";
 	
-	// if (nodes.size() > 100) {
-	//     nodes = initializeBOSS();
-	// } else {
-	nodes = initializeRandom();
-	// }
+	if (bossInit) {
+	    nodes = initializeBOSS();
+	} else {
+	  nodes = initializeRandom();
+	}
 	pi = OrderGraph(nodes);
 	score = updateParallel(pi);
 	
