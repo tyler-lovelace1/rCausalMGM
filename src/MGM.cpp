@@ -405,6 +405,8 @@ double MGM::calcLambdaMax() {
 double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     MGMParams par(parIn, p, lsum);
 
+    // Rcpp::Rcout << "smooth call\n" << std::endl;
+
     // Rcpp::Rcout << "par: \n" << par << std::endl;
 
     MGMParams gradOut;
@@ -505,7 +507,7 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
         wxTemp = arma::diagmat(invDenom) * wxTemp;
 
         for (arma::uword k = 0; k < n; k++) {
-            const arma::vec& curRow0 = wxTemp0.row(k);
+	    arma::vec curRow0(arma::conv_to<arma::vec>::from(wxTemp0.row(k)));
 
             catloss -= curRow0((arma::uword) yDat(k,i) - 1);
             catloss += logsumexp(curRow0);
@@ -1097,6 +1099,8 @@ double MGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
 double MGM::smoothValue(arma::vec& parIn) {
     MGMParams par(parIn, p, lsum);
 
+    // Rcpp::Rcout << "smoothValue call\n" << std::endl;
+
     // Rcpp::Rcout << "par: \n" << par << std::endl;
 
     for(arma::uword i = 0; i < par.betad.size(); i++) {
@@ -1168,7 +1172,7 @@ double MGM::smoothValue(arma::vec& parIn) {
     for (arma::uword i = 0; i < yDat.n_cols; i++) {
         arma::subview<double> wxTemp = wxProd(0, lcumsum[i], arma::size(n, l[i]));
         for (arma::uword k = 0; k < n; k++) {
-            arma::vec curRow = wxTemp.row(k);
+            arma::vec curRow(arma::conv_to<arma::vec>::from(wxTemp.row(k)));
 
             catloss -= curRow((arma::uword) yDat(k,i) - 1);
             catloss += logsumexp(curRow);
@@ -1208,7 +1212,7 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
 
     const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
     arma::mat betaScale = betaWeight * -tlam(0);
-    arma::mat absBeta = arma::abs(par.beta); 
+    arma::mat absBeta = arma::abs(par.beta); // + arma::diagmat(par.betad); 
     
     betaScale /= absBeta;
     betaScale += 1;
@@ -1219,6 +1223,8 @@ double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     double betaNorms = 0;
 
     for (arma::uword i = 0; i < p; i++) {
+	// par.betad(i) *= betaScale(i,i);
+	// betaNorms += std::abs(betaWeight(i,i)*par.betad(i));
         for (arma::uword j = 0; j < p; j++) {
             double curVal = par.beta(i,j);
             if (curVal != 0) {
@@ -1501,6 +1507,8 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
 
     MGMParams par(parIn, p, lsum);
 
+    // Rcpp::Rcout << "smoothGradient call\n" << std::endl;
+
     // Rcpp::Rcout << "par: \n" << par << std::endl;
 
     par.beta = arma::symmatu(par.beta);
@@ -1674,6 +1682,8 @@ arma::vec MGM::smoothGradient(arma::vec& parIn) {
     grad.theta /= (double) n;
     grad.phi /= (double) n;
 
+    // Rcpp::Rcout << "grad:\n" << grad << std::endl;
+
     if (pDummy != 0) {
 	grad.alpha1.fill(0);
 	grad.betad.fill(0);
@@ -1716,11 +1726,13 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
     const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
     arma::mat betaScale = betaWeight * -tlam(0);
     
-    betaScale /= arma::abs(par.beta);
+    betaScale /= arma::abs(par.beta); // + arma::diagmat(par.betad);
     betaScale += 1;
     betaScale.transform( [](double val) {return std::max(val, 0.0); } );
 
     par.beta = par.beta % betaScale;
+
+    // par.betad = par.betad % betaScale.diag();
 
     //weight beta
     //betaw = (wv(1:p)'*wv(1:p)).*beta;
@@ -1779,6 +1791,7 @@ arma::vec MGM::proximalOperator(double t, arma::vec& X) {
 void MGM::learn(double epsilon, int iterLimit) {
     ProximalGradient pg = ProximalGradient();
     arma::vec curParams = params.toMatrix1D();
+    // if (verbose) RcppThread::Rcout << "  Beginning proximal gradient descent...\n";
     arma::vec newParams = pg.learnBackTrack((ConvexProximal *) this, curParams, epsilon, iterLimit);
     params = MGMParams(newParams, p, lsum);
 }
@@ -1986,6 +1999,9 @@ std::vector<EdgeListGraph> MGM::searchPath(std::vector<double> lambdas,
 	pathGraphs.push_back(graphFromMGM());
 
 	arma::vec par(params.toMatrix1D());
+
+	// if (verbose) RcppThread::Rcout << "  params:\n" << params << std::endl;
+	
 	loglik(i) = -n * smoothValue(par);
 	nParams(i) = arma::accu(abs(par)>2*arma::datum::eps);
 

@@ -146,6 +146,10 @@ void PossibleDsepFciConsumerProducer::setMaxPathLength(int maxReachablePathLengt
 void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges) {
     // PossibleDsepTask poisonPill(Edge(), std::vector<Node>());
 
+    int maxPossDsepSize = 0;
+
+    bool printFlag = false;
+
     for (const Edge& edge : edges) {
         Node x = edge.getNode1();
         Node y = edge.getNode2();
@@ -174,7 +178,16 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 
 	if (adjx != possibleDsep) {
 
-	    // RcppThread::Rcout << "      Possible-D-Sep(" << x << "," << y << ")  :  {"; // != Adj(" << x <<") \\ { " << y <<" }\n";
+	    if (possibleDsep.size() > maxPossDsepSize) {
+		maxPossDsepSize = possibleDsep.size();
+		if (verbose) {
+		    printFlag = true;
+		    RcppThread::Rcout << "\r      Largest Encountered Possible-D-Sep: "
+				      << maxPossDsepSize;
+		}
+	    }
+
+	    // RcppThread::Rcout << "      Possible-D-Sep(" << x << "," << y << ")  :  { "; // != Adj(" << x <<") \\ { " << y <<" }\n";
 	
 	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
 	    // for (Node node : possibleDsep) {
@@ -221,7 +234,16 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 
 	if (adjy != possibleDsep) {
 
-	    // RcppThread::Rcout << "      Possible-D-Sep(" << y << "," << x << ")  :  {"; // != Adj(" << y <<") \\ { " << x <<" }\n";
+	    if (possibleDsep.size() > maxPossDsepSize) {
+	        maxPossDsepSize = possibleDsep.size();
+		if (verbose) {
+		    printFlag = true;
+		    RcppThread::Rcout << "\r      Largest Encountered Possible-D-Sep: "
+				      << maxPossDsepSize;
+		}
+	    }
+
+	    // RcppThread::Rcout << "      Possible-D-Sep(" << y << "," << x << ")  :  { "; // != Adj(" << y <<") \\ { " << x <<" }\n";
 	
 	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
 	    // for (Node node : possibleDsep) {
@@ -256,9 +278,15 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 	    }
 	}
 
+	// RcppThread::Rcout << "      Largest Possible-D-Sep: " << maxPossDsepSize << std::endl;
+
 	if (RcppThread::isInterrupted()) {
 	    break;
 	}
+    }
+
+    if (verbose && printFlag) {
+	RcppThread::Rcout << std::endl;
     }
 
     for (int i = 0; i < parallelism; i++) {
@@ -274,10 +302,10 @@ void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::unordered_map<Ed
         if (edgeCondsetMap.count(task.edge) == 0) {
 	    Node x = task.edge.getNode1();
 	    Node y = task.edge.getNode2();
-	    if (x > y) {
-		x = task.edge.getNode2();
-		y = task.edge.getNode1();
-	    }
+	    // if (x > y) {
+	    // 	x = task.edge.getNode2();
+	    // 	y = task.edge.getNode1();
+	    // }
 	    
             if (test->isIndependent(x, y, task.condSet)) {
                 std::lock_guard<std::mutex> edgeLock(edgeMutex);
@@ -286,6 +314,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::unordered_map<Ed
 		// 		      std::vector<Node>>(task.edge, task.condSet));
 	    }
         }
+	
         task = taskQueue.pop();
 
 	if (RcppThread::isInterrupted()) {

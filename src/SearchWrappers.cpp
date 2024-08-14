@@ -927,6 +927,7 @@ Rcpp::List pcStable(
 //' @param orientRule Determines which of the four possible orientation rules will be utilized to orient colliders in the FCI-Stable algorithm. Possible options are "majority", "maxp", "conservative", and "sepsets". The default value is "majority". Additionally, a vector of valid orientation rules can be provided, and fciStable will return a list containing the graphs learned with each.
 //' @param alpha A numeric value containing the significance threshold alpha for the conditional independence tests used during constraint-based causal discovery. This parameter directly controls graph sparsity, with low values of alpha yielding sparse graphs and high values yielding dense graphs. The default value is 0.05.
 //' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param possDsep A logical value indicating whether to perform the possible-D-Sep search stage of the FCI algorithm. The possible-D-Sep search is necessaey fro correctness but can be computationally expensive in dense or high-dimensional or graphs. If set to FALSE, the RFCI rule R0 will be applied to remove some of the extraneous adjacencies that would have been removed by possible-D-Sep search. The default value is TRUE.
 //' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
@@ -944,6 +945,7 @@ Rcpp::List fciStable(
     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority"),
     const double alpha = 0.05,
     const int threads = -1,
+    const bool possDsep = true,
     const bool fdr = false,
     const bool rank = false,
     const bool verbose = false
@@ -974,6 +976,7 @@ Rcpp::List fciStable(
     if (threads > 0) fci.setThreads(threads);
     fci.setVerbose(verbose);
     fci.setFDR(fdr);
+    fci.setPossibleDsepSearchDone(possDsep);
     fci.setOrientRule(SepsetProducer::str2rule(_orientRule.at(0)));
     
     EdgeListGraph ig;

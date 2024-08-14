@@ -328,9 +328,9 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	for (int i = 0; i < firstRejectIdx; i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
-	    double fdrpval = numEdges * harmonicSum / ((double) edgeVec.size()-i) * pval;
-	    minFdrpval = std::min(minFdrpval, fdrpval);
-	    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], minFdrpval);
+	    // double fdrpval = numEdges * harmonicSum / ((double) edgeVec.size()-i) * pval;
+	    // minFdrpval = std::min(minFdrpval, fdrpval);
+	    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
 	    adjacencies[edgePair.first].erase(edgePair.second);
 	    adjacencies[edgePair.second].erase(edgePair.first);
 	}
@@ -454,13 +454,13 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         //If poison, return
         if (task.x.isNull() && task.y.isNull()) return;
 
-	bool edgeExists;
-	{
-	    std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
-	    edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
-	}
+	// bool edgeExists;
+	// {
+	//     std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
+	//     edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
+	// }
 	
-        if (!edgeExists) continue; // Skip if the edge no longer exists
+        // if (!edgeExists) continue; // Skip if the edge no longer exists
 
         numIndependenceTests++;
 	double pval = 0.0;
@@ -702,9 +702,9 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
 	for (int i = 0; i < firstRejectIdx; i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
-	    double fdrpval = numEdges * harmonicSum / ((double) edgeVec.size()-i) * pval;
-	    minFdrpval = std::min(minFdrpval, fdrpval);
-	    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], minFdrpval);
+	    // double fdrpval = numEdges * harmonicSum / ((double) edgeVec.size()-i) * pval;
+	    // minFdrpval = std::min(minFdrpval, fdrpval);
+	    sepset.set(edgePair.first, edgePair.second, edgeMaxPSet[edgePair], pval);
 	    adjacencies[edgePair.first].erase(edgePair.second);
 	    adjacencies[edgePair.second].erase(edgePair.first);
 	}

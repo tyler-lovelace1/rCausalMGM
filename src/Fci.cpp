@@ -76,11 +76,8 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
     graph = fas.search();
     sepsets = fas.getSepsets();
     graph.reorientAllWith(ENDPOINT_CIRCLE);
-    fasGraph = graph;
-    fasSepsets = sepsets;
-    
-    // SepsetProducer spTemp(graph, sepsets, test);
-    // SepsetMap possDsepSepsets;
+
+    SepsetMap rfciSepsets = ruleR0_rfciPrune(graph, sepsets);
 
     // The original FCI, with or without JiJi Zhang's orientation rules
     // Optional step: Possible Dsep. (Needed for correctness but very time consuming.)
@@ -88,53 +85,38 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
 	if (verbose) Rcpp::Rcout << "  Starting Posssible DSep search" << std::endl;
 
 	FciOrient fciorient_;
-	posDmapSp = SepsetProducer(graph, sepsets, test);
 	posDsp = SepsetProducer(graph, test, nullSepsets, threads);
 
-	if (verbose) Rcpp::Rcout << "    Starting Orientations..." << std::endl;
+	if (verbose) Rcpp::Rcout << "    Starting Conservative Orientations..." << std::endl;
     
-	if (orientRule == ORIENT_SEPSETS) {
-
-	  posDmapSp.setOrientRule(orientRule);
-	  posDmapSp.setDepth(depth);
-	  posDmapSp.setVerbose(verbose);
-	  posDmapSp.setKnowledge(knowledge);
-	  if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
-      
-	  posDmapSp.fillMap();
-
-	  fciorient_ = FciOrient(posDmapSp, whyOrient);
-      
-	} else {
-
-	  posDsp.setOrientRule(orientRule);
-	  posDsp.setDepth(depth);
-	  posDsp.setVerbose(verbose);
-	  posDsp.setKnowledge(knowledge);
-	  if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
-      
-	  posDsp.fillMap();
-
-	  fciorient_ = FciOrient(posDsp, whyOrient);
-	}
-
+	posDsp.setOrientRule(ORIENT_CONSERVATIVE);
+	posDsp.setDepth(depth);
+	posDsp.setVerbose(verbose);
+	posDsp.setKnowledge(knowledge);
+	if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
+	
+	posDsp.fillMap();
+	
+	fciorient_ = FciOrient(posDsp, whyOrient);
+	
 	fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
 	fciorient_.setMaxPathLength(maxPathLength);
 	fciorient_.setKnowledge(knowledge);
-
+	
 	if (verbose) Rcpp::Rcout << "    Orienting colliders..." << std::endl;
-    
+	
 	fciorient_.ruleR0(graph);
-
+	
 	PossibleDsepFciConsumerProducer possibleDSep(graph, test, threads);
 	possibleDSep.setKnowledge(knowledge);
 	possibleDSep.setDepth(getDepth());
 	possibleDSep.setMaxPathLength(maxPathLength);
 	possibleDSep.setVerbose(verbose);
 
-	if (verbose) Rcpp::Rcout << "    Checking Possible Dsep sets..." << std::endl;
+	if (verbose) Rcpp::Rcout << "    Checking Possible-Dsep sets..." << std::endl;
 
 	possDsepSepsets = possibleDSep.search();
+	possDsepSepsets.addAll(rfciSepsets);
 	sepsets.addAll(possDsepSepsets);
 
 	graph = possibleDSep.getGraph();
@@ -143,17 +125,20 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
 
 	// Reorient all edges as o-o.
 	graph.reorientAllWith(ENDPOINT_CIRCLE);
+    } else {
+	possDsepSepsets = rfciSepsets;
+	sepsets.addAll(possDsepSepsets);
     }
 
     // Step CI C (Zhang's step F3.)
     //fciOrientbk(getKnowledge(), graph, independenceTest.getVariables());    - Robert Tillman 2008
     //        fciOrientbk(getKnowledge(), graph, variables);
     //        new FciOrient(graph, new Sepsets(this.sepsets)).ruleR0(new Sepsets(this.sepsets));
-    if (verbose) Rcpp::Rcout << "  Starting Orientations..." << std::endl;
+    if (verbose) Rcpp::Rcout << "  Starting Final Orientations..." << std::endl;
 
     FciOrient fciorient_;
     mapSp = SepsetProducer(graph, sepsets, test);
-    sp = SepsetProducer(graph, test, possDsepSepsets, threads);
+    sp = SepsetProducer(graph, test, sepsets, threads);
     
     if (orientRule == ORIENT_SEPSETS) {
 
@@ -279,173 +264,173 @@ EdgeListGraph Fci::reorientWithRule(OrientRule rule) {
     
     orientRule = rule;
 
-    if (isPossibleDsepSearchDone()) {
+    // if (isPossibleDsepSearchDone()) {
 
-	graph = fasGraph;
-	sepsets = fasSepsets;
-	graph.reorientAllWith(ENDPOINT_CIRCLE);    
+    // 	graph = fasGraph;
+    // 	sepsets = fasSepsets;
+    // 	graph.reorientAllWith(ENDPOINT_CIRCLE);    
 	
-	if (verbose) Rcpp::Rcout << "  Starting Posssible DSep search" << std::endl;
+    // 	if (verbose) Rcpp::Rcout << "  Starting Posssible DSep search" << std::endl;
 
-	FciOrient fciorient_;
-	// posDmapSp = SepsetProducer(graph, sepsets, test);
-	// posDsp = SepsetProducer(graph, test, nullSepsets, threads);
+    // 	FciOrient fciorient_;
+    // 	// posDmapSp = SepsetProducer(graph, sepsets, test);
+    // 	// posDsp = SepsetProducer(graph, test, nullSepsets, threads);
 
-	if (verbose) Rcpp::Rcout << "    Starting Orientations..." << std::endl;
+    // 	if (verbose) Rcpp::Rcout << "    Starting Orientations..." << std::endl;
     
-	if (orientRule == ORIENT_SEPSETS) {
+    // 	if (orientRule == ORIENT_SEPSETS) {
 
-	    posDmapSp.setOrientRule(orientRule);
-	    posDmapSp.setDepth(depth);
-	    posDmapSp.setVerbose(verbose);
-	    posDmapSp.setKnowledge(knowledge);
-	    if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
+    // 	    posDmapSp.setOrientRule(orientRule);
+    // 	    posDmapSp.setDepth(depth);
+    // 	    posDmapSp.setVerbose(verbose);
+    // 	    posDmapSp.setKnowledge(knowledge);
+    // 	    if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
       
-	    posDmapSp.fillMap();
+    // 	    posDmapSp.fillMap();
 
-	    fciorient_ = FciOrient(posDmapSp, whyOrient);
+    // 	    fciorient_ = FciOrient(posDmapSp, whyOrient);
       
-	} else {
+    // 	} else {
 
-	    posDsp.setOrientRule(orientRule);
-	    posDsp.setDepth(depth);
-	    posDsp.setVerbose(verbose);
-	    posDsp.setKnowledge(knowledge);
-	    if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
+    // 	    posDsp.setOrientRule(orientRule);
+    // 	    posDsp.setDepth(depth);
+    // 	    posDsp.setVerbose(verbose);
+    // 	    posDsp.setKnowledge(knowledge);
+    // 	    if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
       
-	    posDsp.fillMap();
+    // 	    posDsp.fillMap();
 
-	    fciorient_ = FciOrient(posDsp, whyOrient);
-	}
+    // 	    fciorient_ = FciOrient(posDsp, whyOrient);
+    // 	}
 
-	fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
-	fciorient_.setMaxPathLength(maxPathLength);
-	fciorient_.setKnowledge(knowledge);
+    // 	fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
+    // 	fciorient_.setMaxPathLength(maxPathLength);
+    // 	fciorient_.setKnowledge(knowledge);
 
-	if (verbose) Rcpp::Rcout << "    Orienting colliders..." << std::endl;
+    // 	if (verbose) Rcpp::Rcout << "    Orienting colliders..." << std::endl;
     
-	fciorient_.ruleR0(graph);
+    // 	fciorient_.ruleR0(graph);
 
-	PossibleDsepFciConsumerProducer possibleDSep(graph, test, threads);
-	possibleDSep.setKnowledge(knowledge);
-	possibleDSep.setDepth(getDepth());
-	possibleDSep.setMaxPathLength(maxPathLength);
-	possibleDSep.setVerbose(verbose);
+    // 	PossibleDsepFciConsumerProducer possibleDSep(graph, test, threads);
+    // 	possibleDSep.setKnowledge(knowledge);
+    // 	possibleDSep.setDepth(getDepth());
+    // 	possibleDSep.setMaxPathLength(maxPathLength);
+    // 	possibleDSep.setVerbose(verbose);
 
-	if (verbose) Rcpp::Rcout << "    Checking Possible Dsep sets..." << std::endl;
+    // 	if (verbose) Rcpp::Rcout << "    Checking Possible Dsep sets..." << std::endl;
 
-	possDsepSepsets = possibleDSep.search();
-	sepsets.addAll(possDsepSepsets);
+    // 	possDsepSepsets = possibleDSep.search();
+    // 	sepsets.addAll(possDsepSepsets);
 
-	graph = possibleDSep.getGraph();
+    // 	graph = possibleDSep.getGraph();
 
-	// Step FCI D.
+    // 	// Step FCI D.
 
-	// Reorient all edges as o-o.
-	graph.reorientAllWith(ENDPOINT_CIRCLE);
+    // 	// Reorient all edges as o-o.
+    // 	graph.reorientAllWith(ENDPOINT_CIRCLE);
 
-	if (verbose) Rcpp::Rcout << "  Starting Orientations..." << std::endl;
+    // 	if (verbose) Rcpp::Rcout << "  Starting Orientations..." << std::endl;
 
-	mapSp = SepsetProducer(graph, sepsets, test);
-	sp = SepsetProducer(graph, test, possDsepSepsets, threads);
+    // 	mapSp = SepsetProducer(graph, sepsets, test);
+    // 	sp = SepsetProducer(graph, test, possDsepSepsets, threads);
     
-	if (orientRule == ORIENT_SEPSETS) {
+    // 	if (orientRule == ORIENT_SEPSETS) {
 
-	    mapSp.setOrientRule(orientRule);
-	    mapSp.setDepth(depth);
-	    mapSp.setVerbose(verbose);
-	    mapSp.setKnowledge(knowledge);
-	    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+    // 	    mapSp.setOrientRule(orientRule);
+    // 	    mapSp.setDepth(depth);
+    // 	    mapSp.setVerbose(verbose);
+    // 	    mapSp.setKnowledge(knowledge);
+    // 	    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
-	    mapSp.fillMap();
+    // 	    mapSp.fillMap();
 
-	    fciorient_ = FciOrient(mapSp, whyOrient);
+    // 	    fciorient_ = FciOrient(mapSp, whyOrient);
       
-	} else {
+    // 	} else {
 
-	    sp.setOrientRule(orientRule);
-	    sp.setDepth(depth);
-	    sp.setVerbose(verbose);
-	    sp.setKnowledge(knowledge);
-	    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+    // 	    sp.setOrientRule(orientRule);
+    // 	    sp.setDepth(depth);
+    // 	    sp.setVerbose(verbose);
+    // 	    sp.setKnowledge(knowledge);
+    // 	    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
-	    sp.fillMap();
+    // 	    sp.fillMap();
 
-	    fciorient_ = FciOrient(sp, whyOrient);
-	}
+    // 	    fciorient_ = FciOrient(sp, whyOrient);
+    // 	}
 
-	fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
-	fciorient_.setMaxPathLength(maxPathLength);
-	fciorient_.setKnowledge(knowledge);
+    // 	fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
+    // 	fciorient_.setMaxPathLength(maxPathLength);
+    // 	fciorient_.setKnowledge(knowledge);
 
-	if (verbose) Rcpp::Rcout << "  Orienting colliders..." << std::endl;
+    // 	if (verbose) Rcpp::Rcout << "  Orienting colliders..." << std::endl;
     
-	fciorient_.ruleR0(graph);
+    // 	fciorient_.ruleR0(graph);
 
-	if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
-	    for (auto t : sp.getAmbiguousTriples())
-		graph.addAmbiguousTriple(t.x, t.y, t.z);
-	}
+    // 	if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
+    // 	    for (auto t : sp.getAmbiguousTriples())
+    // 		graph.addAmbiguousTriple(t.x, t.y, t.z);
+    // 	}
 
-	if (verbose) Rcpp::Rcout << "  Orienting implied edges..." << std::endl;
+    // 	if (verbose) Rcpp::Rcout << "  Orienting implied edges..." << std::endl;
     
-	fciorient_.doFinalOrientation(graph);
+    // 	fciorient_.doFinalOrientation(graph);
 	
+    // } else {
+
+    // 	graph = fasGraph;
+    // 	sepsets = fasSepsets;
+	
+    graph.reorientAllWith(ENDPOINT_CIRCLE);
+    graph.clearAmbiguousTriples();
+    
+    FciOrient fciorient_;
+    
+    if (orientRule == ORIENT_SEPSETS) {
+	mapSp.setOrientRule(orientRule);
+	mapSp.setDepth(depth);
+	mapSp.setVerbose(verbose);
+	mapSp.setKnowledge(knowledge);
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+      
+	mapSp.fillMap();
+
+	fciorient_ = FciOrient(mapSp, whyOrient);
+      
     } else {
-
-	graph = fasGraph;
-	sepsets = fasSepsets;
-	
-	graph.reorientAllWith(ENDPOINT_CIRCLE);
-	graph.clearAmbiguousTriples();
-    
-	FciOrient fciorient_;
-    
-	if (orientRule == ORIENT_SEPSETS) {
-	    mapSp.setOrientRule(orientRule);
-	    mapSp.setDepth(depth);
-	    mapSp.setVerbose(verbose);
-	    mapSp.setKnowledge(knowledge);
-	    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+	sp.setOrientRule(orientRule);
+	sp.setDepth(depth);
+	sp.setVerbose(verbose);
+	sp.setKnowledge(knowledge);
+	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
-	    mapSp.fillMap();
+	sp.fillMap();
 
-	    fciorient_ = FciOrient(mapSp, whyOrient);
-      
-	} else {
-	    sp.setOrientRule(orientRule);
-	    sp.setDepth(depth);
-	    sp.setVerbose(verbose);
-	    sp.setKnowledge(knowledge);
-	    if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
-      
-	    sp.fillMap();
-
-	    fciorient_ = FciOrient(sp, whyOrient);
-	}
-    
-	// sp.setOrientRule(orientRule);
-	// sp.setDepth(depth);
-	// sp.setVerbose(verbose);
-	// sp.setKnowledge(knowledge);
-	// if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
-    
-	// sp.fillMap();
-    
-	// FciOrient fciorient_(sp, whyOrient);
-	fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
-	fciorient_.setMaxPathLength(maxPathLength);
-	fciorient_.setKnowledge(knowledge);
-	fciorient_.ruleR0(graph);
-
-	if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
-	    for (auto t : sp.getAmbiguousTriples())
-		graph.addAmbiguousTriple(t.x, t.y, t.z);
-	}
-    
-	fciorient_.doFinalOrientation(graph);
-
+	fciorient_ = FciOrient(sp, whyOrient);
     }
+    
+    // sp.setOrientRule(orientRule);
+    // sp.setDepth(depth);
+    // sp.setVerbose(verbose);
+    // sp.setKnowledge(knowledge);
+    // if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
+    
+    // sp.fillMap();
+    
+    // FciOrient fciorient_(sp, whyOrient);
+    fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
+    fciorient_.setMaxPathLength(maxPathLength);
+    fciorient_.setKnowledge(knowledge);
+    fciorient_.ruleR0(graph);
+
+    if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
+	for (auto t : sp.getAmbiguousTriples())
+	    graph.addAmbiguousTriple(t.x, t.y, t.z);
+    }
+    
+    fciorient_.doFinalOrientation(graph);
+
+    // }
 
     // // Set algorithm and type
     // std::ostringstream alg;
@@ -498,6 +483,219 @@ EdgeListGraph Fci::reorientWithRule(OrientRule rule) {
     return graph;
 }
 
+std::vector<Node> Fci::getSepset(const Node& a, const Node& b, SepsetMap& sepsets) {
+
+    if (sepsets.isInSepsetMap(a, b))
+	return sepsets.get(a, b);
+    
+    std::vector<Node> sepset;
+    double pval = 0;
+
+    if (a.isCensored() && b.isCensored()) {
+	sepsets.set(a, b, sepset, 1.0);
+	return sepset;
+    }
+    
+    std::vector<Node> adja = graph.getAdjacentNodes(a);
+    std::vector<Node> adjb = graph.getAdjacentNodes(b);
+
+    std::vector<Node> ppa = possibleParents(a, adja, b);
+    std::vector<Node> ppb = possibleParents(b, adjb, a);
+
+    int maxDepth = std::max(ppa.size(), ppb.size());
+    maxDepth = std::min(maxDepth, std::max(depth, 1000));
+
+    for (int d = 0; d <= maxDepth; d++) {
+
+	if (d <= ppa.size()) {
+	    ChoiceGenerator cg1(ppa.size(), d);
+	    std::vector<int> *comb2;
+	    for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
+		std::vector<Node> s = GraphUtils::asList(*comb2, ppa);
+		double score;
+		bool indep = test->isIndependent(a, b, s, &score);
+		if (indep) {
+		    pval = score;
+		    sepset = s;
+		}
+	    }
+	}
+
+	if (d <= ppb.size()) {
+	    ChoiceGenerator cg2(ppb.size(), d);
+	    std::vector<int> *comb3;
+	    for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
+		std::vector<Node> s = GraphUtils::asList(*comb3, ppb);
+		double score;
+		bool indep = test->isIndependent(a, b, s, &score);
+		if (indep && (score > pval)) {
+		    pval = score;
+		    sepset = s;
+		}
+	    }
+	}
+
+	if (pval > 0) break;
+    }
+
+    sepsets.set(a, b, sepset, pval);
+    
+    return sepset;
+    
+}
+
+std::vector<Node> Fci::getMinSepset(const Node& a, const Node& b,
+				    std::vector<Node>& sepset, double *pReturn) {
+  
+    std::vector<Node> minSepset;
+    double pval = 0;
+    
+    for (int d = 0; d <= sepset.size(); d++) {
+	
+        ChoiceGenerator cg(sepset.size(), d);
+	std::vector<int> *comb;
+	
+	for (comb = cg.next(); comb != NULL; comb = cg.next()) {
+	    std::vector<Node> s = GraphUtils::asList(*comb, sepset);
+	    double score;
+	    bool indep = test->isIndependent(a, b, s, &score);
+	    if (indep) {
+		pval = score;
+		minSepset = s;
+	    }
+	}
+	
+	if (pval > 0) break;
+    }
+
+    if (pReturn != NULL && pval > 0) {
+	*pReturn = pval;
+    }
+    
+    // sepsets.set(a, b, minSepset, pval);
+    
+    return minSepset;
+}
+
+std::list<Triple> Fci::getMTriples(EdgeListGraph& graph) {
+    std::list<Triple> mTriples;
+
+    std::vector<Node> nodes = graph.getNodes();
+
+    for (const Node& b : nodes) {
+	std::vector<Node> adjacentNodes = graph.getAdjacentNodes(b);
+
+	if (adjacentNodes.size() < 2) {
+	    continue;
+	}
+
+	ChoiceGenerator cg(adjacentNodes.size(), 2);
+	std::vector<int>  *combination;
+
+	for (combination = cg.next(); combination != NULL; combination = cg.next()) {
+	    Node a = adjacentNodes.at(combination->at(0));
+	    Node c = adjacentNodes.at(combination->at(1));
+
+	    // Skip triples that are shielded or where a and c are censored.
+	    if (graph.isAdjacentTo(a, c) || (a.isCensored() && c.isCensored())) {
+		continue;
+	    }
+	    
+	    mTriples.push_back(Triple(a, b, c));
+	}
+    }
+    return mTriples;
+}
+
+SepsetMap Fci::ruleR0_rfciPrune(EdgeListGraph& graph, SepsetMap& sepsets) {
+    std::list<Triple> mTriples = getMTriples(graph);
+
+    if (verbose) RcppThread::Rcout << "  RFCI adjacency pruning...\n";
+    
+    SepsetMap rfciSepsets;
+
+    while (!mTriples.empty()) {
+	Triple t = mTriples.front();
+	mTriples.pop_front();
+
+	std::vector<Node> sepset = getSepset(t.x, t.z, sepsets);
+
+	sepset.erase(std::remove(sepset.begin(), sepset.end(), t.y), sepset.end());
+	
+	bool indep1 = test->isIndependent(t.x, t.y, sepset);
+	bool indep2 = test->isIndependent(t.z, t.y, sepset);
+
+	if (indep1) {
+	    double pval = 0;
+	    std::vector<Node> minSepset = getMinSepset(t.x, t.y, sepset, &pval);
+	    rfciSepsets.set(t.x, t.y, minSepset, pval);
+	    graph.removeEdge(t.x, t.y);
+
+	    if(verbose) {
+		RcppThread::Rcout << "      Removed: " << t.x << " --- " << t.y << std::endl;
+	    }
+
+	    // RcppThread::Rcout << "      Removing: " << t.x << " --- " << t.y << " | { ";
+	    // for (Node n : minSepset) {
+	    // 	RcppThread::Rcout << n << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
+
+	}
+	if (indep2) {
+	    double pval = 0;
+	    std::vector<Node> minSepset = getMinSepset(t.z, t.y, sepset, &pval);
+	    rfciSepsets.set(t.z, t.y, minSepset, pval);
+	    graph.removeEdge(t.z, t.y);
+
+	    if(verbose) {
+		RcppThread::Rcout << "      Removed: " << t.z << " --- " << t.y << std::endl;
+	    }
+
+	    // RcppThread::Rcout << "      Removing: " << t.z << " --- " << t.y << " | { ";
+	    // for (Node n : minSepset) {
+	    // 	RcppThread::Rcout << n << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
+	}
+
+	if (indep1 || indep2) {
+
+	    for (Node node : variables) {
+		std::vector<Node> adj = graph.getAdjacentNodes(node);
+		if (indep1) {
+		    if (std::find(adj.begin(), adj.end(), t.x) != adj.end() &&
+			std::find(adj.begin(), adj.end(), t.y) != adj.end()) {
+			mTriples.push_back(Triple(t.x, node, t.y));
+		    }
+		}
+		if (indep2) {
+		    if (std::find(adj.begin(), adj.end(), t.z) != adj.end() &&
+			std::find(adj.begin(), adj.end(), t.y) != adj.end()) {
+			mTriples.push_back(Triple(t.z, node, t.y));
+		    }
+		}
+	    }
+
+	    auto it = mTriples.begin();
+
+	    while (it != mTriples.end()) {
+		if ((indep1 && it->contains(t.x) && it->contains(t.y)) ||
+		    (indep2 && it->contains(t.z) && it->contains(t.y))) {
+		    // RcppThread::Rcout << "Removing Triple: " << *it << std::endl;
+		    it = mTriples.erase(it);
+		} else {
+		    it++;
+		}
+	    }
+	
+	}
+	
+    }
+
+    return rfciSepsets;
+}
+
 /**
  * @param maxPathLength the maximum length of any discriminating path, or -1 if unlimited.
  */
@@ -519,10 +717,32 @@ void Fci::buildIndexing(std::vector<Node> nodes) {
     }
 }
 
+std::vector<Node> Fci::possibleParents(const Node& x,
+				       const std::vector<Node>& adjx,
+				       const Node& y) {
+    std::vector<Node> possParents;
+
+    for (const Node& z : adjx) {
+	if (z==x) continue;
+	if (z==y) continue;
+
+	if (possibleParentOf(x, z)) {
+	    possParents.push_back(z);
+	}
+    }
+
+    return possParents;
+}
+
+bool Fci::possibleParentOf(const Node& x, const Node& z) {
+    return !knowledge.isForbidden(z, x) && !knowledge.isRequired(x, z);
+}
+
+
 /**
  * Orients according to background knowledge
  */
-void Fci::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph graph, std::vector<Node> variables) {
+void Fci::fciOrientbk(/*IKnowledge bk,*/ EdgeListGraph& graph, std::vector<Node> variables) {
 
     // for (Iterator<KnowledgeEdge> it =
     //      bk.forbiddenEdgesIterator(); it.hasNext(); ) {

@@ -24,15 +24,15 @@ void SepsetMap::set(const Node& x, const Node& y, std::vector<Node>& z) {
  */
 void SepsetMap::set(const Node& x, const Node& y, std::vector<Node>& z, double p) {
     NodePair pair = std::minmax(x, y);
-    // if (sepsets.count(pair) > 0) {
-    // 	if (p > pValues[pair]) {
-    // 	    sepsets[pair] = z;
-    // 	    pValues[pair] = p;
-    // 	}
-    // } else {
-    sepsets[pair] = z;
-    pValues[pair] = p;
-    // }
+    if (sepsets.count(pair) > 0) {
+	if (p > pValues[pair]) {
+	    sepsets[pair] = z;
+	    pValues[pair] = p;
+	}
+    } else {
+	sepsets[pair] = z;
+	pValues[pair] = p;
+    }
 }
 
 /** 

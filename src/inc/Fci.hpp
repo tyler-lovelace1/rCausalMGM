@@ -117,7 +117,7 @@ private:
     EdgeListGraph *initialGraph = NULL;
     int possibleDsepDepth = -1;
 
-    SepsetProducer sp, mapSp, posDsp, posDmapSp;
+    SepsetProducer sp, mapSp, fasMapSp, posDsp, posDmapSp;
     SepsetMap possDsepSepsets, nullSepsets;
 
         //========================PRIVATE METHODS==========================//
@@ -127,7 +127,21 @@ private:
     /**
      * Orients according to background knowledge
      */
-    void fciOrientbk(EdgeListGraph graph, std::vector<Node> variables);
+    void fciOrientbk(EdgeListGraph& graph, std::vector<Node> variables);
+
+    SepsetMap ruleR0_rfciPrune(EdgeListGraph& graph, SepsetMap& sepsets);
+
+    std::list<Triple> getMTriples(EdgeListGraph& graph);
+
+    std::vector<Node> getSepset(const Node& a, const Node& b, SepsetMap& sepsets);
+
+    std::vector<Node> getMinSepset(const Node& a, const Node& b, std::vector<Node>& sepset, double* pReturn = NULL);
+
+    std::vector<Node> possibleParents(const Node& x,
+				      const std::vector<Node>& adjx,
+				      const Node& y);
+  
+    bool possibleParentOf(const Node& x, const Node& z);
 
 
 public:

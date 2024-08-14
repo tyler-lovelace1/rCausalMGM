@@ -179,7 +179,9 @@ public:
 
     ~SepsetProducer() = default;
 
-    std::vector<Node>  getSepset(const Node& a, const Node& b);
+    std::vector<Node> getSepset(const Node& a, const Node& b);
+
+    // std::vector<Node> getMinSepset(const Node& a, const Node& b, std::vector<Node>& sepset);
 
     void fillMap();
 

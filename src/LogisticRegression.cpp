@@ -153,12 +153,20 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     int numRegressors = regressors.n_rows;
     int numCases = target.size();
 
+    // RcppThread::Rcout << "Num regressors: " << numRegressors << std::endl;
+
+    // RcppThread::Rcout << "regressors mat:\n" << regressors << std::endl;
+
     // make a new matrix x with all the columns of regressorsh
     // but with first column all 1.0's.
     x = arma::ones(numRegressors + 1, numCases);
 
     // copy numRegressors of values from regressors into x
-    x.submat(1, 0, size(regressors)) = regressors;
+    if (numRegressors > 0) {
+	x.submat(1, 0, size(regressors)) = regressors;
+    }
+    
+    // RcppThread::Rcout << "x mat:\n" << x << std::endl;
 
     arma::vec xMeans = arma::zeros(numRegressors + 1);
     arma::vec xStdDevs = arma::zeros(numRegressors + 1);

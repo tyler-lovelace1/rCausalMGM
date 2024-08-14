@@ -243,7 +243,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             if (normXY == 0)
                 break;
 
-            double Qx;
+            double Qx = 0.0;
             // double LocalL;
 	    
             if (backtrackSwitch) {
@@ -359,9 +359,9 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 	    }
 	    
 	    if (cp->isVerbose()) {
-		RcppThread::Rcout << "    Iter: " << iterCount << 
+		RcppThread::Rcout << "\r    Iter: " << iterCount << 
 		    " ||dx||/||x||: " << dx << 
-		    " loss: " << Fx + Gx << "\n";
+		    " loss: " << Fx + Gx;
 		// RcppThread::Rcout << "Params = \n" << cp->printParameters(X) << std::endl;
 	    }
         }
@@ -383,7 +383,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
     }
 
     if (cp->isVerbose()) {
-	RcppThread::Rcout << "    Iter: " << iterCount << 
+	RcppThread::Rcout << "\r    Iter: " << iterCount << 
 	    " ||dx||/||x||: " << dx << 
 	    " loss: " << Fx + Gx << "\n";
 	// Rcpp::Rcout << "X = \n" << X.t() << std::endl;

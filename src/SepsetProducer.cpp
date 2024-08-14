@@ -265,6 +265,11 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
     
     std::vector<Node> sepset;
     double pval = 0;
+
+    if (a.isCensored() && b.isCensored()) {
+	sepsets.set(a, b, sepset, 1.0);
+	return sepset;
+    }
     
     std::vector<Node> possibleDsep;
     if (sepsets.isInSepsetMap(a, b))
@@ -286,10 +291,10 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
     int maxDepth = std::max(ppa.size(), ppb.size());
     maxDepth = std::min(maxDepth, std::max(depth, 1000));
 
-    for (int d = 0; d < maxDepth; d++) {
+    for (int d = 0; d <= maxDepth; d++) {
 
 	if (d <= ppa.size()) {
-	    DepthChoiceGenerator cg1(ppa.size(), d);
+	    ChoiceGenerator cg1(ppa.size(), d);
 	    std::vector<int> *comb2;
 	    for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
 		std::vector<Node> s = GraphUtils::asList(*comb2, ppa);
@@ -298,15 +303,13 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
 		if (indep) {
 		    pval = score;
 		    sepset = s;
-		    if (rule==ORIENT_SEPSETS) break;
+		    // if (rule==ORIENT_SEPSETS) break;
 		}
 	    }
 	}
 
-	if (rule==ORIENT_SEPSETS && pval > 0) break;
-
 	if (d <= ppb.size()) {
-	    DepthChoiceGenerator cg2(ppb.size(), d);
+	    ChoiceGenerator cg2(ppb.size(), d);
 	    std::vector<int> *comb3;
 	    for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {
 		std::vector<Node> s = GraphUtils::asList(*comb3, ppb);
@@ -315,7 +318,7 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
 		if (indep && (score > pval)) {
 		    pval = score;
 		    sepset = s;
-		    if (rule==ORIENT_SEPSETS) break;
+		    // if (rule==ORIENT_SEPSETS) break;
 		}
 	    }
 	}
@@ -327,6 +330,7 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
     
     return sepset;
 }
+
 
 bool SepsetProducer::isCollider(const Node& i, const Node& j, const Node& k) {
     if (rule == ORIENT_SEPSETS) {

@@ -60,6 +60,18 @@ RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>
 	}
     }
 
+    std::ostringstream oss;
+
+    if (rcond(x.t() * x) < 5e-16) {
+        oss << "Ill-conditioned Linear Regression: " << target << " ~ ";
+	for (int i = 0; i < regressors.size()-1; i++) {
+	    oss << regressors.at(i) << " + ";
+	}
+        oss << regressors.at(regressors.size()-1) << std::endl;
+    }
+
+    RcppThread::Rcout << oss.str();
+
     arma::vec b = arma::solve(x, y);
     arma::mat xTxInv = arma::solve(x.t() * x, arma::eye(x.n_cols, x.n_cols),
 				   arma::solve_opts::likely_sympd);
@@ -164,6 +176,18 @@ RegressionResult LinearRegression::regress(const Node& target,
 	    }
 	}
     }
+
+    std::ostringstream oss;
+
+    if (rcond(x.t() * x) < 5e-16) {
+        oss << "Ill-conditioned Linear Regression: " << target << " ~ ";
+	for (int i = 0; i < regressors.size()-1; i++) {
+	    oss << regressors.at(i) << " + ";
+	}
+        oss << regressors.at(regressors.size()-1) << std::endl;
+    }
+
+    RcppThread::Rcout << oss.str();
 
     arma::vec b = arma::solve(x, y);
     arma::mat xTxInv = arma::solve(x.t() * x, arma::eye(x.n_cols, x.n_cols),

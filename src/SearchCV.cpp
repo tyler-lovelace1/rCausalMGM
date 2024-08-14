@@ -185,6 +185,8 @@ std::vector<Node> SearchCV::expandVariable(DataSet& dataSet, const Node& var) {
 
 double SearchCV::multiTestLL(arma::mat& coeffs, const Node& dep,
 			     std::vector<Node>& indep, arma::uvec testRows) {
+
+    // RcppThread::Rcout << dep.getName() << " multiTestLL call\n";
     
     arma::uvec depIdx(1);
     depIdx[0] = internalData.getColumn(dep);
@@ -193,6 +195,11 @@ double SearchCV::multiTestLL(arma::mat& coeffs, const Node& dep,
     for (int i = 0; i < indep.size(); i++) {
         indepIdx[i] = internalData.getColumn(indep.at(i));
     }
+
+    // RcppThread::Rcout << "depIdx:\n" << depIdx << std::endl;
+    // RcppThread::Rcout << "indepIdx:\n" << indepIdx << std::endl;
+
+    // RcppThread::Rcout << "testRows:\n" << testRows << std::endl;
 
     arma::vec depData = internalData.getSubsetData(testRows, depIdx).as_col();
     
@@ -206,9 +213,13 @@ double SearchCV::multiTestLL(arma::mat& coeffs, const Node& dep,
         indepData.insert_cols(0, arma::mat(N, 1, arma::fill::ones));
     }
 
+    // RcppThread::Rcout << "coeffs:\n" << coeffs << std::endl;
+
     arma::mat probs = indepData * coeffs;
 
     probs.insert_cols(0, arma::mat(indepData.n_rows, 1, arma::fill::zeros)); // reference class
+
+    // RcppThread::Rcout << "log(probs):\n" << probs << std::endl;
     
     double ll = 0;
     for (int i = 0; i < N; i++) {
@@ -222,11 +233,15 @@ double SearchCV::multiTestLL(arma::mat& coeffs, const Node& dep,
     if (std::isnan(ll)) {
         ll = -std::numeric_limits<double>::infinity();
     }
+
+    // RcppThread::Rcout << dep.getName() << " multiTestLL finished\n";
     
     return ll;
 }
 
 double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int k) {
+
+    // RcppThread::Rcout << dep.getName() << " scoreTestLLTask call\n";
 
     arma::uvec trainRows = arma::find(foldid != k);
     arma::uvec testRows = arma::find(foldid == k);
@@ -234,9 +249,14 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
     double ll = 0;
     int N = testRows.n_elem;
 
-    // RcppThread::Rcout << "Scoring " << dep << " fold " << k << std::endl;
+    // RcppThread::Rcout << "Scoring " << dep << " fold " << k << ":\n  indep: ";
 
     // for (int i = 0; i < indep.size(); i++) {
+    // 	RcppThread::Rcout << indep[i] << " ";
+    // }
+    
+    // RcppThread::Rcout << std::endl;
+    
     // 	if (indep[i].isCensored()) {
     // 	    std::vector<Node> emptySet;
     // 	    result = coxRegression.regress(n, emptySet, testRows);
@@ -291,8 +311,12 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
 	    result = logisticRegression.regress(varDep, indep, trainRows);
 
+	    // RcppThread::Rcout << varDep << " coefficients:\n" << result.getCoefs() << std::endl;
+
 	    coeffs.insert_cols(i, result.getCoefs());
 	}
+
+	// RcppThread::Rcout << "All coefficients:\n" << coeffs << std::endl;
 
 	ll = multiTestLL(coeffs, dep, indep, testRows);
 
@@ -340,12 +364,16 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 	throw std::invalid_argument("Node " + dep.getName() + " is an unrecognized type.");
     }
 
+    // RcppThread::Rcout << dep.getName() << " scoreTestLLTask finished\n";
+
     return ll / N;
     
 }
 
 
 std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
+
+    // RcppThread::Rcout << "scoreGraphTestLL call\n" << graph << std::endl;
 
     int N = scoreNodes.size();
     
@@ -356,15 +384,19 @@ std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
     arma::vec mbSizes(N);
 
     auto scoreTask = [&] (int i) {
-			 std::vector<Node> mb = graph.getMarkovBlanket(scoreNodes.at(i));
-			 std::vector<Node> regressors;
-			 for (Node n : mb) {
-			     std::vector<Node> temp = variablesPerNode.at(n);
-			     regressors.insert(regressors.end(), temp.begin(), temp.end());
-			 }
-			 std::vector<double> result = { scoreTestLLTask(scoreNodes.at(i), regressors, k), (double) mb.size() };
-			 return result;
-		     };
+	// RcppThread::Rcout << "  Scoring Node " << scoreNodes.at(i) << std::endl;
+	std::vector<Node> mb = graph.getMarkovBlanket(scoreNodes.at(i));
+	std::vector<Node> regressors;
+	// RcppThread::Rcout << "    MB : { ";
+	for (Node n : mb) {
+	    // RcppThread::Rcout << n << " ";
+	    std::vector<Node> temp = variablesPerNode.at(n);
+	    regressors.insert(regressors.end(), temp.begin(), temp.end());
+	}
+	// RcppThread::Rcout << "}\n";
+	std::vector<double> result = { scoreTestLLTask(scoreNodes.at(i), regressors, k), (double) mb.size() };
+	return result;
+    };
 
     for (uint i = 0; i < N; i++) {
 	// std::vector<Node> mb = graph.getMarkovBlanket(scoreNodes.at(i));
@@ -379,7 +411,7 @@ std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
 
     pool.join();
 
-    
+    // RcppThread::Rcout << "scoreGraphTestLL finished\n";
 
     return { -arma::accu(scores), arma::mean(mbSizes) };
 }
@@ -398,6 +430,8 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 	}
     }
 
+    // RcppThread::Rcout << "causalCV call\n";
+
     std::vector<double> lambda(lambdaVec.begin(), lambdaVec.end());
 
     std::vector<std::vector<arma::vec>> loglik;
@@ -410,6 +444,9 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 	    mbSize.at(orIdx).push_back(arma::vec(nfolds));
 	}
     }
+
+    // Rcpp::Rcout << "result vectors created\n";
+    
     // arma::mat loglik(nfolds, alphas.n_elem);
 
     // OrientRule orientRule;
@@ -417,7 +454,7 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
     bool censFlag = originalData.isCensored();
 
     for (uint k = 1; k <= nfolds; k++) {
-	arma::uvec trainIdx = arma::find(foldid!=k);
+	arma::urowvec trainIdx = arma::conv_to<arma::urowvec>::from(arma::find(foldid!=k));
 	DataSet train(originalData, trainIdx);
 
 	EdgeListGraph g, ig;
@@ -439,6 +476,8 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 
 	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
 	    IndTestMultiCox itm(train, alphas(aIdx));
+
+	    if (verbose) RcppThread::Rcout << "\r    Alpha = " << alphas[aIdx];
 
 	    if (censFlag) {
 		std::vector<Node> emptySet;
@@ -513,6 +552,7 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 		throw std::invalid_argument("Unknown causal algorithm " + alg + " provided. Must be pc or fci");
 	    }
 	}
+	if (verbose) RcppThread::Rcout << std::endl;
     }
 
     // std::set<CvResult> results;
@@ -671,12 +711,14 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 	}
     }
 
+    // RcppThread::Rcout << "causalMGMGridCV call\n";
+
     bool censFlag = originalData.isCensored();
     MGM mgm;
     CoxMGM coxmgm;
 
     for (uint k = 1; k <= nfolds; k++) {
-	arma::uvec trainIdx = arma::find(foldid!=k);
+	arma::urowvec trainIdx = arma::conv_to<arma::urowvec>::from(arma::find(foldid!=k));
 	DataSet train(originalData, trainIdx);
 
 	EdgeListGraph g, ig;
@@ -711,6 +753,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 	
 	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
 		IndTestMultiCox itm(train, alphas(aIdx));
+		if (verbose) RcppThread::Rcout << "\r    Lambda = " << lambdas[lIdx] << ", Alpha = " << alphas[aIdx];
 		if (alg=="pc") {
 		    PcStable causalAlg((IndependenceTest*) &itm);
 
@@ -782,6 +825,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 		}
 	    }
 	}
+	if (verbose) RcppThread::Rcout << std::endl;
     }
 
     for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
@@ -942,12 +986,14 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	}
     }
 
+    // RcppThread::Rcout << "causalMGMRandCV call\n";
+
     bool censFlag = originalData.isCensored();
     MGM mgm;
     CoxMGM coxmgm;
     
     for (uint k = 1; k <= nfolds; k++) {
-	arma::uvec trainIdx = arma::find(foldid!=k);
+	arma::urowvec trainIdx = arma::conv_to<arma::urowvec>::from(arma::find(foldid!=k));
 	DataSet train(originalData, trainIdx);
 
 	EdgeListGraph g, ig;
@@ -985,6 +1031,8 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	    }
 	
 	    IndTestMultiCox itm(train, alphas(tIdx));
+
+	    if (verbose) RcppThread::Rcout << "\r    Lambda = " << lambdas[tIdx] << ", Alpha = " << alphas[tIdx];
 
 	    if (alg=="pc") {
 		PcStable causalAlg((IndependenceTest*) &itm);
@@ -1044,6 +1092,8 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 		throw std::invalid_argument("Unknown causal algorithm " + alg + " provided. Must be pc or fci");
 	    }
 	}
+
+	if (verbose) RcppThread::Rcout << std::endl;
     }
 
     int count = 0;

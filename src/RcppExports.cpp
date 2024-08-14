@@ -336,8 +336,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // fciStable
-Rcpp::List fciStable(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::List> initialGraph, Rcpp::Nullable<Rcpp::List> knowledge, const Rcpp::StringVector orientRule, const double alpha, const int threads, const bool fdr, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_fciStable(SEXP dataSEXP, SEXP initialGraphSEXP, SEXP knowledgeSEXP, SEXP orientRuleSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP fdrSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+Rcpp::List fciStable(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::List> initialGraph, Rcpp::Nullable<Rcpp::List> knowledge, const Rcpp::StringVector orientRule, const double alpha, const int threads, const bool possDsep, const bool fdr, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_fciStable(SEXP dataSEXP, SEXP initialGraphSEXP, SEXP knowledgeSEXP, SEXP orientRuleSEXP, SEXP alphaSEXP, SEXP threadsSEXP, SEXP possDsepSEXP, SEXP fdrSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -347,10 +347,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const Rcpp::StringVector >::type orientRule(orientRuleSEXP);
     Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
+    Rcpp::traits::input_parameter< const bool >::type possDsep(possDsepSEXP);
     Rcpp::traits::input_parameter< const bool >::type fdr(fdrSEXP);
     Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(fciStable(data, initialGraph, knowledge, orientRule, alpha, threads, fdr, rank, verbose));
+    rcpp_result_gen = Rcpp::wrap(fciStable(data, initialGraph, knowledge, orientRule, alpha, threads, possDsep, fdr, rank, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -536,7 +537,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_pcStars", (DL_FUNC) &_rCausalMGM_pcStars, 12},
     {"_rCausalMGM_fciStars", (DL_FUNC) &_rCausalMGM_fciStars, 12},
     {"_rCausalMGM_pcStable", (DL_FUNC) &_rCausalMGM_pcStable, 9},
-    {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 9},
+    {"_rCausalMGM_fciStable", (DL_FUNC) &_rCausalMGM_fciStable, 10},
     {"_rCausalMGM_pcCV", (DL_FUNC) &_rCausalMGM_pcCV, 11},
     {"_rCausalMGM_fciCV", (DL_FUNC) &_rCausalMGM_fciCV, 11},
     {"_rCausalMGM_mgmpcCV", (DL_FUNC) &_rCausalMGM_mgmpcCV, 14},

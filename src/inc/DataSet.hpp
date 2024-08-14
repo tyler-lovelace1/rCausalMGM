@@ -45,6 +45,7 @@ public:
     DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
     DataSet(const Rcpp::DataFrame& df);
     // DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
+    // DataSet(const DataSet& ds, arma::urowvec rows); // subset rows
     DataSet(const DataSet& ds, const arma::urowvec& rows); // subset rows
     
     DataSet(const DataSet& ds) = default;

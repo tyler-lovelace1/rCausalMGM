@@ -535,6 +535,26 @@ void DataSet::addVariable(int i, Node v) {
 //     }
 // }
 
+// DataSet::DataSet(const DataSet& ds, arma::urowvec rows) {
+//     maxDiscrete = ds.maxDiscrete;
+//     m = ds.m;
+//     n = rows.n_elem;
+//     variables = ds.variables;
+//     variableNames = ds.variableNames;
+//     name2idx = ds.name2idx;
+//     var2idx = ds.var2idx;
+//     data = ds.data.rows(rows);
+
+//     for (int j = 0; j < m; j++) {
+//         if (variables[j].isCensored()) {
+// 	    arma::uvec censor = variables[j].getCensorVec();
+// 	    arma::uvec strata = variables[j].getStrata();
+// 	    variables[j].setCensor(data.col(j), censor(rows), strata(rows));
+// 	}
+//     }
+// }
+
+
 DataSet::DataSet(const DataSet& ds, const arma::urowvec& rows) {
     maxDiscrete = ds.maxDiscrete;
     m = ds.m;

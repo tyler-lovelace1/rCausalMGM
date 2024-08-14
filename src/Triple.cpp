@@ -2,7 +2,7 @@
 
 Triple::Triple(const Node& x, const Node& y, const Node& z) {
     this->y = y;
-    if (x <= z) {
+    if (x < z) {
 	this->x = x;
 	this->z = z;
     } else {
@@ -17,6 +17,10 @@ std::string Triple::toString() const {
     result << *this;
 
     return result.str();
+}
+
+bool Triple::contains(const Node& n) {
+    return (n == x) || (n == y) || (n == z);
 }
 
 std::ostream& operator<<(std::ostream& os, const Triple& triple) {
