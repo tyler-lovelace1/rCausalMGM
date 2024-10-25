@@ -9,14 +9,15 @@ Description: rCasualMGM is a scalable implementation of CausalMGM, a method for 
 License: GPL (>= 2)
 Imports:
 	Rcpp (>= 1.0.3),
-	survival,
-	Rgraphviz,
-	graph
+	survival
 LinkingTo:
 	BH,
 	Rcpp,
 	RcppArmadillo,
 	RcppThread
+Suggests:
+	Rgraphviz,
+	graph
 SystemRequirements: C++14
 RoxygenNote: 7.2.3
 Encoding: UTF-8

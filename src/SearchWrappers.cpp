@@ -13,6 +13,7 @@
 #include "RegressionBicScore.hpp"
 #include "Grasp.hpp"
 #include "Boss.hpp"
+#include "AnnealBoss.hpp"
 #include "Knowledge.hpp"
 
 //' Calculate the MGM graph on a dataset
@@ -2131,3 +2132,80 @@ Rcpp::List boss(
     return result;
 }
 
+//' Runs the BOSS causal discovery algorithm on the dataset 
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
+//' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
+//' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return The CPDAG learned by BOSS
+//' @export
+//' @examples
+//' sim <- simRandomDAG(200, 25)
+//' g <- boss(sim$data)
+//' print(g)
+// [[Rcpp::export]]
+Rcpp::List annealboss(
+    const Rcpp::DataFrame& data,
+    const int numStarts = 3,
+    const double penalty = 2,
+    const int threads = -1,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
+    Score *scorer;
+
+    if (!ds.isCensored()) {
+	scorer = new DegenerateGaussianScore(ds, penalty);
+    } else {
+	throw std::runtime_error("BOSS is not able to handle censored variables.");
+        // scorer = new RegressionBicScore(ds, penalty);
+    }	
+
+    AnnealBoss boss(scorer, threads);
+    boss.setVerbose(verbose);
+    boss.setNumStarts(numStarts);
+
+    // EdgeListGraph ig;
+    // if (!initialGraph.isNull()) {
+    //     Rcpp::List _initialGraph(initialGraph);
+    //     ig = EdgeListGraph(_initialGraph, ds);
+    //     boss.setInitialGraph(&ig);
+    // }
+    // Knowledge k;
+    // if (!knowledge.isNull()) {
+    // 	Rcpp::List _knowledge(knowledge);
+    // 	k = Knowledge(ds.getVariables(), _knowledge);
+    // 	boss.setKnowledge(k);
+    // }
+
+    RcppThread::checkUserInterrupt();
+
+    EdgeListGraph g = boss.search();
+
+    Rcpp::List result = g.toList();
+
+    double score = g.getScore();
+
+    result.attr("Score") = Rcpp::wrap(score);
+
+    delete scorer;
+
+    return result;
+}

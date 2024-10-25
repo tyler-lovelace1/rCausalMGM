@@ -21,7 +21,6 @@ private:
     arma::umat samps;
     std::vector<double> lambda;
     double alpha;
-    int iterLimit = 500;
 
     EdgeListGraph finalGraph;
     Rcpp::DataFrame stabs;
@@ -32,8 +31,6 @@ private:
     bool replace = false;
     bool verbose = false;
     int threads = -1;
-
-    // arma::umat getBootstrapSamples();
 
     EdgeListGraph makeEnsembleGraph(std::vector<EdgeListGraph>& graphVec);
 
