@@ -7,7 +7,7 @@
 mgmfciCV(
   data,
   knowledge = NULL,
-  cvType = "grid",
+  cvType = "random",
   orientRule = as.character(c("majority", "maxp", "conservative")),
   lambdas = NULL,
   nLambda = 20L,
