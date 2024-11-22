@@ -15,7 +15,7 @@ class LogisticRegression
     arma::mat dataCols;
     arma::uvec rows;
 
-    std::map<std::pair<Node,Node>, arma::vec> WZmap;
+    // std::map<std::pair<Node,Node>, arma::vec> WZmap;
 
     bool binary(const Node& x) { return x.getNumCategories()==2; }
 
@@ -49,9 +49,9 @@ class LogisticRegression
 
     void setRows(arma::uvec rows) { this->rows = rows; }
 
-    void setWZmap(std::map<std::pair<Node,Node>, arma::vec>& WZmap) { this->WZmap = WZmap; }
+    // void setWZmap(std::map<std::pair<Node,Node>, arma::vec>& WZmap) { this->WZmap = WZmap; }
 
-    arma::vec getWZ(Node coxNode, Node target);
+    // arma::vec getWZ(Node coxNode, Node target);
     
     double norm(double z);
 

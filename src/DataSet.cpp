@@ -79,107 +79,107 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 	
 	// missing.col(i) = Rcpp::as<arma::uvec>(isna);
 
-	if (Rcpp::is<Rcpp::NumericVector>(x)){
-	    if (Rf_isMatrix(x))  {
-		// Rcpp::stop(curName + " is a numeric matrix.");
-		if (x.inherits("Surv")) {
-		    // Rcpp::Rcout << "Surv Object " << curName << "\n";
-		    arma::mat surv = Rcpp::as<arma::mat>(x);
-		    variables.push_back(Node(new CensoredVariable(curName)));
-		    // Rcpp::Rcout << "Node Object " << curName << " created\n";
+	if (Rcpp::is<Rcpp::NumericVector>(x)) {
+	  // if (Rf_isMatrix(x))  {
+	  // 	// Rcpp::stop(curName + " is a numeric matrix.");
+	  // 	if (x.inherits("Surv")) {
+	  // 	    // Rcpp::Rcout << "Surv Object " << curName << "\n";
+	  // 	    arma::mat surv = Rcpp::as<arma::mat>(x);
+	  // 	    variables.push_back(Node(new CensoredVariable(curName)));
+	  // 	    // Rcpp::Rcout << "Node Object " << curName << " created\n";
 
-		    arma::uvec strata(surv.n_rows, arma::fill::zeros);
-		    if (x.hasAttribute("strata")) {
-			// Rcpp::Rcout << "Node Object " << curName << " has strata\n";
-			Rcpp::RObject st = x.attr("strata");
-			if (Rcpp::is<Rcpp::NumericVector>(st)) {
-			    Rcpp::stop("Strata for " + curName + " is numeric; strata must be discrete and should be either a character vector, integer vector, or factor.");
-			} else if (Rcpp::is<Rcpp::IntegerVector>(st)) {
-			    if(Rf_isFactor(st)) {
-				std::vector<std::string> tempLevels = Rcpp::as<std::vector<std::string>>(st.attr("levels"));
-				arma::vec values = Rcpp::as<arma::vec>(st);
+	  // 	    arma::uvec strata(surv.n_rows, arma::fill::zeros);
+	  // 	    if (x.hasAttribute("strata")) {
+	  // 		// Rcpp::Rcout << "Node Object " << curName << " has strata\n";
+	  // 		Rcpp::RObject st = x.attr("strata");
+	  // 		if (Rcpp::is<Rcpp::NumericVector>(st)) {
+	  // 		    Rcpp::stop("Strata for " + curName + " is numeric; strata must be discrete and should be either a character vector, integer vector, or factor.");
+	  // 		} else if (Rcpp::is<Rcpp::IntegerVector>(st)) {
+	  // 		    if(Rf_isFactor(st)) {
+	  // 			std::vector<std::string> tempLevels = Rcpp::as<std::vector<std::string>>(st.attr("levels"));
+	  // 			arma::vec values = Rcpp::as<arma::vec>(st);
 
-				arma::vec uniqVals = arma::sort(arma::unique(values(arma::find_finite(values))));
-				std::vector<std::string> levels;
+	  // 			arma::vec uniqVals = arma::sort(arma::unique(values(arma::find_finite(values))));
+	  // 			std::vector<std::string> levels;
 
-				for (double val : uniqVals) {
-				    levels.push_back(tempLevels[(int) (val-1)]);
-				}
+	  // 			for (double val : uniqVals) {
+	  // 			    levels.push_back(tempLevels[(int) (val-1)]);
+	  // 			}
 
-				for (int idx = 0; idx < n; idx++) {
-				    for (int cat = 0; cat < levels.size(); cat++) {
-					if (tempLevels[(int) (values[idx]-1)] == levels[cat]) {
-					    strata[idx] = cat;
-					}
-				    }
-				}
+	  // 			for (int idx = 0; idx < n; idx++) {
+	  // 			    for (int cat = 0; cat < levels.size(); cat++) {
+	  // 				if (tempLevels[(int) (values[idx]-1)] == levels[cat]) {
+	  // 				    strata[idx] = cat;
+	  // 				}
+	  // 			    }
+	  // 			}
 
-				// Categorical feature warning
-				if (levels.size() >= 10) {
-				    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
-				}
-			    } else {
-				arma::vec values = Rcpp::as<arma::vec>(st);
-				arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
-				for (int idx = 0; idx < n; idx++) {
-				    for (int cat = 0; cat < uniqVals.size(); cat++) {
-					if (values[idx] == uniqVals[cat]) {
-					    strata[idx] = cat;
-					}
-				    }
-				}
+	  // 			// Categorical feature warning
+	  // 			if (levels.size() >= 10) {
+	  // 			    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
+	  // 			}
+	  // 		    } else {
+	  // 			arma::vec values = Rcpp::as<arma::vec>(st);
+	  // 			arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
+	  // 			for (int idx = 0; idx < n; idx++) {
+	  // 			    for (int cat = 0; cat < uniqVals.size(); cat++) {
+	  // 				if (values[idx] == uniqVals[cat]) {
+	  // 				    strata[idx] = cat;
+	  // 				}
+	  // 			    }
+	  // 			}
 
-				if (uniqVals.size() >= 10) {
-				    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
-				}
-			    }
-			} else if (Rcpp::is<Rcpp::CharacterVector>(st)) {
-			    Rcpp::CharacterVector levels = Rcpp::sort_unique(Rcpp::as<Rcpp::CharacterVector>(st));
-			    Rcpp::CharacterVector values = Rcpp::as<Rcpp::CharacterVector>(st);
+	  // 			if (uniqVals.size() >= 10) {
+	  // 			    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
+	  // 			}
+	  // 		    }
+	  // 		} else if (Rcpp::is<Rcpp::CharacterVector>(st)) {
+	  // 		    Rcpp::CharacterVector levels = Rcpp::sort_unique(Rcpp::as<Rcpp::CharacterVector>(st));
+	  // 		    Rcpp::CharacterVector values = Rcpp::as<Rcpp::CharacterVector>(st);
 
-			    // arma::vec mappedValues(n, arma::fill::zeros);
+	  // 		    // arma::vec mappedValues(n, arma::fill::zeros);
 
-			    for (int idx = 0; idx < n; idx++) {
-				for (int cat = 0; cat < levels.size(); cat++) {
-				    if (values[idx] == levels[cat]) {
-					strata[idx] = cat;
-				    }
-				}
-			    }
+	  // 		    for (int idx = 0; idx < n; idx++) {
+	  // 			for (int cat = 0; cat < levels.size(); cat++) {
+	  // 			    if (values[idx] == levels[cat]) {
+	  // 				strata[idx] = cat;
+	  // 			    }
+	  // 			}
+	  // 		    }
 
-			    if (levels.size() >= 10) {
-			        Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
-			    }
-			}
-		    }
-		    arma::vec values(surv.col(0));
-		    arma::uvec censor(arma::conv_to<arma::uvec>::from(surv.col(1)));
-		    arma::uvec nonmissing =
-			arma::intersect(
-			    arma::intersect(arma::find_finite(values),
-					    arma::find_finite(censor)),
-			    arma::find_finite(strata));
+	  // 		    if (levels.size() >= 10) {
+	  // 		        Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
+	  // 		    }
+	  // 		}
+	  // 	    }
+	  // 	    arma::vec values(surv.col(0));
+	  // 	    arma::uvec censor(arma::conv_to<arma::uvec>::from(surv.col(1)));
+	  // 	    arma::uvec nonmissing =
+	  // 		arma::intersect(
+	  // 		    arma::intersect(arma::find_finite(values),
+	  // 				    arma::find_finite(censor)),
+	  // 		    arma::find_finite(strata));
 		    
-		    variables[i].setCensor(values(nonmissing), censor(nonmissing), strata(nonmissing));
-		    data.col(i) = values;
-		    // missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::NumericVector(values.begin(), values.end())));
-		    // Rcpp::Rcout << "Surv Object " << curName << " data input complete\n";
-		    // Rcpp::Rcout << variables[i] << std::endl;
-		} else {
-		    Rcpp::stop(curName + " is a numeric matrix but is not a Surv object");
-		}
-	    } else {
-		arma::vec values = Rcpp::as<arma::vec>(x);
-		arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
-		// Continuous feature warning
-		if (uniqVals.n_elem < 10) {
-		    contWarnFlag = true;
-		    contWarning << curName << " ";
-		    // Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
-		}
-		variables.push_back(Node(new ContinuousVariable(curName)));
-		data.col(i) = values;
-	    }
+	  // 	    variables[i].setCensor(values(nonmissing), censor(nonmissing), strata(nonmissing));
+	  // 	    data.col(i) = values;
+	  // 	    // missing.col(i) = Rcpp::as<arma::uvec>(Rcpp::is_na(Rcpp::NumericVector(values.begin(), values.end())));
+	  // 	    // Rcpp::Rcout << "Surv Object " << curName << " data input complete\n";
+	  // 	    // Rcpp::Rcout << variables[i] << std::endl;
+	  // 	} else {
+	  // 	    Rcpp::stop(curName + " is a numeric matrix but is not a Surv object");
+	  // 	}
+	  // } else {
+	  arma::vec values = Rcpp::as<arma::vec>(x);
+	  arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
+	  // Continuous feature warning
+	  if (uniqVals.n_elem < 10) {
+	    contWarnFlag = true;
+	    contWarning << curName << " ";
+	    // Rcpp::warning("Variable " + curName + " has fewer than 10 unique values and is numeric. " + curName + " is being treated as a continuous variable. If intended to be categorical, convert " + curName + " to a factor.");
+	  }
+	  variables.push_back(Node(new ContinuousVariable(curName)));
+	  data.col(i) = values;
+	  // }
 	} else if (Rcpp::is<Rcpp::IntegerVector>(x)) {
 	    if(Rf_isFactor(x)) {
 		std::vector<std::string> tempLevels = Rcpp::as<std::vector<std::string>>(x.attr("levels"));
@@ -375,13 +375,13 @@ void DataSet::dropMissing() {
 	n = completeSamples.n_elem;
         data = data.rows(completeSamples);
 	
-	for (int j = 0; j < m; j++) {
-	    if (variables[j].isCensored()) {
-		arma::uvec censor = variables[j].getCensorVec();
-		arma::uvec strata = variables[j].getStrata();
-		variables[j].setCensor(data.col(j), censor.elem(completeSamples), strata.elem(completeSamples));
-	    }
-	}
+	// for (int j = 0; j < m; j++) {
+	//     if (variables[j].isCensored()) {
+	// 	arma::uvec censor = variables[j].getCensorVec();
+	// 	arma::uvec strata = variables[j].getStrata();
+	// 	variables[j].setCensor(data.col(j), censor.elem(completeSamples), strata.elem(completeSamples));
+	//     }
+	// }
     }
 }
 
@@ -565,13 +565,13 @@ DataSet::DataSet(const DataSet& ds, const arma::urowvec& rows) {
     var2idx = ds.var2idx;
     data = ds.data.rows(rows);
 
-    for (int j = 0; j < m; j++) {
-        if (variables[j].isCensored()) {
-	    arma::uvec censor = variables[j].getCensorVec();
-	    arma::uvec strata = variables[j].getStrata();
-	    variables[j].setCensor(data.col(j), censor(rows), strata(rows));
-	}
-    }
+    // for (int j = 0; j < m; j++) {
+    //     if (variables[j].isCensored()) {
+    // 	    arma::uvec censor = variables[j].getCensorVec();
+    // 	    arma::uvec strata = variables[j].getStrata();
+    // 	    variables[j].setCensor(data.col(j), censor(rows), strata(rows));
+    // 	}
+    // }
 }
 
 // DataSet& DataSet::operator=(const DataSet& ds) {
@@ -717,16 +717,16 @@ std::vector<Node> DataSet::getDiscreteVariables() {
     return result;
 }
 
-std::vector<Node> DataSet::getCensoredVariables() {
-    std::vector<Node> result = std::vector<Node>();
+// std::vector<Node> DataSet::getCensoredVariables() {
+//     std::vector<Node> result = std::vector<Node>();
 
-    for (int i = 0; i < m; i++) {
-        if (variables[i].isCensored())
-            result.push_back(variables[i]);
-    } 
+//     for (int i = 0; i < m; i++) {
+//         if (variables[i].isCensored())
+//             result.push_back(variables[i]);
+//     } 
 
-    return result;
-}
+//     return result;
+// }
 
 bool DataSet::isMixed() {
     bool hasCont = false;
@@ -782,18 +782,18 @@ bool DataSet::isDiscrete() {
     return !hasCont && hasDisc;
 }
 
-bool DataSet::isCensored() {
-    bool hasCens = false;
+// bool DataSet::isCensored() {
+//     bool hasCens = false;
 
-    for (const Node& var : variables) {
-	if (!hasCens)
-	    hasCens = var.isCensored();
-	else
-	    break;
-    }
+//     for (const Node& var : variables) {
+// 	if (!hasCens)
+// 	    hasCens = var.isCensored();
+// 	else
+// 	    break;
+//     }
     
-    return hasCens;
-}
+//     return hasCens;
+// }
 
 
 int DataSet::getInt(int row, int col) {
@@ -858,16 +858,16 @@ arma::mat DataSet::getDiscreteData() {
     return data.cols(arma::uvec(discreteColumns));
 }
 
-arma::mat DataSet::getCensoredData() {
-    std::vector<arma::uword> censoredColumns = std::vector<arma::uword>();
+// arma::mat DataSet::getCensoredData() {
+//     std::vector<arma::uword> censoredColumns = std::vector<arma::uword>();
 
-    for (arma::uword i = 0; i < m; i++) {
-        if (variables[i].isCensored())
-            censoredColumns.push_back(i);
-    }
+//     for (arma::uword i = 0; i < m; i++) {
+//         if (variables[i].isCensored())
+//             censoredColumns.push_back(i);
+//     }
 
-    return data.cols(arma::uvec(censoredColumns));
-}
+//     return data.cols(arma::uvec(censoredColumns));
+// }
 
 std::vector<int> DataSet::getDiscLevels() {
     std::vector<int> result;
@@ -986,8 +986,8 @@ std::ostream &operator<<(std::ostream &os, DataSet &ds) {
             os << "C:";
         else if (ds.variables[i].isDiscrete())
             os << "D:";
-	else if (ds.variables[i].isCensored())
-		os << "Cens:";
+	// else if (ds.variables[i].isCensored())
+	// 	os << "Cens:";
         os << ds.variables[i].getName();
         os << "\t";
     }

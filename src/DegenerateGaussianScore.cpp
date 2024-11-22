@@ -4,9 +4,9 @@
 #include "RcppThread.h"
 
 DegenerateGaussianScore::DegenerateGaussianScore(DataSet data, double penalty) {
-    if (data.isCensored()) {
-	throw std::invalid_argument("The Degenerate Gaussian Score is not supported for censored variables.");
-    }
+    // if (data.isCensored()) {
+    // 	throw std::invalid_argument("The Degenerate Gaussian Score is not supported for censored variables.");
+    // }
     
     this->searchVariables = data.getVariables();
     // this->originalData = DataSet(data);

@@ -60,7 +60,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
     std::vector<EdgeListGraph> graphVec;
 
     bool mgmInit = alg.find("mgm") != std::string::npos;
-    bool censFlag = d.isCensored();
+    // bool censFlag = d.isCensored();
 
     for (arma::uword i = 0; i < B; i++) {
 
@@ -71,29 +71,29 @@ EdgeListGraph Bootstrap::runBootstrap() {
 	// Rcpp::Rcout << subset << std::endl;
 
 	if (alg == "mgm") {
-	    if (!censFlag) {
-		MGM mgm(subset, lambda);
-		graphVec.push_back(mgm.search());
-	    } else {
-		CoxMGM coxmgm(subset, lambda);
-		graphVec.push_back(coxmgm.search());
-	    }
+	    // if (!censFlag) {
+	    MGM mgm(subset, lambda);
+	    graphVec.push_back(mgm.search());
+	    // } else {
+	    // 	CoxMGM coxmgm(subset, lambda);
+	    // 	graphVec.push_back(coxmgm.search());
+	    // }
 	    // Rcpp::Rcout << g << std::endl;
 	    
 	} else {
 	    EdgeListGraph ig;
-	    IndTestMultiCox itm(subset, alpha);
+	    IndTestMulti itm(subset, alpha);
 	    
 	    if (mgmInit) {
 		// MGM mgm(subset, lambda);
 	        // ig = mgm.search();
-		if (!censFlag) {
-		    MGM mgm(subset, lambda);
-		    ig = mgm.search();	       
-		} else {
-		    CoxMGM coxmgm(subset, lambda);
-		    ig = coxmgm.search();
-		}
+		// if (!censFlag) {
+		MGM mgm(subset, lambda);
+		ig = mgm.search();	       
+		// } else {
+		//     CoxMGM coxmgm(subset, lambda);
+		//     ig = coxmgm.search();
+		// }
 	    }
 
 	    if (alg.find("pc") != std::string::npos) {

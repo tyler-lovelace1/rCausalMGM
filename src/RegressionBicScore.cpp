@@ -20,13 +20,13 @@ RegressionBicScore::RegressionBicScore(DataSet& data, double penalty) {
     for (Node var : variables) {
         std::vector<Node> vars = expandVariable(internalData, var);
         variablesPerNode.insert(std::pair<Node, std::vector<Node>>(var, vars));
-        if (var.isCensored()) {
-	    double nEvents = var.getNEvents();
-	    this->logNevents[var] = std::log(nEvents);
-	}
+        // if (var.isCensored()) {
+	//     double nEvents = var.getNEvents();
+	//     this->logNevents[var] = std::log(nEvents);
+	// }
     }
 
-    this->coxRegression = CoxRegression(internalData);
+    // this->coxRegression = CoxRegression(internalData);
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
 
@@ -41,9 +41,9 @@ RegressionBicScore::RegressionBicScore(DataSet& data, double penalty) {
 	    nullLL[n] = logLikLinearRegression(n, emptySet);
 	} else if (n.isDiscrete()) {
 	    nullLL[n] = logLikMultinomialLogisticRegression(n, emptySet);
-	} else if (n.isCensored()) {
-	    nullLL[n] = logLikCoxRegression(n, emptySet);
-	    resetWZ(n, emptySet);
+	// } else if (n.isCensored()) {
+	//     nullLL[n] = logLikCoxRegression(n, emptySet);
+	//     resetWZ(n, emptySet);
 	} else {
 	    throw std::invalid_argument(n.getName() + " is an unrecognized variable type");
 	}
@@ -60,11 +60,11 @@ std::vector<Node> RegressionBicScore::expandVariable(DataSet& dataSet, const Nod
         return contList;
     }
 
-    if (var.isCensored()) {
-        std::vector<Node> censList;
-        censList.push_back(var);
-        return censList;
-    }
+    // if (var.isCensored()) {
+    //     std::vector<Node> censList;
+    //     censList.push_back(var);
+    //     return censList;
+    // }
 
     if (var.isDiscrete() && var.getNumCategories() < 3)
     {
@@ -113,54 +113,54 @@ std::vector<Node> RegressionBicScore::expandVariable(DataSet& dataSet, const Nod
     return variables;
 }
 
-void RegressionBicScore::resetWZ(Node target, std::vector<Node>& neighbors) {
-    if (variablesPerNode.count(internalData.getVariable(target.getName())) < 1)
-    {
-        throw std::invalid_argument("Unrecognized node: " + target.getName());
-    }
+// void RegressionBicScore::resetWZ(Node target, std::vector<Node>& neighbors) {
+//     if (variablesPerNode.count(internalData.getVariable(target.getName())) < 1)
+//     {
+//         throw std::invalid_argument("Unrecognized node: " + target.getName());
+//     }
 
-    for (const Node& var : neighbors)
-    {
-        if (variablesPerNode.count(internalData.getVariable(var.getName())) < 1)
-        {
-            throw std::invalid_argument("Unrecognized node: " + var.getName());
-        }
-    }
+//     for (const Node& var : neighbors)
+//     {
+//         if (variablesPerNode.count(internalData.getVariable(var.getName())) < 1)
+//         {
+//             throw std::invalid_argument("Unrecognized node: " + var.getName());
+//         }
+//     }
 
-    std::vector<Node> temp;
-    std::vector<Node> regressors;
-    std::vector<Node> emptySet = {};
+//     std::vector<Node> temp;
+//     std::vector<Node> regressors;
+//     std::vector<Node> emptySet = {};
 
-    for (const Node& var : neighbors) {
-        temp = variablesPerNode.at(internalData.getVariable(var.getName()));
-	regressors.insert(regressors.end(), temp.begin(), temp.end());
-    }
+//     for (const Node& var : neighbors) {
+//         temp = variablesPerNode.at(internalData.getVariable(var.getName()));
+// 	regressors.insert(regressors.end(), temp.begin(), temp.end());
+//     }
 
-    CoxRegressionResult result;
+//     CoxRegressionResult result;
 
-    try {
-	result = coxRegression.regress(target, regressors);
-    } catch (...) {
-	result = coxRegression.regress(target, emptySet);
-    }
+//     try {
+// 	result = coxRegression.regress(target, regressors);
+//     } catch (...) {
+// 	result = coxRegression.regress(target, emptySet);
+//     }
 
-    arma::vec WZ(result.getResid());
+//     arma::vec WZ(result.getResid());
 
-    std::vector<std::string> _neighbors;
+//     std::vector<std::string> _neighbors;
 
-    for (const Node& var : neighbors) {
-	_neighbors.push_back(var.getName());
-    }
+//     for (const Node& var : neighbors) {
+// 	_neighbors.push_back(var.getName());
+//     }
 
-    target.setNeighbors(_neighbors);
-    target.setWZ(WZ);
+//     target.setNeighbors(_neighbors);
+//     target.setWZ(WZ);
 
-    if (internalData.updateNode(target)) {
-	this->coxRegression = CoxRegression(internalData);
-	this->logisticRegression = LogisticRegression(internalData);
-	this->regression = LinearRegression(internalData);
-    }
-}
+//     if (internalData.updateNode(target)) {
+// 	this->coxRegression = CoxRegression(internalData);
+// 	this->logisticRegression = LogisticRegression(internalData);
+// 	this->regression = LinearRegression(internalData);
+//     }
+// }
 
 arma::mat RegressionBicScore::getSubsetData(DataSet& origData, std::vector<Node>& varSubset) {
     arma::mat origMat = origData.getData();
@@ -277,17 +277,17 @@ double RegressionBicScore::logLikMultinomialLogisticRegression(const Node& x, st
 	return ll;
     }
 
-double RegressionBicScore::logLikCoxRegression(const Node& x, std::vector<Node>& regressors) {
-    double ll = 1e20;
-    try {
-	CoxRegressionResult result;
-	result = coxRegression.regress(x, regressors);
-	ll = result.getLoglikelihood();
-    } catch (...) {
-	ll = 1e20;
-    }
-    return ll;
-}
+// double RegressionBicScore::logLikCoxRegression(const Node& x, std::vector<Node>& regressors) {
+//     double ll = 1e20;
+//     try {
+// 	CoxRegressionResult result;
+// 	result = coxRegression.regress(x, regressors);
+// 	ll = result.getLoglikelihood();
+//     } catch (...) {
+// 	ll = 1e20;
+//     }
+//     return ll;
+// }
 
 
 double RegressionBicScore::localScore(const Node& x, const std::vector<Node>& z) {
@@ -321,10 +321,10 @@ double RegressionBicScore::localScore(const Node& x, const std::vector<Node>& z)
 	K = (regressors.size() + 1) * variablesPerNode.at(x).size();
 	score = -2 * (logLikMultinomialLogisticRegression(x, regressors) - nullLL.at(x))
 	    + penalty * logN * K;
-    } else if (x.isCensored()) {
-	K = regressors.size();
-	score = - 2 * (logLikCoxRegression(x, regressors) - nullLL.at(x))
-	    + penalty * logNevents.at(x) * K;
+    // } else if (x.isCensored()) {
+    // 	K = regressors.size();
+    // 	score = - 2 * (logLikCoxRegression(x, regressors) - nullLL.at(x))
+    // 	    + penalty * logNevents.at(x) * K;
     } else {
 	throw std::invalid_argument(x.getName() + " is an unrecognized variable type");
     }

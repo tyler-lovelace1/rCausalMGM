@@ -349,13 +349,13 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
                     return i;
                 }
             }
-        } else if (d.getVariable(i).isCensored()) {
-	    if (d.getVariable(i).getNEvents() < 5) {
-		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  "
-			    << d.getVariable(i).getNEvents()
-			    << " events" << std::endl;
-		return i;
-	    }
+        // } else if (d.getVariable(i).isCensored()) {
+	//     if (d.getVariable(i).getNEvents() < 5) {
+	// 	Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  "
+	// 		    << d.getVariable(i).getNEvents()
+	// 		    << " events" << std::endl;
+	// 	return i;
+	//     }
 	} else {
 	    throw std::runtime_error("Invalid variable type for node " + d.getVariable(i).getName());
 	}
@@ -407,13 +407,13 @@ int StabilityUtils::checkForVariance(DataSet& d) {
                     return i;
                 }
             }
-        } else if (d.getVariable(i).isCensored()) {
-	    if (d.getVariable(i).getNEvents() < 10) {
-		Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  "
-			    << d.getVariable(i).getNEvents()
-			    << " events" << std::endl;
-		return i;
-	    }
+        // } else if (d.getVariable(i).isCensored()) {
+	//     if (d.getVariable(i).getNEvents() < 10) {
+	// 	Rcpp::Rcout << "   " << d.getVariable(i).getName() << ":  "
+	// 		    << d.getVariable(i).getNEvents()
+	// 		    << " events" << std::endl;
+	// 	return i;
+	//     }
 	} else {
 	    throw std::runtime_error("Invalid variable type for node " + d.getVariable(i).getName());
 	}

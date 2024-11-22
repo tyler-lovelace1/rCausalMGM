@@ -1,18 +1,15 @@
 #include "MGM.hpp"
-#include "CoxMGM.hpp"
 #include "PcStable.hpp"
 #include "Fci.hpp"
 #include "STEPS.hpp"
 #include "STARS.hpp"
 #include "StabilityUtils.hpp"
 #include "Bootstrap.hpp"
-#include "IndTestMultiCox.hpp"
+#include "IndTestMulti.hpp"
 #include "SearchCV.hpp"
 #include "GrowShrink.hpp"
 #include "DegenerateGaussianScore.hpp"
 #include "RegressionBicScore.hpp"
-#include "Grasp.hpp"
-#include "Boss.hpp"
 #include "Knowledge.hpp"
 
 //' Calculate the MGM graph on a dataset
@@ -45,7 +42,7 @@ Rcpp::List mgm(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
     
     std::vector<double> l(lambda.begin(), lambda.end());
@@ -71,82 +68,6 @@ Rcpp::List mgm(
     return result;
 }
 
-//' Calculate the CoxMGM graph on a dataset.
-//'
-//' @description Calculate the CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package.
-//'
-//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
-//' @param lambda A numeric vector of five values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, the third for discrete-discrete, the fourth for continuous-survival, and the fifth for discrete-survival. Defaults to c(0.2, 0.2, 0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-//' @param verbose A logical value indicating whether to print updates on the progress of optimizing MGM. The default is FALSE.
-//' @return The calculated CoxMGM graph
-//' @export
-//' @examples
-//' sim <- simRandomDAG(200, 25)
-//' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-//' censtime1 <- sample(time1)
-//' event1 <- as.integer(time1 < censtime1)
-//' time1 <- pmin(time1, censtime1)
-//' sim$data$Survival1 <- survival::Surv(time1, event1)
-//' ig <- coxmgm(sim$data)
-//' print(ig)
-// [[Rcpp::export]]
-Rcpp::List coxmgm(
-    const Rcpp::DataFrame &data, 
-    Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2, 0.2, 0.2),
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(data);
-    ds.dropMissing();
-
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
-
-    int varIdx = StabilityUtils::checkForVariance(ds);
-    if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
-    }
-    
-    bool v = verbose; 
-
-    std::vector<double> l(lambda.begin(), lambda.end());
-
-    int lamLength = 5;
-
-    if (l.size() == 1) {
-	for (int i = 1; i < lamLength; i++) {
-	    l.push_back(l[0]);
-	}
-    } else if (l.size() != lamLength) {
-	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
-    }
-
-    CoxMGM mgm(ds, l);
-    mgm.setVerbose(v);
-    // mgm.calcLambdaMax();
-    EdgeListGraph mgmGraph = mgm.search();
-    
-    RcppThread::checkUserInterrupt();
-
-    // auto elapsedTime = mgm.getElapsedTime();
-
-    // if (v) {
-    // 	if (elapsedTime < 100*1000) {
-    // 	    Rcpp::Rcout.precision(2);
-    // 	} else {
-    // 	    elapsedTime = std::round(elapsedTime / 1000.0) * 1000;
-    // 	}
-    //     Rcpp::Rcout << "CoxMGM Elapsed time =  " << elapsedTime / 1000.0 << " s" << std::endl;
-    // }
-
-    Rcpp::List result = mgmGraph.toList();
-
-    return result;
-}
 
 //' Estimates a solution path for MGM
 //'
@@ -182,7 +103,7 @@ Rcpp::List mgmPath(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     arma::vec _lambda;
@@ -247,113 +168,6 @@ Rcpp::List mgmPath(
     return result;
 }
 
-
-//' Estimates a solution path for CoxMGM
-//'
-//' @description Calculate the solution path for a CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package. It also returns the models selected by the BIC and AIC scores.
-//'
-//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
-//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
-//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
-//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-//' @return A graphPath object that contains CoxMGM graphs learned by the solution path, as well as the BIC and AIC selected models
-//' @export
-//' @examples
-//' sim <- simRandomDAG(200, 25)
-//' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-//' censtime1 <- sample(time1)
-//' event1 <- as.integer(time1 < censtime1)
-//' time1 <- pmin(time1, censtime1)
-//' sim$data$Survival1 <- survival::Surv(time1, event1)
-//' ig.path <- coxmgmPath(sim$data)
-//' print(ig.path)
-// [[Rcpp::export]]
-Rcpp::List coxmgmPath(
-    const Rcpp::DataFrame& data,
-    Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
-    const int nLambda = 30,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(data);
-    ds.dropMissing();
-
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
-
-    int varIdx = StabilityUtils::checkForVariance(ds);
-    if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
-    }
-
-    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
-
-    arma::vec _lambda;
-    std::vector<double> l; // = {0.2, 0.2, 0.2};
-
-    int n = ds.getNumRows();
-
-    CoxMGM mgm(ds);
-    mgm.setVerbose(v);
-
-    double logLambdaMax = std::log10(mgm.calcLambdaMax());
-
-    logLambdaMax = std::min(logLambdaMax,
-    			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
-    						      ((double) ds.getNumRows()))));
-
-    if (lambdas.isNotNull()) {
-        _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
-	l = std::vector<double>(_lambda.begin(), _lambda.end());
-    } else {
-	if (ds.getNumRows() > ds.getNumColumns()) {
-	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
-	    l = std::vector<double>(_lambda.begin(), _lambda.end());
-	} else {
-	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
-	    l = std::vector<double>(_lambda.begin(), _lambda.end());
-	}
-    }
-
-    arma::vec loglik(l.size(), arma::fill::zeros);
-    arma::vec nParams(l.size(), arma::fill::zeros);
-    std::vector<EdgeListGraph> mgmGraphs = mgm.searchPath(l, loglik, nParams);
-
-    RcppThread::checkUserInterrupt();
-
-    Rcpp::List graphList;
-    
-    for (int i = 0; i < l.size(); i++) {
-        graphList.push_back(mgmGraphs[i].toList());
-    }
-
-    arma::vec aic = 2*nParams - 2*loglik;
-    arma::vec bic = std::log(n)*nParams - 2*loglik;
-
-    arma::uword aicIdx = arma::index_min(aic);
-    arma::uword bicIdx = arma::index_min(bic);
-    
-    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.bic"]=mgmGraphs[bicIdx].toList(),
-					   Rcpp::_["graph.aic"]=mgmGraphs[aicIdx].toList(),
-					   Rcpp::_["graphs"]=graphList,
-					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
-					   Rcpp::_["alphas"]=R_NilValue,
-					   Rcpp::_["AIC"] = aic,
-					   Rcpp::_["BIC"] = bic,
-					   Rcpp::_["loglik"] = loglik,
-					   Rcpp::_["nParams"] = nParams,
-					   Rcpp::_["n"] = n);
-
-    result.attr("class") = "graphPath";
-    
-    return result;
-}
-
-
 //' Implements k-fold cross-validation for MGM
 //'
 //' @description Calculate the solution path for an MGM graph on a dataset with k-fold cross-validation. This function returns the graph that minimizes negative log(pseudolikelihood) and the graph selected by the one standard error rule.
@@ -392,7 +206,7 @@ Rcpp::List mgmCV(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
@@ -515,7 +329,7 @@ Rcpp::List steps(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     MGM mgm(ds);
@@ -550,11 +364,11 @@ Rcpp::List steps(
     steps.setVerbose(verbose);
 
     arma::mat instabs;
-    if (ds.isCensored()) {
-	instabs = arma::mat(l.size(), 6);
-    } else {
-	instabs = arma::mat(l.size(), 4);
-    }
+    // if (ds.isCensored()) {
+    // 	instabs = arma::mat(l.size(), 6);
+    // } else {
+    instabs = arma::mat(l.size(), 4);
+    // }
     instabs.fill(arma::datum::nan);
 
     arma::umat samps;
@@ -631,7 +445,7 @@ Rcpp::List pcStars(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -751,7 +565,7 @@ Rcpp::List fciStars(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -866,7 +680,7 @@ Rcpp::List pcStable(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -875,7 +689,7 @@ Rcpp::List pcStable(
     
     std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
     
-    IndTestMultiCox itm(ds, alpha);
+    IndTestMulti itm(ds, alpha);
     
     PcStable pc((IndependenceTest*) &itm);
     if (threads > 0) pc.setThreads(threads);
@@ -961,7 +775,7 @@ Rcpp::List fciStable(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -970,7 +784,7 @@ Rcpp::List fciStable(
     
     std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
     
-    IndTestMultiCox itm(ds, alpha);
+    IndTestMulti itm(ds, alpha);
     
     Fci fci((IndependenceTest*) &itm);
     if (threads > 0) fci.setThreads(threads);
@@ -1058,7 +872,7 @@ Rcpp::List pcCV(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -1210,7 +1024,7 @@ Rcpp::List fciCV(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -1368,7 +1182,7 @@ Rcpp::List mgmpcCV(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -1569,7 +1383,7 @@ Rcpp::List mgmfciCV(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     if (orientRule.size()==0) {
@@ -1805,20 +1619,20 @@ Rcpp::List bootstrap(
 
     // Rcpp::Rcout << rule << std::endl;
 
-    if (_method == "mgm" || _method == "coxmgm") {
+    if (_method == "mgm") {
 	alg = "mgm";
     } else if (_method.substr(0,2) == "pc") {
 	alg = "pc";
     } else if (_method.substr(0,3) == "fci") {
 	alg = "fci";
-    } else if (_method.substr(0,5) == "mgmpc" || _method.substr(0,8) == "coxmgmpc") {
+    } else if (_method.substr(0,5) == "mgmpc") {
 	alg = "mgmpc";
-    } else if (_method.substr(0,6) == "mgmfci" || _method.substr(0,9) == "coxmgmfci") {
+    } else if (_method.substr(0,6) == "mgmfci") {
 	alg = "mgmfci";
     } else {
 	throw std::invalid_argument("Invalid algorithm: " + _method
 				    + "\n   Algorithm must be in the list: "
-				    + "{ mgm, coxmgm, pc, fci, mgmpc, mgmfci, coxmgmpc, coxmgmfci }");
+				    + "{ mgm, pc, fci, mgmpc, mgmfci }");
     }
     
     DataSet ds = DataSet(data);
@@ -1832,7 +1646,7 @@ Rcpp::List bootstrap(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
 
     arma::vec _lambda = g.getHyperParam("lambda");
@@ -1904,7 +1718,6 @@ Rcpp::StringVector growShrinkMB(
     const bool rank = false,
     const bool verbose = false
 ) {
-    // Rcpp::Nullable<Rcpp::List> graph = R_NilValue,
    
     DataSet ds = DataSet(data);
     ds.dropMissing();
@@ -1917,15 +1730,8 @@ Rcpp::StringVector growShrinkMB(
 
     int varIdx = StabilityUtils::checkForVariance(ds);
     if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category).");
     }
-
-    // EdgeListGraph g;
-    // if (!graph.isNull()) {
-    //     Rcpp::List _graph(graph);
-    //     g = EdgeListGraph(_graph, ds);
-    //     gs.setGraph(g);
-    // }
 
     Node targetNode = ds.getVariable(target);
 
@@ -1938,19 +1744,19 @@ Rcpp::StringVector growShrinkMB(
     
     std::vector<Node> mb;
 
-    if (!ds.isCensored()) {
-	DegenerateGaussianScore scorer(ds, penalty);
-	GrowShrink gs(&scorer);
-	gs.setVerbose(verbose);
+    // if (!ds.isCensored()) {
+    DegenerateGaussianScore scorer(ds, penalty);
+    GrowShrink gs(&scorer);
+    gs.setVerbose(verbose);
 	
-	mb = gs.search(targetNode, regressors, &score);
-    } else {
-        RegressionBicScore scorer(ds, penalty);
-	GrowShrink gs(&scorer);
-	gs.setVerbose(verbose);
+    mb = gs.search(targetNode, regressors, &score);
+    // } else {
+    //     RegressionBicScore scorer(ds, penalty);
+    // 	GrowShrink gs(&scorer);
+    // 	gs.setVerbose(verbose);
 
-	mb = gs.search(targetNode, regressors, &score);
-    }
+    // 	mb = gs.search(targetNode, regressors, &score);
+    // }
     
     RcppThread::checkUserInterrupt();
 
@@ -1960,174 +1766,8 @@ Rcpp::StringVector growShrinkMB(
 	_mb.push_back(n.getName());
     }
 
-    // Rcpp::List result = Rcpp::List::create(Rcpp::_["markov.blanket"]=_mb,
-    // 					   Rcpp::_["SCORE"]=score);
-    
     _mb.attr("Score") = Rcpp::wrap(score);
     
     return _mb;
-}
-
-
-//' Runs the GRaSP causal discovery algorithm on the dataset 
-//'
-//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
-//' @param depth The maximum search depth used in the depth-first search in GRaSP.
-//' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
-//' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
-//' @param bossInit A logical value indicating whether to initialize the causal order for GRaSP with the forward search procedure of BOSS.
-//' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
-//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-//' @return The CPDAG learned by GRaSP
-//' @export
-//' @examples
-//' sim <- simRandomDAG(200, 25)
-//' g <- grasp(sim$data)
-//' print(g)
-// [[Rcpp::export]]
-Rcpp::List grasp(
-    const Rcpp::DataFrame& data,
-    const int depth = 2,
-    const int numStarts = 3,
-    const double penalty = 2,
-    const bool bossInit = false,
-    const int threads = -1,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(data);
-    ds.dropMissing();
-
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
-
-    int varIdx = StabilityUtils::checkForVariance(ds);
-    if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
-    }
-
-    Score *scorer;
-
-    if (!ds.isCensored()) {
-	scorer = new DegenerateGaussianScore(ds, penalty);
-    } else {
-	throw std::runtime_error("GRaSP is not able to handle censored variables.");
-        // scorer = new RegressionBicScore(ds, penalty);
-    }	
-
-    Grasp grasp(scorer, threads);
-    grasp.setVerbose(verbose);
-    grasp.setDepth(depth);
-    grasp.setNumStarts(numStarts);
-    grasp.setBossInit(bossInit);
-    
-    // EdgeListGraph ig;
-    // if (!initialGraph.isNull()) {
-    //     Rcpp::List _initialGraph(initialGraph);
-    //     ig = EdgeListGraph(_initialGraph, ds);
-    //     grasp.setInitialGraph(&ig);
-    // }
-    // Knowledge k;
-    // if (!knowledge.isNull()) {
-    // 	Rcpp::List _knowledge(knowledge);
-    // 	k = Knowledge(ds.getVariables(), _knowledge);
-    // 	grasp.setKnowledge(k);
-    // }
-
-    RcppThread::checkUserInterrupt();
-
-    EdgeListGraph g = grasp.search();
-
-    Rcpp::List result = g.toList();
-
-    double score = g.getScore();
-
-    result.attr("Score") = Rcpp::wrap(score);
-
-    delete scorer;
-
-    return result;
-}
-
-//' Runs the BOSS causal discovery algorithm on the dataset 
-//'
-//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
-//' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
-//' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
-//' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
-//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-//' @return The CPDAG learned by BOSS
-//' @export
-//' @examples
-//' sim <- simRandomDAG(200, 25)
-//' g <- boss(sim$data)
-//' print(g)
-// [[Rcpp::export]]
-Rcpp::List boss(
-    const Rcpp::DataFrame& data,
-    const int numStarts = 3,
-    const double penalty = 2,
-    const int threads = -1,
-    const bool rank = false,
-    const bool verbose = false
-) {
-    DataSet ds = DataSet(data);
-    ds.dropMissing();
-
-    if (rank) {
-	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-	ds.npnTransform();
-	if (verbose) Rcpp::Rcout << "done\n";
-    }
-
-    int varIdx = StabilityUtils::checkForVariance(ds);
-    if (varIdx >= 0) {
-	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
-    }
-
-    Score *scorer;
-
-    if (!ds.isCensored()) {
-	scorer = new DegenerateGaussianScore(ds, penalty);
-    } else {
-	throw std::runtime_error("BOSS is not able to handle censored variables.");
-        // scorer = new RegressionBicScore(ds, penalty);
-    }	
-
-    Boss boss(scorer, threads);
-    boss.setVerbose(verbose);
-    boss.setNumStarts(numStarts);
-
-    // EdgeListGraph ig;
-    // if (!initialGraph.isNull()) {
-    //     Rcpp::List _initialGraph(initialGraph);
-    //     ig = EdgeListGraph(_initialGraph, ds);
-    //     boss.setInitialGraph(&ig);
-    // }
-    // Knowledge k;
-    // if (!knowledge.isNull()) {
-    // 	Rcpp::List _knowledge(knowledge);
-    // 	k = Knowledge(ds.getVariables(), _knowledge);
-    // 	boss.setKnowledge(k);
-    // }
-
-    RcppThread::checkUserInterrupt();
-
-    EdgeListGraph g = boss.search();
-
-    Rcpp::List result = g.toList();
-
-    double score = g.getScore();
-
-    result.attr("Score") = Rcpp::wrap(score);
-
-    delete scorer;
-
-    return result;
 }
 

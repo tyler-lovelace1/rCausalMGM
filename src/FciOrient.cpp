@@ -76,7 +76,7 @@ void FciOrient::ruleR0(EdgeListGraph& graph) {
 	    Node c = adjacentNodes.at(combination->at(1));
 
 	    // Skip triples that are shielded or where a and c are censored.
-	    if (graph.isAdjacentTo(a, c) || (a.isCensored() && c.isCensored())) {
+	    if (graph.isAdjacentTo(a, c)) {
 		continue;
 	    }
 

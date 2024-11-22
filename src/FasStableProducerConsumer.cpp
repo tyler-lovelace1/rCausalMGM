@@ -1,8 +1,4 @@
 #include "FasStableProducerConsumer.hpp"
-#include "IndTestMultiCox.hpp"
-
-#include "ChoiceGenerator.hpp"
-#include "GraphUtils.hpp"
 
 // Node FasStableProducerConsumer::nullNode = Node();
 
@@ -70,21 +66,21 @@ EdgeListGraph FasStableProducerConsumer::search() {
             more = searchAtDepth0();
         } else {
 
-	    if (test->getData().isCensored()) {
+	    // if (test->getData().isCensored()) {
 
-		((IndTestMultiCox*)test)->clearWZmap();
+	    // 	((IndTestMultiCox*)test)->clearWZmap();
 		
-		for (Node n : nodes) {
-		    if (n.isCensored()) {
-			// std::vector<Node> adjVars(adjacencies[n].begin(), adjacencies[n].end());
-			// if (adjVars.size() == 0)
-			//     continue;
-			// RcppThread::Rcout << "Calling resetWZ for " + n.getName() + "..." << std::endl;
-			std::vector<Node> emptySet = {};
-			((IndTestMultiCox*)test)->resetWZ(n, emptySet);
-		    }
-		}
-	    }
+	    // 	for (Node n : nodes) {
+	    // 	    if (n.isCensored()) {
+	    // 		// std::vector<Node> adjVars(adjacencies[n].begin(), adjacencies[n].end());
+	    // 		// if (adjVars.size() == 0)
+	    // 		//     continue;
+	    // 		// RcppThread::Rcout << "Calling resetWZ for " + n.getName() + "..." << std::endl;
+	    // 		std::vector<Node> emptySet = {};
+	    // 		((IndTestMultiCox*)test)->resetWZ(n, emptySet);
+	    // 	    }
+	    // 	}
+	    // }
 	    
             more = searchAtDepth(d);
         }
@@ -176,20 +172,20 @@ std::unordered_map<Node, std::unordered_set<Node>> FasStableProducerConsumer::se
             more = searchAtDepth0();
         } else {
 
-	    if (test->getData().isCensored()) {
+	    // if (test->getData().isCensored()) {
 
-		((IndTestMultiCox*)test)->clearWZmap();
+	    // 	((IndTestMultiCox*)test)->clearWZmap();
 		
-		for (Node n : nodes) {
-		    if (n.isCensored()) {
-			std::vector<Node> adjVars(adjacencies[n].begin(), adjacencies[n].end());
-			if (adjVars.size() == 0)
-			    continue;
-			// RcppThread::Rcout << "\nCalling resetWZ for " + n.getName() + "..." << std::endl;
-			((IndTestMultiCox*)test)->resetWZ(n, adjVars);
-		    }
-		}
-	    }
+	    // 	for (Node n : nodes) {
+	    // 	    if (n.isCensored()) {
+	    // 		std::vector<Node> adjVars(adjacencies[n].begin(), adjacencies[n].end());
+	    // 		if (adjVars.size() == 0)
+	    // 		    continue;
+	    // 		// RcppThread::Rcout << "\nCalling resetWZ for " + n.getName() + "..." << std::endl;
+	    // 		((IndTestMultiCox*)test)->resetWZ(n, adjVars);
+	    // 	    }
+	    // 	}
+	    // }
 	    
             more = searchAtDepth(d);
         }

@@ -191,20 +191,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// coxmgm
-Rcpp::List coxmgm(const Rcpp::DataFrame& data, Rcpp::NumericVector lambda, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_coxmgm(SEXP dataSEXP, SEXP lambdaSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type lambda(lambdaSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
-    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(coxmgm(data, lambda, rank, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
 // mgmPath
 Rcpp::List mgmPath(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, const bool rank, const bool verbose);
 RcppExport SEXP _rCausalMGM_mgmPath(SEXP dataSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
@@ -217,21 +203,6 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
     Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
     rcpp_result_gen = Rcpp::wrap(mgmPath(data, lambdas, nLambda, rank, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
-// coxmgmPath
-Rcpp::List coxmgmPath(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_coxmgmPath(SEXP dataSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambdas(lambdasSEXP);
-    Rcpp::traits::input_parameter< const int >::type nLambda(nLambdaSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
-    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(coxmgmPath(data, lambdas, nLambda, rank, verbose));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -478,40 +449,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// grasp
-Rcpp::List grasp(const Rcpp::DataFrame& data, const int depth, const int numStarts, const double penalty, const bool bossInit, const int threads, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_grasp(SEXP dataSEXP, SEXP depthSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP bossInitSEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const int >::type depth(depthSEXP);
-    Rcpp::traits::input_parameter< const int >::type numStarts(numStartsSEXP);
-    Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
-    Rcpp::traits::input_parameter< const bool >::type bossInit(bossInitSEXP);
-    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
-    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(grasp(data, depth, numStarts, penalty, bossInit, threads, rank, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
-// boss
-Rcpp::List boss(const Rcpp::DataFrame& data, const int numStarts, const double penalty, const int threads, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_boss(SEXP dataSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const int >::type numStarts(numStartsSEXP);
-    Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
-    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
-    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(boss(data, numStarts, penalty, threads, rank, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
@@ -529,9 +466,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_prMetrics", (DL_FUNC) &_rCausalMGM_prMetrics, 3},
     {"_rCausalMGM_allMetrics", (DL_FUNC) &_rCausalMGM_allMetrics, 3},
     {"_rCausalMGM_mgm", (DL_FUNC) &_rCausalMGM_mgm, 4},
-    {"_rCausalMGM_coxmgm", (DL_FUNC) &_rCausalMGM_coxmgm, 4},
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
-    {"_rCausalMGM_coxmgmPath", (DL_FUNC) &_rCausalMGM_coxmgmPath, 5},
     {"_rCausalMGM_mgmCV", (DL_FUNC) &_rCausalMGM_mgmCV, 7},
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 10},
     {"_rCausalMGM_pcStars", (DL_FUNC) &_rCausalMGM_pcStars, 12},
@@ -544,8 +479,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_mgmfciCV", (DL_FUNC) &_rCausalMGM_mgmfciCV, 14},
     {"_rCausalMGM_bootstrap", (DL_FUNC) &_rCausalMGM_bootstrap, 8},
     {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 5},
-    {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 8},
-    {"_rCausalMGM_boss", (DL_FUNC) &_rCausalMGM_boss, 6},
     {NULL, NULL, 0}
 };
 

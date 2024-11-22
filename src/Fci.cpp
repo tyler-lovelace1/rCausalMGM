@@ -491,10 +491,10 @@ std::vector<Node> Fci::getSepset(const Node& a, const Node& b, SepsetMap& sepset
     std::vector<Node> sepset;
     double pval = 0;
 
-    if (a.isCensored() && b.isCensored()) {
-	sepsets.set(a, b, sepset, 1.0);
-	return sepset;
-    }
+    // if (a.isCensored() && b.isCensored()) {
+    // 	sepsets.set(a, b, sepset, 1.0);
+    // 	return sepset;
+    // }
     
     std::vector<Node> adja = graph.getAdjacentNodes(a);
     std::vector<Node> adjb = graph.getAdjacentNodes(b);
@@ -597,7 +597,7 @@ std::list<Triple> Fci::getMTriples(EdgeListGraph& graph) {
 	    Node c = adjacentNodes.at(combination->at(1));
 
 	    // Skip triples that are shielded or where a and c are censored.
-	    if (graph.isAdjacentTo(a, c) || (a.isCensored() && c.isCensored())) {
+	    if (graph.isAdjacentTo(a, c)) {
 		continue;
 	    }
 	    

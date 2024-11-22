@@ -33,25 +33,25 @@ SearchCV::SearchCV(DataSet& data, std::string alg, uint nfolds, int threads) {
 
     foldid = arma::shuffle(foldid);
 
-    this->coxRegression = CoxRegression(internalData);
+    // this->coxRegression = CoxRegression(internalData);
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
 
-    for (Node n : scoreNodes) {
-	if (n.isCensored()) {
-	    std::vector<Node> emptySet;
-	    CoxRegressionResult result = coxRegression.regress(n, emptySet);
-	    arma::vec WZ(result.getResid());
-	    n.setWZ(WZ);
+    // for (Node n : scoreNodes) {
+    // 	if (n.isCensored()) {
+    // 	    std::vector<Node> emptySet;
+    // 	    CoxRegressionResult result = coxRegression.regress(n, emptySet);
+    // 	    arma::vec WZ(result.getResid());
+    // 	    n.setWZ(WZ);
 
-	    if (internalData.updateNode(n)) {
-		this->coxRegression = CoxRegression(internalData);
-		this->logisticRegression = LogisticRegression(internalData);
-		this->regression = LinearRegression(internalData);
-	    }
-	}
-    }
+    // 	    if (internalData.updateNode(n)) {
+    // 		this->coxRegression = CoxRegression(internalData);
+    // 		this->logisticRegression = LogisticRegression(internalData);
+    // 		this->regression = LinearRegression(internalData);
+    // 	    }
+    // 	}
+    // }
 }
 
 SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int threads) {
@@ -87,25 +87,25 @@ SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int
     this->foldid = foldid;
     this->nfolds = foldid.max();
 
-    this->coxRegression = CoxRegression(internalData);
+    // this->coxRegression = CoxRegression(internalData);
     this->logisticRegression = LogisticRegression(internalData);
     this->regression = LinearRegression(internalData);
     this->verbose = false;
 
-    for (Node n : scoreNodes) {
-	if (n.isCensored()) {
-	    std::vector<Node> emptySet;
-	    CoxRegressionResult result = coxRegression.regress(n, emptySet);
-	    arma::vec WZ(result.getResid());
-	    n.setWZ(WZ);
+    // for (Node n : scoreNodes) {
+    // 	if (n.isCensored()) {
+    // 	    std::vector<Node> emptySet;
+    // 	    CoxRegressionResult result = coxRegression.regress(n, emptySet);
+    // 	    arma::vec WZ(result.getResid());
+    // 	    n.setWZ(WZ);
 
-	    if (internalData.updateNode(n)) {
-		this->coxRegression = CoxRegression(internalData);
-		this->logisticRegression = LogisticRegression(internalData);
-		this->regression = LinearRegression(internalData);
-	    }
-	}
-    }
+    // 	    if (internalData.updateNode(n)) {
+    // 		this->coxRegression = CoxRegression(internalData);
+    // 		this->logisticRegression = LogisticRegression(internalData);
+    // 		this->regression = LinearRegression(internalData);
+    // 	    }
+    // 	}
+    // }
 }
 
 bool SearchCV::checkFoldID(const arma::uvec& foldid) {
@@ -135,11 +135,11 @@ std::vector<Node> SearchCV::expandVariable(DataSet& dataSet, const Node& var) {
 	return contList;
     }
 
-    if (var.isCensored()) {
-	std::vector<Node> censList;	
-	censList.push_back(var);
-	return censList;
-    }
+    // if (var.isCensored()) {
+    // 	std::vector<Node> censList;	
+    // 	censList.push_back(var);
+    // 	return censList;
+    // }
 
     if (var.isDiscrete() && var.getNumCategories() < 3) {
 	std::vector<Node> discList;
@@ -320,45 +320,45 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
 	ll = multiTestLL(coeffs, dep, indep, testRows);
 
-    } else if (dep.isCensored()) {
+    // } else if (dep.isCensored()) {
 
-	CoxRegressionResult result = coxRegression.regress(dep, indep, trainRows);
+    // 	CoxRegressionResult result = coxRegression.regress(dep, indep, trainRows);
 
-	// RcppThread::Rcout << "Cox Regression Result:\n\n" << result << std::endl;
+    // 	// RcppThread::Rcout << "Cox Regression Result:\n\n" << result << std::endl;
 
-        arma::uvec depIdx(1);
-	depIdx[0] = internalData.getColumn(dep);
+    //     arma::uvec depIdx(1);
+    // 	depIdx[0] = internalData.getColumn(dep);
 
-	arma::vec depData = internalData.getSubsetData(testRows, depIdx).as_col();
+    // 	arma::vec depData = internalData.getSubsetData(testRows, depIdx).as_col();
 
-	Node depCopy(dep);
+    // 	Node depCopy(dep);
 
-	arma::uvec censor = depCopy.getCensorVec();
-	censor = censor(testRows);
-	arma::uvec strata = depCopy.getStrata();
-	strata = strata(testRows);
-        depCopy.setCensor(depData, censor, strata);
+    // 	arma::uvec censor = depCopy.getCensorVec();
+    // 	censor = censor(testRows);
+    // 	arma::uvec strata = depCopy.getStrata();
+    // 	strata = strata(testRows);
+    //     depCopy.setCensor(depData, censor, strata);
 	
-	N = depData.n_elem; // returns number of rows
+    // 	N = depData.n_elem; // returns number of rows
 	
-	arma::uvec indepIdx(indep.size());
-	for (int i = 0; i < indep.size(); i++) {
-	    indepIdx[i] = internalData.getColumn(indep.at(i));
-	}
+    // 	arma::uvec indepIdx(indep.size());
+    // 	for (int i = 0; i < indep.size(); i++) {
+    // 	    indepIdx[i] = internalData.getColumn(indep.at(i));
+    // 	}
 
-	arma::mat indepData;
-	if (indep.size() == 0)
-	    indepData = arma::mat(N, 1, arma::fill::ones); // filling it with ones
-	else {
-	    indepData = internalData.getSubsetData(testRows, indepIdx);
-	    // indepData.insert_cols(0, arma::mat(N, 1, arma::fill::ones));
-	}
+    // 	arma::mat indepData;
+    // 	if (indep.size() == 0)
+    // 	    indepData = arma::mat(N, 1, arma::fill::ones); // filling it with ones
+    // 	else {
+    // 	    indepData = internalData.getSubsetData(testRows, indepIdx);
+    // 	    // indepData.insert_cols(0, arma::mat(N, 1, arma::fill::ones));
+    // 	}
 
-	arma::vec beta = result.getCoef();
+    // 	arma::vec beta = result.getCoef();
 
-	N = depCopy.getNEvents();
+    // 	N = depCopy.getNEvents();
 	
-	ll = coxRegression.loss(beta, indepData, depCopy);
+    // 	ll = coxRegression.loss(beta, indepData, depCopy);
 
     } else {
 	throw std::invalid_argument("Node " + dep.getName() + " is an unrecognized type.");
@@ -423,8 +423,8 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 	std::string alg = initialGraph->getAlgorithm();
 	if (alg == "MGM") {
 	    lambdaVec = initialGraph->getHyperParam("lambda");
-	} else if (alg == "CoxMGM") {
-	    lambdaVec = initialGraph->getHyperParam("lambda");
+	// } else if (alg == "CoxMGM") {
+	//     lambdaVec = initialGraph->getHyperParam("lambda");
 	} else {
 	    throw std::invalid_argument("Unsupported initial graph type for cross-validation. If a method other than MGM is being used, cross-validation must be done externally in R.");
 	}
@@ -451,7 +451,7 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 
     // OrientRule orientRule;
 
-    bool censFlag = originalData.isCensored();
+    // bool censFlag = originalData.isCensored();
 
     for (uint k = 1; k <= nfolds; k++) {
 	arma::urowvec trainIdx = arma::conv_to<arma::urowvec>::from(arma::find(foldid!=k));
@@ -465,28 +465,28 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 	    // MGM mgm(train, lambda);
 	    // ig = mgm.search();
 
-	    if (!censFlag) {
-	      MGM mgm(train, lambda);
-	      ig = mgm.search();	       
-	    } else {
-	      CoxMGM coxmgm(train, lambda);
-	      ig = coxmgm.search();
-	    }
+	    // if (!censFlag) {
+	    MGM mgm(train, lambda);
+	    ig = mgm.search();	       
+	    // } else {
+	    //   CoxMGM coxmgm(train, lambda);
+	    //   ig = coxmgm.search();
+	    // }
 	}
 
 	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
-	    IndTestMultiCox itm(train, alphas(aIdx));
+	    IndTestMulti itm(train, alphas(aIdx));
 
 	    if (verbose) RcppThread::Rcout << "\r    Alpha = " << alphas[aIdx];
 
-	    if (censFlag) {
-		std::vector<Node> emptySet;
-		for (Node n : scoreNodes) {
-		    if (n.isCensored()) {
-		        itm.resetWZ(n, emptySet);
-		    }
-		}
-	    }
+	    // if (censFlag) {
+	    // 	std::vector<Node> emptySet;
+	    // 	for (Node n : scoreNodes) {
+	    // 	    if (n.isCensored()) {
+	    // 	        itm.resetWZ(n, emptySet);
+	    // 	    }
+	    // 	}
+	    // }
 
 	    if (alg == "pc") {
 		PcStable causalAlg((IndependenceTest*) &itm);
@@ -606,21 +606,21 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 	// MGM mgm(originalData, lambda);
 	// ig = mgm.search();
 
-	if (!censFlag) {
-	    MGM mgm(originalData, lambda);
-	    ig = mgm.search();	       
-	} else {
-	    CoxMGM coxmgm(originalData, lambda);
-	    ig = coxmgm.search();
-	}
+	// if (!censFlag) {
+	MGM mgm(originalData, lambda);
+	ig = mgm.search();	       
+	// } else {
+	//     CoxMGM coxmgm(originalData, lambda);
+	//     ig = coxmgm.search();
+	// }
     }
 
     if (verbose) RcppThread::Rcout << "\n  Min:    MB Size:  " << minResult.mbSize << "    Mean:  " << minResult.mean << "    SE:  " << minResult.se << "    Alpha:  " << minResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(minResult.rule) << std::endl;
     
     if (verbose) RcppThread::Rcout << "\n  1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
 
-    IndTestMultiCox itmMin(originalData, minResult.alpha);
-    IndTestMultiCox itm1se(originalData, seResult.alpha);
+    IndTestMulti itmMin(originalData, minResult.alpha);
+    IndTestMulti itm1se(originalData, seResult.alpha);
 
     if (alg == "pc") {
 	PcStable causalMin((IndependenceTest*) &itmMin);
@@ -713,9 +713,9 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 
     // RcppThread::Rcout << "causalMGMGridCV call\n";
 
-    bool censFlag = originalData.isCensored();
+    // bool censFlag = originalData.isCensored();
     MGM mgm;
-    CoxMGM coxmgm;
+    // CoxMGM coxmgm;
 
     for (uint k = 1; k <= nfolds; k++) {
 	arma::urowvec trainIdx = arma::conv_to<arma::urowvec>::from(arma::find(foldid!=k));
@@ -725,34 +725,34 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 
 	if (verbose) RcppThread::Rcout << "  Running Fold " << k << "...\n";
 	
-	if (!censFlag) {
-	    lambda = { lambdas[0], lambdas[0], lambdas[0] };
-	    mgm = MGM(train, lambda);
-	} else {
-	    lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
-	    coxmgm = CoxMGM(train, lambda);
-	    // if (verbose) RcppThread::Rcout << "  CoxMGM initialized " << k << "...\n";
-	}
+	// if (!censFlag) {
+	lambda = { lambdas[0], lambdas[0], lambdas[0] };
+	mgm = MGM(train, lambda);
+	// } else {
+	//     lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
+	//     coxmgm = CoxMGM(train, lambda);
+	//     // if (verbose) RcppThread::Rcout << "  CoxMGM initialized " << k << "...\n";
+	// }
 
 	for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
 
-	    if (!censFlag) {
-		lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
+	    // if (!censFlag) {
+	    lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
 	    
-		mgm.setLambda(lambda);
-		ig = mgm.search();
-	    } else {
-		lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
+	    mgm.setLambda(lambda);
+	    ig = mgm.search();
+	    // } else {
+	    // 	lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
 	    
-		coxmgm.setLambda(lambda);
-		// if (verbose) RcppThread::Rcout << "  Learning CoxMGM " << k << "...\n";
-		ig = coxmgm.search();
-		// if (verbose) RcppThread::Rcout << "  Finished CoxMGM " << k << "\n";
-		// if (verbose) RcppThread::Rcout << ig << "\n";
-	    }
+	    // 	coxmgm.setLambda(lambda);
+	    // 	// if (verbose) RcppThread::Rcout << "  Learning CoxMGM " << k << "...\n";
+	    // 	ig = coxmgm.search();
+	    // 	// if (verbose) RcppThread::Rcout << "  Finished CoxMGM " << k << "\n";
+	    // 	// if (verbose) RcppThread::Rcout << ig << "\n";
+	    // }
 	
 	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
-		IndTestMultiCox itm(train, alphas(aIdx));
+		IndTestMulti itm(train, alphas(aIdx));
 		if (verbose) RcppThread::Rcout << "\r    Lambda = " << lambdas[lIdx] << ", Alpha = " << alphas[aIdx];
 		if (alg=="pc") {
 		    PcStable causalAlg((IndependenceTest*) &itm);
@@ -882,25 +882,25 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
     
     if (verbose) RcppThread::Rcout << "\n  1 SE:    MB Size:  " << seResult.mbSize << "    Mean:  " << seResult.mean << "    SE:  " << seResult.se << "    Lambda:  " << seResult.lambda.at(0) << "    Alpha:  " << seResult.alpha << "    Orient Rule:  " << SepsetProducer::rule2str(seResult.rule) << std::endl;
 
-    if (!censFlag) {
+    // if (!censFlag) {
 	
-	mgm = MGM(originalData, seResult.lambda);
-	ig1se = mgm.search();
+    mgm = MGM(originalData, seResult.lambda);
+    ig1se = mgm.search();
 
-	mgm.setLambda(minResult.lambda);
-	igMin = mgm.search();
+    mgm.setLambda(minResult.lambda);
+    igMin = mgm.search();
 	
-    } else {
+    // } else {
 	
-	coxmgm = CoxMGM(originalData, seResult.lambda);
-	ig1se = coxmgm.search();
+    // 	coxmgm = CoxMGM(originalData, seResult.lambda);
+    // 	ig1se = coxmgm.search();
 
-	coxmgm.setLambda(minResult.lambda);
-	igMin = coxmgm.search();
-    }
+    // 	coxmgm.setLambda(minResult.lambda);
+    // 	igMin = coxmgm.search();
+    // }
     
-    IndTestMultiCox itmMin(originalData, minResult.alpha);
-    IndTestMultiCox itm1se(originalData, seResult.alpha);
+    IndTestMulti itmMin(originalData, minResult.alpha);
+    IndTestMulti itm1se(originalData, seResult.alpha);
 
     if (alg == "pc") {
 	PcStable causalMin((IndependenceTest*) &itmMin);
@@ -988,9 +988,9 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 
     // RcppThread::Rcout << "causalMGMRandCV call\n";
 
-    bool censFlag = originalData.isCensored();
+    // bool censFlag = originalData.isCensored();
     MGM mgm;
-    CoxMGM coxmgm;
+    // CoxMGM coxmgm;
     
     for (uint k = 1; k <= nfolds; k++) {
 	arma::urowvec trainIdx = arma::conv_to<arma::urowvec>::from(arma::find(foldid!=k));
@@ -1002,13 +1002,13 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	
 	// MGM mgm(train, lambda);
 
-	if (!censFlag) {
-	    lambda = { lambdas[0], lambdas[0], lambdas[0] };
-	    mgm = MGM(train, lambda);
-	} else {
-	    lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
-	    coxmgm = CoxMGM(train, lambda);
-	}
+	// if (!censFlag) {
+	lambda = { lambdas[0], lambdas[0], lambdas[0] };
+	mgm = MGM(train, lambda);
+	// } else {
+	//     lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
+	//     coxmgm = CoxMGM(train, lambda);
+	// }
 
 
 	for (int tIdx = 0; tIdx < trials; tIdx++) {
@@ -1018,19 +1018,19 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	    // mgm.setLambda(lambda);
 	    // ig = mgm.search();
 
-	    if (!censFlag) {
-		lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	    // if (!censFlag) {
+	    lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
 	    
-		mgm.setLambda(lambda);
-		ig = mgm.search();
-	    } else {
-		lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	    mgm.setLambda(lambda);
+	    ig = mgm.search();
+	    // } else {
+	    // 	lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
 	    
-		coxmgm.setLambda(lambda);
-		ig = coxmgm.search();
-	    }
+	    // 	coxmgm.setLambda(lambda);
+	    // 	ig = coxmgm.search();
+	    // }
 	
-	    IndTestMultiCox itm(train, alphas(tIdx));
+	    IndTestMulti itm(train, alphas(tIdx));
 
 	    if (verbose) RcppThread::Rcout << "\r    Lambda = " << lambdas[tIdx] << ", Alpha = " << alphas[tIdx];
 
@@ -1160,25 +1160,25 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
     // MGM mgmMin(originalData, minResult.lambda);
     // igMin = mgmMin.search();
 
-    if (!censFlag) {
+    // if (!censFlag) {
 	
-	mgm = MGM(originalData, seResult.lambda);
-	ig1se = mgm.search();
+    mgm = MGM(originalData, seResult.lambda);
+    ig1se = mgm.search();
 
-	mgm.setLambda(minResult.lambda);
-	igMin = mgm.search();
+    mgm.setLambda(minResult.lambda);
+    igMin = mgm.search();
 	
-    } else {
+    // } else {
 	
-	coxmgm = CoxMGM(originalData, seResult.lambda);
-	ig1se = coxmgm.search();
+    // 	coxmgm = CoxMGM(originalData, seResult.lambda);
+    // 	ig1se = coxmgm.search();
 
-	coxmgm.setLambda(minResult.lambda);
-	igMin = coxmgm.search();
-    }
+    // 	coxmgm.setLambda(minResult.lambda);
+    // 	igMin = coxmgm.search();
+    // }
 
-    IndTestMultiCox itmMin(originalData, minResult.alpha);
-    IndTestMultiCox itm1se(originalData, seResult.alpha);
+    IndTestMulti itmMin(originalData, minResult.alpha);
+    IndTestMulti itm1se(originalData, seResult.alpha);
 
     if (alg == "pc") {
 	PcStable causalMin((IndependenceTest*) &itmMin);

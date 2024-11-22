@@ -38,7 +38,7 @@ private:
     arma::uvec rows;
     // arma::vec res2;
 
-    std::map<std::pair<Node,Node>, arma::vec> WZmap;
+    // std::map<std::pair<Node,Node>, arma::vec> WZmap;
 
 public:
     //============================CONSTRUCTORS==========================//
@@ -95,9 +95,9 @@ public:
 
     void setRows(arma::uvec rows) {this->rows = rows;}
 
-    void setWZmap(std::map<std::pair<Node,Node>, arma::vec>& WZmap) { this->WZmap = WZmap; }
+    // void setWZmap(std::map<std::pair<Node,Node>, arma::vec>& WZmap) { this->WZmap = WZmap; }
 
-    arma::vec getWZ(Node coxNode, Node target);
+    // arma::vec getWZ(Node coxNode, Node target);
 
     // arma::vec getResidualsWithoutFirstRegressor() {return res2;}
 

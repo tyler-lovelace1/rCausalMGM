@@ -224,29 +224,6 @@ mgm <- function(data, lambda = as.numeric( c(0.2, 0.2, 0.2)), rank = FALSE, verb
     .Call(`_rCausalMGM_mgm`, data, lambda, rank, verbose)
 }
 
-#' Calculate the CoxMGM graph on a dataset.
-#'
-#' @description Calculate the CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package.
-#'
-#' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
-#' @param lambda A numeric vector of five values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, the third for discrete-discrete, the fourth for continuous-survival, and the fifth for discrete-survival. Defaults to c(0.2, 0.2, 0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
-#' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-#' @param verbose A logical value indicating whether to print updates on the progress of optimizing MGM. The default is FALSE.
-#' @return The calculated CoxMGM graph
-#' @export
-#' @examples
-#' sim <- simRandomDAG(200, 25)
-#' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-#' censtime1 <- sample(time1)
-#' event1 <- as.integer(time1 < censtime1)
-#' time1 <- pmin(time1, censtime1)
-#' sim$data$Survival1 <- survival::Surv(time1, event1)
-#' ig <- coxmgm(sim$data)
-#' print(ig)
-coxmgm <- function(data, lambda = as.numeric( c(0.2, 0.2, 0.2, 0.2, 0.2)), rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_coxmgm`, data, lambda, rank, verbose)
-}
-
 #' Estimates a solution path for MGM
 #'
 #' @description Calculate the solution path for an MGM graph on a dataset. It also returns the models selected by the BIC and AIC scores.
@@ -264,30 +241,6 @@ coxmgm <- function(data, lambda = as.numeric( c(0.2, 0.2, 0.2, 0.2, 0.2)), rank 
 #' print(ig.path)
 mgmPath <- function(data, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmPath`, data, lambdas, nLambda, rank, verbose)
-}
-
-#' Estimates a solution path for CoxMGM
-#'
-#' @description Calculate the solution path for a CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package. It also returns the models selected by the BIC and AIC scores.
-#'
-#' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
-#' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
-#' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
-#' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-#' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-#' @return A graphPath object that contains CoxMGM graphs learned by the solution path, as well as the BIC and AIC selected models
-#' @export
-#' @examples
-#' sim <- simRandomDAG(200, 25)
-#' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-#' censtime1 <- sample(time1)
-#' event1 <- as.integer(time1 < censtime1)
-#' time1 <- pmin(time1, censtime1)
-#' sim$data$Survival1 <- survival::Surv(time1, event1)
-#' ig.path <- coxmgmPath(sim$data)
-#' print(ig.path)
-coxmgmPath <- function(data, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_coxmgmPath`, data, lambdas, nLambda, rank, verbose)
 }
 
 #' Implements k-fold cross-validation for MGM
@@ -580,43 +533,5 @@ bootstrap <- function(data, graph, knowledge = NULL, numBoots = 20L, threads = -
 #' print(mb)
 growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_growShrinkMB`, data, target, penalty, rank, verbose)
-}
-
-#' Runs the GRaSP causal discovery algorithm on the dataset 
-#'
-#' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
-#' @param depth The maximum search depth used in the depth-first search in GRaSP.
-#' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
-#' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
-#' @param bossInit A logical value indicating whether to initialize the causal order for GRaSP with the forward search procedure of BOSS.
-#' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
-#' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-#' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-#' @return The CPDAG learned by GRaSP
-#' @export
-#' @examples
-#' sim <- simRandomDAG(200, 25)
-#' g <- grasp(sim$data)
-#' print(g)
-grasp <- function(data, depth = 2L, numStarts = 3L, penalty = 2, bossInit = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_grasp`, data, depth, numStarts, penalty, bossInit, threads, rank, verbose)
-}
-
-#' Runs the BOSS causal discovery algorithm on the dataset 
-#'
-#' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
-#' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
-#' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
-#' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
-#' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-#' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-#' @return The CPDAG learned by BOSS
-#' @export
-#' @examples
-#' sim <- simRandomDAG(200, 25)
-#' g <- boss(sim$data)
-#' print(g)
-boss <- function(data, numStarts = 3L, penalty = 2, threads = -1L, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_boss`, data, numStarts, penalty, threads, rank, verbose)
 }
 

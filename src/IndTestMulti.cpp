@@ -107,8 +107,12 @@ bool IndTestMulti::isIndependent(const Node& x, const Node& y, std::vector<Node>
 			return isIndependentMultinomialLogisticRegression(x, y, z, pReturn);
 		    }
 		} catch (const std::exception &exc) {
+		    if (pReturn != NULL)
+			*pReturn = 0.0;
 		    return false;
 		}
+		if (pReturn != NULL)
+		    *pReturn = 0.0;
 		return false;
 	    }
 	} else if (y.isDiscrete()) {
@@ -126,11 +130,17 @@ bool IndTestMulti::isIndependent(const Node& x, const Node& y, std::vector<Node>
 		    else
 			return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
 		} catch (const std::exception &exc) {
+		    if (pReturn != NULL)
+			*pReturn = 0.0;
 		    return false;
 		}
+		if (pReturn != NULL)
+		    *pReturn = 0.0;
 		return false;
 	    }
 	} else {
+	    if (pReturn != NULL)
+		*pReturn = 0.0;
 	    return false;
 	}
     } else if (y.isDiscrete()) {
@@ -151,9 +161,13 @@ bool IndTestMulti::isIndependent(const Node& x, const Node& y, std::vector<Node>
 		else {
 		    return isIndependentMultinomialLogisticRegression(y, x, z, pReturn);
 		}
-	    } catch (const std::exception &exc) {	    
+	    } catch (const std::exception &exc) {
+		if (pReturn != NULL)
+		    *pReturn = 0.0;
 		return false;
 	    }
+	    if (pReturn != NULL)
+		*pReturn = 0.0;
 	    return false;
 	}
     } else {
@@ -164,9 +178,13 @@ bool IndTestMulti::isIndependent(const Node& x, const Node& y, std::vector<Node>
 	    // if regression fails, try the opposite regression
 	    try {
 		return isIndependentRegression(y, x, z, pReturn);
-	    } catch (const std::exception &exc) {		
+	    } catch (const std::exception &exc) {
+		if (pReturn != NULL)
+		    *pReturn = 0.0;
 		return false;
 	    }
+	    if (pReturn != NULL)
+		*pReturn = 0.0;
 	    return false;
 	}
     }
@@ -235,19 +253,19 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(const Node& x, con
 
     if (variablesPerNode.count(x) < 1)
     {
-        throw std::invalid_argument("Unrecogized variable: " + x.getName());
+        throw std::invalid_argument("Unrecognized variable: " + x.getName());
     }
 
     if (variablesPerNode.count(y) < 1)
     {
-        throw std::invalid_argument("Unrecogized variable: " + y.getName());
+        throw std::invalid_argument("Unrecognized variable: " + y.getName());
     }
 
     for (const Node& varZ : z)
     {
         if (variablesPerNode.count(varZ) < 1)
         {
-            throw std::invalid_argument("Unrecogized variable: " + varZ.getName());
+            throw std::invalid_argument("Unrecognized variable: " + varZ.getName());
         }
     }
 
@@ -563,19 +581,19 @@ bool IndTestMulti::isIndependentRegression(const Node& x, const Node& y, std::ve
 {
     if (variablesPerNode.count(x) < 1)
     {
-        throw std::invalid_argument("Unrecogized node: " + x.getName());
+        throw std::invalid_argument("Unrecognized node: " + x.getName());
     }
 
     if (variablesPerNode.count(y) < 1)
     {
-        throw std::invalid_argument("Unrecogized node: " + y.getName());
+        throw std::invalid_argument("Unrecognized node: " + y.getName());
     }
 
     for (const Node& varZ : z)
     {
         if (variablesPerNode.count(varZ) < 1)
         {
-            throw std::invalid_argument("Unrecogized node: " + varZ.getName());
+            throw std::invalid_argument("Unrecognized node: " + varZ.getName());
         }
     }
 

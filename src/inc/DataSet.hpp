@@ -73,7 +73,7 @@ public:
     const std::vector<Node>& getVariables() { return variables; }
     std::vector<Node> getContinuousVariables();
     std::vector<Node> getDiscreteVariables();
-    std::vector<Node> getCensoredVariables();
+    // std::vector<Node> getCensoredVariables();
     // std::vector<Node> copyVariables();
     // std::vector<Node> copyContinuousVariables();
     // std::vector<Node> copyDiscreteVariables();
@@ -81,7 +81,7 @@ public:
     bool isMixed();
     bool isContinuous();
     bool isDiscrete();
-    bool isCensored();
+    // bool isCensored();
     
     // void deleteVariables();
 
@@ -96,7 +96,7 @@ public:
     
     arma::mat getContinuousData();
     arma::mat getDiscreteData();
-    arma::mat getCensoredData();
+    // arma::mat getCensoredData();
 
     std::vector<int> getDiscLevels();
 

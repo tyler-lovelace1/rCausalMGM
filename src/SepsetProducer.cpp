@@ -35,7 +35,7 @@ void SepsetProducer::producer() {
             Node c = possParents[(*choice)[1]];
 
             // Skip triples that are shielded.
-            if (graph.isAdjacentTo(a, c) || (a.isCensored() && c.isCensored())) {
+            if (graph.isAdjacentTo(a, c)) {
                 continue;
             }
 
@@ -148,7 +148,7 @@ void SepsetProducer::producerSepsetMap() {
             Node c = possParents[(*choice)[1]];
 
             // Skip triples that are shielded.
-            if (graph.isAdjacentTo(a, c) || (a.isCensored() && c.isCensored())) {
+            if (graph.isAdjacentTo(a, c)) {
                 continue;
             }
 
@@ -266,10 +266,10 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
     std::vector<Node> sepset;
     double pval = 0;
 
-    if (a.isCensored() && b.isCensored()) {
-	sepsets.set(a, b, sepset, 1.0);
-	return sepset;
-    }
+    // if (a.isCensored() && b.isCensored()) {
+    // 	sepsets.set(a, b, sepset, 1.0);
+    // 	return sepset;
+    // }
     
     std::vector<Node> possibleDsep;
     if (sepsets.isInSepsetMap(a, b))
@@ -452,7 +452,7 @@ std::vector<Triple> SepsetProducer::getOrderedColliders() {
             Node c = possParents[(*choice)[1]];
 
 	    // Skip triples that are shielded.
-            if (graph.isAdjacentTo(a, c) || (a.isCensored() && c.isCensored())) {
+            if (graph.isAdjacentTo(a, c)) {
                 continue;
             }
 

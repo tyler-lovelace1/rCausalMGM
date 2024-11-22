@@ -19,7 +19,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
     double oneAlph = -1;
     double allMax = 0;
     int allMaxI = -1;
-    bool censFlag = d.isCensored();
+    // bool censFlag = d.isCensored();
     bool mgmFlag = initialGraph != NULL;
 
     arma::vec lambdaVec;
@@ -27,8 +27,8 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 	std::string alg = initialGraph->getAlgorithm();
 	if (alg == "MGM") {
 	    lambdaVec = initialGraph->getHyperParam("lambda");
-	} else if (alg == "CoxMGM") {
-	    lambdaVec = initialGraph->getHyperParam("lambda");
+	// } else if (alg == "CoxMGM") {
+	//     lambdaVec = initialGraph->getHyperParam("lambda");
 	} else {
 	    throw std::invalid_argument("Unsupported initial graph type for cross-validation. If a method other than MGM is being used, cross-validation must be done externally in R.");
 	}
@@ -48,11 +48,11 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
     arma::mat thetaMat(numVars, numVars, arma::fill::zeros);
     arma::mat thetaMatOld(numVars, numVars, arma::fill::zeros);
     std::vector<DataSet> dataSubVec;
-    std::vector<IndTestMultiCox> itSubVec;
+    std::vector<IndTestMulti> itSubVec;
     
     for (int i = 0; i < samps.n_rows; i++) {
 	dataSubVec.push_back(DataSet(d, samps.row(i)));
-	itSubVec.push_back(IndTestMultiCox(dataSubVec.at(i), alphas[0]));
+	itSubVec.push_back(IndTestMulti(dataSubVec.at(i), alphas[0]));
     }
     
     std::vector<EdgeListGraph> igVec(samps.n_rows);
@@ -68,13 +68,13 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 				    if (RcppThread::isInterrupted())
 					return ig;
 				    
-				    if (!censFlag) {
-					MGM mgm(dataSubVec.at(i), lambda);
-					ig = mgm.search();
-				    } else {
-					CoxMGM coxmgm(dataSubVec.at(i), lambda);
-					ig = coxmgm.search();
-				    }
+				    // if (!censFlag) {
+				    MGM mgm(dataSubVec.at(i), lambda);
+				    ig = mgm.search();
+				    // } else {
+				    // 	CoxMGM coxmgm(dataSubVec.at(i), lambda);
+				    // 	ig = coxmgm.search();
+				    // }
 				    return ig;
 				};
 
@@ -196,7 +196,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 
     EdgeListGraph g;
 
-    IndTestMultiCox itm(d, oneAlph);
+    IndTestMulti itm(d, oneAlph);
     
     if (alg == "pc") {
 	PcStable causalAlg((IndependenceTest*) &itm);

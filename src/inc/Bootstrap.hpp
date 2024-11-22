@@ -2,10 +2,10 @@
 #define BOOTSTRAP_HPP_
 
 #include "MGM.hpp"
-#include "CoxMGM.hpp"
+// #include "CoxMGM.hpp"
 #include "StabilityUtils.hpp"
 #include "SepsetMap.hpp"
-#include "IndTestMultiCox.hpp"
+#include "IndTestMulti.hpp"
 #include "PcStable.hpp"
 #include "Knowledge.hpp"
 #include "Fci.hpp"

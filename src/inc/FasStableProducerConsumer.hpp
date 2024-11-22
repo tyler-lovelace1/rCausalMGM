@@ -9,6 +9,9 @@
 #include "BlockingQueue.hpp"
 #include "RcppThread.h"
 #include "Knowledge.hpp"
+#include "IndTestMulti.hpp"
+#include "ChoiceGenerator.hpp"
+#include "GraphUtils.hpp"
 #include <boost/functional/hash.hpp>
 #include <mutex>
 #include <thread>

@@ -6,8 +6,8 @@
 #include "PcStable.hpp"
 #include "Fci.hpp"
 #include "MGM.hpp"
-#include "CoxMGM.hpp"
-#include "IndTestMultiCox.hpp"
+// #include "CoxMGM.hpp"
+#include "IndTestMulti.hpp"
 
 class STARS {
 

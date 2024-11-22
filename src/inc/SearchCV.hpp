@@ -5,13 +5,13 @@
 #include "RcppThread.h"
 #include "DataSet.hpp"
 #include "MGM.hpp"
-#include "CoxMGM.hpp"
+// #include "CoxMGM.hpp"
 #include "PcStable.hpp"
 #include "Fci.hpp"
-#include "IndTestMultiCox.hpp"
+#include "IndTestMulti.hpp"
 #include "LinearRegression.hpp"
 #include "LogisticRegression.hpp"
-#include "CoxRegression.hpp"
+// #include "CoxRegression.hpp"
 
 struct CvResult;
 
@@ -22,7 +22,7 @@ class SearchCV {
 
     LinearRegression regression;
     LogisticRegression logisticRegression;
-    CoxRegression coxRegression;
+    // CoxRegression coxRegression;
 
     // Hyperparameter vectors
     arma::vec lambdas;                       // p values of lambda
