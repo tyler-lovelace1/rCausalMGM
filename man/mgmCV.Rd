@@ -36,7 +36,9 @@ A graphCV object that contains the minimum and one standard error rule selected 
 Calculate the solution path for an MGM graph on a dataset with k-fold cross-validation. This function returns the graph that minimizes negative log(pseudolikelihood) and the graph selected by the one standard error rule.
 }
 \examples{
+\dontrun{
 sim <- simRandomDAG(200, 25)
 ig.cv <- mgmCV(sim$data)
 print(ig.cv)
+}
 }

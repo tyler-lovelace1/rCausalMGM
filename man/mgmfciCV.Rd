@@ -57,7 +57,9 @@ A graphCV object containing the PAGs selected by the minimum and one standard er
 Runs k-fold cross-validation to select the value of lambda, alpha, and the orientation rule for MGM-FCI-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
 }
 \examples{
+\dontrun{
 sim <- simRandomDAG(200, 25)
 g.cv <- mgmfciCV(sim$data)
 print(g.cv)
+}
 }

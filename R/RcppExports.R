@@ -236,9 +236,11 @@ mgm <- function(data, lambda = as.numeric( c(0.2, 0.2, 0.2)), rank = FALSE, verb
 #' @return A graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' ig.path <- mgmPath(sim$data)
 #' print(ig.path)
+#' }
 mgmPath <- function(data, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmPath`, data, lambdas, nLambda, rank, verbose)
 }
@@ -257,9 +259,11 @@ mgmPath <- function(data, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose =
 #' @return A graphCV object that contains the minimum and one standard error rule selected graphs.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' ig.cv <- mgmCV(sim$data)
 #' print(ig.cv)
+#' }
 mgmCV <- function(data, lambdas = NULL, nLambda = 30L, nfolds = 5L, foldid = NULL, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmCV`, data, lambdas, nLambda, nfolds, foldid, rank, verbose)
 }
@@ -281,6 +285,7 @@ mgmCV <- function(data, lambdas = NULL, nLambda = 30L, nfolds = 5L, foldid = NUL
 #' @return A graphSTEPS object containing the MGMs selected by StEPS and StARS, as well as the instability of each edge type at each value of lambda.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' ig.steps <- steps(sim$data)
 #' print(ig.steps)
@@ -307,9 +312,11 @@ steps <- function(data, lambdas = NULL, nLambda = 30L, gamma = 0.05, numSub = 20
 #' @return A graphSTARS object containing the CPDAG selected by StARS and the instabilities at each value of alpha.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' g.stars <- pcStars(sim$data)
 #' print(g.stars)
+#' }
 pcStars <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alphas = NULL, gamma = 0.01, numSub = 20L, subSize = -1L, leaveOneOut = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_pcStars`, data, initialGraph, knowledge, orientRule, alphas, gamma, numSub, subSize, leaveOneOut, threads, rank, verbose)
 }
@@ -333,9 +340,11 @@ pcStars <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as
 #' @return A graphSTARS object containing the PAG selected by StARS and the instabilities at each value of alpha.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' g.stars <- fciStars(sim$data)
 #' print(g.stars)
+#' }
 fciStars <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alphas = NULL, gamma = 0.01, numSub = 20L, subSize = -1L, leaveOneOut = FALSE, threads = -1L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_fciStars`, data, initialGraph, knowledge, orientRule, alphas, gamma, numSub, subSize, leaveOneOut, threads, rank, verbose)
 }
@@ -405,9 +414,11 @@ fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = 
 #' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' g.cv <- pcCV(sim$data)
 #' print(g.cv)
+#' }
 pcCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority", "maxp", "conservative")), alphas = NULL, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_pcCV`, data, initialGraph, knowledge, orientRule, alphas, nfolds, foldid, threads, fdr, rank, verbose)
 }
@@ -430,9 +441,11 @@ pcCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.ch
 #' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' g.cv <- fciCV(sim$data)
 #' print(g.cv)
+#' }
 fciCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority", "maxp", "conservative")), alphas = NULL, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_fciCV`, data, initialGraph, knowledge, orientRule, alphas, nfolds, foldid, threads, fdr, rank, verbose)
 }
@@ -458,9 +471,11 @@ fciCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.c
 #' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' g.cv <- mgmpcCV(sim$data)
 #' print(g.cv)
+#' }
 mgmpcCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = NULL, numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmpcCV`, data, knowledge, cvType, orientRule, lambdas, nLambda, alphas, numPoints, nfolds, foldid, threads, fdr, rank, verbose)
 }
@@ -486,9 +501,11 @@ mgmpcCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.c
 #' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' g.cv <- mgmfciCV(sim$data)
 #' print(g.cv)
+#' }
 mgmfciCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.character( c("majority", "maxp", "conservative")), lambdas = NULL, nLambda = 20L, alphas = NULL, numPoints = 60L, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmfciCV`, data, knowledge, cvType, orientRule, lambdas, nLambda, alphas, numPoints, nfolds, foldid, threads, fdr, rank, verbose)
 }
@@ -507,11 +524,13 @@ mgmfciCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.
 #' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
 #' @export
 #' @examples
+#' \dontrun{
 #' sim <- simRandomDAG(200, 25)
 #' g <- pcStable(sim$data)
 #' g.boot <- bootstrap(sim$data, g)
 #' print(g.boot)
-#' print(g.boot$stabilities[1:6,])
+#' print(head(g.boot$stabilities))
+#' }
 bootstrap <- function(data, graph, knowledge = NULL, numBoots = 20L, threads = -1L, replace = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_bootstrap`, data, graph, knowledge, numBoots, threads, replace, rank, verbose)
 }

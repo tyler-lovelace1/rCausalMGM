@@ -81,9 +81,11 @@ Rcpp::List mgm(
 //' @return A graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' ig.path <- mgmPath(sim$data)
 //' print(ig.path)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmPath(
     const Rcpp::DataFrame &data,
@@ -182,9 +184,11 @@ Rcpp::List mgmPath(
 //' @return A graphCV object that contains the minimum and one standard error rule selected graphs.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' ig.cv <- mgmCV(sim$data)
 //' print(ig.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmCV(
     const Rcpp::DataFrame &data,
@@ -298,6 +302,7 @@ Rcpp::List mgmCV(
 //' @return A graphSTEPS object containing the MGMs selected by StEPS and StARS, as well as the instability of each edge type at each value of lambda.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' ig.steps <- steps(sim$data)
 //' print(ig.steps)
@@ -416,9 +421,11 @@ Rcpp::List steps(
 //' @return A graphSTARS object containing the CPDAG selected by StARS and the instabilities at each value of alpha.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' g.stars <- pcStars(sim$data)
 //' print(g.stars)
+//' }
 // [[Rcpp::export]]
 Rcpp::List pcStars(
     const Rcpp::DataFrame& data,
@@ -536,9 +543,11 @@ Rcpp::List pcStars(
 //' @return A graphSTARS object containing the PAG selected by StARS and the instabilities at each value of alpha.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' g.stars <- fciStars(sim$data)
 //' print(g.stars)
+//' }
 // [[Rcpp::export]]
 Rcpp::List fciStars(
     const Rcpp::DataFrame& data,
@@ -844,9 +853,11 @@ Rcpp::List fciStable(
 //' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- pcCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List pcCV(
     const Rcpp::DataFrame& data,
@@ -996,9 +1007,11 @@ Rcpp::List pcCV(
 //' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- fciCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List fciCV(
     const Rcpp::DataFrame& data,
@@ -1151,9 +1164,11 @@ Rcpp::List fciCV(
 //' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- mgmpcCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmpcCV(
     const Rcpp::DataFrame& data,
@@ -1352,9 +1367,11 @@ Rcpp::List mgmpcCV(
 //' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- mgmfciCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmfciCV(
     const Rcpp::DataFrame& data,
@@ -1547,11 +1564,13 @@ Rcpp::List mgmfciCV(
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
 //' @export
 //' @examples
+//' \dontrun{
 //' sim <- simRandomDAG(200, 25)
 //' g <- pcStable(sim$data)
 //' g.boot <- bootstrap(sim$data, g)
 //' print(g.boot)
-//' print(g.boot$stabilities[1:6,])
+//' print(head(g.boot$stabilities))
+//' }
 // [[Rcpp::export]]
 Rcpp::List bootstrap(
     const Rcpp::DataFrame& data,
