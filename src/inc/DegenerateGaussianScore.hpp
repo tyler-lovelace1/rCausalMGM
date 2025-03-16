@@ -30,6 +30,8 @@ public:
 
     DegenerateGaussianScore(DataSet data, double penalty);
 
+    // DegenerateGaussianScore(arma::mat covMat, int N, double penalty);
+
     DegenerateGaussianScore(const DegenerateGaussianScore& other) = default;
     DegenerateGaussianScore& operator=(const DegenerateGaussianScore& other) = default;
 

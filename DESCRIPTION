@@ -9,13 +9,14 @@ Description: The rCasualMGM package is a scalable implementation of CausalMGM, a
 License: GPL (>= 2)
 Imports:
 	Rcpp (>= 1.0.3),
-	Rgraphviz,
-	graph
 LinkingTo:
 	BH,
 	Rcpp,
 	RcppArmadillo,
 	RcppThread
+Suggests:
+	Rgraphviz,
+	graph
 SystemRequirements: C++14
 RoxygenNote: 7.3.2
 Encoding: UTF-8
