@@ -91,8 +91,10 @@ EdgeListGraph Bootstrap::runBootstrap() {
 		    MGM mgm(subset, lambda);
 		    ig = mgm.search();	       
 		} else {
+		    // Rcpp::Rcout << "Starting CoxMGM...\n";
 		    CoxMGM coxmgm(subset, lambda);
 		    ig = coxmgm.search();
+		    // Rcpp::Rcout << "CoxMGM Complete\n";
 		}
 	    }
 
@@ -120,6 +122,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
 		causalAlg.setKnowledge(this->knowledge);
 		causalAlg.setVerbose(false);
 		causalAlg.setFDR(false);
+		causalAlg.setPossibleDsepSearchDone(false);
 		causalAlg.setOrientRule(orientRule);
 	    
 		if (mgmInit) {
@@ -127,6 +130,8 @@ EdgeListGraph Bootstrap::runBootstrap() {
 		}
 	    
 		graphVec.push_back(causalAlg.search());
+
+		// Rcpp::Rcout << "FCI Complete\n";
 	    } else {
 		throw std::runtime_error("Invalid algorithm selected");
 	    }   
