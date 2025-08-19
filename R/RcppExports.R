@@ -620,21 +620,3 @@ boss <- function(data, numStarts = 3L, penalty = 2, threads = -1L, rank = FALSE,
     .Call(`_rCausalMGM_boss`, data, numStarts, penalty, threads, rank, verbose)
 }
 
-#' Runs the BOSS causal discovery algorithm on the dataset 
-#'
-#' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
-#' @param numStarts The number of restarts (with different randomly sampled initial topological orders). Reduces the variance that can result from being stuck with an unfavorable initial starting order.
-#' @param penalty A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.
-#' @param threads An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.
-#' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-#' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-#' @return The CPDAG learned by BOSS
-#' @export
-#' @examples
-#' sim <- simRandomDAG(200, 25)
-#' g <- boss(sim$data)
-#' print(g)
-annealboss <- function(data, numStarts = 3L, penalty = 2, threads = -1L, rank = FALSE, verbose = FALSE) {
-    .Call(`_rCausalMGM_annealboss`, data, numStarts, penalty, threads, rank, verbose)
-}
-

@@ -512,22 +512,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// annealboss
-Rcpp::List annealboss(const Rcpp::DataFrame& data, const int numStarts, const double penalty, const int threads, const bool rank, const bool verbose);
-RcppExport SEXP _rCausalMGM_annealboss(SEXP dataSEXP, SEXP numStartsSEXP, SEXP penaltySEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
-    Rcpp::traits::input_parameter< const int >::type numStarts(numStartsSEXP);
-    Rcpp::traits::input_parameter< const double >::type penalty(penaltySEXP);
-    Rcpp::traits::input_parameter< const int >::type threads(threadsSEXP);
-    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
-    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
-    rcpp_result_gen = Rcpp::wrap(annealboss(data, numStarts, penalty, threads, rank, verbose));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_saveGraph", (DL_FUNC) &_rCausalMGM_saveGraph, 2},
@@ -562,7 +546,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_growShrinkMB", (DL_FUNC) &_rCausalMGM_growShrinkMB, 5},
     {"_rCausalMGM_grasp", (DL_FUNC) &_rCausalMGM_grasp, 8},
     {"_rCausalMGM_boss", (DL_FUNC) &_rCausalMGM_boss, 6},
-    {"_rCausalMGM_annealboss", (DL_FUNC) &_rCausalMGM_annealboss, 6},
     {NULL, NULL, 0}
 };
 
