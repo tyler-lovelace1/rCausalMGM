@@ -51,7 +51,9 @@ A graphSTARS object containing the PAG selected by StARS and the instabilities a
 Runs StARS to select the value of alpha for FCI-Stable based on adjacency stability. Returns a graphSTARS object containing the PAG selected by StARS and the adjacency instabilities for each alpha.
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 25)
 g.stars <- fciStars(sim$data)
 print(g.stars)
+}
 }

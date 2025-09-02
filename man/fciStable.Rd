@@ -11,6 +11,7 @@ fciStable(
   orientRule = as.character(c("majority")),
   alpha = 0.05,
   threads = -1L,
+  possDsep = TRUE,
   fdr = FALSE,
   rank = FALSE,
   verbose = FALSE
@@ -28,6 +29,8 @@ fciStable(
 \item{alpha}{A numeric value containing the significance threshold alpha for the conditional independence tests used during constraint-based causal discovery. This parameter directly controls graph sparsity, with low values of alpha yielding sparse graphs and high values yielding dense graphs. The default value is 0.05.}
 
 \item{threads}{An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.}
+
+\item{possDsep}{A logical value indicating whether to perform the possible-D-Sep search stage of the FCI algorithm. The possible-D-Sep search is necessaey fro correctness but can be computationally expensive in dense or high-dimensional or graphs. If set to FALSE, the RFCI rule R0 will be applied to remove some of the extraneous adjacencies that would have been removed by possible-D-Sep search. The default value is TRUE.}
 
 \item{fdr}{A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.}
 

@@ -251,19 +251,18 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
     // RcppThread::Rcout << "Scoring " << dep << " fold " << k << ":\n  indep: ";
 
-    // for (int i = 0; i < indep.size(); i++) {
-    // 	RcppThread::Rcout << indep[i] << " ";
+    for (int i = 0; i < indep.size(); i++) {
+	// RcppThread::Rcout << indep[i] << " ";
     // }
+	// RcppThread::Rcout << std::endl;
     
-    // RcppThread::Rcout << std::endl;
-    
-    // 	if (indep[i].isCensored()) {
-    // 	    std::vector<Node> emptySet;
-    // 	    result = coxRegression.regress(n, emptySet, testRows);
-    // 	    arma::vec WZ(result.getResid());
-    // 	    indep[i].setWZ(WZ);
-    // 	}
-    // }
+	if (indep[i].isCensored()) {
+	    std::vector<Node> emptySet;
+	    CoxRegressionResult result = coxRegression.regress(indep[i], emptySet, testRows);
+	    arma::vec WZ(result.getResid());
+	    indep[i].setWZ(WZ);
+	}
+    }
 
     if (dep.isContinuous()) {
 
@@ -829,7 +828,11 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
     }
 
     for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
-	lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
+	if (censFlag) {
+	    lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
+	} else {
+	    lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
+	}
 	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
 	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
 		results.insert(CvResult(arma::mean(loglik[lIdx][orIdx][aIdx]),
@@ -1098,7 +1101,11 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 
     int count = 0;
     for (int tIdx = 0; tIdx < trials; tIdx++) {
-	lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	if (censFlag) {
+	    lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	} else {
+	    lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
+	}
 	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
 	    count++;
 	    results.insert(CvResult(arma::mean(loglik[orIdx][tIdx]),

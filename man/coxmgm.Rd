@@ -27,12 +27,7 @@ The calculated CoxMGM graph
 Calculate the CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
-time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-censtime1 <- sample(time1)
-event1 <- as.integer(time1 < censtime1)
-time1 <- pmin(time1, censtime1)
-sim$data$Survival1 <- survival::Surv(time1, event1)
+sim <- simRandomDAG(200, 25, 1)
 ig <- coxmgm(sim$data)
 print(ig)
 }

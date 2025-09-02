@@ -355,25 +355,56 @@ plot.graphSTEPS <- function(x, ...) {
         log10params <- log10(x$alphas)
     }
 
-    plot(x=log10params, y=x$instability[,4], col='black', pch=19,
-         xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
-         ylab="Edge instability across subsamples", ylim=c(0,0.5))
+    alg <- x$graph.steps$algorithm
 
-    graphics::points(x=log10params, y=x$instability[,1], col='red', pch=18)
-    graphics::points(x=log10params, y=x$instability[,2], col='blue', pch=17)
-    graphics::points(x=log10params, y=x$instability[,3], col='purple', pch=15)
+    if (alg == "MGM") {
+        plot(x=log10params, y=x$instability[,4], col='black', pch=19,
+             xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
+             ylab="Edge instability across subsamples", ylim=c(0,0.5))
 
-    graphics::abline(h=gamma, lty=2, col='gray', lw=2)
-    
-    graphics::abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
-    graphics::abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
-    graphics::abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
-    graphics::abline(v=log10(x$graph.stars$lambda[1]),  col='black',  lty=3, lw=2)
+        graphics::points(x=log10params, y=x$instability[,1], col='red', pch=18)
+        graphics::points(x=log10params, y=x$instability[,2], col='blue', pch=17)
+        graphics::points(x=log10params, y=x$instability[,3], col='purple', pch=15)
 
-    graphics::legend(x = "topleft", title="Edge Type", 
-                     legend = c("All", "C-C", "C-D", "D-D"), 
-                     col = c("black","red", "blue", "purple"),
-                     pch = c(19, 18, 17, 15), cex=0.7)
+        graphics::abline(h=gamma, lty=2, col='gray', lw=2)
+        
+        graphics::abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
+        graphics::abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
+        graphics::abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
+        graphics::abline(v=log10(x$graph.stars$lambda[1]),  col='black',  lty=3, lw=2)
+
+        graphics::legend(x = "topleft", title="Edge Type", 
+                         legend = c("All", "C-C", "C-D", "D-D"), 
+                         col = c("black","red", "blue", "purple"),
+                         pch = c(19, 18, 17, 15), cex=0.7)
+    } else if (alg == "CoxMGM") {
+        plot(x=log10params, y=x$instability[,6], col='black', pch=19,
+             xlab=ifelse(mgmFlag, expression(log10(lambda)), expression(log10(alpha))),
+             ylab="Edge instability across subsamples", ylim=c(0,0.5))
+
+        graphics::points(x=log10params, y=x$instability[,1], col='red', pch=18)
+        graphics::points(x=log10params, y=x$instability[,2], col='blue', pch=17)
+        graphics::points(x=log10params, y=x$instability[,3], col='purple', pch=15)
+        graphics::points(x=log10params, y=x$instability[,4], col='darkorange', pch=17)
+        graphics::points(x=log10params, y=x$instability[,5], col='gold', pch=15)
+
+        graphics::abline(h=gamma, lty=2, col='gray', lw=2)
+        
+        graphics::abline(v=log10(x$graph.steps$lambda[1]),  col='red',    lty=2, lw=2)
+        graphics::abline(v=log10(x$graph.steps$lambda[2]),  col='blue',   lty=2, lw=2)
+        graphics::abline(v=log10(x$graph.steps$lambda[3]),  col='purple', lty=2, lw=2)
+        graphics::abline(v=log10(x$graph.steps$lambda[4]),  col='darkorange',   lty=2, lw=2)
+        graphics::abline(v=log10(x$graph.steps$lambda[5]),  col='gold', lty=2, lw=2)
+        
+        graphics::abline(v=log10(x$graph.stars$lambda[1]),  col='black',  lty=3, lw=2)
+
+        graphics::legend(x = "topleft", title="Edge Type", 
+                         legend = c("All", "C-C", "C-D", "D-D", "C-Cens", "D-Cens"), 
+                         col = c("black","red", "blue", "purple", 'darkorange', 'gold'),
+                         pch = c(19, 18, 17, 15), cex=0.7)
+    } else {
+        stop("Unsupported graph learning algorithm")
+    }
 }
 
 #' A plot override function for the graphSTARS class
@@ -619,6 +650,8 @@ createKnowledge <- function(tiers = list(), forbiddenWithinTier=NULL,
 #'     1000.
 #' @param p The number of features in the generated dataset. The
 #'     default is 50.
+#' @param r The number of censored features in the generated
+#'     dataset. The default is 0.
 #' @param discFrac The fraction of variables in the dataset that are
 #'     discrete. The default is 0.5.
 #' @param deg The average graph degree for the simulated graph. The
@@ -631,6 +664,8 @@ createKnowledge <- function(tiers = list(), forbiddenWithinTier=NULL,
 #'     Gaussian noise for continuous variables. The default is 1.
 #' @param noiseMax The upper bound on the standard deviation of the
 #'     Gaussian noise for continuous variables. The default is 2.
+#' @param censorRate The rate censored variables are censored at. The
+#'     default is 0.3.
 #' @param seed The random seed for generating the simulated DAG. The
 #'     default is NULL.
 #' @return A list containing the simulated dataset and the
@@ -640,16 +675,16 @@ createKnowledge <- function(tiers = list(), forbiddenWithinTier=NULL,
 #' print(sim$graph)
 #' print(sim$data[1:6,])
 #' @export
-simRandomDAG <- function(n=1000, p=50, discFrac=0.5, deg=3,
+simRandomDAG <- function(n=1000, p=50, r=0, discFrac=0.5, deg=3,
                          coefMin=0.5, coefMax=1.5, noiseMin=1, noiseMax=2,
-                         seed=NULL) {
+                         censorRate=0.3, seed=NULL) {
 
     if (!is.null(seed)) {
         set.seed(seed)
     }
     
-    numCat <- floor(p * discFrac)
-    numCont <- p - numCat
+    numCat <- floor((p-r) * discFrac)
+    numCont <- (p-r) - numCat
     nodes <- c()
     if (numCont > 0) {
         nodes <- c(nodes, paste0('X',1:numCont))
@@ -657,12 +692,20 @@ simRandomDAG <- function(n=1000, p=50, discFrac=0.5, deg=3,
     if (numCat>0) {
         nodes <- c(nodes, paste0('Y',1:numCat))
     }
+    if (r>0) {
+        # require(survival)
+        nodes <- c(nodes, paste0('Surv',1:r))
+    }
 
-    permNodes <- sample(nodes)
+    if (r == 0) {
+        permNodes <- sample(nodes)
+    } else {
+        permNodes <- c(sample(nodes[1:(numCont+numCat)]), nodes[(numCont+numCat+1):p])
+    }
 
     numEdges <- floor(deg * p / 2)
 
-    edgeIdx <- sample(1:(p*(p-1)/2), numEdges)
+    edgeIdx <- sample(1:((p*(p-1)/2)-(r*(r-1)/2)), numEdges)
 
     adjMat <- matrix(0, p, p)
 
@@ -739,6 +782,38 @@ simRandomDAG <- function(n=1000, p=50, discFrac=0.5, deg=3,
                     levels=c('A','B','C')
                 )
             }
+        } else if(grepl('Surv', node)) {
+            if (length(pa)==0) {
+                loghazard <- rep(0, n)
+            } else {
+                betaScale <- stats::runif(length(pa), coefMin, coefMax)
+                names(betaScale) <- pa
+                beta <- matrix(stats::runif(ncol(mod.mat), -1, 1), 1)
+                colnames(beta) <- colnames(mod.mat)
+                for (paNode in pa) {
+                    paIdx <- grep(paNode, colnames(beta))
+                    if (grepl('X', paNode)) {
+                        beta[,paIdx] <- sign(beta[,paIdx]) * betaScale[paNode]
+                    } else {
+                        beta[,paIdx] <- beta[,paIdx] - mean(beta[,paIdx])
+                        beta[,paIdx] <- betaScale[paNode] * beta[,paIdx] / sqrt(sum(beta[,paIdx]^2))
+                    }
+                }
+                
+                loghazard <- mod.mat %*% t(beta)
+
+                time <- (-log(stats::runif(n)) / exp(loghazard))^0.5
+
+                censIdx <- sample((1:n)[-which.min(time)], size=floor(censorRate * n))
+
+                events <- rep(1, n)
+                events[censIdx] <- 0
+
+                C <- stats::runif(length(censIdx))
+                time[censIdx] <- C * (time[censIdx] - min(time)) + min(time)
+
+                val <- survival::Surv(time, events)
+            }
         }
         if (idx==1) {
             data <- data.frame(val)
@@ -749,7 +824,7 @@ simRandomDAG <- function(n=1000, p=50, discFrac=0.5, deg=3,
         idx <- idx + 1
     }
     
-    graph <- adjMat2Graph(adjMat, permNodes, directed=T)
+    graph <- adjMat2Graph(adjMat, permNodes, directed=TRUE)
 
     graph$algorithm <- "Ground Truth"
     graph$type <- "directed acyclic graph"

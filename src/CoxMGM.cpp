@@ -1,36 +1,123 @@
 #include "CoxMGM.hpp"
 
 
-// CoxMGM::CoxMGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda) {
+CoxMGM::CoxMGM(DataSet ds, std::vector<int> l, std::vector<double> lambda) {
+
+    this->origData = ds;
     
-//     if (l.size() != y.n_cols)
-//         throw std::invalid_argument("length of l doesn't match number of variables in Y");
+    bool mixed = true;
 
-//     if (y.n_rows != x.n_rows)
-//         throw std::invalid_argument("different number of samples for x and y");
+    if (!ds.isCensored()) {
+	throw std::runtime_error("Cannot run CoxMGM: The dataset does not contain censored variables.");
+    }
 
-//     //lambda should have 3 values corresponding to cc, cd, and dd
-//     if (lambda.size() != 3)
-//         throw std::invalid_argument("Lambda should have three values for cc, cd, and dd edges respectively");
+    if (ds.isContinuous()) {
+	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
+	ds.addVariable(dummyVar);
+	arma::uword j = ds.getColumn(dummyVar);
+	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	    ds.set(i, j, std::floor(R::runif(0,2)));
+	}
+	mixed = false;
+	qDummy = 1;
+    }
+
+    if (ds.isDiscrete()) {
+	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
+	ds.addVariable(dummyVar);
+	arma::uword j = ds.getColumn(dummyVar);
+	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	    ds.set(i, j, std::floor(R::rnorm(0,1)));
+	}
+	mixed = false;
+	pDummy = 1;
+    }
     
-//     this->xDat = x;
-//     this->yDat = y;
-//     this->l = l;
-//     this->p = x.n_cols;
-//     this->q = y.n_cols;
-//     this->n = x.n_rows;
-//     this->variables = variables;
-//     this->initVariables = variables;
 
-//     this->lambda = arma::vec(lambda);
-//     fixData();
-//     initParameters();
-//     calcWeights();
-//     makeDummy();
+    this->xDat = ds.getContinuousData();
+    this->yDat = ds.getDiscreteData();
+    this->cDat = ds.getCensoredData();
+    this->l = l;
+    this->p = xDat.n_cols;
+    this->q = yDat.n_cols;
+    this->r = cDat.n_cols;
+    this->n = xDat.n_rows;
 
-// }
+    if (l.size() != this->q)
+        throw std::invalid_argument("length of l doesn't match number of discrete variables");
+
+    this->zDat = arma::mat(n, r, arma::fill::zeros);
+    this->wzDat = arma::mat(n, r, arma::fill::zeros);
+    this->coxgrad = arma::mat(n, r, arma::fill::zeros);
+    this->diagHess = arma::mat(n, r, arma::fill::zeros);
+    // this->orderMat = arma::umat(n, r, arma::fill::zeros);
+    this->censMat = arma::umat(n, r, arma::fill::zeros);
+    this->numStrata = arma::uvec(r, arma::fill::ones);
+
+    this->fitWeight = arma::rowvec(r, arma::fill::zeros);
+
+    // this->HList = std::vector<arma::uvec>(r);
+    this->orderList = std::vector<std::vector<arma::uvec>>(r);
+    this->censList = std::vector<std::vector<arma::uvec>>(r);
+    this->idxList = std::vector<std::vector<arma::uvec>>(r);
+    this->HList = std::vector<std::vector<arma::uvec>>(r);
+
+    //the variables are now ordered continuous first then discrete
+    std::vector<Node> cVar = ds.getContinuousVariables();
+    std::vector<Node> dVar = ds.getDiscreteVariables();
+    std::vector<Node> sVar = ds.getCensoredVariables();
+    this->variables = std::vector<Node>();
+    this->variables.reserve(p+q+r);
+    this->variables.insert(this->variables.end(), cVar.begin(), cVar.end());
+    this->variables.insert(this->variables.end(), dVar.begin(), dVar.end());
+    this->variables.insert(this->variables.end(), sVar.begin(), sVar.end());
+
+    // for (int m = 0; m < r; m++) {
+    // 	this->orderMat.col(m) = sVar[m].getOrder();
+    // 	this->censMat.col(m) = sVar[m].getCensor();
+    // 	this->HList[m] = sVar[m].getH();
+    // }
+
+    for (int m = 0; m < r; m++) {
+	this->censMat.col(m) = sVar[m].getCensorVec();
+	this->orderList[m] = sVar[m].getOrder();
+	this->censList[m] = sVar[m].getCensor();
+	this->HList[m] = sVar[m].getH();
+	this->idxList[m] = sVar[m].getIndex();
+	this->numStrata(m) = sVar[m].getNumStrata();
+    }
+    
+    this->initVariables = ds.getVariables();
+    this->lambda = arma::vec(lambda);
+    // this->lambda = arma::pow(4/3.0 * this->lambda, 1.5);
+    
+    //Data is checked for 0 or 1 indexing and for missing levels and N(0,1) Standardizes continuous data
+    fixData();
+
+    // this->resid = arma::mat(xDat);
+    // this->catResid = arma::mat(yDat);
+    // arma::rowvec pHat = arma::mean(yDat, 0);
+    // this->catResid.each_row([&pHat] (arma::rowvec& r) { r = pHat-r; });
+
+    //Initialize all parameters to zeros
+    initParameters();
+
+    //Sets continuous variable weights to standard deviation and discrete variable weights to p*(1-p) for each category
+    calcWeights();
+
+    //Creates dummy variables for each category of discrete variables (stored in dDat)
+    makeDummy();
+
+    arma::vec dDatSum = arma::sum(dDat, 0).t();
+    
+    params.alpha2 = arma::log(dDatSum + 1) - arma::log(arma::vec(lsum, arma::fill::value(n)) - dDatSum + 1);
+
+}
+
 
 CoxMGM::CoxMGM(DataSet& ds) {
+
+    this->origData = ds;
 
     bool mixed = true;
 
@@ -133,6 +220,8 @@ CoxMGM::CoxMGM(DataSet& ds) {
 
 
 CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
+
+    this->origData = ds;
 
     bool mixed = true;
 
@@ -3328,4 +3417,131 @@ std::vector<EdgeListGraph> CoxMGM::searchPath(std::vector<double> lambdas) {
         Rcpp::Rcout << "  CoxMGM Path Elapsed Time =  " << elapsedTime << " s" << std::endl;
     }
     return pathGraphs;
+}
+
+
+std::vector<EdgeListGraph> CoxMGM::searchPathCV(std::vector<double> lambdas,
+						arma::uvec& foldid,
+						arma::mat& loglik,
+						arma::uvec& index) {
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<EdgeListGraph> cvGraphs(2);
+    // std::vector<MGM> trainMGMs;
+    // std::vector<MGM> testMGMs;
+    std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
+    std::vector<double> lambda = { lambdas[0], lambdas[0], lambdas[0] };
+
+    int nfolds = arma::max(foldid);
+
+    for (int k = 1; k <= nfolds; k++) {
+	// arma::uvec trainIdxs = arma::find(foldid != k);
+	// arma::uvec testIdxs = arma::find(foldid == k);
+	arma::urowvec rTrainIdxs = arma::conv_to<arma::urowvec>::from(arma::find(foldid != k));
+	arma::urowvec rTestIdxs = arma::conv_to<arma::urowvec>::from(arma::find(foldid == k));
+
+	DataSet train(this->origData, rTrainIdxs);
+	DataSet test(this->origData, rTestIdxs);
+	
+	std::vector<Node> variables(this->variables);
+	std::vector<int> l(this->l);
+
+	// Rcpp::Rcout << "  Creating subset CoxMGMs\n";
+
+	lambda = { lambdas[0], lambdas[0], lambdas[0], lambdas[0], lambdas[0] };
+	
+	CoxMGM trainCoxMGM(train, l, lambda);
+
+	// Rcpp::Rcout << "  Train complete\n";
+
+	trainCoxMGM.setVerbose(false);
+	
+        CoxMGM testCoxMGM(test, l, lambda);
+
+	// Rcpp::Rcout << "  Test complete\n";
+	
+	for (int i = 0; i < lambdas.size(); i++) {
+	    if (verbose) {
+		RcppThread::Rcout << "  Fold " << k << ": Learning MGM for lambda = "
+				  << lambdas[i] << "\r";
+	    }
+	    
+	    lambda = { lambdas[i], lambdas[i], lambdas[i], lambdas[i], lambdas[i] };
+
+	    // Rcpp::Rcout << "Setting Lambda...\n";
+	    
+	    trainCoxMGM.setLambda(lambda);
+	    
+	    // Rcpp::Rcout << "Training...\n";
+	    
+	    trainCoxMGM.learn(1e-5, 500);
+	    // pathGraphs.push_back(graphFromMGM());
+
+	    arma::vec par(trainCoxMGM.getParams().toMatrix1D());
+
+	    // testCoxMGM.setParams(trainCoxMGM.getParams());
+	    testCoxMGM.iterUpdate(par);
+
+	    // Rcpp::Rcout << "Evaluating on test data...\n";
+	    loglik(i,k-1) = testCoxMGM.smoothValue(par);
+	    // nParams(i) = arma::accu(par!=0);
+
+	    RcppThread::checkUserInterrupt();
+		
+	}
+
+	if (verbose) {
+	  RcppThread::Rcout << std::endl;
+	}
+    }
+
+    if (verbose) RcppThread::Rcout << std::endl;
+
+    // Rcpp::Rcout << "Test LogLiks:\n" << loglik << std::endl;
+
+    arma::vec meanLoglik = arma::mean(loglik, 1);
+    arma::vec seLoglik = arma::stddev(loglik, 0, 1);
+
+    // Rcpp::Rcout << "Mean Test LogLiks:\n" << meanLoglik.t() << std::endl;
+    // Rcpp::Rcout << "SE Test LogLiks:\n" << seLoglik.t() << std::endl;
+
+    arma::uword minIdx = arma::index_min(meanLoglik);
+
+    arma::uword seIdx = minIdx;
+    for (int i = minIdx; i >= 0; i--) {
+	if (meanLoglik(i) == meanLoglik(minIdx)) minIdx = i;
+	else if (meanLoglik(i) > meanLoglik(minIdx) + seLoglik(minIdx)) break;
+	seIdx = i;
+    }
+
+    index(0) = minIdx;
+    index(1) = seIdx;
+
+    lambda = { lambdas[seIdx], lambdas[seIdx], lambdas[seIdx], lambdas[seIdx], lambdas[seIdx] };
+
+    if (verbose) RcppThread::Rcout << "lambda (1 SE) = " << lambdas[seIdx] << "\n";
+
+    setLambda(lambda);
+    learn(1e-5, 500);
+
+    cvGraphs.at(1) = graphFromCoxMGM();
+
+    lambda = { lambdas[minIdx], lambdas[minIdx], lambdas[minIdx], lambdas[minIdx], lambdas[minIdx] };
+
+    if (verbose) RcppThread::Rcout << "lambda (min) = " << lambdas[minIdx] << "\n";
+
+    setLambda(lambda);
+    learn(1e-5, 500);
+
+    cvGraphs.at(0) = graphFromCoxMGM();
+    
+    if (verbose) RcppThread::Rcout << std::endl;
+    elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now()-start).count();
+
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  CoxMGM Cross-Validation Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
+    
+    return cvGraphs;
 }

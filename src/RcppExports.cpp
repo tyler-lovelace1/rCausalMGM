@@ -252,6 +252,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// coxmgmCV
+Rcpp::List coxmgmCV(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, const int nfolds, Rcpp::Nullable<Rcpp::NumericVector> foldid, const bool rank, const bool verbose);
+RcppExport SEXP _rCausalMGM_coxmgmCV(SEXP dataSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP nfoldsSEXP, SEXP foldidSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::DataFrame& >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type lambdas(lambdasSEXP);
+    Rcpp::traits::input_parameter< const int >::type nLambda(nLambdaSEXP);
+    Rcpp::traits::input_parameter< const int >::type nfolds(nfoldsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericVector> >::type foldid(foldidSEXP);
+    Rcpp::traits::input_parameter< const bool >::type rank(rankSEXP);
+    Rcpp::traits::input_parameter< const bool >::type verbose(verboseSEXP);
+    rcpp_result_gen = Rcpp::wrap(coxmgmCV(data, lambdas, nLambda, nfolds, foldid, rank, verbose));
+    return rcpp_result_gen;
+END_RCPP
+}
 // steps
 Rcpp::List steps(const Rcpp::DataFrame& data, Rcpp::Nullable<Rcpp::NumericVector> lambdas, const int nLambda, const double gamma, const int numSub, const int subSize, const bool leaveOneOut, const int threads, const bool rank, const bool verbose);
 RcppExport SEXP _rCausalMGM_steps(SEXP dataSEXP, SEXP lambdasSEXP, SEXP nLambdaSEXP, SEXP gammaSEXP, SEXP numSubSEXP, SEXP subSizeSEXP, SEXP leaveOneOutSEXP, SEXP threadsSEXP, SEXP rankSEXP, SEXP verboseSEXP) {
@@ -533,6 +550,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rCausalMGM_mgmPath", (DL_FUNC) &_rCausalMGM_mgmPath, 5},
     {"_rCausalMGM_coxmgmPath", (DL_FUNC) &_rCausalMGM_coxmgmPath, 5},
     {"_rCausalMGM_mgmCV", (DL_FUNC) &_rCausalMGM_mgmCV, 7},
+    {"_rCausalMGM_coxmgmCV", (DL_FUNC) &_rCausalMGM_coxmgmCV, 7},
     {"_rCausalMGM_steps", (DL_FUNC) &_rCausalMGM_steps, 10},
     {"_rCausalMGM_pcStars", (DL_FUNC) &_rCausalMGM_pcStars, 12},
     {"_rCausalMGM_fciStars", (DL_FUNC) &_rCausalMGM_fciStars, 12},

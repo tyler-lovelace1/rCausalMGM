@@ -7,12 +7,14 @@
 simRandomDAG(
   n = 1000,
   p = 50,
+  r = 0,
   discFrac = 0.5,
   deg = 3,
   coefMin = 0.5,
   coefMax = 1.5,
   noiseMin = 1,
   noiseMax = 2,
+  censorRate = 0.3,
   seed = NULL
 )
 }
@@ -22,6 +24,9 @@ simRandomDAG(
 
 \item{p}{The number of features in the generated dataset. The
 default is 50.}
+
+\item{r}{The number of censored features in the generated
+dataset. The default is 0.}
 
 \item{discFrac}{The fraction of variables in the dataset that are
 discrete. The default is 0.5.}
@@ -40,6 +45,9 @@ Gaussian noise for continuous variables. The default is 1.}
 
 \item{noiseMax}{The upper bound on the standard deviation of the
 Gaussian noise for continuous variables. The default is 2.}
+
+\item{censorRate}{The rate censored variables are censored at. The
+default is 0.3.}
 
 \item{seed}{The random seed for generating the simulated DAG. The
 default is NULL.}

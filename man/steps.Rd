@@ -45,7 +45,9 @@ A graphSTEPS object containing the MGMs selected by StEPS and StARS, as well as 
 Calculates the optimal lambda values for the MGM algorithm using StEPS and StARS. Returns a graphSTEPS object that contains the MGMs selected by StEPS and StARS as well as the instability at each value of lambda.
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 25)
 ig.steps <- steps(sim$data)
 print(ig.steps)
+}
 }

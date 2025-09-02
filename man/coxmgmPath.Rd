@@ -7,7 +7,7 @@
 coxmgmPath(data, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE)
 }
 \arguments{
-\item{data}{A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.}
+\item{data}{A data.frame containing the dataset to be used for estimating the CoxMGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.}
 
 \item{lambdas}{A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.}
 
@@ -24,12 +24,9 @@ A graphPath object that contains CoxMGM graphs learned by the solution path, as 
 Calculate the solution path for a CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package. It also returns the models selected by the BIC and AIC scores.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
-time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-censtime1 <- sample(time1)
-event1 <- as.integer(time1 < censtime1)
-time1 <- pmin(time1, censtime1)
-sim$data$Survival1 <- survival::Surv(time1, event1)
+\donttest{
+sim <- simRandomDAG(200, 25, 1)
 ig.path <- coxmgmPath(sim$data)
 print(ig.path)
+}
 }

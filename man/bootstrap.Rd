@@ -36,9 +36,11 @@ bootstrap(
 Runs bootstrapping for a causal graph on the dataset. This function can be used to estimate the stability of edge adjacencies and orientations in the causal graph. It returns an ensemble graph which consists of the most common edges accross bootstrap samples. The ensemble graph is constructed based on edge-wise probabilities, so it is not guaranteed to be a valid CPDAG or PAG. The ensemble graph's stabilites entry contains information about the frequency of each possible orientation for each edge that appears at least once across bootstrap samples.
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 25)
 g <- pcStable(sim$data)
 g.boot <- bootstrap(sim$data, g)
 print(g.boot)
 print(g.boot$stabilities[1:6,])
+}
 }

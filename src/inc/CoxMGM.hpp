@@ -22,6 +22,9 @@ class CoxMGM : public ConvexProximal {
 
 private:
 
+    //Original DataSet
+    DataSet origData;
+    
     //Continuous Data
     arma::mat xDat;
 
@@ -120,6 +123,7 @@ public:
     // CoxMGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<int>& l, std::vector<double>& lambda);
     CoxMGM(DataSet& ds);
     CoxMGM(DataSet& ds, std::vector<double>& lambda);
+    CoxMGM(DataSet ds, std::vector<int> l, std::vector<double> lambda);
 
     // CoxMGM(CoxMGM& other) = default;
     // CoxMGM& operator=(CoxMGM& other) = default;
@@ -250,7 +254,12 @@ public:
 
     std::vector<EdgeListGraph> searchPath(std::vector<double> lambdas);
 
-    friend void CoxMGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
+    std::vector<EdgeListGraph> searchPathCV(std::vector<double> lambdas,
+					    arma::uvec& foldid,
+					    arma::mat& loglik,
+					    arma::uvec& index);
+
+    // friend void CoxMGMTest(const Rcpp::DataFrame &df, const int maxDiscrete);
 
 };
 

@@ -29,12 +29,17 @@
 //' print(g)
 // [[Rcpp::export]]
 Rcpp::List mgm(
-    const Rcpp::DataFrame &data, 
+    const Rcpp::DataFrame& data, 
     Rcpp::NumericVector lambda = Rcpp::NumericVector::create(0.2, 0.2, 0.2),
     const bool rank = false,
     const bool verbose = false
 ) {
     DataSet ds = DataSet(data);
+
+    if (ds.isCensored()) {
+	throw std::invalid_argument("The dataset contains at least one censored variable; please use coxmgm to learn a CoxMGM instead.");
+    }
+    
     ds.dropMissing();
 
     if (rank) {
@@ -82,12 +87,7 @@ Rcpp::List mgm(
 //' @return The calculated CoxMGM graph
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
-//' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-//' censtime1 <- sample(time1)
-//' event1 <- as.integer(time1 < censtime1)
-//' time1 <- pmin(time1, censtime1)
-//' sim$data$Survival1 <- survival::Surv(time1, event1)
+//' sim <- simRandomDAG(200, 25, 1)
 //' ig <- coxmgm(sim$data)
 //' print(ig)
 // [[Rcpp::export]]
@@ -98,6 +98,11 @@ Rcpp::List coxmgm(
     const bool verbose = false
 ) {
     DataSet ds = DataSet(data);
+
+    if (!ds.isCensored()) {
+	throw std::invalid_argument("The dataset does not contain censored variables; please use mgm to learn an MGM instead.");
+    }
+    
     ds.dropMissing();
 
     if (rank) {
@@ -172,6 +177,11 @@ Rcpp::List mgmPath(
     const bool verbose = false
 ) {
     DataSet ds = DataSet(data);
+
+    if (ds.isCensored()) {
+	throw std::invalid_argument("The dataset contains at least one censored variable; please use coxmgmPath to learn a CoxMGM solution path instead.");
+    }
+    
     ds.dropMissing();
 
     if (rank) {
@@ -252,7 +262,7 @@ Rcpp::List mgmPath(
 //'
 //' @description Calculate the solution path for a CoxMGM graph on a dataset. The dataset must contain at least one censored variable formatted as Surv object from the survival package. It also returns the models selected by the BIC and AIC scores.
 //'
-//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
+//' @param data A data.frame containing the dataset to be used for estimating the CoxMGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
 //' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
 //' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
@@ -260,14 +270,11 @@ Rcpp::List mgmPath(
 //' @return A graphPath object that contains CoxMGM graphs learned by the solution path, as well as the BIC and AIC selected models
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
-//' time1 <- exp(0.5 * sim$data$X1 - 0.5 * sim$data$X2 + rnorm(nrow(sim$data)))
-//' censtime1 <- sample(time1)
-//' event1 <- as.integer(time1 < censtime1)
-//' time1 <- pmin(time1, censtime1)
-//' sim$data$Survival1 <- survival::Surv(time1, event1)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, 1)
 //' ig.path <- coxmgmPath(sim$data)
 //' print(ig.path)
+//' }
 // [[Rcpp::export]]
 Rcpp::List coxmgmPath(
     const Rcpp::DataFrame& data,
@@ -277,6 +284,11 @@ Rcpp::List coxmgmPath(
     const bool verbose = false
 ) {
     DataSet ds = DataSet(data);
+
+    if (!ds.isCensored()) {
+	throw std::invalid_argument("The dataset does not contain censored variables; please use mgmPath to learn an MGM solution path instead.");
+    }
+    
     ds.dropMissing();
 
     if (rank) {
@@ -368,9 +380,11 @@ Rcpp::List coxmgmPath(
 //' @return A graphCV object that contains the minimum and one standard error rule selected graphs.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' ig.cv <- mgmCV(sim$data)
 //' print(ig.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmCV(
     const Rcpp::DataFrame &data,
@@ -382,6 +396,11 @@ Rcpp::List mgmCV(
     const bool verbose = false
 ) {
     DataSet ds = DataSet(data);
+
+    if (ds.isCensored()) {
+	throw std::invalid_argument("The dataset contains at least one censored variable; please use coxmgmCV to perform cross-validation with CoxMGM instead.");
+    }
+    
     ds.dropMissing();
 
     if (rank) {
@@ -466,6 +485,126 @@ Rcpp::List mgmCV(
 }
 
 
+//' Implements k-fold cross-validation for CoxMGM
+//'
+//' @description Calculate the solution path for a CoxMGM graph on a dataset with k-fold cross-validation. The dataset must contain at least one censored variable formatted as Surv object from the survival package. This function returns the graph that minimizes negative log(pseudolikelihood) and the graph selected by the one standard error rule.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the CoxMGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. All censored variables must be a survival::Surv object. Any rows with missing values will be dropped.
+//' @param lambdas A numeric vector containing the values of lambda to learn an MGM with. The default value is NULL, in which case a log-spaced vector of nLambda values for lambda will be supplied instead.
+//' @param nLambda A numeric value indicating the number of lambda values to test when the lambdas vector is NULL. The default is 30.
+//' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
+//' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphCV object that contains the minimum and one standard error rule selected graphs.
+//' @export
+//' @examples
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, 1)
+//' ig.cv <- coxmgmCV(sim$data)
+//' print(ig.cv)
+//' }
+// [[Rcpp::export]]
+Rcpp::List coxmgmCV(
+    const Rcpp::DataFrame &data,
+    Rcpp::Nullable<Rcpp::NumericVector> lambdas = R_NilValue,
+    const int nLambda = 30,
+    const int nfolds = 5,
+    Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+
+    if (!ds.isCensored()) {
+	throw std::invalid_argument("The dataset does not contain censored variables; please use mgmCV to perform cross-validation with MGM instead.");
+    }
+    
+    ds.dropMissing();
+
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
+
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
+
+    bool v = verbose; // Rcpp::is_true(Rcpp::all(verbose));
+
+    arma::vec _lambda;
+    std::vector<double> l; // = {0.2, 0.2, 0.2};
+
+    int n = ds.getNumRows();
+    int p = ds.getNumColumns();
+
+    CoxMGM mgm(ds);
+    mgm.setVerbose(v);
+
+    double logLambdaMax = std::log10(mgm.calcLambdaMax());
+
+    logLambdaMax = std::min(logLambdaMax,
+    			    std::log10(10 * std::sqrt(std::log10(p) / ((double) n))));
+
+    if (lambdas.isNotNull()) {
+        _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
+	l = std::vector<double>(_lambda.begin(), _lambda.end());
+    } else {
+	if (n > p) {
+	    _lambda = arma::logspace(logLambdaMax+std::log10(0.05), logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	} else {
+	    _lambda = arma::logspace(logLambdaMax-1, logLambdaMax, nLambda); 
+	    l = std::vector<double>(_lambda.begin(), _lambda.end());
+	}
+    }
+    
+    arma::uvec _foldid;
+    
+    if (foldid.isNull()) {
+	_foldid = arma::linspace<arma::uvec>(1, n, n) - 1;
+	_foldid.transform([nfolds](arma::uword val) { return val % nfolds + 1; });
+	_foldid = arma::shuffle(_foldid);
+    } else {
+	_foldid = Rcpp::as<arma::uvec>(foldid);
+    }
+
+    if (_foldid.n_elem != n) {
+	throw std::invalid_argument("foldid has a length that does not equal number of samples in the dataset.");
+    }
+
+    if (!SearchCV::checkFoldID(_foldid)) {
+	throw std::invalid_argument("Invalid input for foldid. Values must be in the range 1:nfolds, with folds of approximately equal size.");
+    }
+
+    arma::mat loglik(l.size(), arma::max(_foldid), arma::fill::zeros);
+    arma::uvec index(2, arma::fill::zeros);
+    std::vector<EdgeListGraph> cvGraphs = mgm.searchPathCV(l, _foldid, loglik, index);
+
+    RcppThread::checkUserInterrupt();
+
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
+    					   Rcpp::_["lambdas"]=arma::sort(_lambda, "descend"),
+					   Rcpp::_["alphas"]=R_NilValue,
+					   Rcpp::_["orientRules"]=R_NilValue,
+					   Rcpp::_["idx.min"]=index(0) + 1,
+					   Rcpp::_["idx.1se"]=index(1) + 1,
+					   Rcpp::_["mean"] = arma::mean(loglik, 1),
+					   Rcpp::_["se"] = arma::stddev(loglik, 0, 1),
+					   Rcpp::_["size"] = R_NilValue,
+					   Rcpp::_["foldid"]=_foldid);
+
+    result.attr("class") = "graphCV";
+
+    return result;
+}
+
+
+
 
 //' Implements StEPS and StARS for MGM
 //'
@@ -484,9 +623,11 @@ Rcpp::List mgmCV(
 //' @return A graphSTEPS object containing the MGMs selected by StEPS and StARS, as well as the instability of each edge type at each value of lambda.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' ig.steps <- steps(sim$data)
 //' print(ig.steps)
+//' }
 // [[Rcpp::export]]
 Rcpp::List steps(
     const Rcpp::DataFrame &data, 
@@ -602,9 +743,11 @@ Rcpp::List steps(
 //' @return A graphSTARS object containing the CPDAG selected by StARS and the instabilities at each value of alpha.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g.stars <- pcStars(sim$data)
 //' print(g.stars)
+//' }
 // [[Rcpp::export]]
 Rcpp::List pcStars(
     const Rcpp::DataFrame& data,
@@ -722,9 +865,11 @@ Rcpp::List pcStars(
 //' @return A graphSTARS object containing the PAG selected by StARS and the instabilities at each value of alpha.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g.stars <- fciStars(sim$data)
 //' print(g.stars)
+//' }
 // [[Rcpp::export]]
 Rcpp::List fciStars(
     const Rcpp::DataFrame& data,
@@ -1030,9 +1175,11 @@ Rcpp::List fciStable(
 //' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- pcCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List pcCV(
     const Rcpp::DataFrame& data,
@@ -1182,9 +1329,11 @@ Rcpp::List pcCV(
 //' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- fciCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List fciCV(
     const Rcpp::DataFrame& data,
@@ -1337,9 +1486,11 @@ Rcpp::List fciCV(
 //' @return A graphCV object containing the CPDAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- mgmpcCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmpcCV(
     const Rcpp::DataFrame& data,
@@ -1538,9 +1689,11 @@ Rcpp::List mgmpcCV(
 //' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g.cv <- mgmfciCV(sim$data)
 //' print(g.cv)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmfciCV(
     const Rcpp::DataFrame& data,
@@ -1733,11 +1886,13 @@ Rcpp::List mgmfciCV(
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g <- pcStable(sim$data)
 //' g.boot <- bootstrap(sim$data, g)
 //' print(g.boot)
 //' print(g.boot$stabilities[1:6,])
+//' }
 // [[Rcpp::export]]
 Rcpp::List bootstrap(
     const Rcpp::DataFrame& data,
@@ -1982,9 +2137,11 @@ Rcpp::StringVector growShrinkMB(
 //' @return The CPDAG learned by GRaSP
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g <- grasp(sim$data)
 //' print(g)
+//' }
 // [[Rcpp::export]]
 Rcpp::List grasp(
     const Rcpp::DataFrame& data,

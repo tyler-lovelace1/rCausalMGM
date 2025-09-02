@@ -48,7 +48,9 @@ A graphCV object containing the PAGs selected by the minimum and one standard er
 Runs k-fold cross-validation to select the value of alpha and orientation rule for FCI-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 25)
 g.cv <- fciCV(sim$data)
 print(g.cv)
+}
 }

@@ -9,6 +9,7 @@ grasp(
   depth = 2L,
   numStarts = 3L,
   penalty = 2,
+  bossInit = FALSE,
   threads = -1L,
   rank = FALSE,
   verbose = FALSE
@@ -23,6 +24,8 @@ grasp(
 
 \item{penalty}{A numeric value that represents the strength of the penalty for model complexity. The default value is 2, which corresponds to twice the BIC penalty.}
 
+\item{bossInit}{A logical value indicating whether to initialize the causal order for GRaSP with the forward search procedure of BOSS.}
+
 \item{threads}{An integer value denoting the number of threads to use for parallelization. The default value is -1, which will all available CPUs.}
 
 \item{rank}{A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.}
@@ -36,7 +39,9 @@ The CPDAG learned by GRaSP
 Runs the GRaSP causal discovery algorithm on the dataset
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 25)
 g <- grasp(sim$data)
 print(g)
+}
 }
