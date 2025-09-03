@@ -60,12 +60,14 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 	std::size_t found = curName.find(" ");
 
 	if (found != std::string::npos) {
-	    Rcpp::Rcout << "WARNING : The variable " << curName << " was renamed to ";
+	  std::ostringstream nameWarning;
+	    nameWarning << "The variable " << curName << " was renamed to ";
 	    while (found != std::string::npos) {
 		curName.replace(found, 1, ".");
 		found = curName.find(" ");
 	    }
-	    Rcpp::Rcout << curName << "\n";
+	    nameWarning << curName << "\n";
+	    Rcpp::warning(nameWarning.str());
 	}
 
 	if (name2idx.count(curName)>0) {
@@ -116,7 +118,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 
 				// Categorical feature warning
 				if (levels.size() >= 10) {
-				    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
+				    Rcpp::warning("Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n");
 				}
 			    } else {
 				arma::vec values = Rcpp::as<arma::vec>(st);
@@ -130,7 +132,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 				}
 
 				if (uniqVals.size() >= 10) {
-				    Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
+				    Rcpp::warning("Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n");
 				}
 			    }
 			} else if (Rcpp::is<Rcpp::CharacterVector>(st)) {
@@ -148,7 +150,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 			    }
 
 			    if (levels.size() >= 10) {
-			        Rcpp::Rcout << "WARNING : Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n";
+			        Rcpp::warning("Strata for censored variable " + curName + " has 10 or more categories. Fitting models with large numbers of strata is not recommended.\n");
 			    }
 			}
 		    }
@@ -261,13 +263,17 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 	// Rcpp::Rcout << "Variable " << curName << " has been completely entered\n";
     }
 
-    contWarning << "} have fewer than 10 unique values. If any variable(s) are intended to be categorical, convert them to factors.";
+    contWarning << "} have fewer than 10 unique values. If any variable(s) are intended to be categorical, convert them to factors.\n";
 
-    catWarning << "} have 10 or more categories. Fitting models with large numbers of categories is not recommended. If any variables(s) are intended to be continuous, convert them to numeric.";
+    catWarning << "} have 10 or more categories. Fitting models with large numbers of categories is not recommended. If any variables(s) are intended to be continuous, convert them to numeric.\n";
 
-    if (contWarnFlag) Rcpp::Rcout << "WARNING : " << contWarning.str() << "\n";
+    // if (contWarnFlag) Rcpp::Rcout << "" << contWarning.str() << "\n";
 
-    if (catWarnFlag) Rcpp::Rcout << "WARNING : " << catWarning.str() << "\n";
+    // if (catWarnFlag) Rcpp::Rcout << "" << catWarning.str() << "\n";
+
+    if (contWarnFlag) Rcpp::warning(contWarning.str());
+
+    if (catWarnFlag) Rcpp::warning(catWarning.str());
 
     // Rcpp::Rcout << data << std::endl;
 
@@ -367,7 +373,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 
 void DataSet::dropMissing() {
     if (arma::accu(missing) > 0) {
-        Rcpp::Rcout << "WARNING : Missing values detected. Samples with missing values will be dropped.\n";
+        Rcpp::warning("Missing values detected. Samples with missing values will be dropped.\n");
 
 	arma::uvec missingByRow = arma::sum(missing, 1);
 	arma::uvec completeSamples = arma::find(missingByRow == 0);
