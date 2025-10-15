@@ -1,8 +1,6 @@
 #ifndef MGM_HPP_
 #define MGM_HPP_
 
-#include "armaLapack.hpp"
-
 #include "Node.hpp"
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"

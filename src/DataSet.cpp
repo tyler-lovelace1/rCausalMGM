@@ -34,7 +34,6 @@ std::set<std::string> DataSet::getUnique(const Rcpp::CharacterVector &col)
 
 
 DataSet::DataSet(const Rcpp::DataFrame &df) {
-    this->maxDiscrete = maxDiscrete;
     const Rcpp::CharacterVector names = df.names();
     this->m = names.length();
     this->n = df.nrows();
@@ -43,7 +42,6 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
     this->missing = arma::umat(n,m,arma::fill::zeros);
     this->name2idx = std::unordered_map<std::string, int>();
     this->var2idx = std::unordered_map<Node, int>();
-    int numUnique;
     std::string val, curName;
     std::ostringstream contWarning, catWarning; //, nameWarning;
     bool contWarnFlag = false;
@@ -562,7 +560,6 @@ void DataSet::addVariable(int i, Node v) {
 
 
 DataSet::DataSet(const DataSet& ds, const arma::urowvec& rows) {
-    maxDiscrete = ds.maxDiscrete;
     m = ds.m;
     n = rows.n_elem;
     variables = ds.variables;

@@ -1,4 +1,4 @@
-// [[Rcpp::depends(BH,RcppThread)]]
+// [[Rcpp::depends(RcppThread)]]
 
 #include "Boss.hpp"
 
@@ -45,8 +45,9 @@ std::list<Node> Boss::initializeRandom() {
 
     for (const std::set<Node>& tier : tiers) {
 	std::vector<Node> _tier(tier.begin(), tier.end());
-
-	std::random_shuffle(_tier.begin(), _tier.end(), randWrapper);
+	
+	R_RNG_Engine rng;
+	std::shuffle(_tier.begin(), _tier.end(), rng);
 	nodeList.insert(nodeList.end(), _tier.begin(), _tier.end());
     }
 
@@ -82,7 +83,7 @@ Boss::Boss(Score *scorer, int threads) : taskQueue(MAX_QUEUE_SIZE) {
     nodes = std::list<Node>(_nodes.begin(), _nodes.end());
 
     for (Node node : nodes) {
-	gstMap[node] = std::make_unique<GrowShrinkTree>(scorer, node);
+	gstMap[node] = std::unique_ptr<GrowShrinkTree>(new GrowShrinkTree(scorer, node));
 	gstMutexMap[node];
     }
     

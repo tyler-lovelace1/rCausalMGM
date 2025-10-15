@@ -1,19 +1,10 @@
-// [[Rcpp::depends(BH, RcppThread)]]
-
 #include "LogisticRegression.hpp"
 #include "LogisticRegressionResult.hpp"
-// #include "Variable.hpp"
-// #include "DiscreteVariable.hpp"
 #include "Node.hpp"
-#include "RcppThread.h"
 #include <iostream>
 #include <algorithm>
 #include <math.h>
-// #include <boost/math/constants/constants.hpp>
-#include <boost/math/distributions/chi_squared.hpp>
 
-#include <fstream>
-#include <thread>
 
 LogisticRegression::LogisticRegression(DataSet &data) {
     this->data = data;
@@ -482,9 +473,11 @@ double LogisticRegression::norm(double z) {
     }
     else
     {
-        boost::math::chi_squared dist(1);
+	// boost::math::chi_squared dist(1);
 
-        double p = cdf(dist, q);
+        // double p = cdf(dist, q);
+
+	double p = 1.0 - R::pchisq(q, 1, true, false); // lower.tail = TRUE, log.p = FALSE
         return (p);
     }
 }

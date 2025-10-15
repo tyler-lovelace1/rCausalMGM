@@ -1,15 +1,13 @@
 #ifndef GRAPHUTILS_HPP_
 #define GRAPHUTILS_HPP_
 
-// [[Rcpp::depends(BH, RcppThread)]]
-
-// #include <thread>
+// [[Rcpp::depends(BH)]]
 
 class EdgeListGraph; // Forward declaration
 
 #include "EdgeListGraph.hpp"
 #include "SepsetMap.hpp"
-#include "RcppThread.h"
+// #include "RcppThread.h"
 #include <boost/functional/hash.hpp>
 #include <boost/optional.hpp>
 #include <queue>

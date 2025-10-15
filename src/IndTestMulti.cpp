@@ -1,13 +1,5 @@
-// [[Rcpp::depends(BH, RcppThread)]]
-
 #include "IndTestMulti.hpp"
-#include "RcppThread.h"
-#include <boost/math/distributions/chi_squared.hpp>
-#include <boost/math/distributions/fisher_f.hpp>
 
-#include <fstream>
-
-// const Node& IndTestMulti::nullconst Node& = Node();
 
 IndTestMulti::IndTestMulti(DataSet& data, double alpha)
 {
@@ -363,7 +355,7 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(const Node& x, con
     // }
 
     int df = variablesPerNode.at(y).size() * variablesPerNode.at(x).size();
-    boost::math::chi_squared dist(df);
+    // boost::math::chi_squared dist(df);
 
     // if (std::isnan(chisq)) {
     // 	logfile << "IND TEST" << std::endl;
@@ -371,7 +363,9 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(const Node& x, con
     // 	logfile << "chisq = " << chisq << std::endl << std::endl;
     // }
 
-    double p = 1.0 - cdf(dist, chisq);
+    // double p = 1.0 - cdf(dist, chisq);
+
+    double p = 1.0 - R::pchisq(chisq, df, true, false); // lower.tail = TRUE, log.p = FALSE
 
     if (pReturn != NULL)
         *pReturn = p;
@@ -654,9 +648,11 @@ bool IndTestMulti::isIndependentRegression(const Node& x, const Node& y, std::ve
 
 	F = std::max(F, 1e-15);
 
-	boost::math::fisher_f dist(df1, df2);
+	// boost::math::fisher_f dist(df1, df2);
 
-	p = 1.0 - cdf(dist, F);
+	// p = 1.0 - cdf(dist, F);
+
+	p = 1.0 - R::pf(F, df1, df2, true, false); // lower.tail = TRUE, log.p = FALSE
 
 	// RcppThread::Rcout << "p    =  " << p << std::endl;
 

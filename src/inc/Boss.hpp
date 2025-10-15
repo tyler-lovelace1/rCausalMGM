@@ -1,13 +1,8 @@
 #ifndef BOSS_HPP_
 #define BOSS_HPP_
 
-// [[Rcpp::depends(BH)]]
-
-#include <boost/functional/hash.hpp>
 #include <set>
 #include <map>
-// #include <stack>
-// #include "GrowShrink.hpp"
 #include "DepthChoiceGenerator.hpp"
 #include "BlockingQueue.hpp"
 #include "GrowShrinkTree.hpp"
@@ -217,7 +212,8 @@ private:
 
 	std::vector<Node> getShuffledNodes() {
 	    std::vector<Node> nodes(order.begin(), order.end());
-	    std::random_shuffle(nodes.begin(), nodes.end(), randWrapper);
+	    R_RNG_Engine rng;
+	    std::shuffle(nodes.begin(), nodes.end(), rng);
 	    return nodes;
 	}
 

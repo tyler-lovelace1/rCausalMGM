@@ -1,7 +1,6 @@
 #ifndef SEARCHCV_HPP_
 #define SEARCHCV_HPP_
 
-#include "armaLapack.hpp"
 #include "RcppThread.h"
 #include "DataSet.hpp"
 #include "MGM.hpp"

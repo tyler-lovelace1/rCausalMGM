@@ -34,22 +34,7 @@ private:
     EdgeListGraph graph;
     IndependenceTest* test;
 
-    std::unordered_map<Triple, std::pair<int, int>> sepsetCount;
-    std::unordered_set<Triple> ambiguous;
-    
-    std::unordered_map<Triple, double> maxP;
-    std::unordered_map<Triple, bool> maxPCollider;
-
-    SepsetMap sepsets;
-
-    Knowledge knowledge;
-
     OrientRule rule;
-
-    int depth = -1;
-    bool verbose = false;
-
-    bool mapFilled = false;
 
     // Concurrency
     /**
@@ -78,18 +63,33 @@ private:
 	~IndependenceTask() = default;
     };
 
+    static const int MAX_QUEUE_SIZE = 100;
+    BlockingQueue<IndependenceTask> taskQueue;
+
+    SepsetMap sepsets;
+
+    int parallelism = std::thread::hardware_concurrency();
+
+    bool mapFilled = false;
+
+    int depth = -1;
+    bool verbose = false;
+
+    std::unordered_map<Triple, std::pair<int, int>> sepsetCount;
+    std::unordered_set<Triple> ambiguous;
+    
+    std::unordered_map<Triple, double> maxP;
+    std::unordered_map<Triple, bool> maxPCollider;
+
+    Knowledge knowledge;
+    
+    std::mutex mapMutex;
+
     void producer();
     void consumer();
 
     void producerSepsetMap();
     void consumerSepsetMap();
-
-    static const int MAX_QUEUE_SIZE = 100;
-    BlockingQueue<IndependenceTask> taskQueue;
-
-    int parallelism = std::thread::hardware_concurrency();
-    
-    std::mutex mapMutex;
 
     std::vector<Node> possibleParents(const Node& x,
 				      const std::vector<Node>& adjx,
@@ -139,40 +139,40 @@ public:
     // SepsetProducer(const SepsetProducer& other) = default;
 
     SepsetProducer(const SepsetProducer& other) : graph(other.graph),
-    						  test(other.test),
-    						  sepsetCount(other.sepsetCount),
-    						  ambiguous(other.ambiguous),
-    						  maxP(other.maxP),
-    						  maxPCollider(other.maxPCollider),
-    						  sepsets(other.sepsets),
-    						  knowledge(other.knowledge),
-    						  rule(other.rule),
-    						  depth(other.depth),
-    						  mapFilled(other.mapFilled),
-    						  verbose(other.verbose),
-    						  parallelism(other.parallelism),
-    						  taskQueue(other.taskQueue) {}
+						  test(other.test),
+						  rule(other.rule),
+						  taskQueue(other.taskQueue),
+						  sepsets(other.sepsets),
+						  parallelism(other.parallelism),
+						  mapFilled(other.mapFilled),
+						  depth(other.depth),
+						  verbose(other.verbose),
+						  sepsetCount(other.sepsetCount),
+						  ambiguous(other.ambiguous),
+						  maxP(other.maxP),
+						  maxPCollider(other.maxPCollider),
+						  knowledge(other.knowledge) {}
     
     SepsetProducer(SepsetProducer&& other) = default;
 
     // SepsetProducer& operator=(const SepsetProducer& other) = default;
 
     SepsetProducer& operator=(const SepsetProducer& other) {
-    	graph = other.graph;
-    	test = other.test;
-    	sepsetCount = other.sepsetCount;
-    	ambiguous = other.ambiguous;
-    	maxP = other.maxP;
-    	maxPCollider = other.maxPCollider;
-    	sepsets = other.sepsets;
-    	knowledge = other.knowledge;
-    	rule = other.rule;
-    	depth = other.depth;
-    	mapFilled = other.mapFilled;
-    	verbose = other.verbose;
-    	parallelism = other.parallelism;
-    	taskQueue = other.taskQueue;
-    	return *this;
+	graph = other.graph;
+	test = other.test;
+	sepsetCount = other.sepsetCount;
+	ambiguous = other.ambiguous;
+	maxP = other.maxP;
+	maxPCollider = other.maxPCollider;
+	sepsets = other.sepsets;
+	knowledge = other.knowledge;
+	rule = other.rule;
+	depth = other.depth;
+	mapFilled = other.mapFilled;
+	verbose = other.verbose;
+	parallelism = other.parallelism;
+	taskQueue = other.taskQueue;
+	return *this;
     }
     
     SepsetProducer& operator=(SepsetProducer&& other) = default;

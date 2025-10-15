@@ -1,12 +1,8 @@
-// [[Rcpp::depends(BH)]]
-
 #include "CoxRegression.hpp"
 #include "CoxRegressionResult.hpp"
 #include <iostream>
 #include <algorithm>
 #include <math.h>
-#include <boost/math/distributions/normal.hpp>
-
 
 CoxRegression::CoxRegression(DataSet& data) {
     this->data = data;
@@ -136,14 +132,14 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
 
     arma::mat cov = arma::solve(hess, arma::eye(arma::size(hess)), arma::solve_opts::likely_sympd);
 
-    boost::math::normal dist(0, 1);
+    // boost::math::normal dist(0, 1);
     
     for (arma::uword i = 0; i < X.n_cols; i++) {
 	b[i] = beta[i];
         se[i] = std::sqrt(cov(i,i));
 	if (se[i]== 0.0) se[i] = 1e-10;
 	z[i] = b[i] / se[i];
-	pval[i] = 2 * (1.0 - boost::math::cdf(dist, std::abs(z[i])));
+	pval[i] = 2 * (1.0 - R::pnorm(std::abs(z[i]), 0., 1., true, false)); // lower.tail = TRUE, log.p = FALSE
     }
 
     std::vector<std::string> vNames(regressors.size());
@@ -281,14 +277,15 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
 
     arma::mat cov = arma::solve(hess, arma::eye(arma::size(hess)), arma::solve_opts::likely_sympd);
 
-    boost::math::normal dist(0, 1);
+    // boost::math::normal dist(0, 1);
     
     for (arma::uword i = 0; i < X.n_cols; i++) {
 	b[i] = beta[i];
         se[i] = std::sqrt(cov(i,i));
 	if (se[i]== 0.0) se[i] = 1e-10;
 	z[i] = b[i] / se[i];
-	pval[i] = 2 * (1.0 - boost::math::cdf(dist, std::abs(z[i])));
+	pval[i] = 2 * (1.0 - R::pnorm(std::abs(z[i]), 0., 1., true, false)); // lower.tail = TRUE, log.p = FALSE
+	// pval[i] = 2 * (1.0 - boost::math::cdf(dist, std::abs(z[i])));
     }
     
     std::vector<std::string> vNames(regressors.size());

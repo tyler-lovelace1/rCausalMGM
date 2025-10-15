@@ -1,7 +1,6 @@
 #ifndef LOGISTICREGRESSION_HPP_
 #define LOGISTICREGRESSION_HPP_
 
-#include "armaLapack.hpp"
 #include "DataSet.hpp"
 #include "Node.hpp"
 #include "LogisticRegressionResult.hpp"

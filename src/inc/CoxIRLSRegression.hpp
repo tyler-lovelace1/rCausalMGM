@@ -1,10 +1,8 @@
 #ifndef COXIRLSREGRESSION_HPP_
 #define COXIRLSREGRESSION_HPP_
 
-#include "armaLapack.hpp"
 #include "DataSet.hpp"
 #include "CoxRegressionResult.hpp"
-// #include <list>
 
 class CoxIRLSRegression {
 private:

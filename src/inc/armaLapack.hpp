@@ -23,6 +23,15 @@
 // For compiler that do not know uint...
 typedef unsigned int uint;
 
-static int randWrapper(const int n) { return std::floor(R::unif_rand()*n); }
+// static int randWrapper(const int n) { return std::floor(R::unif_rand()*n); }
+
+struct R_RNG_Engine {
+    typedef std::ptrdiff_t result_type;
+    result_type operator()() {
+        return static_cast<result_type>(R::unif_rand() * std::numeric_limits<result_type>::max());
+    }
+    static constexpr result_type min() { return 0; }
+    static constexpr result_type max() { return std::numeric_limits<result_type>::max(); }
+};
 
 #endif /* ARMALAPACK_HPP_ */

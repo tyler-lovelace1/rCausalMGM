@@ -392,6 +392,7 @@ public:
      */
     void setMaxPathLength(int maxPathLength);
 
+    void setTrueDag(EdgeListGraph& dag) { this->dag = dag; }
 
     void setTruePag(EdgeListGraph& truePag) { this->truePag = truePag; }
 

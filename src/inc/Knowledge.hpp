@@ -1,8 +1,6 @@
 #ifndef KNOWLEDGE_HPP_
 #define KNOWLEDGE_HPP_
 
-#include "armaLapack.hpp"
-
 #include "Node.hpp"
 #include <vector>
 #include <set>

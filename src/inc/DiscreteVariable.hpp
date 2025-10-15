@@ -17,7 +17,7 @@
 
 class DiscreteVariable : public Variable {
 private:
-    const int MISSING_VALUE = -99;
+    static constexpr int MISSING_VALUE = -99;
     const std::string MISSING_VALUE_STRING = "*";
     std::vector<std::string> categories;
 
@@ -61,7 +61,7 @@ public:
     // 	    this->categories.push_back(var.categories.at(i));
     // }
 
-    DiscreteVariable& operator=(const DiscreteVariable& var) = default; // {
+    // DiscreteVariable& operator=(const DiscreteVariable& var) = default; // {
     // 	this->name = var.name;
     // 	this->type = var.type;
     // 	for (int i = 0; i < var.categories.size(); i++)
@@ -75,7 +75,7 @@ public:
     // 	this->categories = std::move(var.categories);
     // }
 
-    DiscreteVariable& operator=(DiscreteVariable&& var) = default; // {
+    // DiscreteVariable& operator=(DiscreteVariable&& var) = default; // {
     // 	this->name = std::move(var.name);
     // 	this->type = std::exchange(var.type,0);
     // 	this->categories = std::move(var.categories);

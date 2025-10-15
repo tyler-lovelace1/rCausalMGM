@@ -1,10 +1,10 @@
 #ifndef BLOCKINGQUEUE_HPP_
 #define BLOCKINGQUEUE_HPP_
 
+#include <algorithm>
 #include <mutex>
 #include <condition_variable>
 #include <memory>
-#include <fstream>
 
 /**
  * A fixed capacity, thread stable queue used to store
@@ -39,7 +39,7 @@ public:
         capacity = _capacity;
         head = 0;
         tail = 0;
-        queue = std::make_unique<T[]>(capacity);
+        queue = std::unique_ptr<T[]>(new T[capacity]);
     }
 
     BlockingQueue(const BlockingQueue& other) : BlockingQueue(other.capacity) {
@@ -52,7 +52,7 @@ public:
 	capacity = other.capacity;
 	head = other.head;
 	tail = other.tail;
-	queue = std::make_unique<T[]>(capacity);
+	queue = std::unique_ptr<T[]>(new T[capacity]);
         std::copy_n(other.queue.get(), other.capacity, queue.get());
 	return *this;
     }

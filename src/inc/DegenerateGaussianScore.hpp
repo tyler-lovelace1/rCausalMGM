@@ -1,7 +1,6 @@
 #ifndef DEGENERATEGAUSSIANSCORE_HPP_
 #define DEGENERATEGAUSSIANSCORE_HPP_
 
-#include "armaLapack.hpp"
 #include "Score.hpp"
 #include "DataSet.hpp"
 

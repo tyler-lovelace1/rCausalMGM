@@ -1,7 +1,6 @@
 #ifndef REGRESSION_HPP_
 #define REGRESSION_HPP_
 
-#include "armaLapack.hpp"
 #include "Node.hpp"
 #include <list>
 

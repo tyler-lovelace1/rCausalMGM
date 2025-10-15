@@ -1,15 +1,12 @@
 #ifndef EDGELISTGRAPH_HPP_
 #define EDGELISTGRAPH_HPP_
 
-#include "armaLapack.hpp"
-
 #include "Node.hpp"
 #include "Edge.hpp"
 #include "Triple.hpp"
 #include "DataSet.hpp"
 #include "GraphUtils.hpp"
 #include "ChoiceGenerator.hpp"
-// #include "MGMParams.hpp"
 #include <string.h>
 #include <fstream>
 #include <stdlib.h>

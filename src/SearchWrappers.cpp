@@ -165,9 +165,11 @@ Rcpp::List coxmgm(
 //' @return A graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' ig.path <- mgmPath(sim$data)
 //' print(ig.path)
+//' }
 // [[Rcpp::export]]
 Rcpp::List mgmPath(
     const Rcpp::DataFrame &data,

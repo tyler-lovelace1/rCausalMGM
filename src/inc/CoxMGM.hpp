@@ -3,7 +3,6 @@
 
 // [[Rcpp::depends(RcppThread)]]
 
-#include "armaLapack.hpp"
 #include "RcppThread.h"
 #include "ConvexProximal.hpp"
 #include "DataSet.hpp"

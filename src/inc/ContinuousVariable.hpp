@@ -18,7 +18,7 @@
 
 class ContinuousVariable : public Variable {
 private:
-    const double MISSING_VALUE = std::numeric_limits<double>::quiet_NaN();
+    static constexpr double MISSING_VALUE = std::numeric_limits<double>::quiet_NaN();
     const std::string MISSING_VALUE_STRING = "NaN";
 
 public:
@@ -38,11 +38,11 @@ public:
 
     ContinuousVariable(const ContinuousVariable& var) = default;
 
-    ContinuousVariable& operator=(const ContinuousVariable& var) = default;
+    // ContinuousVariable& operator=(const ContinuousVariable& var) = default;
     
     ContinuousVariable(ContinuousVariable&& var) = default;
 
-    ContinuousVariable& operator=(ContinuousVariable&& var) = default;     
+    // ContinuousVariable& operator=(ContinuousVariable&& var) = default;     
   
     ~ContinuousVariable() = default;
 

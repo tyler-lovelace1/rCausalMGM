@@ -12,7 +12,6 @@
 
 class DataSet;
 
-#include "armaLapack.hpp"
 #include "Node.hpp"
 #include "ContinuousVariable.hpp"
 #include "DiscreteVariable.hpp"
@@ -32,7 +31,6 @@ private:
     std::unordered_map<Node, int> var2idx;
     arma::mat data;
     arma::umat missing;
-    int maxDiscrete;
     int m, n;
 
     std::set<std::string> getUnique(const Rcpp::CharacterVector &col);
@@ -42,7 +40,7 @@ private:
 
 public:
     DataSet() {}
-    DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
+    // DataSet(const int maxDiscrete) { this->maxDiscrete=maxDiscrete; }
     DataSet(const Rcpp::DataFrame& df);
     // DataSet(const Rcpp::DataFrame& df, const int maxDiscrete);
     // DataSet(const DataSet& ds, arma::urowvec rows); // subset rows

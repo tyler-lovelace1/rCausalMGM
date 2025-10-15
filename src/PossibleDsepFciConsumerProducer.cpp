@@ -98,7 +98,7 @@ SepsetMap& PossibleDsepFciConsumerProducer::search() {
 
     concurrentSearch(graph, edgeCondsetMap);
 
-    for (const std::pair<Edge, std::vector<Node>>& entry : edgeCondsetMap) {
+    for (std::pair<Edge, std::vector<Node>> entry : edgeCondsetMap) {
         Edge edge = entry.first;
         std::vector<Node> condSet = entry.second;
         Node x = edge.getNode1();

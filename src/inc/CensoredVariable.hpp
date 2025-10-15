@@ -20,7 +20,7 @@
 
 class CensoredVariable : public Variable {
 private:
-    const double MISSING_VALUE = std::numeric_limits<double>::quiet_NaN();
+    static constexpr double MISSING_VALUE = std::numeric_limits<double>::quiet_NaN();
     const std::string MISSING_VALUE_STRING = "NaN";
     uint n;
     uint unique;
@@ -101,11 +101,11 @@ public:
 
     CensoredVariable(const CensoredVariable& var) = default;
 
-    CensoredVariable& operator=(const CensoredVariable& var) = default;
+    // CensoredVariable& operator=(const CensoredVariable& var) = default;
     
     CensoredVariable(CensoredVariable&& var) = default;
 
-    CensoredVariable& operator=(CensoredVariable&& var) = default;     
+    // CensoredVariable& operator=(CensoredVariable&& var) = default;     
   
     ~CensoredVariable() = default;
   

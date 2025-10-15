@@ -1,13 +1,9 @@
-// [[Rcpp::depends(BH)]]
-
 #include "LinearRegression.hpp"
 #include "RegressionResult.hpp"
 #include <iostream>
 #include <algorithm>
 #include <math.h>
-#include <boost/math/distributions/students_t.hpp>
 
-#include <fstream>
 
 LinearRegression::LinearRegression(DataSet& data) {
     this->data = data;
@@ -101,14 +97,15 @@ RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>
     arma::vec t = arma::vec(x.n_cols);
     arma::vec p = arma::vec(x.n_cols);
 
-    boost::math::students_t dist(n - k);
+    // boost::math::students_t dist(n - k);
     
     for (arma::uword i = 0; i < x.n_cols; i++) {
 	double s_ = se * se * xTxInv(i, i);
 	double se_ = std::sqrt(s_);
 	if (se_== 0.0) se_ = 1e-10;
 	double t_ = b(i) / se_;
-	double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+	// double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+	double p_ = 2 * (1.0 - R::pt(std::abs(t_), n - k, true, false)); // lower.tail = TRUE, log.p = FALSE
 
 	// if (i == 1)
 	//     {
@@ -218,14 +215,15 @@ RegressionResult LinearRegression::regress(const Node& target,
     arma::vec t = arma::vec(x.n_cols);
     arma::vec p = arma::vec(x.n_cols);
 
-    boost::math::students_t dist(n - k);
+    // boost::math::students_t dist(n - k);
     
     for (arma::uword i = 0; i < x.n_cols; i++) {
 	double s_ = se * se * xTxInv(i, i);
 	double se_ = std::sqrt(s_);
 	if (se_== 0.0) se_ = 1e-10;
 	double t_ = b(i) / se_;
-	double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+	// double p_ = 2 * (1.0 - boost::math::cdf(dist, std::abs(t_)));
+	double p_ = 2 * (1.0 - R::pt(std::abs(t_), n - k, true, false)); // lower.tail = TRUE, log.p = FALSE
 
 	// if (i == 1)
 	//     {

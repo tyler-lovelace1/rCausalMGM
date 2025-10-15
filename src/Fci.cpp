@@ -42,7 +42,7 @@ Fci::Fci(IndependenceTest* test, std::vector<Node> searchVars) {
         }
     }
     for (const Node& var: remVars) {
-	std::remove(this->variables.begin(), this->variables.end(), var);
+	auto it = std::remove(this->variables.begin(), this->variables.end(), var);
     }
 }
 

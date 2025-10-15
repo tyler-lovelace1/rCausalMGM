@@ -346,6 +346,12 @@ std::ostream& operator<<(std::ostream& os, const Edge& edge) {
         case ENDPOINT_CIRCLE:
             os << "o";
             break;
+        case ENDPOINT_STAR:
+            os << "*";
+            break;
+	case ENDPOINT_NULL:
+            os << " ";
+            break;
     }
 
     os << "-";
@@ -359,6 +365,12 @@ std::ostream& operator<<(std::ostream& os, const Edge& edge) {
             break;
         case ENDPOINT_CIRCLE:
             os << "o";
+            break;
+	case ENDPOINT_STAR:
+            os << "*";
+            break;
+	case ENDPOINT_NULL:
+            os << " ";
             break;
     }
 

@@ -1,7 +1,6 @@
 #ifndef STEPS_HPP_
 #define STEPS_HPP_
 
-#include "armaLapack.hpp"
 #include "StabilityUtils.hpp"
 
 class STEPS {
@@ -13,10 +12,11 @@ private:
     int b;
     std::vector<double> lambda;
     double gamma;
+    bool leaveOneOut = false;
+    
     int iterLimit = 500;
     double origLambda;
     std::vector<double> lastLambda;
-    bool leaveOneOut = false;
     arma::mat stabilities;
     bool computeStabs = false;
     bool verbose = false;
@@ -27,19 +27,19 @@ public:
     
     STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, bool loo = false) :
         d(dat),
-        leaveOneOut(loo),
         N(numSub),
+        b(StabilityUtils::getSubSize(dat.getNumRows())),
+	lambda(lam),
         gamma(g),
-        lambda(lam),
-        b(StabilityUtils::getSubSize(dat.getNumRows())) {}
+        leaveOneOut(loo) {}
 
     STEPS(DataSet& dat, std::vector<double>& lam, double g, int numSub, int subSize, bool loo = false) :
         d(dat),
-        leaveOneOut(loo),
         N(numSub),
+        b(subSize),
+	lambda(lam),
         gamma(g),
-        lambda(lam),
-        b(subSize) {}
+        leaveOneOut(loo) {}
 
     EdgeListGraph runStepsPar();
 

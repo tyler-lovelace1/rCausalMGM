@@ -289,12 +289,16 @@ void FciOrient::ddpOrient(const Node& a,
 			  const Node& b,
 			  const Node& c,
 			  EdgeListGraph& graph) {
+
+    // RcppThread::Rcout << "ddpOrient call <a, " + a.getName() + "> <b, " + b.getName() + "> <c, " + c.getName() + ">\n";
+    
     std::queue<Node> Q;
 
     std::unordered_set<Node> V;
 
     Node e;
     int distance = 0;
+    const int maxPathLength_ = (maxPathLength == -1) ? 1000 : maxPathLength;
 
     std::unordered_map<Node, Node> previous;
 
@@ -304,6 +308,7 @@ void FciOrient::ddpOrient(const Node& a,
     V.insert(a);
     V.insert(b);
     previous.insert(std::pair<Node,Node>(a, b));
+    previous.insert(std::pair<Node,Node>(b, e));
 
     while (!Q.empty()) {
 	Node t = Q.front();
@@ -312,7 +317,7 @@ void FciOrient::ddpOrient(const Node& a,
 	if (e.isNull() || e == t) {
 	    e = t;
 	    distance++;
-	    if (distance > 0 && (distance > (maxPathLength == -1) ? 1000 : maxPathLength)) {
+	    if (distance > 0 && distance > maxPathLength_) {
 		return;
 	    }
 	}
@@ -320,12 +325,18 @@ void FciOrient::ddpOrient(const Node& a,
 	const std::vector<Node> nodesInTo = graph.getNodesInTo(t, ENDPOINT_ARROW);
 
 	for (const Node& d : nodesInTo) {
+	    // RcppThread::Rcout << "  d: " + d.getName() << std::endl;
+
 	    if (std::count(V.begin(), V.end(), d) != 0) {
 		continue;
 	    }
 
-	    previous.insert(std::pair<Node, Node>(d, t));
+	    // RcppThread::Rcout << "  t: " + t.getName() << std::endl;
+
+	    // previous.insert(std::pair<Node, Node>(d, t));
 	    Node p = previous.at(t);
+
+	    // RcppThread::Rcout << "  p: " + p.getName() << std::endl;
 
 	    if (!graph.isDefCollider(d, t, p)) {
 		continue;
@@ -339,6 +350,7 @@ void FciOrient::ddpOrient(const Node& a,
 		}
 	    }
 	    if (std::count(cParents.begin(), cParents.end(), d) != 0) {
+		// RcppThread::Rcout << "  added d: " + d.getName() << std::endl;
 		Q.push(d);
 		V.insert(d);
 	    }
@@ -672,6 +684,8 @@ void FciOrient::reachablePathFind(const Node& a, const Node& b, const Node& c,
 //        next.put(a, b);
 //        next.put(b, c);
 
+    const int maxPathLength_ = (maxPathLength == -1) ? 1000 : maxPathLength;
+
     std::vector<Node> v = graph.getParents(c);
     std::unordered_set<Node> cParents(v.begin(), v.end());
 
@@ -695,7 +709,6 @@ void FciOrient::reachablePathFind(const Node& a, const Node& b, const Node& c,
 	if (e == x) {
 	    e = x;
 	    distance++;
-	    const int maxPathLength_ = (maxPathLength == -1) ? 1000 : maxPathLength;
 
 	    if (distance > 0 && distance > maxPathLength_) {
 		continue;
@@ -705,7 +718,7 @@ void FciOrient::reachablePathFind(const Node& a, const Node& b, const Node& c,
 	// Possible DDP path endpoints.
 	std::vector<Node> pathExtensions = graph.getNodesInTo(x, ENDPOINT_ARROW);
 	for (const Node& var: visited) {
-	    std::remove(pathExtensions.begin(), pathExtensions.end(), var);
+	    auto it = std::remove(pathExtensions.begin(), pathExtensions.end(), var);
 	}
 
 	for (const Node& d : pathExtensions) {
@@ -769,6 +782,9 @@ void FciOrient::doDdpOrientation(const Node& d, const Node& a, const Node& b, co
 bool FciOrient::doDdpOrientation(const Node& d, const Node& a, const Node& b, const Node& c,
                                  std::unordered_map<Node, Node> previous, EdgeListGraph& graph) {
 
+    // RcppThread::Rcout << "ddpOrientdoDdpOrientation call <d, " + d.getName() + "> <a, " + a.getName() + "> <b, " + b.getName() + "> <c, " + c.getName() + ">\n";
+    
+
     if (dag.getNumNodes() != 0) {
 	if (dag.isAncestorOf(b, c)) {
 	    graph.setEndpoint(c, b, ENDPOINT_TAIL);
@@ -805,7 +821,18 @@ bool FciOrient::doDdpOrientation(const Node& d, const Node& a, const Node& b, co
 
     std::vector<Node> path = getPath(d, previous);
 
+    // RcppThread::Rcout << "  Path: ";
+    // for (auto n : path) {
+    // 	RcppThread::Rcout << n.getName() + " ";
+    // }
+    // RcppThread::Rcout << std::endl;
+
     bool ind = getSepsets().isIndependent(d, c, path);
+    // RcppThread::Rcout << "  " + d.getName() + " _||_ " + c.getName() + " [ ";
+    // for (auto n : path) {
+    // 	RcppThread::Rcout << n.getName() + " ";
+    // }
+    // RcppThread::Rcout << "] = " << (ind ? "True" : "False") << "\n";
 
     // std::vector<Node> path2 (path);
     // path2.remove(b);
@@ -813,14 +840,21 @@ bool FciOrient::doDdpOrientation(const Node& d, const Node& a, const Node& b, co
     if (std::find(path2.begin(), path2.end(), b) != path2.end()) {
 	path2.erase(std::find(path2.begin(), path2.end(), b));
     }
-    for(const Node& var: path) {
-	if (var != b) {
-	    path2.push_back(var);
-	}
-    }
+    // for(const Node& var: path) {
+    // 	if (var != b) {
+    // 	    path2.push_back(var);
+    // 	}
+    // }
 
 
     bool ind2 = getSepsets().isIndependent(d, c, path2);
+
+    // RcppThread::Rcout << "  " + d.getName() + " _||_ " + c.getName() + " [ ";
+    // for (auto n : path2) {
+    // 	RcppThread::Rcout << n.getName() + " ";
+    // }
+    // RcppThread::Rcout << "] = " << (ind2 ? "True" : "False") << "\n";
+
 
     if (!ind && !ind2) {
 	std::vector<Node> sepset = getSepsets().getSepset(d, c);

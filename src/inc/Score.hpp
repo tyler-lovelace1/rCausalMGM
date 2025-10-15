@@ -3,7 +3,6 @@
 
 #include "DataSet.hpp"
 #include "Node.hpp"
-#include "armaLapack.hpp"
 #include <list>
 #include <string>
 

@@ -1,7 +1,6 @@
 #ifndef INDTESTMULTICOX_HPP_
 #define INDTESTMULTICOX_HPP_
 
-#include "armaLapack.hpp"
 #include "IndependenceTest.hpp"
 #include "LogisticRegression.hpp"
 #include "LinearRegression.hpp"

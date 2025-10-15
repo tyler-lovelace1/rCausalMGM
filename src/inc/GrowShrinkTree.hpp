@@ -14,12 +14,12 @@ struct GrowShrinkNode {
     };
     
     Node node;
+    std::vector<Node> condSet;
+    std::vector<std::atomic_bool> visited;
     
     double score = 0.0;
     std::atomic<double> shrinkScore;
     std::atomic_bool shrinkFlag;
-    std::vector<std::atomic_bool> visited;
-    std::vector<Node> condSet;
     std::vector<Node> shrinkCondSet;
 
     std::set<GrowShrinkNode*,cmp_ptr> children;

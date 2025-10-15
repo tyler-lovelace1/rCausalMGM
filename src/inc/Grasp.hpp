@@ -1,13 +1,9 @@
 #ifndef GRASP_HPP_
 #define GRASP_HPP_
 
-// [[Rcpp::depends(BH)]]
-
-#include <boost/functional/hash.hpp>
 #include <unordered_set>
 #include <unordered_map>
 #include <stack>
-// #include "GrowShrink.hpp"
 #include "GrowShrinkTree.hpp"
 #include "EdgeListGraph.hpp"
 #include "Knowledge.hpp"
@@ -213,7 +209,8 @@ private:
 
 	std::vector<Node> getShuffledNodes() {
 	    std::vector<Node> nodes(order.begin(), order.end());
-	    std::random_shuffle(nodes.begin(), nodes.end(), randWrapper);
+	    R_RNG_Engine rng;
+	    std::shuffle(nodes.begin(), nodes.end(), rng);
 	    return nodes;
 	}
 

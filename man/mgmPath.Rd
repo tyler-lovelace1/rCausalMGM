@@ -24,7 +24,9 @@ A graphPath object that contains MGM graphs learned by the solution path, as wel
 Calculate the solution path for an MGM graph on a dataset. It also returns the models selected by the BIC and AIC scores.
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 25)
 ig.path <- mgmPath(sim$data)
 print(ig.path)
+}
 }

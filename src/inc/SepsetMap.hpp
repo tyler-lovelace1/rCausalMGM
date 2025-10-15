@@ -3,7 +3,6 @@
 
 // [[Rcpp::depends(BH)]]
 
-// #include <boost/optional/optional.hpp>
 #include <boost/functional/hash.hpp>
 #include "Node.hpp"
 

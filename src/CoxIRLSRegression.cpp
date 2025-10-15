@@ -1,11 +1,8 @@
-// [[Rcpp::depends(BH)]]
-
 #include "CoxIRLSRegression.hpp"
 #include "CoxRegressionResult.hpp"
 #include <iostream>
 #include <algorithm>
 #include <math.h>
-#include <boost/math/distributions/normal.hpp>
 
 
 CoxIRLSRegression::CoxIRLSRegression(DataSet& data) {
@@ -247,14 +244,14 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 
     arma::mat cov = -arma::inv(info);
 
-    boost::math::normal dist;
+    // boost::math::normal dist;
     
     for (arma::uword i = 0; i < k; i++) {
 	b[i] = beta[i];
 	se[i] = std::sqrt(cov(i,i));
 	if (se[i] == 0.0) se[i] = 1e-15;
 	z[i] = b[i] / se[i];
-	pval[i] = 2 * (1.0 - boost::math::cdf(dist, std::abs(z[i])));
+	pval[i] = 2 * (1.0 - R::pnorm(std::abs(z[i]), 0., 1., true, false)); // lower.tail = TRUE, log.p = FALSE
     }
 
     std::vector<std::string> vNames(regressors.size());
@@ -492,14 +489,14 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 
     // RcppThread::Rcout << "Covariance:\n" << cov << std::endl; 
 
-    boost::math::normal dist;
+    // boost::math::normal dist;
     
     for (arma::uword i = 0; i < k; i++) {
 	b[i] = beta[i];
 	se[i] = std::sqrt(cov(i,i));
 	if (se[i] == 0.0) se[i] = 1e-15;
 	z[i] = b[i] / se[i];
-	pval[i] = 2 * (1.0 - boost::math::cdf(dist, std::abs(z[i])));
+	pval[i] = 2 * (1.0 - R::pnorm(std::abs(z[i]), 0., 1., true, false)); // lower.tail = TRUE, log.p = FALSE
     }
 
     

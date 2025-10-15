@@ -1716,7 +1716,7 @@ Rcpp::List EdgeListGraph::toList() const {
     }
 
     std::vector<std::string> ambiguousTriplesStrings;
-    for (const Triple t : ambiguousTriples) {
+    for (const Triple& t : ambiguousTriples) {
         ambiguousTriplesStrings.push_back(t.toString());
     }
     std::sort(ambiguousTriplesStrings.begin(),
@@ -2537,6 +2537,7 @@ EdgeListGraph EdgeListGraph::getPAG(std::vector<Node>& latent) {
     sepsetsset.setOrientRule(ORIENT_SEPSETS);
 
     FciOrient rules(sepsetsset);
+    rules.setTrueDag(*this);
     rules.setCompleteRuleSetUsed(true);
     rules.ruleR0(pag);
     rules.doFinalOrientation(pag);

@@ -1,7 +1,6 @@
 #ifndef LINEARREGRESSION_HPP_
 #define LINEARREGRESSION_HPP_
 
-#include "armaLapack.hpp"
 #include "DataSet.hpp"
 #include "Node.hpp"
 #include "RegressionResult.hpp"

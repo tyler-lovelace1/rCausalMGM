@@ -254,9 +254,11 @@ coxmgm <- function(data, lambda = as.numeric( c(0.2, 0.2, 0.2, 0.2, 0.2)), rank 
 #' @return A graphPath object that contains MGM graphs learned by the solution path, as well as the BIC and AIC selected models
 #' @export
 #' @examples
+#' \donttest{
 #' sim <- simRandomDAG(200, 25)
 #' ig.path <- mgmPath(sim$data)
 #' print(ig.path)
+#' }
 mgmPath <- function(data, lambdas = NULL, nLambda = 30L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_mgmPath`, data, lambdas, nLambda, rank, verbose)
 }

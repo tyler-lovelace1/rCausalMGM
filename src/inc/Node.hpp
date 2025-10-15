@@ -14,17 +14,13 @@
 #ifndef NODE_HPP_
 #define NODE_HPP_
 
-#include "armaLapack.hpp"
 #include "RcppThread.h"
 #include "Variable.hpp"
 #include "ContinuousVariable.hpp"
 #include "DiscreteVariable.hpp"
 #include "CensoredVariable.hpp"
 #include <string>
-// #include <memory>
 #include <exception>
-// #include <algorithm>
-// #include <iterator>
 
 class Node {
     

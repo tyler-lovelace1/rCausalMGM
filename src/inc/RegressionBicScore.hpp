@@ -1,7 +1,6 @@
 #ifndef REGRESSIONBICSCORE_HPP_
 #define REGRESSIONBICSCORE_HPP_
 
-#include "armaLapack.hpp"
 #include "Score.hpp"
 #include "DataSet.hpp"
 #include "LogisticRegression.hpp"

@@ -329,7 +329,8 @@ Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::stri
 	    // 	gst.reset();
 	    // }
 	    std::vector<Node> candidates(regressors);
-	    std::random_shuffle(candidates.begin(), candidates.end(), randWrapper);
+	    R_RNG_Engine rng;
+	    std::shuffle(candidates.begin(), candidates.end(), rng);
 	    candidates.erase(candidates.begin() + candidates.size() / 2,
 			     candidates.end());
 	    mb = gst.search(candidates, &score);
@@ -341,7 +342,8 @@ Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::stri
 	
 	for (int i = 0; i < numSub; i++) {
 	    std::vector<Node> candidates(regressors);
-	    std::random_shuffle(candidates.begin(), candidates.end(), randWrapper);
+	    R_RNG_Engine rng;
+	    std::shuffle(candidates.begin(), candidates.end(), rng);
 	    candidates.erase(candidates.begin() + candidates.size() / 2,
 			     candidates.end());
 	    mb = gst.search(candidates, &score);
@@ -395,7 +397,8 @@ std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame &df, 
 
     for (int i = 0; i < numSub; i++) {
 	std::vector<Node> candidates(regressors);
-	std::random_shuffle(candidates.begin(), candidates.end(), randWrapper);
+	R_RNG_Engine rng;
+	std::shuffle(candidates.begin(), candidates.end(), rng);
 	candidates.erase(candidates.begin() + candidates.size() / 2,
 			 candidates.end());
 	futures[i] = pool.pushReturn(gsTask, candidates);

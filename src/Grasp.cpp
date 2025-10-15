@@ -1,4 +1,4 @@
-// [[Rcpp::depends(BH,RcppThread)]]
+// [[Rcpp::depends(RcppThread)]]
 
 #include "Grasp.hpp"
 
@@ -52,7 +52,8 @@ std::list<Node> Grasp::initializeRandom() {
 	// for (const Node& n: _tier) Rcpp::Rcout << n << " ";
 	// Rcpp::Rcout << std::endl;
 	
-	std::random_shuffle(_tier.begin(), _tier.end(), randWrapper);
+	R_RNG_Engine rng;
+	std::shuffle(_tier.begin(), _tier.end(), rng);
 	nodeList.insert(nodeList.end(), _tier.begin(), _tier.end());
     }
 
@@ -514,7 +515,8 @@ Grasp::Grasp(Score *scorer, int threads) {
     nodes = std::list<Node>(_nodes.begin(), _nodes.end());
 
     for (Node node : nodes) {
-	gstMap[node] = std::make_unique<GrowShrinkTree>(scorer, node);
+	// gstMap[node] = std::make_unique<GrowShrinkTree>(scorer, node);
+	gstMap[node] = std::unique_ptr<GrowShrinkTree>(new GrowShrinkTree(scorer, node));
 	gstMutexMap[node];
     }
     

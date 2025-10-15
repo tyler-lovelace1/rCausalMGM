@@ -1,7 +1,6 @@
 #ifndef COXREGRESSION_HPP_
 #define COXREGRESSION_HPP_
 
-#include "armaLapack.hpp"
 #include "DataSet.hpp"
 #include "CoxRegressionResult.hpp"
 // #include <list>
@@ -40,11 +39,11 @@ public:
     //============================CONSTRUCTORS==========================//
     CoxRegression() {}
     CoxRegression(DataSet& data);
-    CoxRegression(CoxRegression& other) = default;
+    CoxRegression(const CoxRegression& other) = default;
     CoxRegression(CoxRegression&& other) = default;
     // Coxregression(arma::mat data, std::vector<Node>&  variables);
 
-    CoxRegression& operator=(CoxRegression& other) = default;
+    CoxRegression& operator=(const CoxRegression& other) = default;
     CoxRegression& operator=(CoxRegression&& other) = default;
 
     //===========================PUBLIC METHODS========================//

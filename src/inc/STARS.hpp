@@ -1,7 +1,6 @@
 #ifndef STARS_HPP_
 #define STARS_HPP_
 
-#include "armaLapack.hpp"
 #include "StabilityUtils.hpp"
 #include "PcStable.hpp"
 #include "Fci.hpp"
@@ -16,18 +15,18 @@ private:
     DataSet d;
     int N;
     int b;
-
-    std::vector<double> lambda;
     arma::vec alphas;
+    double gamma;
+    std::string alg = "pc";
+    bool leaveOneOut = false;
+
+    
     EdgeListGraph *initialGraph = NULL;
     OrientRule orientRule = ORIENT_MAJORITY;
-    std::string alg = "pc";
     Knowledge knowledge;
     bool fdr = false;
-
-    double gamma;
+    std::vector<double> lambda;
     int iterLimit = 500;
-    bool leaveOneOut = false;
     arma::mat stabilities;
     bool computeStabs = false;
     bool verbose = false;
@@ -38,21 +37,21 @@ public:
     
     STARS(DataSet& dat, std::string alg, arma::vec& alphas, double g, int numSub, bool loo = false) :
         d(dat),
-        leaveOneOut(loo),
         N(numSub),
+	b(StabilityUtils::getSubSize(dat.getNumRows())),
+        alphas(alphas),
         gamma(g),
 	alg(alg),
-        alphas(alphas),
-        b(StabilityUtils::getSubSize(dat.getNumRows())) {}
+        leaveOneOut(loo) {}
 
     STARS(DataSet& dat, std::string alg, arma::vec& alphas, double g, int numSub, int subSize, bool loo = false) :
-        d(dat),
-        leaveOneOut(loo),
+	d(dat),
         N(numSub),
+	b(subSize),
+        alphas(alphas),
         gamma(g),
 	alg(alg),
-        alphas(alphas),
-        b(subSize) {}
+        leaveOneOut(loo) {}
 
     EdgeListGraph runStarsPar(arma::mat& instabs, arma::umat& samps);
 

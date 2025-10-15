@@ -5,15 +5,7 @@
 
 #include "MGM.hpp"
 #include "CoxMGM.hpp"
-// #include "PcStable.hpp"
-// #include "CpcStable.hpp"
-// #include "PcMax.hpp"
-// #include "Fci.hpp"
-// #include "Cfci.hpp"
-// #include "FciMax.hpp"
-// #include "IndTestMulti.hpp"
 #include "RcppThread.h"
-#include "armaLapack.hpp"
 #include "BlockingQueue.hpp"
 #include <thread>
 
