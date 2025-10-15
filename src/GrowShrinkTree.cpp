@@ -329,6 +329,7 @@ Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::stri
 	    // 	gst.reset();
 	    // }
 	    std::vector<Node> candidates(regressors);
+	    Rcpp::RNGScope scope;
 	    R_RNG_Engine rng;
 	    std::shuffle(candidates.begin(), candidates.end(), rng);
 	    candidates.erase(candidates.begin() + candidates.size() / 2,
@@ -342,6 +343,7 @@ Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::stri
 	
 	for (int i = 0; i < numSub; i++) {
 	    std::vector<Node> candidates(regressors);
+	    Rcpp::RNGScope scope;
 	    R_RNG_Engine rng;
 	    std::shuffle(candidates.begin(), candidates.end(), rng);
 	    candidates.erase(candidates.begin() + candidates.size() / 2,
@@ -397,6 +399,7 @@ std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame &df, 
 
     for (int i = 0; i < numSub; i++) {
 	std::vector<Node> candidates(regressors);
+	Rcpp::RNGScope scope;
 	R_RNG_Engine rng;
 	std::shuffle(candidates.begin(), candidates.end(), rng);
 	candidates.erase(candidates.begin() + candidates.size() / 2,

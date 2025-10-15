@@ -212,6 +212,7 @@ private:
 
 	std::vector<Node> getShuffledNodes() {
 	    std::vector<Node> nodes(order.begin(), order.end());
+	    Rcpp::RNGScope scope;
 	    R_RNG_Engine rng;
 	    std::shuffle(nodes.begin(), nodes.end(), rng);
 	    return nodes;

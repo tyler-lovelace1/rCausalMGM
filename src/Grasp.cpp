@@ -51,7 +51,8 @@ std::list<Node> Grasp::initializeRandom() {
 	// Rcpp::Rcout << "  Tier " << tierIdx << ":\n";
 	// for (const Node& n: _tier) Rcpp::Rcout << n << " ";
 	// Rcpp::Rcout << std::endl;
-	
+
+	Rcpp::RNGScope scope;
 	R_RNG_Engine rng;
 	std::shuffle(_tier.begin(), _tier.end(), rng);
 	nodeList.insert(nodeList.end(), _tier.begin(), _tier.end());

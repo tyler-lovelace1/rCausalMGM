@@ -45,7 +45,8 @@ std::list<Node> Boss::initializeRandom() {
 
     for (const std::set<Node>& tier : tiers) {
 	std::vector<Node> _tier(tier.begin(), tier.end());
-	
+
+	Rcpp::RNGScope scope;
 	R_RNG_Engine rng;
 	std::shuffle(_tier.begin(), _tier.end(), rng);
 	nodeList.insert(nodeList.end(), _tier.begin(), _tier.end());
