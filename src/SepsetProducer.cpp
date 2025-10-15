@@ -232,11 +232,11 @@ void SepsetProducer::fillMap() {
 	} else {
 
 	    // threads.push_back(RcppThread::Thread( [this] { producer(); } ));
-	    pool.push([this] { producer(); });
+	    pool.push([this] { producer(); })
 
 	    for (int i = 0; i < parallelism; i++) {
 		// threads.push_back(RcppThread::Thread( [this] { consumer(); } ));
-		pool.push([this] { consumer(); });
+		pool.push([this] { consumer(); })
 	    }
 	}
 	
@@ -244,7 +244,7 @@ void SepsetProducer::fillMap() {
 	//   threads[i].join();
 	// }
 	
-	pool.join();
+	pool.join()
     }
 
     mapFilled = true;
