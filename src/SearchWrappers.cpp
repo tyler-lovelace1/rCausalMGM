@@ -2223,9 +2223,11 @@ Rcpp::List grasp(
 //' @return The CPDAG learned by BOSS
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 25)
 //' g <- boss(sim$data)
 //' print(g)
+//' }
 // [[Rcpp::export]]
 Rcpp::List boss(
     const Rcpp::DataFrame& data,

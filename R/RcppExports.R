@@ -650,9 +650,11 @@ grasp <- function(data, depth = 2L, numStarts = 3L, penalty = 2, bossInit = FALS
 #' @return The CPDAG learned by BOSS
 #' @export
 #' @examples
+#' \donttest{
 #' sim <- simRandomDAG(200, 25)
 #' g <- boss(sim$data)
 #' print(g)
+#' }
 boss <- function(data, numStarts = 3L, penalty = 2, threads = -1L, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_boss`, data, numStarts, penalty, threads, rank, verbose)
 }

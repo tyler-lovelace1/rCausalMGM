@@ -33,7 +33,9 @@ The CPDAG learned by BOSS
 Runs the BOSS causal discovery algorithm on the dataset
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 25)
 g <- boss(sim$data)
 print(g)
+}
 }

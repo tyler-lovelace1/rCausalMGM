@@ -1,13 +1,12 @@
 Package: rCausalMGM
 Type: Package
-Title: Scalable Causal Discovery and Model Selection on Mixed Datasets
+Title: Scalable Causal Discovery and Model Selection on Mixed Datasets with rCausalMGM
 Version: 1.0
-Date: 2025-09-29
-Author: Tyler C Lovelace [aut, cre], Max Dudek [aut], Jack Fiore [aut], Panayiotis V Benos [aut]
+Date: 2025-10-15
+Author: Tyler C Lovelace [aut], Max Dudek [aut], Jack Fiore [aut], Panayiotis V Benos [aut, cre]
 Authors@R: c(person(given = c("Tyler", "C"),
                     family = "Lovelace",
-                    role = c("aut", "cre"),
-                    email = "tyl15@pitt.edu"),
+                    role = "aut"),
 	     person(given = "Max",
                     family = "Dudek",
                     role = "aut"),
@@ -16,8 +15,9 @@ Authors@R: c(person(given = c("Tyler", "C"),
                     role = "aut"),
              person(given = c("Panayiotis", "V"),
                     family = "Benos",
-                    role = "aut"))
-Maintainer: Tyler C Lovelace <tyl15@pitt.edu>
+                    role = c("aut", "cre"),
+                    email = "pbenos@ufl.edu"))
+Maintainer: Panayiotis V Benos <pbenos@ufl.edu>
 Description: The rCasualMGM package is a scalable implementation of CausalMGM, a method for learning causal graphical models over mixed (continuous, discrete, and censored) data. rCausalMGM scales to high-dimensional mixed datasets by utilizing a convex score-based method for learning the initial (moralized) graph and a producer-consumer scheme that efficiently performs the conditional independence tests in constraint-based causal discovery algorithms in parallel. Each individual component of the CausalMGM procedure, such as MGM and the causal discovery algorithms PC-Stable and FCI-Stable, are also available individually. Finally, in real-world applications, model selection is essential. As such, rCausalMGM implements three approaches to model selection: (1) information criteria based on model likelihood and complexity, (2) a cross-validation approach to estimating model likelihood on out-of-sample data, and (3) stability-based approaches that assesses how stable a graphical model is across subsamples of the dataset.
 License: GPL-3 + file LICENSE
 Imports:
