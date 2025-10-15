@@ -216,35 +216,30 @@ void SepsetProducer::fillMap() {
 	maxP.clear();
 	maxPCollider.clear();
 
-	RcppThread::ThreadPool pool(std::max(1, parallelism));
-
-	// std::vector<RcppThread::Thread> threads;
+	std::vector<RcppThread::Thread> threads;
     
 	if (rule == ORIENT_SEPSETS) {
-	    pool.push( [this] { producerSepsetMap(); } );
-	    // threads.push_back(RcppThread::Thread( [this] { producerSepsetMap(); } ));
+	    threads.push_back(RcppThread::Thread( [this] { producerSepsetMap(); } ));
 
 	    for (int i = 0; i < parallelism; i++) {
-		// threads.push_back(RcppThread::Thread( [this] { consumerSepsetMap(); } ));
-		pool.push( [this] { consumerSepsetMap(); } );
+		threads.push_back(RcppThread::Thread( [this] { consumerSepsetMap(); } ));
 	    }
 
+	    for (int i = 0; i < threads.size(); i++) {
+		threads[i].join();
+	    }
 	} else {
 
-	    // threads.push_back(RcppThread::Thread( [this] { producer(); } ));
-	    pool.push([this] { producer(); })
+	    threads.push_back(RcppThread::Thread( [this] { producer(); } ));
 
 	    for (int i = 0; i < parallelism; i++) {
-		// threads.push_back(RcppThread::Thread( [this] { consumer(); } ));
-		pool.push([this] { consumer(); })
+		threads.push_back(RcppThread::Thread( [this] { consumer(); } ));
+	    }
+
+	    for (int i = 0; i < threads.size(); i++) {
+		threads[i].join();
 	    }
 	}
-	
-	// for (int i = 0; i < threads.size(); i++) {
-	//   threads[i].join();
-	// }
-	
-	pool.join()
     }
 
     mapFilled = true;
