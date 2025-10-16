@@ -121,6 +121,8 @@ void SepsetProducer::consumer() {
 	}
     }
 
+    taskQueue.push(IndependenceTask());
+
 }
 
 
@@ -207,6 +209,8 @@ void SepsetProducer::consumerSepsetMap() {
 	    sepsets.set(it.a, it.c, it.s, score);
 	}
     }
+
+    taskQueue.push(IndependenceTask());
 }
 
 
