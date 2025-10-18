@@ -2213,7 +2213,7 @@ Rcpp::List adjMat2Graph(arma::mat adj, Rcpp::StringVector nodes, bool directed =
 //' @param graph The graph object
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- mgm(sim$data)
 //' printGraph(g)
 // [[Rcpp::export]]
@@ -2555,7 +2555,7 @@ EdgeListGraph EdgeListGraph::getPAG(std::vector<Node>& latent) {
 //' @return The CPDAG corresponding to the input DAG
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' sim$cpdag <- cpdag(sim$graph)
 //' print(sim$cpdag)
 // [[Rcpp::export]]
@@ -2576,7 +2576,7 @@ Rcpp::List cpdag(const Rcpp::List& graph) {
 //' @return The moral graph corresponding to the input DAG
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' sim$moral <- moral(sim$graph)
 //' print(sim$moral)
 // [[Rcpp::export]]
@@ -2597,7 +2597,7 @@ Rcpp::List moral(const Rcpp::List& graph) {
 //' @return The skeleton graph corresponding to the input DAG
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' sim$skeleton <- skeleton(sim$graph)
 //' print(sim$skeleton)
 // [[Rcpp::export]]
@@ -2623,7 +2623,7 @@ Rcpp::List skeleton(const Rcpp::List& graph) {
 //' @return The PAG corresponding to the input DAG
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' sim$pag <- pag(sim$graph)
 //' print(sim$pag)
 // [[Rcpp::export]]
@@ -2747,9 +2747,11 @@ Rcpp::List pag(const Rcpp::List& graph,
 //' @return The SHD btween the two graph objects
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' SHD(g, cpdag(sim$graph))
+//' }
 // [[Rcpp::export]]
 Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
     double SHD=0.0, orientSHD=0.0, skelSHD=0.0;
@@ -2826,9 +2828,11 @@ Rcpp::NumericVector SHD(const Rcpp::List& graph1, const Rcpp::List& graph2) {
 //' @return The skeleton precision, recall, F1, and MCC, between the two graph objects
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' prMetricsAdjacency(g, cpdag(sim$graph))
+//' }
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetricsAdjacency(const Rcpp::List& estimate,
 				       const Rcpp::List& groundTruth) {
@@ -2886,10 +2890,11 @@ Rcpp::NumericVector prMetricsAdjacency(const Rcpp::List& estimate,
 //' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 //' @export
 //' @examples
-//' data("train_n10000_p10")
-//' sim <- simRandomDAG(200, 25)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' prMetricsOrientation(g, cpdag(sim$graph))
+//' }
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 					 const Rcpp::List& groundTruth,
@@ -3137,9 +3142,11 @@ Rcpp::NumericVector prMetricsOrientation(const Rcpp::List& estimate,
 //' @return The causal orientation precision, recall, and F1 between the two graph objects
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' prMetricsCausal(g, sim$graph)
+//' }
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 				    const Rcpp::List& groundTruthDAG) {
@@ -3383,9 +3390,11 @@ Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 //' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' prMetrics(g, cpdag(sim$graph))
+//' }
 // [[Rcpp::export]]
 Rcpp::NumericVector prMetrics(const Rcpp::List& estimate,
 			      const Rcpp::List& groundTruth,
@@ -3417,9 +3426,11 @@ Rcpp::NumericVector prMetrics(const Rcpp::List& estimate,
 //' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' allMetrics(g, cpdag(sim$graph))
+//' }
 // [[Rcpp::export]]
 Rcpp::NumericVector allMetrics(const Rcpp::List& estimate,
 			       const Rcpp::List& groundTruth,

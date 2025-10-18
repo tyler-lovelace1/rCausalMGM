@@ -24,7 +24,7 @@
 //' @return The calculated MGM graph
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- mgm(sim$data)
 //' print(g)
 // [[Rcpp::export]]
@@ -166,7 +166,7 @@ Rcpp::List coxmgm(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' ig.path <- mgmPath(sim$data)
 //' print(ig.path)
 //' }
@@ -383,7 +383,7 @@ Rcpp::List coxmgmPath(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' ig.cv <- mgmCV(sim$data)
 //' print(ig.cv)
 //' }
@@ -626,7 +626,7 @@ Rcpp::List coxmgmCV(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' ig.steps <- steps(sim$data)
 //' print(ig.steps)
 //' }
@@ -746,7 +746,7 @@ Rcpp::List steps(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g.stars <- pcStars(sim$data)
 //' print(g.stars)
 //' }
@@ -868,7 +868,7 @@ Rcpp::List pcStars(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g.stars <- fciStars(sim$data)
 //' print(g.stars)
 //' }
@@ -987,7 +987,7 @@ Rcpp::List fciStars(
 //' @return The CPDAG learned by PC-Stable.
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' print(g)
 // [[Rcpp::export]]
@@ -1081,9 +1081,11 @@ Rcpp::List pcStable(
 //' @return The PAG learned by FCI-Stable.
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- fciStable(sim$data)
 //' print(g)
+//' }
 // [[Rcpp::export]]
 Rcpp::List fciStable(
     const Rcpp::DataFrame& data,
@@ -1178,7 +1180,7 @@ Rcpp::List fciStable(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g.cv <- pcCV(sim$data)
 //' print(g.cv)
 //' }
@@ -1332,7 +1334,7 @@ Rcpp::List pcCV(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g.cv <- fciCV(sim$data)
 //' print(g.cv)
 //' }
@@ -1489,7 +1491,7 @@ Rcpp::List fciCV(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g.cv <- mgmpcCV(sim$data)
 //' print(g.cv)
 //' }
@@ -1692,7 +1694,7 @@ Rcpp::List mgmpcCV(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g.cv <- mgmfciCV(sim$data)
 //' print(g.cv)
 //' }
@@ -1889,7 +1891,7 @@ Rcpp::List mgmfciCV(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- pcStable(sim$data)
 //' g.boot <- bootstrap(sim$data, g)
 //' print(g.boot)
@@ -2050,7 +2052,7 @@ Rcpp::List bootstrap(
 //' @return The list of features in the Markov Blanket and the BIC score
 //' @export
 //' @examples
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' mb <- growShrinkMB(sim$data, "X1")
 //' print(mb)
 // [[Rcpp::export]]
@@ -2140,7 +2142,7 @@ Rcpp::StringVector growShrinkMB(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- grasp(sim$data)
 //' print(g)
 //' }
@@ -2224,7 +2226,7 @@ Rcpp::List grasp(
 //' @export
 //' @examples
 //' \donttest{
-//' sim <- simRandomDAG(200, 25)
+//' sim <- simRandomDAG(200, 25, deg=2)
 //' g <- boss(sim$data)
 //' print(g)
 //' }
