@@ -49,7 +49,7 @@ Runs k-fold cross-validation to select the value of alpha and orientation rule f
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g.cv <- fciCV(sim$data)
 print(g.cv)
 }

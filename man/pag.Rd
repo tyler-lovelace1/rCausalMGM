@@ -18,7 +18,7 @@ The PAG corresponding to the input DAG
 Create the partial ancestral graph (PAG) for the input directed acyclic graph (DAG). The PAG represents the Markov equivalence class of the true cauasl MAG. The FCI algorithms are only identifiable up to the Markov equivalence class, so assessments of causal structure recovery should be compared to the PAG rather than the causal MAG.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 sim$pag <- pag(sim$graph)
 print(sim$pag)
 }

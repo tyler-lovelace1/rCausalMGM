@@ -13,7 +13,7 @@ printGraph(graph)
 Display a graph object as text. This is the same format as written in ".txt" save files.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g <- mgm(sim$data)
 printGraph(g)
 }

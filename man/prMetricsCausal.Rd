@@ -18,7 +18,9 @@ The causal orientation precision, recall, and F1 between the two graph objects
 Calculate the causal orientation precision, recall, and F1 between an estimated CPDAG and ground truth graph causal DAG.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+\donttest{
+sim <- simRandomDAG(200, 25, deg=2)
 g <- pcStable(sim$data)
 prMetricsCausal(g, sim$graph)
+}
 }

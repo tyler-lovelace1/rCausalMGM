@@ -42,7 +42,7 @@ adjMat2Graph <- function(adj, nodes, directed = FALSE) {
 #' @param graph The graph object
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- mgm(sim$data)
 #' printGraph(g)
 printGraph <- function(graph) {
@@ -57,7 +57,7 @@ printGraph <- function(graph) {
 #' @return The CPDAG corresponding to the input DAG
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' sim$cpdag <- cpdag(sim$graph)
 #' print(sim$cpdag)
 cpdag <- function(graph) {
@@ -72,7 +72,7 @@ cpdag <- function(graph) {
 #' @return The moral graph corresponding to the input DAG
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' sim$moral <- moral(sim$graph)
 #' print(sim$moral)
 moral <- function(graph) {
@@ -87,7 +87,7 @@ moral <- function(graph) {
 #' @return The skeleton graph corresponding to the input DAG
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' sim$skeleton <- skeleton(sim$graph)
 #' print(sim$skeleton)
 skeleton <- function(graph) {
@@ -103,7 +103,7 @@ skeleton <- function(graph) {
 #' @return The PAG corresponding to the input DAG
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' sim$pag <- pag(sim$graph)
 #' print(sim$pag)
 pag <- function(graph, latent = NULL) {
@@ -119,9 +119,11 @@ pag <- function(graph, latent = NULL) {
 #' @return The SHD btween the two graph objects
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' \donttest{
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' SHD(g, cpdag(sim$graph))
+#' }
 SHD <- function(graph1, graph2) {
     .Call(`_rCausalMGM_SHD`, graph1, graph2)
 }
@@ -135,9 +137,11 @@ SHD <- function(graph1, graph2) {
 #' @return The skeleton precision, recall, F1, and MCC, between the two graph objects
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' \donttest{
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' prMetricsAdjacency(g, cpdag(sim$graph))
+#' }
 prMetricsAdjacency <- function(estimate, groundTruth) {
     .Call(`_rCausalMGM_prMetricsAdjacency`, estimate, groundTruth)
 }
@@ -152,10 +156,11 @@ prMetricsAdjacency <- function(estimate, groundTruth) {
 #' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 #' @export
 #' @examples
-#' data("train_n10000_p10")
-#' sim <- simRandomDAG(200, 25)
+#' \donttest{
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' prMetricsOrientation(g, cpdag(sim$graph))
+#' }
 prMetricsOrientation <- function(estimate, groundTruth, groundTruthDAG = NULL) {
     .Call(`_rCausalMGM_prMetricsOrientation`, estimate, groundTruth, groundTruthDAG)
 }
@@ -169,9 +174,11 @@ prMetricsOrientation <- function(estimate, groundTruth, groundTruthDAG = NULL) {
 #' @return The causal orientation precision, recall, and F1 between the two graph objects
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' \donttest{
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' prMetricsCausal(g, sim$graph)
+#' }
 prMetricsCausal <- function(estimate, groundTruthDAG) {
     .Call(`_rCausalMGM_prMetricsCausal`, estimate, groundTruthDAG)
 }
@@ -185,9 +192,11 @@ prMetricsCausal <- function(estimate, groundTruthDAG) {
 #' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' \donttest{
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' prMetrics(g, cpdag(sim$graph))
+#' }
 prMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
     .Call(`_rCausalMGM_prMetrics`, estimate, groundTruth, groundTruthDAG)
 }
@@ -201,9 +210,11 @@ prMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
 #' @return The orientation precision, recall, F1, and MCC, between the two graph objects
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' \donttest{
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' allMetrics(g, cpdag(sim$graph))
+#' }
 allMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
     .Call(`_rCausalMGM_allMetrics`, estimate, groundTruth, groundTruthDAG)
 }
@@ -217,7 +228,7 @@ allMetrics <- function(estimate, groundTruth, groundTruthDAG = NULL) {
 #' @return The calculated MGM graph
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- mgm(sim$data)
 #' print(g)
 mgm <- function(data, lambda = as.numeric( c(0.2, 0.2, 0.2)), rank = FALSE, verbose = FALSE) {
@@ -255,7 +266,7 @@ coxmgm <- function(data, lambda = as.numeric( c(0.2, 0.2, 0.2, 0.2, 0.2)), rank 
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' ig.path <- mgmPath(sim$data)
 #' print(ig.path)
 #' }
@@ -299,7 +310,7 @@ coxmgmPath <- function(data, lambdas = NULL, nLambda = 30L, rank = FALSE, verbos
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' ig.cv <- mgmCV(sim$data)
 #' print(ig.cv)
 #' }
@@ -348,7 +359,7 @@ coxmgmCV <- function(data, lambdas = NULL, nLambda = 30L, nfolds = 5L, foldid = 
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' ig.steps <- steps(sim$data)
 #' print(ig.steps)
 #' }
@@ -376,7 +387,7 @@ steps <- function(data, lambdas = NULL, nLambda = 30L, gamma = 0.05, numSub = 20
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g.stars <- pcStars(sim$data)
 #' print(g.stars)
 #' }
@@ -404,7 +415,7 @@ pcStars <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g.stars <- fciStars(sim$data)
 #' print(g.stars)
 #' }
@@ -428,7 +439,7 @@ fciStars <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = a
 #' @return The CPDAG learned by PC-Stable.
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' print(g)
 pcStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alpha = 0.05, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
@@ -452,9 +463,11 @@ pcStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = a
 #' @return The PAG learned by FCI-Stable.
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' \donttest{
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- fciStable(sim$data)
 #' print(g)
+#' }
 fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alpha = 0.05, threads = -1L, possDsep = TRUE, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_fciStable`, data, initialGraph, knowledge, orientRule, alpha, threads, possDsep, fdr, rank, verbose)
 }
@@ -478,7 +491,7 @@ fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = 
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g.cv <- pcCV(sim$data)
 #' print(g.cv)
 #' }
@@ -505,7 +518,7 @@ pcCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.ch
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g.cv <- fciCV(sim$data)
 #' print(g.cv)
 #' }
@@ -535,7 +548,7 @@ fciCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.c
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g.cv <- mgmpcCV(sim$data)
 #' print(g.cv)
 #' }
@@ -565,7 +578,7 @@ mgmpcCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.c
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g.cv <- mgmfciCV(sim$data)
 #' print(g.cv)
 #' }
@@ -588,7 +601,7 @@ mgmfciCV <- function(data, knowledge = NULL, cvType = "random", orientRule = as.
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- pcStable(sim$data)
 #' g.boot <- bootstrap(sim$data, g)
 #' print(g.boot)
@@ -610,7 +623,7 @@ bootstrap <- function(data, graph, knowledge = NULL, numBoots = 20L, threads = -
 #' @return The list of features in the Markov Blanket and the BIC score
 #' @export
 #' @examples
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' mb <- growShrinkMB(sim$data, "X1")
 #' print(mb)
 growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, verbose = FALSE) {
@@ -631,7 +644,7 @@ growShrinkMB <- function(data, target, penalty = 1, rank = FALSE, verbose = FALS
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- grasp(sim$data)
 #' print(g)
 #' }
@@ -651,7 +664,7 @@ grasp <- function(data, depth = 2L, numStarts = 3L, penalty = 2, bossInit = FALS
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25)
+#' sim <- simRandomDAG(200, 25, deg=2)
 #' g <- boss(sim$data)
 #' print(g)
 #' }

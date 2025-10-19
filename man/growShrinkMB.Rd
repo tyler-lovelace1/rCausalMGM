@@ -24,7 +24,7 @@ The list of features in the Markov Blanket and the BIC score
 Runs the Grow-Shrink algorithm to find the Markov blanket of a feature in a dataset
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 mb <- growShrinkMB(sim$data, "X1")
 print(mb)
 }

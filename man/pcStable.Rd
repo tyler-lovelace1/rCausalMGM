@@ -42,7 +42,7 @@ The CPDAG learned by PC-Stable.
 Runs the causal discovery algorithm PC-Stable on a dataset. The PC-Stable algorithm is designed to recover the Markov equivalence class of causal DAGs that could give rise to the observed conditional independence relationships under the assumption of causal sufficiency. A dataset is said to be causally sufficient if all variables relevant to the causal process are observed (i.e. there are no latent confounders). The resulting graph is a completed partially directed acyclic graph (CPDAG) containing directed edges where the causal orientation can be uniquely determined and an undirected edge where multiple orientations are possible.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g <- pcStable(sim$data)
 print(g)
 }

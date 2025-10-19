@@ -37,7 +37,7 @@ Runs bootstrapping for a causal graph on the dataset. This function can be used 
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g <- pcStable(sim$data)
 g.boot <- bootstrap(sim$data, g)
 print(g.boot)

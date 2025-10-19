@@ -16,7 +16,7 @@ The skeleton graph corresponding to the input DAG
 Create the skeleton graph for the input directed acyclic graph (DAG). The skeleton graph is the undirected graph that contains the same adjacencies as the input DAG.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 sim$skeleton <- skeleton(sim$graph)
 print(sim$skeleton)
 }

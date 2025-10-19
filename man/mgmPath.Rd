@@ -25,7 +25,7 @@ Calculate the solution path for an MGM graph on a dataset. It also returns the m
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 ig.path <- mgmPath(sim$data)
 print(ig.path)
 }

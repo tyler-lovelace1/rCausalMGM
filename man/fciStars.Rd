@@ -52,7 +52,7 @@ Runs StARS to select the value of alpha for FCI-Stable based on adjacency stabil
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g.stars <- fciStars(sim$data)
 print(g.stars)
 }

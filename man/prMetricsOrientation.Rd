@@ -20,8 +20,9 @@ The orientation precision, recall, F1, and MCC, between the two graph objects
 Calculate the orientation precision, recall, F1, and Matthew's Correlation Coefficient (MCC) between an estimated and ground truth graph.
 }
 \examples{
-data("train_n10000_p10")
-sim <- simRandomDAG(200, 25)
+\donttest{
+sim <- simRandomDAG(200, 25, deg=2)
 g <- pcStable(sim$data)
 prMetricsOrientation(g, cpdag(sim$graph))
+}
 }

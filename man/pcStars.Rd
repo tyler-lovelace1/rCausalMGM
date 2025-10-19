@@ -52,7 +52,7 @@ Runs StARS to select the value of alpha for PC-Stable based on adjacency stabili
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g.stars <- pcStars(sim$data)
 print(g.stars)
 }

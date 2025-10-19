@@ -40,7 +40,7 @@ Runs the GRaSP causal discovery algorithm on the dataset
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g <- grasp(sim$data)
 print(g)
 }

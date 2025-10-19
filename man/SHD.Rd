@@ -18,7 +18,9 @@ The SHD btween the two graph objects
 Calculate the Structural Hamming Distance (SHD) between two graphs.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+\donttest{
+sim <- simRandomDAG(200, 25, deg=2)
 g <- pcStable(sim$data)
 SHD(g, cpdag(sim$graph))
+}
 }

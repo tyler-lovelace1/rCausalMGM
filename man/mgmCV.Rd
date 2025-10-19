@@ -37,7 +37,7 @@ Calculate the solution path for an MGM graph on a dataset with k-fold cross-vali
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 ig.cv <- mgmCV(sim$data)
 print(ig.cv)
 }

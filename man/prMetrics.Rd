@@ -20,7 +20,9 @@ The orientation precision, recall, F1, and MCC, between the two graph objects
 Calculate the precision, recall, F1, and Matthew's Correlation Coefficient (MCC) for the adjacencies and orientations of an estimated graph compared to the ground truth. This is the concatenated output of the adjacency PR metrics and the orientation PR metrics.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+\donttest{
+sim <- simRandomDAG(200, 25, deg=2)
 g <- pcStable(sim$data)
 prMetrics(g, cpdag(sim$graph))
+}
 }

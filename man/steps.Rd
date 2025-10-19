@@ -46,7 +46,7 @@ Calculates the optimal lambda values for the MGM algorithm using StEPS and StARS
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 ig.steps <- steps(sim$data)
 print(ig.steps)
 }

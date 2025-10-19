@@ -58,7 +58,7 @@ Runs k-fold cross-validation to select the value of lambda, alpha, and the orien
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g.cv <- mgmfciCV(sim$data)
 print(g.cv)
 }

@@ -22,7 +22,7 @@ The calculated MGM graph
 Calculate the MGM graph on a dataset
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g <- mgm(sim$data)
 print(g)
 }

@@ -16,7 +16,7 @@ The moral graph corresponding to the input DAG
 Create the moral graph for the input directed acyclic graph (DAG). The moral graph is the undirected graphical model that is equivalent to the input DAG.
 }
 \examples{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 sim$moral <- moral(sim$graph)
 print(sim$moral)
 }

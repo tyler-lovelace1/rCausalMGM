@@ -34,7 +34,7 @@ Runs the BOSS causal discovery algorithm on the dataset
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25)
+sim <- simRandomDAG(200, 25, deg=2)
 g <- boss(sim$data)
 print(g)
 }
