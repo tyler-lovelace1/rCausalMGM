@@ -372,45 +372,44 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
 std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
 
-    // RcppThread::Rcout << "scoreGraphTestLL call\n" << graph << std::endl;
-
-    int N = scoreNodes.size();
+    std::size_t N = scoreNodes.size();
     
-    RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, N)));
+    // RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, N)));
 
+    // Use a vector to store the threads
+    std::vector<std::thread> threads;
     std::vector<std::future<std::vector<double>>> futures(N);
     arma::vec scores(N);
     arma::vec mbSizes(N);
 
-    auto scoreTask = [&] (int i) {
-	// RcppThread::Rcout << "  Scoring Node " << scoreNodes.at(i) << std::endl;
+    auto scoreTask = [&] (const std::size_t& i) {
+	RcppThread::checkUserInterrupt();
 	std::vector<Node> mb = graph.getMarkovBlanket(scoreNodes.at(i));
 	std::vector<Node> regressors;
-	// RcppThread::Rcout << "    MB : { ";
+
 	for (Node n : mb) {
-	    // RcppThread::Rcout << n << " ";
 	    std::vector<Node> temp = variablesPerNode.at(n);
 	    regressors.insert(regressors.end(), temp.begin(), temp.end());
 	}
-	// RcppThread::Rcout << "}\n";
+
 	std::vector<double> result = { scoreTestLLTask(scoreNodes.at(i), regressors, k), (double) mb.size() };
 	return result;
     };
 
-    for (uint i = 0; i < N; i++) {
-	// std::vector<Node> mb = graph.getMarkovBlanket(scoreNodes.at(i));
-	futures[i] = pool.pushReturn(scoreTask, i);
+    for (std::size_t i = 0; i < N; i++) {
+	std::packaged_task<std::vector<double>(const std::size_t&)> task(scoreTask);	
+	futures[i] = task.get_future();
+	threads.push_back(std::thread(std::move(task), i));
     }
-    for (uint i = 0; i < N; i++) {
+    
+    for (std::size_t i = 0; i < N; i++) {
+	threads[i].join();
 	std::vector<double> scoreOutput = futures[i].get();
 	scores(i) = scoreOutput[0];
 	mbSizes(i) = scoreOutput[1];
-	// RcppThread::Rcout << scoreNodes.at(i) << " = " << scores(i) << std::endl;
     }
 
-    pool.join();
-
-    // RcppThread::Rcout << "scoreGraphTestLL finished\n";
+    // pool.join();
 
     return { -arma::accu(scores), arma::mean(mbSizes) };
 }

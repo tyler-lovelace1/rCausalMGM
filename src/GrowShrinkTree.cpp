@@ -261,159 +261,159 @@ std::vector<Node> GrowShrinkTree::search(double* scoreReturn) {
     return search(scorer->getVariables(), scoreReturn);
 }
 
-// no export [[Rcpp::export]]
-Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string target) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// // no export [[Rcpp::export]]
+// Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string target) {
+//     DataSet ds = DataSet(df);
+//     ds.dropMissing();
 
-    Node targetNode = ds.getVariable(target);
+//     Node targetNode = ds.getVariable(target);
 
-    std::vector<Node> regressors(ds.getVariables());
-    auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
+//     std::vector<Node> regressors(ds.getVariables());
+//     auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
 
-    regressors.erase(it, regressors.end());
+//     regressors.erase(it, regressors.end());
 
-    std::vector<Node> mb;
-    double score;
+//     std::vector<Node> mb;
+//     double score;
 
-    if (!ds.isCensored()) {
-	DegenerateGaussianScore scorer(ds, 1.0);
-	GrowShrinkTree gst(&scorer, targetNode);
-	gst.setVerbose(true);
+//     if (!ds.isCensored()) {
+// 	DegenerateGaussianScore scorer(ds, 1.0);
+// 	GrowShrinkTree gst(&scorer, targetNode);
+// 	gst.setVerbose(true);
 	
-	mb = gst.search(regressors, &score);
-    } else {
-        RegressionBicScore scorer(ds, 1.0);
-	GrowShrinkTree gst(&scorer, targetNode);
-	gst.setVerbose(true);
+// 	mb = gst.search(regressors, &score);
+//     } else {
+//         RegressionBicScore scorer(ds, 1.0);
+// 	GrowShrinkTree gst(&scorer, targetNode);
+// 	gst.setVerbose(true);
 	
-	mb = gst.search(regressors, &score);
-    }
+// 	mb = gst.search(regressors, &score);
+//     }
     
-    RcppThread::checkUserInterrupt();
+//     RcppThread::checkUserInterrupt();
 
-    Rcpp::StringVector _mb;
+//     Rcpp::StringVector _mb;
 
-    for (Node n : mb) {
-	_mb.push_back(n.getName());
-    }
+//     for (Node n : mb) {
+// 	_mb.push_back(n.getName());
+//     }
 
-    _mb.attr("Score") = Rcpp::wrap(score);
+//     _mb.attr("Score") = Rcpp::wrap(score);
     
-    return _mb;
-}
+//     return _mb;
+// }
 
 
-// no export  [[Rcpp::export]]
-Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// // no export  [[Rcpp::export]]
+// Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub) {
+//     DataSet ds = DataSet(df);
+//     ds.dropMissing();
 
-    Node targetNode = ds.getVariable(target);
+//     Node targetNode = ds.getVariable(target);
 
-    std::vector<Node> regressors(ds.getVariables());
-    auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
+//     std::vector<Node> regressors(ds.getVariables());
+//     auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
 
-    regressors.erase(it, regressors.end());
+//     regressors.erase(it, regressors.end());
 
-    std::vector<Node> mb;
-    double score;
+//     std::vector<Node> mb;
+//     double score;
 
-    if (!ds.isCensored()) {
-	DegenerateGaussianScore scorer(ds, 1.0);
-	GrowShrinkTree gst(&scorer, targetNode);
-	gst.setVerbose(false);
+//     if (!ds.isCensored()) {
+// 	DegenerateGaussianScore scorer(ds, 1.0);
+// 	GrowShrinkTree gst(&scorer, targetNode);
+// 	gst.setVerbose(false);
 
-	for (int i = 0; i < numSub; i++) {
-	    // if ((i+1) % 50 == 0) {
-	    // 	gst.reset();
-	    // }
-	    std::vector<Node> candidates(regressors);
-	    Rcpp::RNGScope scope;
-	    R_RNG_Engine rng;
-	    std::shuffle(candidates.begin(), candidates.end(), rng);
-	    candidates.erase(candidates.begin() + candidates.size() / 2,
-			     candidates.end());
-	    mb = gst.search(candidates, &score);
-	}
-    } else {
-        RegressionBicScore scorer(ds, 1.0);
-	GrowShrinkTree gst(&scorer, targetNode);
-	gst.setVerbose(false);
+// 	for (int i = 0; i < numSub; i++) {
+// 	    // if ((i+1) % 50 == 0) {
+// 	    // 	gst.reset();
+// 	    // }
+// 	    std::vector<Node> candidates(regressors);
+// 	    Rcpp::RNGScope scope;
+// 	    R_RNG_Engine rng;
+// 	    std::shuffle(candidates.begin(), candidates.end(), rng);
+// 	    candidates.erase(candidates.begin() + candidates.size() / 2,
+// 			     candidates.end());
+// 	    mb = gst.search(candidates, &score);
+// 	}
+//     } else {
+//         RegressionBicScore scorer(ds, 1.0);
+// 	GrowShrinkTree gst(&scorer, targetNode);
+// 	gst.setVerbose(false);
 	
-	for (int i = 0; i < numSub; i++) {
-	    std::vector<Node> candidates(regressors);
-	    Rcpp::RNGScope scope;
-	    R_RNG_Engine rng;
-	    std::shuffle(candidates.begin(), candidates.end(), rng);
-	    candidates.erase(candidates.begin() + candidates.size() / 2,
-			     candidates.end());
-	    mb = gst.search(candidates, &score);
-	}
-    }
+// 	for (int i = 0; i < numSub; i++) {
+// 	    std::vector<Node> candidates(regressors);
+// 	    Rcpp::RNGScope scope;
+// 	    R_RNG_Engine rng;
+// 	    std::shuffle(candidates.begin(), candidates.end(), rng);
+// 	    candidates.erase(candidates.begin() + candidates.size() / 2,
+// 			     candidates.end());
+// 	    mb = gst.search(candidates, &score);
+// 	}
+//     }
     
-    RcppThread::checkUserInterrupt();
+//     RcppThread::checkUserInterrupt();
 
-    Rcpp::StringVector _mb;
+//     Rcpp::StringVector _mb;
 
-    for (Node n : mb) {
-	_mb.push_back(n.getName());
-    }
+//     for (Node n : mb) {
+// 	_mb.push_back(n.getName());
+//     }
 
-    _mb.attr("Score") = Rcpp::wrap(score);
+//     _mb.attr("Score") = Rcpp::wrap(score);
     
-    return _mb;
-}
+//     return _mb;
+// }
 
 
-//  no export [[Rcpp::export]]
-std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub, int threads) {
-    DataSet ds = DataSet(df);
-    ds.dropMissing();
+// //  no export [[Rcpp::export]]
+// std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub, int threads) {
+//     DataSet ds = DataSet(df);
+//     ds.dropMissing();
 
-    Node targetNode = ds.getVariable(target);
+//     Node targetNode = ds.getVariable(target);
 
-    std::vector<Node> regressors(ds.getVariables());
-    auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
+//     std::vector<Node> regressors(ds.getVariables());
+//     auto it = std::remove(regressors.begin(), regressors.end(), targetNode);
 
-    regressors.erase(it, regressors.end());
+//     regressors.erase(it, regressors.end());
 
-    std::vector<Node> mb;
-    double score;
+//     std::vector<Node> mb;
+//     double score;
 
-    RcppThread::ThreadPool pool(std::max(1, threads));
+//     RcppThread::ThreadPool pool(std::max(1, threads));
 
-    DegenerateGaussianScore scorer(ds, 1.0);
-    GrowShrinkTree* gst = new GrowShrinkTree(&scorer, targetNode);
-    gst->setVerbose(true);
+//     DegenerateGaussianScore scorer(ds, 1.0);
+//     GrowShrinkTree* gst = new GrowShrinkTree(&scorer, targetNode);
+//     gst->setVerbose(true);
 
-    auto gsTask = [&](std::vector<Node> candidates) {
-	double score;
-	RcppThread::checkUserInterrupt();
-	gst->search(candidates, &score);
-	return score;
-    };
+//     auto gsTask = [&](std::vector<Node> candidates) {
+// 	double score;
+// 	RcppThread::checkUserInterrupt();
+// 	gst->search(candidates, &score);
+// 	return score;
+//     };
 
-    std::vector<std::future<double>> futures(numSub);
-    std::vector<double> scores;
+//     std::vector<std::future<double>> futures(numSub);
+//     std::vector<double> scores;
 
-    for (int i = 0; i < numSub; i++) {
-	std::vector<Node> candidates(regressors);
-	Rcpp::RNGScope scope;
-	R_RNG_Engine rng;
-	std::shuffle(candidates.begin(), candidates.end(), rng);
-	candidates.erase(candidates.begin() + candidates.size() / 2,
-			 candidates.end());
-	futures[i] = pool.pushReturn(gsTask, candidates);
-    }
+//     for (int i = 0; i < numSub; i++) {
+// 	std::vector<Node> candidates(regressors);
+// 	Rcpp::RNGScope scope;
+// 	R_RNG_Engine rng;
+// 	std::shuffle(candidates.begin(), candidates.end(), rng);
+// 	candidates.erase(candidates.begin() + candidates.size() / 2,
+// 			 candidates.end());
+// 	futures[i] = pool.pushReturn(gsTask, candidates);
+//     }
 
-    for (int i = 0; i < numSub; i++) {
-	scores[i] = futures[i].get();
-    }
+//     for (int i = 0; i < numSub; i++) {
+// 	scores[i] = futures[i].get();
+//     }
 
-    pool.join();
+//     pool.join();
     
-    delete gst;
+//     delete gst;
     
-    return scores;
-}
+//     return scores;
+// }

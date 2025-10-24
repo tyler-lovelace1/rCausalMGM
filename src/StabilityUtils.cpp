@@ -510,7 +510,8 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
 }
 
 arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, arma::umat& subs) {
-    BlockingQueue<int> taskQueue(subs.n_rows);
+    
+    BlockingQueue<int> taskQueue(MAX_QUEUE_SIZE);
     if (num_threads <= 0) num_threads = std::thread::hardware_concurrency();
     if (num_threads == 0) {
         num_threads = 4;

@@ -59,7 +59,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
     std::vector<std::future<EdgeListGraph>> futures(samps.n_rows);
 
     if (mgmFlag) {
-      RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, (int) samps.n_rows)));
+	RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, (int) samps.n_rows)));
         lambda = std::vector<double>(lambdaVec.begin(), lambdaVec.end());
 
 	auto initialGraphTask = [&] (int i) {

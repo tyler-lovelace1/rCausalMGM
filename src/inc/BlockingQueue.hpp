@@ -15,15 +15,15 @@ class BlockingQueue
 {
 
 private:
-    int capacity;
+    std::size_t capacity;
 
     std::mutex mtx;
 
     std::condition_variable c_head;
     std::condition_variable c_tail;
 
-    unsigned long tail;
-    unsigned long head;
+    std::size_t tail;
+    std::size_t head;
 
     std::unique_ptr<T[]> queue;
 
@@ -35,7 +35,7 @@ public:
     //     queue = std::make_unique<T[]>(capacity);
     // }
   
-    BlockingQueue(int _capacity) {
+    BlockingQueue(std::size_t _capacity) {
         capacity = _capacity;
         head = 0;
         tail = 0;
@@ -101,10 +101,10 @@ public:
         return ret;
     }
 
-    int getCapacity() { return capacity; }
+    std::size_t getCapacity() { return capacity; }
 
     // TODO - lock?
-    int getSize() {
+    std::size_t getSize() {
 	std::unique_lock<std::mutex> lock(mtx);
 	return tail - head;
     }

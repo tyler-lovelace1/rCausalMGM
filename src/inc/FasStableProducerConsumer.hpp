@@ -129,7 +129,7 @@ private:
         // IndependenceTask(const IndependenceTask& it) { x = it.x; y = it.y; z = it.z; }
     };
 
-    const int MAX_QUEUE_SIZE = 100;
+    static const std::size_t MAX_QUEUE_SIZE = 1000;
     BlockingQueue<IndependenceTask> taskQueue;
     
     int parallelism;

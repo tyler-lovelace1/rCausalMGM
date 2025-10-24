@@ -297,10 +297,10 @@ public:
 	root.reset(new GrowShrinkNode(numNodes));
     }
 
-    friend Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string target);
-    friend Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub);
+    // friend Rcpp::StringVector GrowShrinkTreeTest(const Rcpp::DataFrame &df, std::string target);
+    // friend Rcpp::StringVector GrowShrinkTreeSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub);
 
-    friend std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub, int threads);
+    // friend std::vector<double> GrowShrinkTreeParallelSubSetTest(const Rcpp::DataFrame &df, std::string target, int numSub, int threads);
 
 };
 

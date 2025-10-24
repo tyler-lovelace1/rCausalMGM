@@ -63,7 +63,7 @@ private:
 	~IndependenceTask() = default;
     };
 
-    static const int MAX_QUEUE_SIZE = 100;
+    static const std::size_t MAX_QUEUE_SIZE = 1000;
     BlockingQueue<IndependenceTask> taskQueue;
 
     SepsetMap sepsets;

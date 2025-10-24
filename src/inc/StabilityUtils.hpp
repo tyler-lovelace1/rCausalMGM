@@ -11,6 +11,8 @@
 
 class StabilityUtils {
 
+    static const std::size_t MAX_QUEUE_SIZE = 1000;
+
 public:
 
     static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, int N, int b);
