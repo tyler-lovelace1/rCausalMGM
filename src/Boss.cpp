@@ -329,7 +329,11 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
 
     RcppThread::ThreadPool pool(parallelism);
 
-    auto scoreTask = [this] (Node node, std::vector<Node> prefix) {
+    std::vector<double> with(tau.order.size());
+    std::vector<double> without(tau.order.size());
+    std::vector<double> scores(tau.order.size());
+
+    auto scoreTaskWith = [&, this] (int i, Node node, std::vector<Node> prefix) {
 	double localBic = 1e20;
 	std::vector<Node> parents;
 
@@ -342,19 +346,47 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
 	    parents = gstMap[node]->search(prefix, &localBic);
 	}
 	
-	return localBic;
+	with[i] = localBic;
     };
+
+    auto scoreTaskWithout = [&, this] (int i, Node node, std::vector<Node> prefix) {
+	double localBic = 1e20;
+	std::vector<Node> parents;
+
+	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+	RcppThread::checkUserInterrupt();
+
+	{
+	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+	    parents = gstMap[node]->search(prefix, &localBic);
+	}
 	
+	without[i] = localBic;
+    };
+
+    auto scoreTaskScores = [&, this] (int i, Node node, std::vector<Node> prefix) {
+	double localBic = 1e20;
+	std::vector<Node> parents;
+
+	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+	RcppThread::checkUserInterrupt();
+
+	{
+	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+	    parents = gstMap[node]->search(prefix, &localBic);
+	}
+	
+	scores[i] = localBic;
+    };
+    
     // Rcpp::Rcout << "    Scoring new orders...\n";
 
-    std::vector<std::future<double>> futureWith(tau.order.size());
-    std::vector<std::future<double>> futureWithout(tau.order.size());
-    std::vector<std::future<double>> futureScores(tau.order.size());
-	
-    std::vector<double> with(tau.order.size());
-    std::vector<double> without(tau.order.size());
-    std::vector<double> scores(tau.order.size());
-
+    // std::vector<std::future<double>> futureWith(tau.order.size());
+    // std::vector<std::future<double>> futureWithout(tau.order.size());
+    // std::vector<std::future<double>> futureScores(tau.order.size());
+    
     int currIdx = 0;
     
     std::vector<Node> prefix;
@@ -372,11 +404,11 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
 	    continue;
 	}
 	
-	futureWithout[i] = pool.pushReturn(scoreTask, *jt, prefix);
-	futureScores[i] = pool.pushReturn(scoreTask, n, prefix);
+	pool.push(scoreTaskWithout, i, *jt, prefix);
+	pool.push(scoreTaskScores, i, n, prefix);
 
 	prefix.push_back(n);
-	futureWith[i] = pool.pushReturn(scoreTask, *jt, prefix);
+        pool.push(scoreTaskWith, i, *jt, prefix);
 	prefix.pop_back();
 
 	prefix.push_back(*jt);
@@ -384,14 +416,14 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
 	jt++;
     }
 
-    // Rcpp::Rcout << "\n";
+    // // Rcpp::Rcout << "\n";
 
-    for (int i = 0; i < tau.order.size(); ++i) {
-	if (i == currIdx) continue;
-	with[i] = futureWith[i].get();
-	without[i] = futureWithout[i].get();
-	scores[i] = futureScores[i].get();
-    }
+    // for (int i = 0; i < tau.order.size(); ++i) {
+    // 	if (i == currIdx) continue;
+    // 	with[i] = futureWith[i].get();
+    // 	without[i] = futureWithout[i].get();
+    // 	scores[i] = futureScores[i].get();
+    // }
 
     pool.join();
 

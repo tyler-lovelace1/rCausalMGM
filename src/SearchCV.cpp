@@ -374,11 +374,11 @@ std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
 
     std::size_t N = scoreNodes.size();
     
-    // RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, N)));
+    RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, (int) N)));
 
-    // Use a vector to store the threads
-    std::vector<std::thread> threads;
-    std::vector<std::future<std::vector<double>>> futures(N);
+    // // Use a vector to store the threads
+    // std::vector<std::thread> threads;
+    // std::vector<std::future<std::vector<double>>> futures(N);
     arma::vec scores(N);
     arma::vec mbSizes(N);
 
@@ -392,24 +392,28 @@ std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
 	    regressors.insert(regressors.end(), temp.begin(), temp.end());
 	}
 
-	std::vector<double> result = { scoreTestLLTask(scoreNodes.at(i), regressors, k), (double) mb.size() };
-	return result;
+	// std::vector<double> result = { scoreTestLLTask(scoreNodes.at(i), regressors, k), (double) mb.size() };
+	scores[i] = scoreTestLLTask(scoreNodes.at(i), regressors, k);
+	mbSizes[i] = (double) mb.size();
+	// return result;
     };
 
-    for (std::size_t i = 0; i < N; i++) {
-	std::packaged_task<std::vector<double>(const std::size_t&)> task(scoreTask);	
-	futures[i] = task.get_future();
-	threads.push_back(std::thread(std::move(task), i));
-    }
-    
-    for (std::size_t i = 0; i < N; i++) {
-	threads[i].join();
-	std::vector<double> scoreOutput = futures[i].get();
-	scores(i) = scoreOutput[0];
-	mbSizes(i) = scoreOutput[1];
-    }
+    pool.parallelFor(0, N, scoreTask);
 
-    // pool.join();
+    // for (std::size_t i = 0; i < N; i++) {
+    // 	std::packaged_task<std::vector<double>(const std::size_t&)> task(scoreTask);	
+    // 	futures[i] = task.get_future();
+    // 	threads.push_back(std::thread(std::move(task), i));
+    // }
+    
+    // for (std::size_t i = 0; i < N; i++) {
+    // 	threads[i].join();
+    // 	std::vector<double> scoreOutput = futures[i].get();
+    // 	scores(i) = scoreOutput[0];
+    // 	mbSizes(i) = scoreOutput[1];
+    // }
+
+    pool.join();
 
     return { -arma::accu(scores), arma::mean(mbSizes) };
 }

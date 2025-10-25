@@ -64,9 +64,11 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 
 	auto initialGraphTask = [&] (int i) {
 				    EdgeListGraph ig;
+
+				    RcppThread::checkUserInterrupt();
 				    
 				    if (RcppThread::isInterrupted())
-					return ig;
+					igVec[i] = ig;
 				    
 				    if (!censFlag) {
 					MGM mgm(dataSubVec.at(i), lambda);
@@ -75,18 +77,20 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 					CoxMGM coxmgm(dataSubVec.at(i), lambda);
 					ig = coxmgm.search();
 				    }
-				    return ig;
+				    igVec[i] = ig;
 				};
 
-	for (int i = 0; i < samps.n_rows; i++) {
-	    futures[i] = pool.pushReturn(initialGraphTask, i);
-	}
+	// for (int i = 0; i < samps.n_rows; i++) {
+	//     futures[i] = pool.pushReturn(initialGraphTask, i);
+	// }
 
-	for (int i = 0; i < samps.n_rows; i++) {
-	    igVec[i] = futures[i].get();
-	}
+	// for (int i = 0; i < samps.n_rows; i++) {
+	//     igVec[i] = futures[i].get();
+	// }
 
-	RcppThread::checkUserInterrupt();
+	// RcppThread::checkUserInterrupt();
+
+	pool.parallelFor(0, samps.n_rows, initialGraphTask);
 
 	pool.join();
     }
