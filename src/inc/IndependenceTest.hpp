@@ -23,6 +23,8 @@ public:
      */
     //   virtual IndependenceTest indTestSubset(std::vector<Node>& vars) = 0;
 
+    virtual ~IndependenceTest() {}
+
     /**
      * @return true if the given independence question is judged true, false if not. The independence question is of the
      * form x _||_ y | z, z = <z1,...,zn>, where x, y, z1,...,zn are variables in the list returned by

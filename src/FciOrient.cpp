@@ -519,7 +519,7 @@ void FciOrient::spirtesFinalOrientation(EdgeListGraph& graph) {
 	ruleR3(graph);
 
 	// R4 requires an arrow orientation.
-	if (changeFlag || firstTime && !knowledge.isEmpty()) {
+	if (changeFlag || (firstTime && !knowledge.isEmpty())) {
 	    ruleR4B(graph);
 	    firstTime = false;
 	}
@@ -536,7 +536,7 @@ void FciOrient::zhangFinalOrientation(EdgeListGraph& graph) {
 	ruleR3(graph);
 
 	// R4 requires an arrow orientation.
-	if (changeFlag || firstTime && !knowledge.isEmpty()) {
+	if (changeFlag || (firstTime && !knowledge.isEmpty())) {
 	    ruleR4B(graph);
 	    firstTime = false;
 	}
@@ -718,7 +718,7 @@ void FciOrient::reachablePathFind(const Node& a, const Node& b, const Node& c,
 	// Possible DDP path endpoints.
 	std::vector<Node> pathExtensions = graph.getNodesInTo(x, ENDPOINT_ARROW);
 	for (const Node& var: visited) {
-	    auto it = std::remove(pathExtensions.begin(), pathExtensions.end(), var);
+	    std::remove(pathExtensions.begin(), pathExtensions.end(), var);
 	}
 
 	for (const Node& d : pathExtensions) {

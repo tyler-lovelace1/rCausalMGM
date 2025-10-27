@@ -205,7 +205,7 @@ bool Edge::isBidirectionalEdge(const Edge& edge) {
  */
 bool Edge::isDirectedEdge(const Edge& edge) {
     return ((edge.endpoint1 == ENDPOINT_TAIL) && (edge.endpoint2 == ENDPOINT_ARROW)) ||
-            (edge.endpoint2 == ENDPOINT_TAIL) && (edge.endpoint1 == ENDPOINT_ARROW);
+	((edge.endpoint2 == ENDPOINT_TAIL) && (edge.endpoint1 == ENDPOINT_ARROW));
 }
 
 /**
@@ -213,7 +213,7 @@ bool Edge::isDirectedEdge(const Edge& edge) {
  */
 bool Edge::isPartiallyOrientedEdge(const Edge& edge) {
     return ((edge.endpoint1 == ENDPOINT_CIRCLE) && (edge.endpoint2 == ENDPOINT_ARROW)) ||
-            (edge.endpoint2 == ENDPOINT_CIRCLE) && (edge.endpoint1 == ENDPOINT_ARROW);
+	((edge.endpoint2 == ENDPOINT_CIRCLE) && (edge.endpoint1 == ENDPOINT_ARROW));
 }
 
 /**

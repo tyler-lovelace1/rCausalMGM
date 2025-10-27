@@ -26,7 +26,7 @@ private:
     Knowledge knowledge;
     bool fdr = false;
     std::vector<double> lambda;
-    int iterLimit = 500;
+    // int iterLimit = 500;
     arma::mat stabilities;
     bool computeStabs = false;
     bool verbose = false;

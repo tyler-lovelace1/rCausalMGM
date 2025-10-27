@@ -14,8 +14,7 @@ IndTestMulti::IndTestMulti(DataSet& data, double alpha)
 
     std::vector<Node> variables = internalData.getVariables();
 
-    for (const Node& var : variables)
-    {
+    for (const Node& var : variables) {
 	// Rcpp::Rcout << var->getName() << "\n";
         std::vector<Node> vars = expandVariable(internalData, var); // See expandVariable function below
         variablesPerNode.insert(std::pair<Node, std::vector<Node>>(var, vars));
@@ -709,7 +708,7 @@ Node IndTestMulti::getVariable(std::string name)
 {
     for (int i = 0; i < getVariables().size(); i++)
     {
-        const Node& var = getVariables().at(i);
+        Node var = getVariables().at(i);
         if (var.getName() == name)
         {
             return var;

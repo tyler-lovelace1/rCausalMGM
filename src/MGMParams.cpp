@@ -91,7 +91,7 @@ arma::vec MGMParams::toMatrix1D() {
 
 Rcpp::List MGMParams::toList() const {
     int p = beta.n_cols;
-    int ltot = phi.n_cols;
+    // int ltot = phi.n_cols;
     std::vector<std::string> contNames(names.begin(), names.begin()+p);
     std::vector<std::string> discNames(names.begin()+p, names.end());
 

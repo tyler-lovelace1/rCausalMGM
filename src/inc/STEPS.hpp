@@ -60,7 +60,7 @@ public:
         leaveOneOut(loo),
 	taskQueue(MAX_QUEUE_SIZE) {}
 
-    EdgeListGraph runStepsPar();
+    // EdgeListGraph runStepsPar();
 
     std::vector<EdgeListGraph> runStepsPath(arma::mat& instabs, arma::umat& samps);
 

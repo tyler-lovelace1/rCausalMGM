@@ -29,7 +29,7 @@ std::vector<Node> GrowShrinkTree::growShrink(std::vector<Node>& candidates, doub
 
     if (verbose) RcppThread::Rcout << "  Growing...\n";
 
-    double oldScore = 1e20, curScore = root->score, score;
+    double oldScore = 1e20; // , curScore = root->score, score;
     GrowShrinkNode* bestNode = root.get();
     bool changeFlag = false;
 

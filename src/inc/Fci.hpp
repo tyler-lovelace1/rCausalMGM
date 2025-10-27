@@ -30,6 +30,7 @@
 // #include "SepsetsPossibleDsep.hpp"
 // #include "SepsetsSet.hpp"
 #include <limits>
+#include <optional>
 
 
 class Fci {
@@ -117,7 +118,7 @@ private:
     EdgeListGraph *initialGraph = NULL;
     int possibleDsepDepth = -1;
 
-    SepsetProducer sp, mapSp, fasMapSp, posDsp, posDmapSp;
+    std::optional<SepsetProducer> sp, mapSp, fasMapSp, posDsp, posDmapSp;
     SepsetMap possDsepSepsets, nullSepsets;
 
         //========================PRIVATE METHODS==========================//

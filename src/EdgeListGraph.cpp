@@ -2122,7 +2122,6 @@ Rcpp::List loadGraph(const std::string& filename) {
         }
     }
 
-    END:
     Rcpp::List result = Rcpp::List::create(
         Rcpp::_["nodes"] = nodeNames,
         Rcpp::_["edges"] = edgeStrings,
@@ -3186,7 +3185,7 @@ Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 	// if (groundTruthDAG.isNotNull())
 	//     Rcpp::warning("The ground truth DAG is only needed for assessing the causalation accuracy of partial ancestral graphs.");
 	
-	double tp = 0, fp = 0, fn = 0, tn = 0;
+	double tp = 0, fp = 0, fn = 0;
 
 	for (Edge edge1 : est.getEdges()) {
 	    if (truth.isAdjacentTo(edge1.getNode1(), edge1.getNode2())) {
@@ -3197,7 +3196,7 @@ Rcpp::NumericVector prMetricsCausal(const Rcpp::List& estimate,
 		} else if (edge1.isDirected()) {
 		    if (edge1 == edge2) {
 			tp++;
-			tn++;
+			// tn++;
 		    } else {
 			fp++;
 			fn++;

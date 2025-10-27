@@ -209,8 +209,7 @@ Rcpp::List mgmPath(
     double logLambdaMax = std::log10(mgm.calcLambdaMax());
 
     logLambdaMax = std::min(logLambdaMax,
-    			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
-						      ((double) ds.getNumRows()))));
+    			    std::log10(10 * std::sqrt(std::log10(p) / ((double) n))));
 
     if (lambdas.isNotNull()) {
         _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 
@@ -310,6 +309,7 @@ Rcpp::List coxmgmPath(
     std::vector<double> l; // = {0.2, 0.2, 0.2};
 
     int n = ds.getNumRows();
+    int p = ds.getNumColumns();
 
     CoxMGM mgm(ds);
     mgm.setVerbose(v);
@@ -317,8 +317,7 @@ Rcpp::List coxmgmPath(
     double logLambdaMax = std::log10(mgm.calcLambdaMax());
 
     logLambdaMax = std::min(logLambdaMax,
-    			    std::log10(10 * std::sqrt(std::log10(ds.getNumColumns()) /
-    						      ((double) ds.getNumRows()))));
+    			    std::log10(10 * std::sqrt(std::log10(p) / ((double) n))));
 
     if (lambdas.isNotNull()) {
         _lambda = arma::vec(Rcpp::as<arma::vec>(lambdas)); 

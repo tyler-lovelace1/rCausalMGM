@@ -34,6 +34,8 @@ private:
 
     arma::uvec rows;
 
+    int maxIter = 100;
+
 
 public:
     //============================CONSTRUCTORS==========================//

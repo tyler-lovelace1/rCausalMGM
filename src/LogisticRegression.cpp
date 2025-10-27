@@ -234,7 +234,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     double llP = 2e+10;
     double ll = 1e+10;
     double llN = 0.0;
-    double lam = 0.888;
+    // double lam = 0.888;
     double chiSq;
 
     // auto start = std::chrono::high_resolution_clock::now();

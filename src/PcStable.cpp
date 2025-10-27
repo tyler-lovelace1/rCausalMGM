@@ -88,30 +88,30 @@ EdgeListGraph PcStable::search(FasStableProducerConsumer& fas, const std::vector
 
     // SepsetProducer sp;
     SepsetMap nullSepsets;
-    mapSp = SepsetProducer(graph, sepsets, independenceTest);
-    sp = SepsetProducer(graph, independenceTest, nullSepsets, threads);
+    mapSp.emplace(graph, sepsets, independenceTest);
+    sp.emplace(graph, independenceTest, nullSepsets, threads);
     
     if (orientRule == ORIENT_SEPSETS) {
 	
-	mapSp.setOrientRule(orientRule);
-	mapSp.setDepth(depth);
-	mapSp.setVerbose(verbose);
-	mapSp.setKnowledge(knowledge);
+	mapSp->setOrientRule(orientRule);
+	mapSp->setDepth(depth);
+	mapSp->setVerbose(verbose);
+	mapSp->setKnowledge(knowledge);
 
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
 
-	mapSp.fillMap();
+	mapSp->fillMap();
 	
     } else {
 	
-	sp.setOrientRule(orientRule);
-	sp.setDepth(depth);
-	sp.setVerbose(verbose);
-	sp.setKnowledge(knowledge);
+	sp->setOrientRule(orientRule);
+	sp->setDepth(depth);
+	sp->setVerbose(verbose);
+	sp->setKnowledge(knowledge);
 
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
 
-	sp.fillMap();
+	sp->fillMap();
     
     }
 
@@ -126,16 +126,16 @@ EdgeListGraph PcStable::search(FasStableProducerConsumer& fas, const std::vector
     std::vector<Triple> orderedColliders;
 
     if (orientRule == ORIENT_SEPSETS) {    
-	orderedColliders = mapSp.getOrderedColliders();
+	orderedColliders = mapSp->getOrderedColliders();
     } else {
-	orderedColliders = sp.getOrderedColliders();
+	orderedColliders = sp->getOrderedColliders();
     }
 
     SearchGraphUtils::orientCollidersUsingOrderedColliders(orderedColliders, graph,
 							   knowledge, verbose);
 
     if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
-	for (auto t : sp.getAmbiguousTriples())
+	for (auto t : sp->getAmbiguousTriples())
 	    graph.addAmbiguousTriple(t.x, t.y, t.z);
     }
 
@@ -223,25 +223,25 @@ EdgeListGraph PcStable::reorientWithRule(OrientRule rule) {
     
     if (orientRule == ORIENT_SEPSETS) {
 	
-	mapSp.setOrientRule(orientRule);
-	mapSp.setDepth(depth);
-	mapSp.setVerbose(verbose);
-	mapSp.setKnowledge(knowledge);
+	mapSp->setOrientRule(orientRule);
+	mapSp->setDepth(depth);
+	mapSp->setVerbose(verbose);
+	mapSp->setKnowledge(knowledge);
 
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
 
-	mapSp.fillMap();
+	mapSp->fillMap();
 	
     } else {
 	
-	sp.setOrientRule(orientRule);
-	sp.setDepth(depth);
-	sp.setVerbose(verbose);
-	sp.setKnowledge(knowledge);
+	sp->setOrientRule(orientRule);
+	sp->setDepth(depth);
+	sp->setVerbose(verbose);
+	sp->setKnowledge(knowledge);
 
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
 
-	sp.fillMap();
+	sp->fillMap();
     
     }
     
@@ -256,16 +256,16 @@ EdgeListGraph PcStable::reorientWithRule(OrientRule rule) {
     std::vector<Triple> orderedColliders;
 
     if (orientRule == ORIENT_SEPSETS) {
-	orderedColliders = mapSp.getOrderedColliders();
+	orderedColliders = mapSp->getOrderedColliders();
     } else {
-	orderedColliders = sp.getOrderedColliders();
+	orderedColliders = sp->getOrderedColliders();
     }
 
     SearchGraphUtils::orientCollidersUsingOrderedColliders(orderedColliders, graph,
 							   knowledge, verbose);
     
     if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
-	for (auto t : sp.getAmbiguousTriples())
+	for (auto t : sp->getAmbiguousTriples())
 	    graph.addAmbiguousTriple(t.x, t.y, t.z);
     }
 

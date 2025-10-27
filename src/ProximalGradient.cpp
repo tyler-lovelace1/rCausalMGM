@@ -41,7 +41,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
     double obj;
 
     while(true) {
-        auto lastStart = std::chrono::high_resolution_clock::now();
+        // auto lastStart = std::chrono::high_resolution_clock::now();
         Lold = L;
         L = L*alpha;
         thetaOld = theta;
@@ -182,12 +182,12 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 
     int iterCount = 0;
     int noEdgeChangeCount = 0;
-    int increaseObjCount = 0;
+    // int increaseObjCount = 0;
 
     double theta = std::numeric_limits<double>::infinity();
     double thetaOld = theta;
     double L = 1.0;
-    double Lcur = L;
+    // double Lcur = L;
     double Lold = L;
     double LocalL;
 
@@ -195,8 +195,8 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
     double dx;
     double Fx = std::numeric_limits<double>::infinity();
     double Gx = std::numeric_limits<double>::infinity();
-    double Gxold;
-    double Fxold;
+    // double Gxold;
+    // double Fxold;
     double Fy;
     double obj;
     // double minObj = std::numeric_limits<double>::infinity();
@@ -206,8 +206,8 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
         Lold = L;
         L = L*alpha;
         thetaOld = theta;
-	Gxold = Gx;
-	Fxold = Fx;
+	// Gxold = Gx;
+	// Fxold = Fx;
 	cp->iterUpdate(Xold);
         Xold = arma::vec(X);
 	obj = Fx + Gx;
@@ -228,7 +228,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
             // MGMParams tempParams(temp, 5, 20);
             // Rcpp::Rcout << "tempParams: \n" << tempParams << std::endl;
 
-	    Lcur = L;
+	    // Lcur = L;
 
             Gx = cp->nonSmooth(1.0 / L, temp, X);
             if (backtrackSwitch) {

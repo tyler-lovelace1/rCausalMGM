@@ -60,9 +60,9 @@ public:
 
     // std::vector<DataSet*> getDataSets() { return { NULL }; }
 
-    friend double DGScoreTest(const Rcpp::DataFrame& df,
-			      std::string targetName,
-			      std::vector<std::string>& regressorNames);
+    // friend double DGScoreTest(const Rcpp::DataFrame& df,
+    // 			      std::string targetName,
+    // 			      std::vector<std::string>& regressorNames);
 
     
 };

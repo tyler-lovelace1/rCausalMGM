@@ -83,11 +83,11 @@ public:
     MGM(DataSet ds);
     MGM(DataSet ds, std::vector<double> lambda);
 
-    // MGM(const MGM& other) = default;
-    // MGM& operator=(const MGM& other) = default;
-    // MGM(const MGM&& other) = default;
-    // MGM& operator=(const MGM&& other) = default;
-    // ~MGM() = default;
+    MGM(const MGM& other) = default;
+    MGM& operator=(const MGM& other) = default;
+    MGM(const MGM&& other) = default;
+    MGM& operator=(const MGM&& other) = default;
+    ~MGM() = default;
 
     std::string printParameters(arma::vec& X);
 

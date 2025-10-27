@@ -873,7 +873,7 @@ Node IndTestMultiCox::getVariable(std::string name)
 {
     for (int i = 0; i < getVariables().size(); i++)
     {
-        const Node& var = getVariables().at(i);
+        Node var = getVariables().at(i);
         if (var.getName() == name)
         {
             return var;

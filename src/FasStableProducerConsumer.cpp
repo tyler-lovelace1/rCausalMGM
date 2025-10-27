@@ -282,14 +282,14 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	    harmonicSum = 1;
 	}
 	
-	double maxFdrpval = 0;
+	// double maxFdrpval = 0;
 	int firstRejectIdx = -1;
 	for (int i = 0; i < edgeVec.size(); i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
 	    double fdrpval = harmonicSum * numEdges / ((double) edgeVec.size()-i) * pval;
-	    double alphaStar = ((double) edgeVec.size()-i) /
-		(((double) numEdges) * harmonicSum) * test->getAlpha();
+	    // double alphaStar = ((double) edgeVec.size()-i) /
+	    // 	(((double) numEdges) * harmonicSum) * test->getAlpha();
 	    
 	    // if (initialGraph != NULL) {
 	    // 	fdrpval *= harmonicSum;
@@ -324,7 +324,7 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	if (firstRejectIdx < 0)
 	    firstRejectIdx = edgeVec.size();
 
-	double minFdrpval = 1.0;
+	// double minFdrpval = 1.0;
 	for (int i = 0; i < firstRejectIdx; i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
@@ -661,14 +661,14 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
 	    harmonicSum = 1;
 	}
 	
-	double maxFdrpval = 0;
+	// double maxFdrpval = 0;
 	int firstRejectIdx = -1;
 	for (int i = 0; i < edgeVec.size(); i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
 	    double fdrpval = numEdges * harmonicSum / ((double) edgeVec.size()-i) * pval;
-	    double alphaStar = ((double) edgeVec.size()-i) /
-		((double) numEdges * harmonicSum) * test->getAlpha();
+	    // double alphaStar = ((double) edgeVec.size()-i) /
+	    // 	((double) numEdges * harmonicSum) * test->getAlpha();
 	    
 	    // Rcpp::Rcout << "  Edge: " << edgePair.first << " --- "
 	    // 		<< edgePair.second << "\n    p = " << pval
@@ -698,7 +698,7 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
 	if (firstRejectIdx < 0)
 	    firstRejectIdx = edgeVec.size();
 	
-	double minFdrpval = 1.0;
+	// double minFdrpval = 1.0;
 	for (int i = 0; i < firstRejectIdx; i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];

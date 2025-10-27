@@ -76,7 +76,7 @@ std::list<Node> Grasp::initializeBOSS() {
     updateParallel(tau);
 
     double oldBic = 1e20;
-    double oldScore = nodeList.size() * nodeList.size();
+    // double oldScore = nodeList.size() * nodeList.size();
     double bic = tau.bic;
     double score = tau.score;
 
@@ -88,7 +88,7 @@ std::list<Node> Grasp::initializeBOSS() {
 
     while (oldBic - bic > 1e-6) {
 	oldBic = bic;
-	oldScore = score;
+	// oldScore = score;
 	nodeList = std::list<Node>(tau.order.begin(), tau.order.end());
 	for (Node n : nodeList) {
 	    // if (verbose) Rcpp::Rcout << "\n      Node " << n << "...";
@@ -1226,15 +1226,15 @@ double Grasp::updateParallel(OrderGraph& tau) {
 bool Grasp::graspDFS(int tier) {
     OrderGraph tau = pi;
     OrderGraph oldTau;
-    double oldScore = tau.score;
-    double oldBic = tau.bic;
+    // double oldScore = tau.score;
+    // double oldBic = tau.bic;
     int curDepth = 0;
-    double bicThresh = std::log(10.0); // Bayes Factor K = sqrt(10),
-				           // substantially worse
-				           // prune models that are
-				           // not substantively the
-				           // same as the current best
-				           // model
+    // double bicThresh = std::log(10.0); // Bayes Factor K = sqrt(10),
+    // 				           // substantially worse
+    // 				           // prune models that are
+    // 				           // not substantively the
+    // 				           // same as the current best
+    // 				           // model
     // std::set<std::list<Node>> visited = {};
     // std::set<EdgeListGraph> visitedDAGs = {};
     std::set<std::set<NodePair>> visitedTuckSets = {};
@@ -1573,7 +1573,7 @@ EdgeListGraph Grasp::search() {
     // pi = OrderGraph(nodes);
     // score = update(pi);
 
-    double bicThresh = std::log(10.0);
+    // double bicThresh = std::log(10.0);
 
     OrderGraph bestOrder;
 

@@ -169,89 +169,86 @@ std::vector<std::string> DegenerateGaussianScore::getVariableNames()
     return variableNames;
 }
 
-Node DegenerateGaussianScore::getVariable(std::string name)
-{
-    for (int i = 0; i < getVariables().size(); i++)
-	{
-	    const Node& var = getVariables().at(i);
-	    if (var.getName() == name)
-		{
-		    return var;
-		}
+Node DegenerateGaussianScore::getVariable(std::string name) {
+    for (int i = 0; i < getVariables().size(); i++) {
+	Node var = getVariables().at(i);
+	if (var.getName() == name) {
+	    return var;
 	}
+    }
     Node emptyVar;
     return emptyVar;
 }
 
-// no export // [[Rcpp::export]]
-double DGScoreTest(const Rcpp::DataFrame& df,
-		   std::string targetName,
-		   std::vector<std::string>& regressorNames,
-		   double penalty=1.0) {
-    DataSet data = DataSet(df);
-    data.dropMissing();
+// // no export // [[Rcpp::export]]
+// double DGScoreTest(const Rcpp::DataFrame& df,
+// 		   std::string targetName,
+// 		   std::vector<std::string>& regressorNames,
+// 		   double penalty=1.0) {
+//     DataSet data = DataSet(df);
+//     data.dropMissing();
     
-    Rcpp::Rcout << "-----START----- \n";
-    Node target = data.getVariable(targetName);
-    std::vector<Node> inputRegressors;
-    for (std::string varName : regressorNames) {
-	inputRegressors.push_back(data.getVariable(varName));
-    }
+//     Rcpp::Rcout << "-----START----- \n";
+//     Node target = data.getVariable(targetName);
+//     std::vector<Node> inputRegressors;
+//     for (std::string varName : regressorNames) {
+// 	inputRegressors.push_back(data.getVariable(varName));
+//     }
 
-    DegenerateGaussianScore dgScore(data, penalty);
-    double score = dgScore.localScore(target, inputRegressors);
-    Rcpp::Rcout << "DG Score = " << score << std::endl;
-    Rcpp::Rcout << "-----END----- \n";
+//     DegenerateGaussianScore dgScore(data, penalty);
+//     double score = dgScore.localScore(target, inputRegressors);
+//     Rcpp::Rcout << "DG Score = " << score << std::endl;
+//     Rcpp::Rcout << "-----END----- \n";
 
-    return score;
-}
+//     return score;
+// }
 
 
-// no export // [[Rcpp::export]]
-void DGScoreTest2(const Rcpp::DataFrame& df) {
-    DataSet data = DataSet(df);
-    data.dropMissing();
+// // no export // [[Rcpp::export]]
+// void DGScoreTest2(const Rcpp::DataFrame& df) {
+//     DataSet data = DataSet(df);
+//     data.dropMissing();
 
-    auto startTime = std::chrono::high_resolution_clock::now();
+//     auto startTime = std::chrono::high_resolution_clock::now();
 
-    long elapsedTime;
+//     long elapsedTime;
     
-    DegenerateGaussianScore dgScore(data, 1.0);
-    double score;
+//     DegenerateGaussianScore dgScore(data, 1.0);
+//     double score;
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+//     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Covariance Matrix elapsed time: " << elapsedTime / 1000.0 << " s\n";
+//     Rcpp::Rcout << "Covariance Matrix elapsed time: " << elapsedTime / 1000.0 << " s\n";
     
-    Rcpp::Rcout << "-----START----- \n";
-    int m = data.getNumColumns();
+//     Rcpp::Rcout << "-----START----- \n";
+//     int m = data.getNumColumns();
 
-    for (int i = 0; i < 1000000; i++) {
-	int targetIdx = std::floor(m * R::runif(0,1));
-	Node target = data.getVariable(targetIdx);
-	std::set<Node> regressors;
-	for (int ii = 0; ii < 5; ii++) {
-	    int regrIdx = std::floor(m * R::runif(0,1));
-	    if (regrIdx != targetIdx) {
-		regressors.insert(data.getVariable(regrIdx));
-	    }
-	}
-	std::vector<Node> z(regressors.begin(), regressors.end());
+//     for (int i = 0; i < 1000000; i++) {
+// 	int targetIdx = std::floor(m * R::runif(0,1));
+// 	Node target = data.getVariable(targetIdx);
+// 	std::set<Node> regressors;
+// 	for (int ii = 0; ii < 5; ii++) {
+// 	    int regrIdx = std::floor(m * R::runif(0,1));
+// 	    if (regrIdx != targetIdx) {
+// 		regressors.insert(data.getVariable(regrIdx));
+// 	    }
+// 	}
+// 	std::vector<Node> z(regressors.begin(), regressors.end());
 
-	// Rcpp::Rcout << target << " | ";
-	// for (const Node& zVar : z) {
-	//     Rcpp::Rcout << zVar << " ";
-	// }
+// 	// Rcpp::Rcout << target << " | ";
+// 	// for (const Node& zVar : z) {
+// 	//     Rcpp::Rcout << zVar << " ";
+// 	// }
 	
-	score = dgScore.localScore(target, z);
+// 	score = dgScore.localScore(target, z);
 	
-	// Rcpp::Rcout << ": " << score << "\n";
-    }
+// 	// Rcpp::Rcout << ": " << score << "\n";
+//     }
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+//     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Total elapsed time: " << elapsedTime / 1000.0 << " s\n";
-    Rcpp::Rcout << "Average time per score: " << elapsedTime / 1000000.0 << " ms\n";
+//     Rcpp::Rcout << "Total elapsed time: " << elapsedTime / 1000.0 << " s\n";
+//     Rcpp::Rcout << "Average time per score: " << elapsedTime / 1000000.0 << " ms\n";
     
-    Rcpp::Rcout << "-----END----- \n";
-}
+//     Rcpp::Rcout << "-----END----- \n";
+// }

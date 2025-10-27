@@ -82,7 +82,7 @@ SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int
         variablesPerNode.insert(std::pair<Node, std::vector<Node>>(var, vars));
     }
 
-    int N = data.getNumRows();
+    // int N = data.getNumRows();
 
     this->foldid = foldid;
     this->nfolds = foldid.max();
@@ -595,24 +595,24 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
     }
 
     CvResult minResult(1e20, 1e20, 0);
-    uint minIdx = 0, idx = 0;
+    // uint minIdx = 0, idx = 0;
     for (CvResult res : results) {
 	// Rcpp::Rcout << "  MB Size:  " << res.mbSize << "    Mean:  " << res.mean << "    SE:  " << res.se << "    Alpha:  " << res.alpha << "    Orient Rule:  " << orientStrings.at((int) res.rule) << std::endl;
 	if (res.mean < minResult.mean) {
-	    minIdx = idx;
+	    // minIdx = idx;
 	    minResult = res;
 	}
-	idx++;
+	// idx++;
     }
 
     CvResult seResult(1e20, 1e20, 0);
-    uint seIdx = 0;
+    // uint seIdx = 0;
     for (CvResult res : results) {
 	if (res.mean < minResult.mean + minResult.se) {
 	    seResult = res;
 	    break;
 	}
-	seIdx++;
+	// seIdx++;
     }
 
     // idx = 0;
@@ -874,23 +874,23 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
     }
 
     CvResult minResult(1e20, 1e20, 0);
-    uint minIdx = 0, idx = 0;
+    // uint minIdx = 0, idx = 0;
     for (CvResult res : results) {
 	if (res.mean < minResult.mean) {
-	    minIdx = idx;
+	    // minIdx = idx;
 	    minResult = res;
 	}
-	idx++;
+	// idx++;
     }
 
     CvResult seResult(1e20, 1e20, 0);
-    uint seIdx = 0;
+    // uint seIdx = 0;
     for (CvResult res : results) {
 	if (res.mean < minResult.mean + minResult.se) {
 	    seResult = res;
 	    break;
 	}
-	seIdx++;
+	// seIdx++;
     }
 
     // Rcpp::Rcout << std::endl;
@@ -1127,7 +1127,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	if (verbose) RcppThread::Rcout << std::endl;
     }
 
-    int count = 0;
+    // int count = 0;
     for (int tIdx = 0; tIdx < trials; tIdx++) {
 	if (censFlag) {
 	    lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
@@ -1135,7 +1135,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	    lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
 	}
 	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
-	    count++;
+	    // count++;
 	    results.insert(CvResult(arma::mean(loglik[orIdx][tIdx]),
 				    arma::stddev(loglik[orIdx][tIdx]),
 				    arma::mean(mbSize[orIdx][tIdx]),
@@ -1146,23 +1146,23 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
     }
 
     CvResult minResult(1e20, 1e20, 0);
-    uint minIdx = 0, idx = 0;
+    // uint minIdx = 0, idx = 0;
     for (CvResult res : results) {
 	if (res.mean < minResult.mean) {
-	    minIdx = idx;
+	    // minIdx = idx;
 	    minResult = res;
 	}
-	idx++;
+	// idx++;
     }
 
     CvResult seResult(1e20, 1e20, 0);
-    uint seIdx = 0;
+    // uint seIdx = 0;
     for (CvResult res : results) {
 	if (res.mean < minResult.mean + minResult.se) {
 	    seResult = res;
 	    break;
 	}
-	seIdx++;
+	// seIdx++;
     }
 
     // Rcpp::Rcout << std::endl;

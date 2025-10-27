@@ -13,13 +13,13 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
     if (lambda.size() != 3)
         throw std::invalid_argument("Lambda should have three values for cc, cd, and dd edges respectively");
 
-    bool mixed = true;
+    // bool mixed = true;
 
     Node dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
 	this->dummyVar = dummyVar;
-	mixed = false;
+	// mixed = false;
 	qDummy = 1;
     }
 
@@ -27,7 +27,7 @@ MGM::MGM(arma::mat& x, arma::mat& y, std::vector<Node>& variables, std::vector<i
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
 	this->dummyVar = dummyVar;
-	mixed = false;
+	// mixed = false;
 	pDummy = 1;
     }
     
@@ -60,13 +60,13 @@ MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<
     if (lambda.size() != 3)
         throw std::invalid_argument("Lambda should have three values for cc, cd, and dd edges respectively");
 
-    bool mixed = true;
+    // bool mixed = true;
 
     Node dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
 	this->dummyVar = dummyVar;
-	mixed = false;
+	// mixed = false;
 	qDummy = 1;
     }
 
@@ -74,7 +74,7 @@ MGM::MGM(arma::mat&& x, arma::mat&& y, std::vector<Node> variables, std::vector<
 
     if (std::find(variables.begin(), variables.end(), dummyVar) != variables.end()) {
 	this->dummyVar = dummyVar;
-	mixed = false;
+	// mixed = false;
 	pDummy = 1;
     }
     
@@ -103,7 +103,7 @@ MGM::MGM(DataSet ds) {
    //  std::vector<double> lambda = { lamValue, lamValue, lamValue };
    // MGM(ds, lambda);
     
-    bool mixed = true;
+    // bool mixed = true;
 
     if (ds.isContinuous()) {
     	this->dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
@@ -112,7 +112,7 @@ MGM::MGM(DataSet ds) {
     	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
     	    ds.set(i, j, std::floor(R::runif(0,2)));
     	}
-    	mixed = false;
+    	// mixed = false;
     	qDummy = 1;
     }
 
@@ -123,7 +123,7 @@ MGM::MGM(DataSet ds) {
     	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
     	    ds.set(i, j, std::floor(R::rnorm(0,1)));
     	}
-    	mixed = false;
+    	// mixed = false;
     	pDummy = 1;
     }
     
@@ -170,7 +170,7 @@ MGM::MGM(DataSet ds) {
 
 MGM::MGM(DataSet ds, std::vector<double> lambda) {
 
-    bool mixed = true;
+    // bool mixed = true;
 
     if (ds.isContinuous()) {
 	this->dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
@@ -179,7 +179,7 @@ MGM::MGM(DataSet ds, std::vector<double> lambda) {
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::runif(0,2)));
 	}
-	mixed = false;
+	// mixed = false;
 	qDummy = 1;
     }
 
@@ -190,7 +190,7 @@ MGM::MGM(DataSet ds, std::vector<double> lambda) {
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::rnorm(0,1)));
 	}
-	mixed = false;
+	// mixed = false;
 	pDummy = 1;
     }
 

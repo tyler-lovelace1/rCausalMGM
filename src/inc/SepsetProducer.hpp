@@ -153,7 +153,7 @@ public:
 						  maxPCollider(other.maxPCollider),
 						  knowledge(other.knowledge) {}
     
-    SepsetProducer(SepsetProducer&& other) = default;
+    SepsetProducer(SepsetProducer&& other) = delete;
 
     // SepsetProducer& operator=(const SepsetProducer& other) = default;
 
@@ -175,7 +175,7 @@ public:
 	return *this;
     }
     
-    SepsetProducer& operator=(SepsetProducer&& other) = default;
+    SepsetProducer& operator=(SepsetProducer&& other) = delete;
 
     ~SepsetProducer() = default;
 

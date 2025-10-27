@@ -126,6 +126,9 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
 	// Rcpp::Rcout << "Iter:  " << iter << "    Loss:  " << new_l << "    |dx|/|x|:  "
 	// 	    << dbeta << "    |dll|:  " << std::abs(new_l - old_l)
 	// 	    << "\n    beta:  " << beta.t() << std::endl;
+	if (iter > maxIter) {
+	    break;
+	}
     }
 
     new_l = gradHess(beta, grad, hess, X, Y);
@@ -189,7 +192,7 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
     else
 	X = dataMat.submat(_rows, regressors_);
 
-    double old_l, new_l, a, m, t, c = 0.1;
+    double old_l, new_l;
     arma::vec beta(X.n_cols, arma::fill::zeros);
     arma::vec b = beta;
     arma::vec se = arma::vec(X.n_cols);
@@ -271,6 +274,9 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
 	// Rcpp::Rcout << "Iter:  " << iter << "    Loss:  " << new_l << "    |dx|/|x|:  "
 	// 	    << dbeta << "    |dll|:  " << std::abs(new_l - old_l)
 	// 	    << "\n    beta:  " << beta.t() << std::endl;
+	if (iter > maxIter) {
+	    break;
+	}
     }
 
     new_l = gradHess(beta, grad, hess, X, Y);
@@ -320,7 +326,7 @@ double CoxRegression::loss(arma::vec& beta, arma::mat& X, const Node& target) {
 	arma::uvec H = target.getH(strat);
 	arma::uvec censor = target.getCensor(strat);
 	
-	double HsumTheta, m, sub, d, phi;
+	double HsumTheta, m, sub;
 
 	int n = index.n_elem;
 

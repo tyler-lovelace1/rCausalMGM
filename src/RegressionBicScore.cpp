@@ -380,7 +380,7 @@ std::vector<std::string> RegressionBicScore::getVariableNames() {
 Node RegressionBicScore::getVariable(std::string name) {
     for (int i = 0; i < getVariables().size(); i++)
     {
-        const Node& var = getVariables().at(i);
+        Node var = getVariables().at(i);
         if (var.getName() == name)
         {
             return var;
@@ -390,74 +390,74 @@ Node RegressionBicScore::getVariable(std::string name) {
     return emptyVar;
 }
 
-// no export // [[Rcpp::export]]
-double RegrBicScoreTest(const Rcpp::DataFrame& df,
-		   std::string targetName,
-		   std::vector<std::string>& regressorNames) {
-    DataSet data = DataSet(df);
-    data.dropMissing();
+// // no export // [[Rcpp::export]]
+// double RegrBicScoreTest(const Rcpp::DataFrame& df,
+// 		   std::string targetName,
+// 		   std::vector<std::string>& regressorNames) {
+//     DataSet data = DataSet(df);
+//     data.dropMissing();
     
-    Rcpp::Rcout << "-----START----- \n";
-    Node target = data.getVariable(targetName);
-    std::vector<Node> inputRegressors;
-    for (std::string varName : regressorNames) {
-	inputRegressors.push_back(data.getVariable(varName));
-    }
+//     Rcpp::Rcout << "-----START----- \n";
+//     Node target = data.getVariable(targetName);
+//     std::vector<Node> inputRegressors;
+//     for (std::string varName : regressorNames) {
+// 	inputRegressors.push_back(data.getVariable(varName));
+//     }
 
-    RegressionBicScore regrBicScore(data, 1.0);
-    double score = regrBicScore.localScore(target, inputRegressors);
-    Rcpp::Rcout << "Regression BIC Score = " << score << std::endl;
-    Rcpp::Rcout << "-----END----- \n";
+//     RegressionBicScore regrBicScore(data, 1.0);
+//     double score = regrBicScore.localScore(target, inputRegressors);
+//     Rcpp::Rcout << "Regression BIC Score = " << score << std::endl;
+//     Rcpp::Rcout << "-----END----- \n";
 
-    return score;
-}
+//     return score;
+// }
 
 
-// no export // [[Rcpp::export]]
-void RegrBicScoreTest2(const Rcpp::DataFrame& df) {
-    DataSet data = DataSet(df);
-    data.dropMissing();
+// // no export // [[Rcpp::export]]
+// void RegrBicScoreTest2(const Rcpp::DataFrame& df) {
+//     DataSet data = DataSet(df);
+//     data.dropMissing();
 
-    auto startTime = std::chrono::high_resolution_clock::now();
+//     auto startTime = std::chrono::high_resolution_clock::now();
 
-    long elapsedTime;
+//     long elapsedTime;
     
-    RegressionBicScore regrBicScore(data, 1.0);
-    double score;
+//     RegressionBicScore regrBicScore(data, 1.0);
+//     double score;
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+//     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Initialize elapsed time: " << elapsedTime / 1000.0 << " s\n";
+//     Rcpp::Rcout << "Initialize elapsed time: " << elapsedTime / 1000.0 << " s\n";
     
-    Rcpp::Rcout << "-----START----- \n";
-    int m = data.getNumColumns();
+//     Rcpp::Rcout << "-----START----- \n";
+//     int m = data.getNumColumns();
 
-    for (int i = 0; i < 10000; i++) {
-	int targetIdx = std::floor(m * R::runif(0,1));
-	Node target = data.getVariable(targetIdx);
-	std::set<Node> regressors;
-	for (int ii = 0; ii < 5; ii++) {
-	    int regrIdx = std::floor(m * R::runif(0,1));
-	    if (regrIdx != targetIdx) {
-		regressors.insert(data.getVariable(regrIdx));
-	    }
-	}
-	std::vector<Node> z(regressors.begin(), regressors.end());
+//     for (int i = 0; i < 10000; i++) {
+// 	int targetIdx = std::floor(m * R::runif(0,1));
+// 	Node target = data.getVariable(targetIdx);
+// 	std::set<Node> regressors;
+// 	for (int ii = 0; ii < 5; ii++) {
+// 	    int regrIdx = std::floor(m * R::runif(0,1));
+// 	    if (regrIdx != targetIdx) {
+// 		regressors.insert(data.getVariable(regrIdx));
+// 	    }
+// 	}
+// 	std::vector<Node> z(regressors.begin(), regressors.end());
 
-	// Rcpp::Rcout << target << " | ";
-	// for (const Node& zVar : z) {
-	//     Rcpp::Rcout << zVar << " ";
-	// }
+// 	// Rcpp::Rcout << target << " | ";
+// 	// for (const Node& zVar : z) {
+// 	//     Rcpp::Rcout << zVar << " ";
+// 	// }
 	
-	score = regrBicScore.localScore(target, z);
+// 	score = regrBicScore.localScore(target, z);
 	
-	// Rcpp::Rcout << ": " << score << "\n";
-    }
+// 	// Rcpp::Rcout << ": " << score << "\n";
+//     }
 
-    elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+//     elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
 
-    Rcpp::Rcout << "Total elapsed time: " << elapsedTime / 1000.0 << " s\n";
-    Rcpp::Rcout << "Average time per score: " << elapsedTime / 10000.0 << " ms\n";
+//     Rcpp::Rcout << "Total elapsed time: " << elapsedTime / 1000.0 << " s\n";
+//     Rcpp::Rcout << "Average time per score: " << elapsedTime / 10000.0 << " ms\n";
     
-    Rcpp::Rcout << "-----END----- \n";
-}
+//     Rcpp::Rcout << "-----END----- \n";
+// }

@@ -42,7 +42,7 @@ Fci::Fci(IndependenceTest* test, std::vector<Node> searchVars) {
         }
     }
     for (const Node& var: remVars) {
-	auto it = std::remove(this->variables.begin(), this->variables.end(), var);
+        std::remove(this->variables.begin(), this->variables.end(), var);
     }
 }
 
@@ -85,19 +85,19 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
 	if (verbose) Rcpp::Rcout << "  Starting Posssible DSep search" << std::endl;
 
 	FciOrient fciorient_;
-	posDsp = SepsetProducer(graph, test, nullSepsets, threads);
+	posDsp.emplace(graph, test, nullSepsets, threads);
 
 	if (verbose) Rcpp::Rcout << "    Starting Conservative Orientations..." << std::endl;
     
-	posDsp.setOrientRule(ORIENT_CONSERVATIVE);
-	posDsp.setDepth(depth);
-	posDsp.setVerbose(verbose);
-	posDsp.setKnowledge(knowledge);
+	posDsp->setOrientRule(ORIENT_CONSERVATIVE);
+	posDsp->setDepth(depth);
+	posDsp->setVerbose(verbose);
+	posDsp->setKnowledge(knowledge);
 	if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
 	
-	posDsp.fillMap();
+	posDsp->fillMap();
 	
-	fciorient_ = FciOrient(posDsp, whyOrient);
+	fciorient_ = FciOrient(*posDsp, whyOrient);
 	
 	fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
 	fciorient_.setMaxPathLength(maxPathLength);
@@ -137,32 +137,32 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
     if (verbose) Rcpp::Rcout << "  Starting Final Orientations..." << std::endl;
 
     FciOrient fciorient_;
-    mapSp = SepsetProducer(graph, sepsets, test);
-    sp = SepsetProducer(graph, test, sepsets, threads);
+    mapSp.emplace(graph, sepsets, test);
+    sp.emplace(graph, test, sepsets, threads);
     
     if (orientRule == ORIENT_SEPSETS) {
 
-	mapSp.setOrientRule(orientRule);
-	mapSp.setDepth(depth);
-	mapSp.setVerbose(verbose);
-	mapSp.setKnowledge(knowledge);
+	mapSp->setOrientRule(orientRule);
+	mapSp->setDepth(depth);
+	mapSp->setVerbose(verbose);
+	mapSp->setKnowledge(knowledge);
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
-	mapSp.fillMap();
+	mapSp->fillMap();
 
-	fciorient_ = FciOrient(mapSp, whyOrient);
+	fciorient_ = FciOrient(*mapSp, whyOrient);
       
     } else {
 
-	sp.setOrientRule(orientRule);
-	sp.setDepth(depth);
-	sp.setVerbose(verbose);
-	sp.setKnowledge(knowledge);
+	sp->setOrientRule(orientRule);
+	sp->setDepth(depth);
+	sp->setVerbose(verbose);
+	sp->setKnowledge(knowledge);
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
-	sp.fillMap();
+	sp->fillMap();
 
-	fciorient_ = FciOrient(sp, whyOrient);
+	fciorient_ = FciOrient(*sp, whyOrient);
     }
 
     fciorient_.setCompleteRuleSetUsed(completeRuleSetUsed);
@@ -174,7 +174,7 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
     fciorient_.ruleR0(graph);
 
     if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
-	for (auto t : sp.getAmbiguousTriples())
+	for (auto t : sp->getAmbiguousTriples())
 	    graph.addAmbiguousTriple(t.x, t.y, t.z);
     }
 
@@ -387,26 +387,26 @@ EdgeListGraph Fci::reorientWithRule(OrientRule rule) {
     FciOrient fciorient_;
     
     if (orientRule == ORIENT_SEPSETS) {
-	mapSp.setOrientRule(orientRule);
-	mapSp.setDepth(depth);
-	mapSp.setVerbose(verbose);
-	mapSp.setKnowledge(knowledge);
+	mapSp->setOrientRule(orientRule);
+	mapSp->setDepth(depth);
+	mapSp->setVerbose(verbose);
+	mapSp->setKnowledge(knowledge);
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
-	mapSp.fillMap();
+	mapSp->fillMap();
 
-	fciorient_ = FciOrient(mapSp, whyOrient);
+	fciorient_ = FciOrient(*mapSp, whyOrient);
       
     } else {
-	sp.setOrientRule(orientRule);
-	sp.setDepth(depth);
-	sp.setVerbose(verbose);
-	sp.setKnowledge(knowledge);
+	sp->setOrientRule(orientRule);
+	sp->setDepth(depth);
+	sp->setVerbose(verbose);
+	sp->setKnowledge(knowledge);
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
-	sp.fillMap();
+	sp->fillMap();
 
-	fciorient_ = FciOrient(sp, whyOrient);
+	fciorient_ = FciOrient(*sp, whyOrient);
     }
     
     // sp.setOrientRule(orientRule);
@@ -424,7 +424,7 @@ EdgeListGraph Fci::reorientWithRule(OrientRule rule) {
     fciorient_.ruleR0(graph);
 
     if (orientRule == ORIENT_MAJORITY || orientRule == ORIENT_CONSERVATIVE) {
-	for (auto t : sp.getAmbiguousTriples())
+	for (auto t : sp->getAmbiguousTriples())
 	    graph.addAmbiguousTriple(t.x, t.y, t.z);
     }
     

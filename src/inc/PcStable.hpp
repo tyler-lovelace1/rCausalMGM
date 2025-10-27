@@ -46,7 +46,7 @@ private:
      */
     EdgeListGraph *initialGraph = NULL;
 
-    SepsetProducer sp, mapSp;
+    std::optional<SepsetProducer> sp, mapSp;
 
     /** 
      * Orientation rule for identifying colliders
