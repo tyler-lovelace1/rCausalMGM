@@ -62,7 +62,7 @@ EdgeListGraph Bootstrap::runBootstrap() {
     bool mgmInit = alg.find("mgm") != std::string::npos;
     bool censFlag = d.isCensored();
 
-    for (arma::uword i = 0; i < B; i++) {
+    for (arma::uword i = 0; i < (uint) B; i++) {
 
 	if (verbose) Rcpp::Rcout << "\r    Running bootstrap " << i+1 << "...";
 
@@ -147,7 +147,14 @@ EdgeListGraph Bootstrap::runBootstrap() {
 
     if (verbose) Rcpp::Rcout << std::endl << "  Finished" << std::endl;
 
-    auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-startTime).count();
+    double elapsedTime = std::chrono::duration<double>(std::chrono::high_resolution_clock::now() - startTime).count();
+
+    if (verbose) {
+	double factor = (elapsedTime < 10) ? std::pow(10, 2 - std::ceil(std::log10(std::abs(elapsedTime)))) : 1.0;
+	elapsedTime = std::round(elapsedTime * factor) / factor;
+        Rcpp::Rcout << "  Bootstrap Elapsed Time =  " << elapsedTime << " s" << std::endl;
+    }
+
 
     std::string fullAlg = graphVec.at(0).getAlgorithm() + " Bootstrap Ensemble";
 

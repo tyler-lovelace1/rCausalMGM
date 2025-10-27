@@ -5,7 +5,7 @@ CoxMGM::CoxMGM(DataSet ds, std::vector<int> l, std::vector<double> lambda) {
 
     this->origData = ds;
     
-    bool mixed = true;
+    // bool mixed = true;
 
     if (!ds.isCensored()) {
 	throw std::runtime_error("Cannot run CoxMGM: The dataset does not contain censored variables.");
@@ -15,10 +15,10 @@ CoxMGM::CoxMGM(DataSet ds, std::vector<int> l, std::vector<double> lambda) {
 	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	for (int i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::runif(0,2)));
 	}
-	mixed = false;
+	// mixed = false;
 	qDummy = 1;
     }
 
@@ -26,10 +26,10 @@ CoxMGM::CoxMGM(DataSet ds, std::vector<int> l, std::vector<double> lambda) {
 	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	for (int i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::rnorm(0,1)));
 	}
-	mixed = false;
+	// mixed = false;
 	pDummy = 1;
     }
     
@@ -119,7 +119,7 @@ CoxMGM::CoxMGM(DataSet& ds) {
 
     this->origData = ds;
 
-    bool mixed = true;
+    // bool mixed = true;
 
     if (!ds.isCensored()) {
 	throw std::runtime_error("Cannot run CoxMGM: The dataset does not contain censored variables.");
@@ -132,7 +132,7 @@ CoxMGM::CoxMGM(DataSet& ds) {
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::runif(0,2)));
 	}
-	mixed = false;
+	// mixed = false;
 	qDummy = 1;
     }
 
@@ -143,7 +143,7 @@ CoxMGM::CoxMGM(DataSet& ds) {
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::rnorm(0,1)));
 	}
-	mixed = false;
+	// mixed = false;
 	pDummy = 1;
     }
     
@@ -223,7 +223,7 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
 
     this->origData = ds;
 
-    bool mixed = true;
+    // bool mixed = true;
 
     if (!ds.isCensored()) {
 	throw std::runtime_error("Cannot run CoxMGM: The dataset does not contain censored variables.");
@@ -236,7 +236,7 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::runif(0,2)));
 	}
-	mixed = false;
+	// mixed = false;
 	qDummy = 1;
     }
 
@@ -247,7 +247,7 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
 	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::rnorm(0,1)));
 	}
-	mixed = false;
+	// mixed = false;
 	pDummy = 1;
     }
     

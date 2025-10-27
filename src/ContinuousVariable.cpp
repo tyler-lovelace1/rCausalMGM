@@ -2,7 +2,7 @@
 
 bool ContinuousVariable::checkValue(const std::string& val) {
     try {
-	double value = stod(val);
+	stod(val);
     } catch (std::exception& e) {
 	return false;
     }

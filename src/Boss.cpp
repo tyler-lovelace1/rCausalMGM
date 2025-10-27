@@ -62,7 +62,7 @@ std::list<Node> Boss::initializeRandom() {
 }
 
 
-Boss::Boss(Score *scorer, int threads) : taskQueue(MAX_QUEUE_SIZE) {
+Boss::Boss(Score *scorer, int threads) : deleteTaskQueue(MAX_QUEUE_SIZE), taskQueue(MAX_QUEUE_SIZE) {
 
     if (threads > 0) parallelism = threads;
     else {
@@ -143,12 +143,28 @@ double Boss::update(OrderGraph& tau) {
     return score;
 }
 
+void Boss::parallelTaskConsumer() {
+    while (true) {
+	ParallelTask t = taskQueue.pop();
+
+	if (t.is_poison())
+	    break;
+
+	if (RcppThread::isInterrupted())
+	    break;	
+
+	t();
+    }
+}
+
 double Boss::updateParallel(OrderGraph& tau) {
 
     double score = tau.score;
     double bic = tau.bic;
 
-    RcppThread::ThreadPool pool(parallelism);
+    std::vector<RcppThread::Thread> threads;
+
+    // RcppThread::ThreadPool pool(parallelism);
 
     auto updateTask = [&] (std::list<Node>::iterator it) {
 			  {
@@ -197,12 +213,37 @@ double Boss::updateParallel(OrderGraph& tau) {
 			  }
 			  
 		      };
+
+    auto producer = [&] () {
+	for (auto it = tau.start; it != tau.stop; it++) {
+	    // auto jt = std::list<Node>::iterator(it);
+	    taskQueue.push(ParallelTask(updateTask, it));
+	    // RcppThread::checkUserInterrupt();
+	    if (RcppThread::isInterrupted()) {
+		break;
+	    }
+	}
+	
+	for (int i = 0; i < parallelism; i++) {
+	    taskQueue.push(ParallelTask::poisonpill());
+	}
+    };
     
-    for (auto it = tau.start; it != tau.stop; it++) {
-	pool.push(updateTask, it);
+    // for (auto it = tau.start; it != tau.stop; it++) {
+    // 	pool.push(updateTask, it);
+    // }
+    
+    // pool.join();
+
+    threads.push_back(RcppThread::Thread(producer));
+
+    for (int i = 0; i < parallelism; i++) {
+	threads.push_back(RcppThread::Thread([this] { parallelTaskConsumer(); }));
     }
-    
-    pool.join();
+
+    for (uint i = 0; i < threads.size(); i++) {
+	threads[i].join();
+    }
 
     tau.score = score;
     tau.bic = bic;
@@ -320,6 +361,441 @@ double Boss::updateParallel(OrderGraph& tau) {
 //     return results.at(minIdx);
 // }
 
+// Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
+//     // OrderGraph oldTau = tau;
+
+//     auto oldIt = std::find(tau.order.begin(), tau.order.end(), n);
+
+//     // Rcpp::Rcout << "\n      Node n = " << *oldIt << "\n";
+
+//     RcppThread::ThreadPool pool(parallelism);
+
+//     std::vector<double> with(tau.order.size());
+//     std::vector<double> without(tau.order.size());
+//     std::vector<double> scores(tau.order.size());
+
+//     // auto scoreTaskWith = [&, this] (int i, Node node, std::vector<Node> prefix) {
+//     // 	double localBic = 1e20;
+//     // 	std::vector<Node> parents;
+
+//     // 	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+//     // 	RcppThread::checkUserInterrupt();
+
+//     // 	{
+//     // 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+//     // 	    parents = gstMap[node]->search(prefix, &localBic);
+//     // 	}
+	
+//     // 	with[i] = localBic;
+//     // };
+
+//     // auto scoreTaskWithout = [&, this] (int i, Node node, std::vector<Node> prefix) {
+//     // 	double localBic = 1e20;
+//     // 	std::vector<Node> parents;
+
+//     // 	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+//     // 	RcppThread::checkUserInterrupt();
+
+//     // 	{
+//     // 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+//     // 	    parents = gstMap[node]->search(prefix, &localBic);
+//     // 	}
+	
+//     // 	without[i] = localBic;
+//     // };
+
+//     // auto scoreTaskScores = [&, this] (int i, Node node, std::vector<Node> prefix) {
+//     // 	double localBic = 1e20;
+//     // 	std::vector<Node> parents;
+
+//     // 	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+//     // 	RcppThread::checkUserInterrupt();
+
+//     // 	{
+//     // 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+//     // 	    parents = gstMap[node]->search(prefix, &localBic);
+//     // 	}
+	
+//     // 	scores[i] = localBic;
+//     // };
+    
+//     // Rcpp::Rcout << "    Scoring new orders...\n";
+
+//     // std::vector<std::future<double>> futureWith(tau.order.size());
+//     // std::vector<std::future<double>> futureWithout(tau.order.size());
+//     // std::vector<std::future<double>> futureScores(tau.order.size());
+    
+//     uint currIdx = 0;
+    
+//     std::vector<Node> orderVec;
+//     std::vector<Node> prefix = {};
+//     std::vector<std::vector<Node>> prefixVec;
+//     auto jt = tau.order.begin();
+
+//     for (uint i = 0; i < tau.order.size(); ++i) {
+// 	prefixVec.push_back(prefix);
+// 	orderVec.push_back(*jt);
+// 	prefix.push_back(*jt);
+// 	jt++;
+//     }
+
+//     auto scoreTaskFull = [&] (std::size_t i) {
+// 	std::vector<Node> prefix = prefixVec[i];
+// 	Node cur = orderVec[i];
+// 	// RcppThread::Rcout << i << std::endl;
+// 	// RcppThread::Rcout << cur << std::endl;
+// 	if (cur == n) {
+// 	    currIdx = i;
+// 	    return;
+// 	}
+
+// 	double localBic = 1e20;
+// 	std::vector<Node> parents = {};
+
+// 	{
+// 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[cur]);
+// 	    parents = gstMap[cur]->search(prefix, &localBic);
+// 	}
+	
+// 	without[i] = localBic;
+
+// 	localBic = 1e20;
+// 	parents = {};
+
+// 	{
+// 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[n]);
+// 	    parents = gstMap[n]->search(prefix, &localBic);
+// 	}
+	
+// 	scores[i] = localBic;
+
+// 	prefix.push_back(n);
+
+// 	localBic = 1e20;
+// 	parents = {};
+
+// 	{
+// 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[cur]);
+// 	    parents = gstMap[cur]->search(prefix, &localBic);
+// 	}
+	
+// 	with[i] = localBic;
+
+//     };
+
+//     pool.parallelFor(0, tau.order.size(), scoreTaskFull);
+
+//     // // futureScores[0] = pool.pushReturn(scoreTask, n, prefix);
+//     // Rcpp::Rcout << "Order: ";
+//     // for (uint i = 0; i < tau.order.size(); ++i) {
+
+//     // 	Node cur = *jt;
+
+//     // 	Rcpp::Rcout << cur << " ";
+	
+//     // 	if (cur == n) {
+//     // 	    currIdx = i;
+//     // 	    jt++;
+//     // 	    continue;
+//     // 	}
+	
+//     // 	pool.push(scoreTaskWithout, i, cur, prefix);
+//     // 	pool.push(scoreTaskScores, i, n, prefix);
+
+//     // 	prefix.push_back(n);
+//     //     pool.push(scoreTaskWith, i, cur, prefix);
+//     // 	prefix.pop_back();
+
+//     // 	prefix.push_back(cur);
+	
+//     // 	jt++;
+//     // }
+
+//     // Rcpp::Rcout << "\n";
+
+//     // for (int i = 0; i < tau.order.size(); ++i) {
+//     // 	if (i == currIdx) continue;
+//     // 	with[i] = futureWith[i].get();
+//     // 	without[i] = futureWithout[i].get();
+//     // 	scores[i] = futureScores[i].get();
+//     // }
+
+//     // pool.wait();
+//     pool.join();
+
+//     double runningScore = 0.0;
+    
+//     // Rcpp::Rcout << "  currIdx = " << currIdx << "\n";
+
+//     // Rcpp::Rcout << "Original Order: ";
+//     // for (Node n : tau.order) {
+//     // 	Rcpp::Rcout << n << " ";
+//     // }
+//     // Rcpp::Rcout << "\n";
+
+//     // Rcpp::Rcout << "With scores: ";
+//     for (int i = tau.order.size() - 1; i >= 0; i--) {
+// 	if (i == (int) currIdx) continue;
+// 	// Rcpp::Rcout << "(" << i << ", " << with[i] << ", ";
+// 	// Rcpp::Rcout << scores[i] << ") ";
+// 	scores[i] += runningScore;
+// 	runningScore += with[i];
+//     }
+//     // Rcpp::Rcout << "\n";
+
+//     // Rcpp::Rcout << "Without scores: ";
+    
+//     runningScore = 0.0;
+//     for (uint i = 0; i < tau.order.size(); i++) {
+// 	if (i == currIdx) continue;
+// 	// Rcpp::Rcout << without[i] << " ";
+// 	runningScore += without[i];
+// 	scores[i] += runningScore;
+//     }
+//     // Rcpp::Rcout << "\n";
+
+//     scores[currIdx] = tau.bic;
+
+//     // Rcpp::Rcout << "    Scoring of new orders complete\n";
+
+//     double minBic = tau.bic;
+//     uint minIdx = currIdx;
+    
+//     for (uint i = 0; i < tau.order.size(); ++i) {
+// 	if (scores[i] + 1e-6 < minBic) {
+// 	    minIdx = i;
+// 	    minBic = scores[i];
+// 	}
+//     }
+
+//     if (currIdx == minIdx) return tau;
+
+//     std::list<Node>::iterator newIt = std::next(tau.order.begin(), minIdx);
+
+//     // Rcpp::Rcout << "\n    Best Score = " << scores[minIdx] << "\n";
+//     // Rcpp::Rcout << "    Best Score Index = " << minIdx << "\n";
+//     // Rcpp::Rcout << "    Node at Index = " << *newIt << "\n";
+
+//     if (currIdx < minIdx) {
+// 	// Rcpp::Rcout << "currIdx < minIdx" << std::endl;
+// 	tau.start = tau.order.erase(oldIt);
+// 	newIt++;
+// 	tau.stop = tau.order.insert(newIt, n);
+// 	tau.stop++;
+//     } else {
+// 	// Rcpp::Rcout << "currIdx >= minIdx" << std::endl;
+// 	tau.stop = tau.order.erase(oldIt);
+// 	tau.start = tau.order.insert(newIt, n);
+//     }
+
+//     // Rcpp::Rcout << "New Order: ";
+//     // for (Node n : tau.order) {
+//     // 	Rcpp::Rcout << n << " ";
+//     // }
+
+//     // Rcpp::Rcout << "\nstart = " << *tau.start << std::endl;
+
+//     // if (tau.stop == tau.order.end()) {
+//     // 	Rcpp::Rcout << "stop = END" << std::endl;
+//     // } else {
+//     // 	Rcpp::Rcout << "stop = " << *tau.stop << std::endl;
+//     // }
+    
+//     updateParallel(tau);
+
+//     // Rcpp::Rcout << "    Best Score After Update = " << tau.bic << "\n";
+
+//     return tau;
+// }
+
+// Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
+//     // OrderGraph oldTau = tau;
+
+//     auto oldIt = std::find(tau.order.begin(), tau.order.end(), n);
+
+//     // RcppThread::Rcout << "\n      Node n = " << *oldIt << "\n";
+
+//     RcppThread::ThreadPool pool(parallelism);
+
+//     std::vector<double> with(tau.order.size());
+//     std::vector<double> without(tau.order.size());
+//     std::vector<double> scores(tau.order.size());
+
+//     auto scoreTaskWith = [&, this] (int i, Node node, std::vector<Node> prefix) {
+// 	double localBic = 1e20;
+// 	std::vector<Node> parents;
+
+// 	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+// 	RcppThread::checkUserInterrupt();
+
+// 	{
+// 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+// 	    parents = gstMap[node]->search(prefix, &localBic);
+// 	}
+	
+// 	with[i] = localBic;
+//     };
+
+//     auto scoreTaskWithout = [&, this] (int i, Node node, std::vector<Node> prefix) {
+// 	double localBic = 1e20;
+// 	std::vector<Node> parents;
+
+// 	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+// 	RcppThread::checkUserInterrupt();
+
+// 	{
+// 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+// 	    parents = gstMap[node]->search(prefix, &localBic);
+// 	}
+	
+// 	without[i] = localBic;
+//     };
+
+//     auto scoreTaskScores = [&, this] (int i, Node node, std::vector<Node> prefix) {
+// 	double localBic = 1e20;
+// 	std::vector<Node> parents;
+
+// 	// RcppThread::Rcout << "Scoring " << node << "\n";
+
+// 	RcppThread::checkUserInterrupt();
+
+// 	{
+// 	    std::lock_guard<std::mutex> gstLock(gstMutexMap[node]);
+// 	    parents = gstMap[node]->search(prefix, &localBic);
+// 	}
+	
+// 	scores[i] = localBic;
+//     };
+    
+//     // Rcpp::Rcout << "    Scoring new orders...\n";
+
+//     // std::vector<std::future<double>> futureWith(tau.order.size());
+//     // std::vector<std::future<double>> futureWithout(tau.order.size());
+//     // std::vector<std::future<double>> futureScores(tau.order.size());
+    
+//     int currIdx = 0;
+    
+//     std::vector<Node> prefix;
+//     auto jt = tau.order.begin();
+
+//     // futureScores[0] = pool.pushReturn(scoreTask, n, prefix);
+//     // Rcpp::Rcout << "Order: ";
+//     for (int i = 0; i < tau.order.size(); ++i) {
+
+// 	// Rcpp::Rcout << *jt << " ";
+	
+// 	if (*jt == n) {
+// 	    currIdx = i;
+// 	    jt++;
+// 	    continue;
+// 	}
+	
+// 	pool.push(scoreTaskWithout, i, *jt, prefix);
+// 	pool.push(scoreTaskScores, i, n, prefix);
+
+// 	prefix.push_back(n);
+//         pool.push(scoreTaskWith, i, *jt, prefix);
+// 	prefix.pop_back();
+
+// 	prefix.push_back(*jt);
+	
+// 	jt++;
+//     }
+
+//     // // Rcpp::Rcout << "\n";
+
+//     // for (int i = 0; i < tau.order.size(); ++i) {
+//     // 	if (i == currIdx) continue;
+//     // 	with[i] = futureWith[i].get();
+//     // 	without[i] = futureWithout[i].get();
+//     // 	scores[i] = futureScores[i].get();
+//     // }
+
+//     pool.join();
+
+//     double runningScore = 0.0;
+    
+//     // Rcpp::Rcout << "  currIdx = " << currIdx << "\n";
+
+//     // Rcpp::Rcout << "Original Order: ";
+//     // for (Node n : tau.order) {
+//     // 	Rcpp::Rcout << n << " ";
+//     // }
+//     // Rcpp::Rcout << "\n";
+    
+//     for (int i = tau.order.size() - 1; i >= 0; i--) {
+// 	if (i == currIdx) continue;
+// 	scores[i] += runningScore;
+// 	runningScore += with[i];
+//     }
+
+//     runningScore = 0.0;
+//     for (int i = 0; i < tau.order.size(); i++) {
+// 	if (i == currIdx) continue;
+// 	runningScore += without[i];
+// 	scores[i] += runningScore;
+//     }
+
+//     scores[currIdx] = tau.bic;
+
+//     // Rcpp::Rcout << "    Scoring of new orders complete\n";
+
+//     double minBic = tau.bic;
+//     int minIdx = currIdx;
+    
+//     for (int i = 0; i < tau.order.size(); ++i) {
+// 	if (scores[i] + 1e-6 < minBic) {
+// 	    minIdx = i;
+// 	    minBic = scores[i];
+// 	}
+//     }
+
+//     if (currIdx == minIdx) return tau;
+
+//     std::list<Node>::iterator newIt = std::next(tau.order.begin(), minIdx);
+
+//     // Rcpp::Rcout << "\n    Best Score = " << scores[minIdx] << "\n";
+//     // Rcpp::Rcout << "    Best Score Index = " << minIdx << "\n";
+//     // Rcpp::Rcout << "    Node at Index = " << *newIt << "\n";
+
+//     if (currIdx < minIdx) {
+// 	// Rcpp::Rcout << "currIdx < minIdx" << std::endl;
+// 	tau.start = tau.order.erase(oldIt);
+// 	newIt++;
+// 	tau.stop = tau.order.insert(newIt, n);
+// 	tau.stop++;
+//     } else {
+// 	// Rcpp::Rcout << "currIdx >= minIdx" << std::endl;
+// 	tau.stop = tau.order.erase(oldIt);
+// 	tau.start = tau.order.insert(newIt, n);
+//     }
+
+//     // Rcpp::Rcout << "New Order: ";
+//     // for (Node n : tau.order) {
+//     // 	Rcpp::Rcout << n << " ";
+//     // }
+
+//     // Rcpp::Rcout << "\nstart = " << *tau.start << std::endl;
+
+//     // if (tau.stop == tau.order.end()) {
+//     // 	Rcpp::Rcout << "stop = END" << std::endl;
+//     // } else {
+//     // 	Rcpp::Rcout << "stop = " << *tau.stop << std::endl;
+//     // }
+    
+//     updateParallel(tau);
+
+//     // Rcpp::Rcout << "    Best Score After Update = " << tau.bic << "\n";
+
+//     return tau;
+// }
+
+
 Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
     // OrderGraph oldTau = tau;
 
@@ -327,7 +803,9 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
 
     // RcppThread::Rcout << "\n      Node n = " << *oldIt << "\n";
 
-    RcppThread::ThreadPool pool(parallelism);
+    std::vector<RcppThread::Thread> threads;
+
+    // RcppThread::ThreadPool pool(parallelism);
 
     std::vector<double> with(tau.order.size());
     std::vector<double> without(tau.order.size());
@@ -394,26 +872,68 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
 
     // futureScores[0] = pool.pushReturn(scoreTask, n, prefix);
     // Rcpp::Rcout << "Order: ";
-    for (int i = 0; i < tau.order.size(); ++i) {
+    // for (int i = 0; i < tau.order.size(); ++i) {
 
-	// Rcpp::Rcout << *jt << " ";
+    // 	// Rcpp::Rcout << *jt << " ";
 	
-	if (*jt == n) {
-	    currIdx = i;
+    // 	if (*jt == n) {
+    // 	    currIdx = i;
+    // 	    jt++;
+    // 	    continue;
+    // 	}
+	
+    // 	pool.push(scoreTaskWithout, i, *jt, prefix);
+    // 	pool.push(scoreTaskScores, i, n, prefix);
+
+    // 	prefix.push_back(n);
+    //     pool.push(scoreTaskWith, i, *jt, prefix);
+    // 	prefix.pop_back();
+
+    // 	prefix.push_back(*jt);
+	
+    // 	jt++;
+    // }
+
+    auto producer = [&] () {
+	for (int i = 0; i < tau.order.size(); ++i) {
+
+	    // Rcpp::Rcout << *jt << " ";
+	
+	    if (*jt == n) {
+		currIdx = i;
+		jt++;
+		continue;
+	    }
+	
+	    taskQueue.push(ParallelTask(scoreTaskWithout, i, *jt, prefix));
+	    taskQueue.push(ParallelTask(scoreTaskScores, i, n, prefix));
+
+	    prefix.push_back(n);
+	    taskQueue.push(ParallelTask(scoreTaskWith, i, *jt, prefix));
+	    prefix.pop_back();
+
+	    prefix.push_back(*jt);
+	
 	    jt++;
-	    continue;
+
+	    if (RcppThread::isInterrupted()) {
+		break;
+	    }
 	}
 	
-	pool.push(scoreTaskWithout, i, *jt, prefix);
-	pool.push(scoreTaskScores, i, n, prefix);
+	for (int i = 0; i < parallelism; i++) {
+	    taskQueue.push(ParallelTask::poisonpill());
+	}
+    };
 
-	prefix.push_back(n);
-        pool.push(scoreTaskWith, i, *jt, prefix);
-	prefix.pop_back();
+    threads.push_back(RcppThread::Thread(producer));
 
-	prefix.push_back(*jt);
-	
-	jt++;
+    for (int i = 0; i < parallelism; i++) {
+	threads.push_back(RcppThread::Thread([this] { parallelTaskConsumer(); }));
+    }
+
+    for (uint i = 0; i < threads.size(); i++) {
+	threads[i].join();
     }
 
     // // Rcpp::Rcout << "\n";
@@ -425,7 +945,7 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
     // 	scores[i] = futureScores[i].get();
     // }
 
-    pool.join();
+    // pool.join();
 
     double runningScore = 0.0;
     
@@ -504,6 +1024,8 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
     return tau;
 }
 
+
+
 bool Boss::bossForward() {
 
     OrderGraph tau(pi);
@@ -564,8 +1086,8 @@ bool Boss::isClique(const std::set<Node>& nodes, EdgeListGraph& graph) {
     
     std::vector<Node> nodeList(nodes.begin(), nodes.end());
 
-    for (int i = 0; i < nodes.size()-1; i++) {
-	for (int j = i + 1; j < nodes.size(); j++) {
+    for (uint i = 0; i < nodes.size()-1; i++) {
+	for (uint j = i + 1; j < nodes.size(); j++) {
 	    if (!graph.isAdjacentTo(nodeList[i], nodeList[j])) {
 		return false;
 	    }
@@ -634,7 +1156,7 @@ void Boss::deleteProducer(EdgeListGraph& graph) {
 
 		// if (validDelete(graph, task)) {
 		// tasks.push_back(task);
-		taskQueue.push(task);
+		deleteTaskQueue.push(task);
 		// }
 	    }
 	    
@@ -659,7 +1181,7 @@ void Boss::deleteProducer(EdgeListGraph& graph) {
 
 		// if (validDelete(graph, task)) {
 		// tasks.push_back(task);
-		taskQueue.push(task);
+		deleteTaskQueue.push(task);
 		// }
 	    }
 	    
@@ -683,7 +1205,7 @@ void Boss::deleteProducer(EdgeListGraph& graph) {
 
 		// if (validDelete(graph, task)) {
 		// tasks.push_back(task);
-		taskQueue.push(task);
+		deleteTaskQueue.push(task);
 		// }
 	    }
 	}
@@ -694,14 +1216,14 @@ void Boss::deleteProducer(EdgeListGraph& graph) {
 
     DeleteTask poisonPill;
     for (int i = 0; i < parallelism; i++) {
-        taskQueue.push(poisonPill);
+        deleteTaskQueue.push(poisonPill);
     }
 }
 
 void Boss::deleteConsumer(EdgeListGraph& graph) {
     while(true) {
 	
-        DeleteTask task = taskQueue.pop();
+        DeleteTask task = deleteTaskQueue.pop();
 
         //If poison, return
         if (task.x.isNull() && task.y.isNull()) return;
@@ -773,7 +1295,7 @@ bool Boss::bestDelete(EdgeListGraph& graph) {
         threads.push_back(RcppThread::Thread( [&] { deleteConsumer(graph); } ));
     }
 
-    for (int i = 0; i < threads.size(); i++) {
+    for (uint i = 0; i < threads.size(); i++) {
 	if (threads[i].joinable()) {
 	    threads[i].join();
 	} else {

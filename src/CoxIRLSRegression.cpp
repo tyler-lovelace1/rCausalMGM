@@ -10,7 +10,7 @@ CoxIRLSRegression::CoxIRLSRegression(DataSet& data) {
     dataMat = arma::mat(data.getData());
     variables = data.getVariables();
     rows = arma::uvec(data.getNumRows());
-    for (arma::uword i = 0; i < data.getNumRows(); i++)
+    for (int i = 0; i < data.getNumRows(); i++)
         rows[i] = i;
 }
 
@@ -54,17 +54,17 @@ CoxIRLSRegression::CoxIRLSRegression(DataSet& data) {
 
 CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 					       std::vector<Node>& regressors) {
-    int n = this->rows.n_elem;
-    int k = regressors.size();
+    uint n = this->rows.n_elem;
+    uint k = regressors.size();
     
     if (n < k)
 	throw std::runtime_error("Cox regression ill-conditioned, samples less than regressors");
 
-    int target_ = data.getColumn(target);
+    // int target_ = data.getColumn(target);
 
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (uint i = 0; i < regressors.size(); i++)	{
 	regressors_[i] = data.getColumn(regressors[i]);
     }
 
@@ -256,7 +256,7 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 
     std::vector<std::string> vNames(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (uint i = 0; i < regressors.size(); i++)	{
 	vNames[i] = regressors[i].getName(); 
     }
 
@@ -270,8 +270,8 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
 					       std::vector<Node>& regressors,
 					       arma::uvec& _rows) {
-    int n = _rows.n_elem;
-    int k = regressors.size();
+    uint n = _rows.n_elem;
+    uint k = regressors.size();
     
     if (n < k)
 	throw std::runtime_error("Cox regression ill-conditioned, samples less than regressors");
@@ -281,7 +281,7 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
     // stringstream os;
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (uint i = 0; i < regressors.size(); i++)	{
 	regressors_[i] = data.getColumn(regressors[i]);
 	// os << regressors[i]->getName() << ","
     }
@@ -502,7 +502,7 @@ CoxRegressionResult CoxIRLSRegression::regress(const Node& target,
     
     std::vector<std::string> vNames(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (uint i = 0; i < regressors.size(); i++)	{
 	vNames[i] = regressors[i].getName(); 
     }
 
@@ -528,19 +528,19 @@ double CoxIRLSRegression::loss(arma::vec& beta, arma::mat& X, Node target) {
 	arma::uvec censor = target.getCensor(strat);
 	double HsumTheta, m, sub, d;
 
-	int n = index.n_elem;
+	uint n = index.n_elem;
 
 	arma::vec logtheta = X.rows(index) * beta;
   
 	arma::vec theta = arma::exp(logtheta);
 	double rs_sum = arma::accu(theta);
 
-	int i = 0;
-	for (int j = 0; j < H.n_elem; j++) {
+	uint i = 0;
+	for (uint j = 0; j < H.n_elem; j++) {
 	    HsumTheta = 0;
 	    m = 0;
 	    sub = 0;
-	    for (int k = 0; k < H[j]; k++) {
+	    for (uint k = 0; k < H[j]; k++) {
 		if (censor[order[i+k]]) {
 		    m++;
 		    loss += logtheta[order[i+k]];
@@ -595,7 +595,7 @@ double CoxIRLSRegression::gradHess(arma::vec& eta, arma::vec& grad, arma::vec& d
 	double HsumTheta, m, sub, d, phi, dSum, dSum2;
 	double theta_weight_sum = 0, theta_weight2_sum = 0;
 
-	int n = index.n_elem;
+	uint n = index.n_elem;
 
 	// eta -= arma::mean(eta);
 
@@ -606,15 +606,15 @@ double CoxIRLSRegression::gradHess(arma::vec& eta, arma::vec& grad, arma::vec& d
 
 	grad(index) += arma::conv_to<arma::vec>::from(censor);
     
-	int i = 0;
-	for (int j = 0; j < H.n_elem; j++) {
+	uint i = 0;
+	for (uint j = 0; j < H.n_elem; j++) {
 	    HsumTheta = 0;
 	    m = 0;
 	    sub = 0;
 	    dSum = 0;
 	    dSum2 = 0;
 
-	    for (int k = 0; k < H[j]; k++) {
+	    for (uint k = 0; k < H[j]; k++) {
 		if (censor[order[i+k]]) {
 		    m++;
 		    HsumTheta += theta[order[i+k]];
@@ -646,7 +646,7 @@ double CoxIRLSRegression::gradHess(arma::vec& eta, arma::vec& grad, arma::vec& d
 		}
 	    }
 
-	    for (int k = 0; k < H[j]; k++) {
+	    for (uint k = 0; k < H[j]; k++) {
 		theta_weight[order[i+k]] = theta_weight_sum - censor[order[i+k]] * dSum;
 		theta_weight2[order[i+k]] = theta_weight2_sum - censor[order[i+k]] * dSum2;
 	    }
@@ -682,7 +682,7 @@ void CoxIRLSRegression::infoMat(arma::vec& beta, arma::mat& hess,
 
 	arma::mat Xsub = X.rows(index);
 
-	int n = index.n_elem;
+	uint n = index.n_elem;
 
 	arma::vec theta = arma::exp(Xsub * beta);
 	double rs_sum = arma::accu(theta);
@@ -694,8 +694,8 @@ void CoxIRLSRegression::infoMat(arma::vec& beta, arma::mat& hess,
 	arma::vec num = arma::sum(arma::diagmat(theta) * Xsub, 0).t();
 	arma::mat outer_num = Xsub.t() * arma::diagmat(theta) * Xsub;
 
-	int i = 0;
-	for (int j = 0; j < H.n_elem; j++) {
+	uint i = 0;
+	for (uint j = 0; j < H.n_elem; j++) {
 	    HsumTheta = 0;
 	    m = 0;
 	    sub = 0;
@@ -706,7 +706,7 @@ void CoxIRLSRegression::infoMat(arma::vec& beta, arma::mat& hess,
 	    HsumOuter.fill(0);
 	    sub_outer.fill(0);
 
-	    for (int k = 0; k < H[j]; k++) {
+	    for (uint k = 0; k < H[j]; k++) {
 		temp = theta[order[i+k]] * Xsub.row(order[i+k]).t() * Xsub.row(order[i+k]);
 	    
 		if (censor[order[i+k]]) {

@@ -23,6 +23,8 @@ public:
      */
     //   virtual Score indTestSubset(std::vector<Node>& vars) = 0;
 
+    virtual ~Score() = default;
+
     /**
      * @return score of x | z, z = <z1,...,zn>,
      * form x | z, z = <z1,...,zn>, where x, z1,...,zn are variables in the list returned by

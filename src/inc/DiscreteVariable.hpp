@@ -38,7 +38,7 @@ public:
     DiscreteVariable(const std::string& name, const std::vector<std::string>& categories) {
 	this->name = name;
 	this->type = DISCRETE;
-	for (int i = 0; i < categories.size(); i++)
+	for (uint i = 0; i < categories.size(); i++)
 	    this->categories.push_back(categories.at(i));
     }
 
@@ -47,7 +47,7 @@ public:
 	    this->name = var->getName();
 	    this->type = DISCRETE;
 	    std::vector<std::string> cats = ((DiscreteVariable*)var)->getCategories();
-	    for (int i = 0; i < cats.size(); i++)
+	    for (uint i = 0; i < cats.size(); i++)
 		this->categories.push_back(cats.at(i));
 	} else {
 	    throw std::runtime_error("Trying to construct discrete variable from a variable of a different type");

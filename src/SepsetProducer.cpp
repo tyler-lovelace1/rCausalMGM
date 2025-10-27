@@ -240,7 +240,7 @@ void SepsetProducer::fillMap() {
 	    }
 	}
 	
-	for (int i = 0; i < threads.size(); i++) {
+	for (uint i = 0; i < threads.size(); i++) {
 	    threads[i].join();
 	}
 
@@ -281,7 +281,7 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
     
     if (!possibleDsep.empty()) {
 	double score;
-	bool indep = test->isIndependent(a, b, possibleDsep, &score);
+        test->isIndependent(a, b, possibleDsep, &score);
 	pval = score;
 	sepset = possibleDsep;
     }

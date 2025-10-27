@@ -61,7 +61,7 @@ arma::umat StabilityUtils::subSampleLOO(DataSet& data) {
     }
     
     // Print a warning if there's a variance issue
-    for (int s = 0; s < sampMat.n_rows; s++) {
+    for (uint s = 0; s < sampMat.n_rows; s++) {
         DataSet dataSubSamp(data, sampMat.row(s));
         if (checkForVariance(dataSubSamp, data) != -1) {
             Rcpp::Rcout << "Variance issue with dataset: " << s << std::endl;
@@ -499,7 +499,7 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
     }
     
     // Print a warning if there's a variance issue
-    for (int s = 0; s < samps.n_rows; s++) {
+    for (uint s = 0; s < samps.n_rows; s++) {
         DataSet dataSubSamp(data, samps.row(s));
         if (checkForVariance(dataSubSamp, data) != -1) {
             Rcpp::Rcout << "Variance issue with dataset: " << s << std::endl;
@@ -524,7 +524,7 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
     RcppThread::ThreadPool pool(num_threads);
     std::vector<MGM> mgmList;
 
-    for (int i = 0; i < subs.n_rows; i++) {
+    for (uint i = 0; i < subs.n_rows; i++) {
     	DataSet dataSubSamp(data, subs.row(i));
     	mgmList.push_back(MGM(dataSubSamp));
     }
@@ -665,7 +665,7 @@ double StabilityUtils::stabilitySearchStars(DataSet& data,
     }
     
     // Print a warning if there's a variance issue
-    for (int s = 0; s < samps.n_rows; s++) {
+    for (uint s = 0; s < samps.n_rows; s++) {
         DataSet dataSubSamp(data, samps.row(s));
         if (checkForVariance(dataSubSamp, data) != -1) {
             Rcpp::Rcout << "Variance issue with dataset: " << s << std::endl;

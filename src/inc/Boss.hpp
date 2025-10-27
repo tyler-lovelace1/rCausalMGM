@@ -10,6 +10,11 @@
 #include "Knowledge.hpp"
 #include <chrono>
 #include <mutex>
+#include <functional>
+#include <tuple>
+#include <utility>
+#include <type_traits>
+
 
 typedef std::pair<Node, Node> NodePair;
 
@@ -311,6 +316,41 @@ private:
 	}
     };
 
+    
+    // A simple parallel task: holds a bound callable as std::function<void()>
+    struct ParallelTask {
+	std::function<void()> fn;
+	bool poison = false;
+
+	ParallelTask() = default;
+
+	template <class F, class... Args>
+	explicit ParallelTask(F&& f, Args&&... args) {
+	    // Bind f and args without invoking; execute later in consumer thread
+	    auto bound = std::tuple<std::decay_t<F>, std::decay_t<Args>...>(
+		std::forward<F>(f), std::forward<Args>(args)...
+		);
+	    fn = [t = std::move(bound)]() mutable {
+		std::apply([](auto&& f0, auto&&... a0) {
+		    std::invoke(std::forward<decltype(f0)>(f0),
+				std::forward<decltype(a0)>(a0)...);
+		}, t);
+	    };
+	}
+
+	// Factory for poison pill
+	static ParallelTask poisonpill() {
+	    ParallelTask t;
+	    t.poison = true;
+	    return t;
+	}
+
+	bool is_poison() const noexcept { return this->poison; }
+
+	void operator()() { if (fn) fn(); }
+	bool valid() const noexcept { return static_cast<bool>(fn); }
+    };
+
     OrderGraph pi;
 
     std::set<OrderGraph> bestGraphs;
@@ -320,7 +360,10 @@ private:
     std::map<DeleteTask, double> deleteScores;
 
     static const std::size_t MAX_QUEUE_SIZE = 1000;
-    BlockingQueue<DeleteTask> taskQueue;
+    BlockingQueue<DeleteTask> deleteTaskQueue;
+    BlockingQueue<ParallelTask> taskQueue;
+
+    void parallelTaskConsumer();
 
     double score;
 
@@ -348,7 +391,7 @@ public:
      * @param independenceTest The oracle for conditional independence facts. This does not make a copy of the
      *                         independence test, for fear of duplicating the data set!
      */
-    Boss() : taskQueue(MAX_QUEUE_SIZE) {}
+    Boss() : deleteTaskQueue(MAX_QUEUE_SIZE), taskQueue(MAX_QUEUE_SIZE) {}
 
     Boss(Score* scorer, int threads = -1);
 
