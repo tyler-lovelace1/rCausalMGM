@@ -234,7 +234,8 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
     std::vector<CoxMGM> coxmgmList;
     arma::mat thetaMat(numVars, numVars, arma::fill::zeros);
     std::mutex matMutex; // For protecting thetaMat
-    RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, N)));
+    // RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, N)));
+
     std::vector<double> lambdaCurr;
 
 
@@ -266,41 +267,118 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
 
 	thetaMat.fill(0);
 
-	if (r > 0) {
-	    pool.parallelForEach(coxmgmList,
-				 [&] (CoxMGM& m) {
-				     // RcppThread::Rcout << "MGM run started...\n";
-				     // EdgeListGraph ig = m.graphFromCoxMGM();
-				     // RcppThread::Rcout << "Graph starting from " << ig << "\n";
-				     m.setLambda(lambdaCurr);
-				     EdgeListGraph g = m.search();
-				     arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
+	// if (r > 0) {
+	//     auto coxmgmTask = [&] (CoxMGM& m) {
+	// 	// RcppThread::Rcout << "MGM run started...\n";
+	// 	// EdgeListGraph ig = m.graphFromCoxMGM();
+	// 	// RcppThread::Rcout << "Graph starting from " << ig << "\n";
+	// 	m.setLambda(lambdaCurr);
+	// 	EdgeListGraph g = m.search();
+	// 	arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
+		
+	// 	{
+	// 	    std::lock_guard<std::mutex> matLock(matMutex);
+	// 	    thetaMat += curAdj;
+	// 	}
+	// 	// RcppThread::Rcout << "MGM run completed\n";
+	//     };
+	    
+	//     // pool.parallelForEach(coxmgmList,
+	//     // 			 [&] (CoxMGM& m) {
+	//     // 			     // RcppThread::Rcout << "MGM run started...\n";
+	//     // 			     // EdgeListGraph ig = m.graphFromCoxMGM();
+	//     // 			     // RcppThread::Rcout << "Graph starting from " << ig << "\n";
+	//     // 			     m.setLambda(lambdaCurr);
+	//     // 			     EdgeListGraph g = m.search();
+	//     // 			     arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
 				 
-				     {
-					 std::lock_guard<std::mutex> matLock(matMutex);
-					 thetaMat += curAdj;
-				     }
-				     // RcppThread::Rcout << "MGM run completed\n";
-				 });
-	} else {
-	    pool.parallelForEach(mgmList,
-				 [&] (MGM& m) {
-				     // RcppThread::Rcout << "MGM run started...\n";
-				     // EdgeListGraph ig = m.graphFromMGM();
-				     // RcppThread::Rcout << "Graph starting from " << ig.getEdges().size() << " edges\n";
-				     m.setLambda(lambdaCurr);
-				     EdgeListGraph g = m.search();
-				     arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
+	//     // 			     {
+	//     // 				 std::lock_guard<std::mutex> matLock(matMutex);
+	//     // 				 thetaMat += curAdj;
+	//     // 			     }
+	//     // 			     // RcppThread::Rcout << "MGM run completed\n";
+	//     // 			 });
+	// } else {
+
+	//     auto mgmTask = [&] (MGM& m) {
+	// 	// RcppThread::Rcout << "MGM run started...\n";
+	// 	// EdgeListGraph ig = m.graphFromMGM();
+	// 	// RcppThread::Rcout << "Graph starting from " << ig.getEdges().size() << " edges\n";
+	// 	m.setLambda(lambdaCurr);
+	// 	EdgeListGraph g = m.search();
+	// 	arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
 				 
-				     {
-					 std::lock_guard<std::mutex> matLock(matMutex);
-					 thetaMat += curAdj;
-				     }
-				     // RcppThread::Rcout << "MGM run completed\n";
-				 });
-	}
+	// 	{
+	// 	    std::lock_guard<std::mutex> matLock(matMutex);
+	// 	    thetaMat += curAdj;
+	// 	}
+	// 	// RcppThread::Rcout << "MGM run completed\n";
+	//     };
+	    
+	//     // pool.parallelForEach(mgmList,
+	//     // 			 [&] (MGM& m) {
+	//     // 			     // RcppThread::Rcout << "MGM run started...\n";
+	//     // 			     // EdgeListGraph ig = m.graphFromMGM();
+	//     // 			     // RcppThread::Rcout << "Graph starting from " << ig.getEdges().size() << " edges\n";
+	//     // 			     m.setLambda(lambdaCurr);
+	//     // 			     EdgeListGraph g = m.search();
+	//     // 			     arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
+				 
+	//     // 			     {
+	//     // 				 std::lock_guard<std::mutex> matLock(matMutex);
+	//     // 				 thetaMat += curAdj;
+	//     // 			     }
+	//     // 			     // RcppThread::Rcout << "MGM run completed\n";
+	//     // 			 });
+	// }
 	
-	pool.wait();
+	// pool.wait();
+
+	std::vector<RcppThread::Thread> threads;
+
+	auto mgmTask = [&] (std::size_t i) {
+
+	    EdgeListGraph g;
+	    
+	    if (r > 0) {
+		coxmgmList[i].setLambda(lambdaCurr);
+		g = coxmgmList[i].search();
+	    } else {
+		mgmList[i].setLambda(lambdaCurr);
+		g = mgmList[i].search();
+	    }
+
+	    arma::mat curAdj = StabilityUtils::skeletonToMatrix(g, d);
+				 
+	    {
+		std::lock_guard<std::mutex> matLock(matMutex);
+		thetaMat += curAdj;
+	    }
+	};
+
+	auto producer = [&] () {
+	    for (std::size_t i = 0; i < samps.n_rows; i++) {
+		taskQueue.push(ParallelTask(mgmTask, i));
+
+		if (RcppThread::isInterrupted()) {
+		    break;
+		}
+	    }
+	
+	    for (int i = 0; i < parallelism; i++) {
+		taskQueue.push(ParallelTask::poisonpill());
+	    }
+	};
+
+	threads.push_back(RcppThread::Thread(producer));
+
+	for (int i = 0; i < parallelism; i++) {
+	    threads.push_back(RcppThread::Thread([this] { parallelTaskConsumer(); }));
+	}
+
+	for (uint i = 0; i < threads.size(); i++) {
+	    threads[i].join();
+	}
 
         arma::mat adjMat = thetaMat/samps.n_rows;
 
@@ -445,7 +523,7 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
     }
     // EXIT_LOOP:
 
-    pool.join();
+    // pool.join();
 
     if (CC == -1)
         CC = lambda[CCMaxI];

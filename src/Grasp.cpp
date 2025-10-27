@@ -1088,19 +1088,19 @@ double Grasp::update(OrderGraph& tau) {
 //     return score;
 // }
 
-void Grasp::parallelTaskConsumer() {
-    while (true) {
-	ParallelTask t = taskQueue.pop();
+// void Grasp::parallelTaskConsumer() {
+//     while (true) {
+// 	ParallelTask t = taskQueue.pop();
 
-	if (t.is_poison())
-	    break;
+// 	if (t.is_poison())
+// 	    break;
 
-	if (RcppThread::isInterrupted())
-	    break;	
+// 	if (RcppThread::isInterrupted())
+// 	    break;	
 
-	t();
-    }
-}
+// 	t();
+//     }
+// }
 
 double Grasp::updateParallel(OrderGraph& tau) {
 

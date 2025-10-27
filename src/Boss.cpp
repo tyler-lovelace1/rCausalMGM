@@ -143,19 +143,19 @@ double Boss::update(OrderGraph& tau) {
     return score;
 }
 
-void Boss::parallelTaskConsumer() {
-    while (true) {
-	ParallelTask t = taskQueue.pop();
+// void Boss::parallelTaskConsumer() {
+//     while (true) {
+// 	ParallelTask t = taskQueue.pop();
 
-	if (t.is_poison())
-	    break;
+// 	if (t.is_poison())
+// 	    break;
 
-	if (RcppThread::isInterrupted())
-	    break;	
+// 	if (RcppThread::isInterrupted())
+// 	    break;	
 
-	t();
-    }
-}
+// 	t();
+//     }
+// }
 
 double Boss::updateParallel(OrderGraph& tau) {
 

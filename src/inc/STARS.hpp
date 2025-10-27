@@ -32,8 +32,25 @@ private:
     bool verbose = false;
     int threads = -1;
 
+    static const std::size_t MAX_QUEUE_SIZE = 100;
+    BlockingQueue<ParallelTask> taskQueue;
+
+    void parallelTaskConsumer() {
+	while (true) {
+	    ParallelTask t = taskQueue.pop();
+
+	    if (t.is_poison())
+		break;
+
+	    if (RcppThread::isInterrupted())
+		break;	
+
+	    t();
+	}
+    }
+
 public:
-    STARS() {}
+    STARS() : taskQueue(MAX_QUEUE_SIZE) {}
     
     STARS(DataSet& dat, std::string alg, arma::vec& alphas, double g, int numSub, bool loo = false) :
         d(dat),
@@ -42,7 +59,8 @@ public:
         alphas(alphas),
         gamma(g),
 	alg(alg),
-        leaveOneOut(loo) {}
+        leaveOneOut(loo),
+	taskQueue(MAX_QUEUE_SIZE) {}
 
     STARS(DataSet& dat, std::string alg, arma::vec& alphas, double g, int numSub, int subSize, bool loo = false) :
 	d(dat),
@@ -51,7 +69,8 @@ public:
         alphas(alphas),
         gamma(g),
 	alg(alg),
-        leaveOneOut(loo) {}
+        leaveOneOut(loo),
+	taskQueue(MAX_QUEUE_SIZE) {}
 
     EdgeListGraph runStarsPar(arma::mat& instabs, arma::umat& samps);
 

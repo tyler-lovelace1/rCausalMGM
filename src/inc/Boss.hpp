@@ -317,39 +317,39 @@ private:
     };
 
     
-    // A simple parallel task: holds a bound callable as std::function<void()>
-    struct ParallelTask {
-	std::function<void()> fn;
-	bool poison = false;
+    // // A simple parallel task: holds a bound callable as std::function<void()>
+    // struct ParallelTask {
+    // 	std::function<void()> fn;
+    // 	bool poison = false;
 
-	ParallelTask() = default;
+    // 	ParallelTask() = default;
 
-	template <class F, class... Args>
-	explicit ParallelTask(F&& f, Args&&... args) {
-	    // Bind f and args without invoking; execute later in consumer thread
-	    auto bound = std::tuple<std::decay_t<F>, std::decay_t<Args>...>(
-		std::forward<F>(f), std::forward<Args>(args)...
-		);
-	    fn = [t = std::move(bound)]() mutable {
-		std::apply([](auto&& f0, auto&&... a0) {
-		    std::invoke(std::forward<decltype(f0)>(f0),
-				std::forward<decltype(a0)>(a0)...);
-		}, t);
-	    };
-	}
+    // 	template <class F, class... Args>
+    // 	explicit ParallelTask(F&& f, Args&&... args) {
+    // 	    // Bind f and args without invoking; execute later in consumer thread
+    // 	    auto bound = std::tuple<std::decay_t<F>, std::decay_t<Args>...>(
+    // 		std::forward<F>(f), std::forward<Args>(args)...
+    // 		);
+    // 	    fn = [t = std::move(bound)]() mutable {
+    // 		std::apply([](auto&& f0, auto&&... a0) {
+    // 		    std::invoke(std::forward<decltype(f0)>(f0),
+    // 				std::forward<decltype(a0)>(a0)...);
+    // 		}, t);
+    // 	    };
+    // 	}
 
-	// Factory for poison pill
-	static ParallelTask poisonpill() {
-	    ParallelTask t;
-	    t.poison = true;
-	    return t;
-	}
+    // 	// Factory for poison pill
+    // 	static ParallelTask poisonpill() {
+    // 	    ParallelTask t;
+    // 	    t.poison = true;
+    // 	    return t;
+    // 	}
 
-	bool is_poison() const noexcept { return this->poison; }
+    // 	bool is_poison() const noexcept { return this->poison; }
 
-	void operator()() { if (fn) fn(); }
-	bool valid() const noexcept { return static_cast<bool>(fn); }
-    };
+    // 	void operator()() { if (fn) fn(); }
+    // 	bool valid() const noexcept { return static_cast<bool>(fn); }
+    // };
 
     OrderGraph pi;
 
@@ -363,7 +363,21 @@ private:
     BlockingQueue<DeleteTask> deleteTaskQueue;
     BlockingQueue<ParallelTask> taskQueue;
 
-    void parallelTaskConsumer();
+    void parallelTaskConsumer() {
+	while (true) {
+	    ParallelTask t = taskQueue.pop();
+
+	    if (t.is_poison())
+		break;
+
+	    if (RcppThread::isInterrupted())
+		break;	
+
+	    t();
+	}
+    }
+
+    // void parallelTaskConsumer();
 
     double score;
 

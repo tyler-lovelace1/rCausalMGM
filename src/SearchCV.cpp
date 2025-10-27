@@ -2,7 +2,7 @@
 
 #include "SearchCV.hpp"
 
-SearchCV::SearchCV(DataSet& data, std::string alg, uint nfolds, int threads) {
+SearchCV::SearchCV(DataSet& data, std::string alg, uint nfolds, int threads) : taskQueue(MAX_QUEUE_SIZE) {
     this->scoreNodes = data.getVariables();
     this->originalData = DataSet(data);
     this->internalData = DataSet(data);
@@ -54,7 +54,7 @@ SearchCV::SearchCV(DataSet& data, std::string alg, uint nfolds, int threads) {
     }
 }
 
-SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int threads) {
+SearchCV::SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int threads) : taskQueue(MAX_QUEUE_SIZE) {
 
     if (!checkFoldID(foldid)) {
 	throw std::invalid_argument("Invalid input for foldid. Values must be in the range 1:nfolds, with folds of approximately equal size.");
@@ -374,10 +374,10 @@ std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
 
     std::size_t N = scoreNodes.size();
     
-    RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, (int) N)));
+    // RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, (int) N)));
 
-    // // Use a vector to store the threads
-    // std::vector<std::thread> threads;
+    // Use a vector to store the threads
+    std::vector<RcppThread::Thread> threads;
     // std::vector<std::future<std::vector<double>>> futures(N);
     arma::vec scores(N);
     arma::vec mbSizes(N);
@@ -398,7 +398,7 @@ std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
 	// return result;
     };
 
-    pool.parallelFor(0, N, scoreTask);
+    // pool.parallelFor(0, N, scoreTask);
 
     // for (std::size_t i = 0; i < N; i++) {
     // 	std::packaged_task<std::vector<double>(const std::size_t&)> task(scoreTask);	
@@ -413,7 +413,32 @@ std::vector<double> SearchCV::scoreGraphTestLL(EdgeListGraph graph, int k) {
     // 	mbSizes(i) = scoreOutput[1];
     // }
 
-    pool.join();
+    // pool.join();
+
+    auto producer = [&] () {
+	for (std::size_t i = 0; i < N; i++) {
+	    taskQueue.push(ParallelTask(scoreTask, i));
+
+	    if (RcppThread::isInterrupted()) {
+		break;
+	    }
+	}
+	
+	for (int i = 0; i < parallelism; i++) {
+	    taskQueue.push(ParallelTask::poisonpill());
+	}
+    };
+
+    threads.push_back(RcppThread::Thread(producer));
+
+    for (int i = 0; i < parallelism; i++) {
+	threads.push_back(RcppThread::Thread([this] { parallelTaskConsumer(); }));
+    }
+
+    for (uint i = 0; i < threads.size(); i++) {
+	threads[i].join();
+    }
+
 
     return { -arma::accu(scores), arma::mean(mbSizes) };
 }

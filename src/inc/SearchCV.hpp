@@ -23,6 +23,9 @@ class SearchCV {
     LogisticRegression logisticRegression;
     CoxRegression coxRegression;
 
+    static const std::size_t MAX_QUEUE_SIZE = 1000;
+    BlockingQueue<ParallelTask> taskQueue;
+
     // Hyperparameter vectors
     arma::vec lambdas;                       // p values of lambda
     arma::vec alphas;                        // q values of alpha
@@ -52,6 +55,21 @@ class SearchCV {
 
     std::set<CvResult> results;
 
+    void parallelTaskConsumer() {
+	while (true) {
+	    ParallelTask t = taskQueue.pop();
+
+	    if (t.is_poison())
+		break;
+
+	    if (RcppThread::isInterrupted())
+		break;	
+
+	    t();
+	}
+    }
+
+
     std::vector<Node> expandVariable(DataSet& dataSet, const Node& var);
     
     double multiTestLL(arma::mat &coeffs, const Node& dep,
@@ -65,7 +83,7 @@ class SearchCV {
 
 public:
 
-    SearchCV() {}
+    SearchCV() : taskQueue(MAX_QUEUE_SIZE) {}
     SearchCV(DataSet& data, std::string alg, uint nfolds, int threads = -1);
     SearchCV(DataSet& data, std::string alg, const arma::uvec& foldid, int threads = -1);
 

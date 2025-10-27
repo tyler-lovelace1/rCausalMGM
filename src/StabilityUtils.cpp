@@ -511,38 +511,85 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
 
 arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, arma::umat& subs) {
     
-    BlockingQueue<int> taskQueue(MAX_QUEUE_SIZE);
+    BlockingQueue<ParallelTask> taskQueue(MAX_QUEUE_SIZE);
+    
     if (num_threads <= 0) num_threads = std::thread::hardware_concurrency();
     if (num_threads == 0) {
         num_threads = 4;
         Rcpp::Rcout << "Couldn't detect number of processors. Defaulting to 4" << std::endl;
     }
 
+    bool censFlag = data.isCensored();
     int numVars = data.getNumColumns();
     arma::mat thetaMat(numVars, numVars, arma::fill::zeros);
     std::mutex matMutex; // For protecting thetaMat
-    RcppThread::ThreadPool pool(num_threads);
-    std::vector<MGM> mgmList;
+    // RcppThread::ThreadPool pool(num_threads);
+    // std::vector<MGM> mgmList;
+    std::vector<DataSet> dataSubVec;
 
     for (uint i = 0; i < subs.n_rows; i++) {
-    	DataSet dataSubSamp(data, subs.row(i));
-    	mgmList.push_back(MGM(dataSubSamp));
+    	dataSubVec.push_back(DataSet(data, subs.row(i)));
+    	// mgmList.push_back(MGM(dataSubSamp));
     }
 
+    std::vector<RcppThread::Thread> threads;
 
-    pool.parallelForEach(mgmList,
-			 [&] (MGM& m) {
-			     m.setLambda(lambda);
-			     EdgeListGraph g = m.search();
-			     arma::mat curAdj = skeletonToMatrix(g, data);
+    auto undirGraphTask = [&] (std::size_t i) {
+	EdgeListGraph ig;
+				    
+	if (!censFlag) {
+	    MGM mgm(dataSubVec.at(i), lambda);
+	    ig = mgm.search();
+	} else {
+	    CoxMGM coxmgm(dataSubVec.at(i), lambda);
+	    ig = coxmgm.search();
+	}
+
+	arma::mat curAdj = skeletonToMatrix(ig, data);
 				 
-			     {
-				 std::lock_guard<std::mutex> matLock(matMutex);
-				 thetaMat += curAdj;
-			     }
-			 });
+	{
+	    std::lock_guard<std::mutex> matLock(matMutex);
+	    thetaMat += curAdj;
+	}
+    };
 
-    pool.join();
+    auto producer = [&] () {
+	for (std::size_t i = 0; i < subs.n_rows; i++) {
+	    taskQueue.push(ParallelTask(undirGraphTask, i));
+
+	    if (RcppThread::isInterrupted()) {
+		break;
+	    }
+	}
+	
+	for (int i = 0; i < num_threads; i++) {
+	    taskQueue.push(ParallelTask::poisonpill());
+	}
+    };
+
+    threads.push_back(RcppThread::Thread(producer));
+
+    for (int i = 0; i < num_threads; i++) {
+	threads.push_back(RcppThread::Thread([&] { StabilityUtils::parallelTaskConsumer(taskQueue); }));
+    }
+
+    for (uint i = 0; i < threads.size(); i++) {
+	threads[i].join();
+    }
+
+    // pool.parallelForEach(mgmList,
+    // 			 [&] (MGM& m) {
+    // 			     m.setLambda(lambda);
+    // 			     EdgeListGraph g = m.search();
+    // 			     arma::mat curAdj = skeletonToMatrix(g, data);
+				 
+    // 			     {
+    // 				 std::lock_guard<std::mutex> matLock(matMutex);
+    // 				 thetaMat += curAdj;
+    // 			     }
+    // 			 });
+
+    // pool.join();
 
     
     // auto producer = [&]() {
@@ -608,345 +655,345 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
     return thetaMat / subs.n_rows;
 }
 
-double StabilityUtils::stabilitySearchStars(DataSet& data,
-					    std::string& alg,
-					    double param,
-					    EdgeListGraph* initialGraph,
-					    int num_threads,
-					    bool adjacency,
-					    int N,
-					    int b) {
-    arma::umat samp = subSampleNoReplacement(data, b, N);
-    // if (alg != "mgm") {
-    // 	b = std::min(4*data.getNumRows()/5, (int) std::floor(20*std::sqrt(data.getNumRows())));
-    // 	Rcpp::Rcout << "Subsample size = " << b << std::endl;
-    // }
-    // int attempts = 5000;
-    // bool done = false;
-    // while(!done) {
-    //     // Rcpp::Rcout << "Attempt " << 5000 - attempts;
-    //     samp = subSampleNoReplacement(data.getNumRows(), b, N);
-    //     done = true;
-    //     for (int i = 0; i < samp.n_rows; i++) {
-    //         DataSet subset(data, samp.row(i));
-    //         if (checkForVariance(subset, data) != -1) {
-    //             done = false;
-    //             break;
-    //         }
-    //     }
-    //     attempts--;
-    //     if (attempts == 0) {
-    //         Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
-    //         throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least one category of every discrete variable");
-    //     }
-    // }
-    // Rcpp::Rcout << std::endl;
+// double StabilityUtils::stabilitySearchStars(DataSet& data,
+// 					    std::string& alg,
+// 					    double param,
+// 					    EdgeListGraph* initialGraph,
+// 					    int num_threads,
+// 					    bool adjacency,
+// 					    int N,
+// 					    int b) {
+//     arma::umat samp = subSampleNoReplacement(data, b, N);
+//     // if (alg != "mgm") {
+//     // 	b = std::min(4*data.getNumRows()/5, (int) std::floor(20*std::sqrt(data.getNumRows())));
+//     // 	Rcpp::Rcout << "Subsample size = " << b << std::endl;
+//     // }
+//     // int attempts = 5000;
+//     // bool done = false;
+//     // while(!done) {
+//     //     // Rcpp::Rcout << "Attempt " << 5000 - attempts;
+//     //     samp = subSampleNoReplacement(data.getNumRows(), b, N);
+//     //     done = true;
+//     //     for (int i = 0; i < samp.n_rows; i++) {
+//     //         DataSet subset(data, samp.row(i));
+//     //         if (checkForVariance(subset, data) != -1) {
+//     //             done = false;
+//     //             break;
+//     //         }
+//     //     }
+//     //     attempts--;
+//     //     if (attempts == 0) {
+//     //         Rcpp::Rcout << "ERROR: Unable to find a subsampled dataset of size " << b << " where there are at least one category of every discrete variable" << std::endl;
+//     //         throw std::invalid_argument("Unable to find a subsampled dataset of size " + std::to_string(b) + " where there are at least one category of every discrete variable");
+//     //     }
+//     // }
+//     // Rcpp::Rcout << std::endl;
 
-    return stabilitySearchStars(data, alg, param, initialGraph, num_threads, adjacency, samp);
-}
+//     return stabilitySearchStars(data, alg, param, initialGraph, num_threads, adjacency, samp);
+// }
 
-double StabilityUtils::stabilitySearchStars(DataSet& data,
-					    std::string& alg,
-					    double param,
-					    EdgeListGraph* initialGraph,
-					    int num_threads,
-					    bool adjacency) {
-    // LOO
-    arma::umat samps(data.getNumRows(), data.getNumRows()-1);
+// double StabilityUtils::stabilitySearchStars(DataSet& data,
+// 					    std::string& alg,
+// 					    double param,
+// 					    EdgeListGraph* initialGraph,
+// 					    int num_threads,
+// 					    bool adjacency) {
+//     // LOO
+//     arma::umat samps(data.getNumRows(), data.getNumRows()-1);
 
-    for(int i = 0; i < samps.n_rows; i++) {
-        int count = 0;
-        for(int j = 0; j < samps.n_rows; j++) {
-            if(i==j) goto A;
-            samps(i, count) = j;
-            count++;
-            A:;
-        }
-    }
+//     for(int i = 0; i < samps.n_rows; i++) {
+//         int count = 0;
+//         for(int j = 0; j < samps.n_rows; j++) {
+//             if(i==j) goto A;
+//             samps(i, count) = j;
+//             count++;
+//             A:;
+//         }
+//     }
     
-    // Print a warning if there's a variance issue
-    for (uint s = 0; s < samps.n_rows; s++) {
-        DataSet dataSubSamp(data, samps.row(s));
-        if (checkForVariance(dataSubSamp, data) != -1) {
-            Rcpp::Rcout << "Variance issue with dataset: " << s << std::endl;
-        }
-    }
+//     // Print a warning if there's a variance issue
+//     for (uint s = 0; s < samps.n_rows; s++) {
+//         DataSet dataSubSamp(data, samps.row(s));
+//         if (checkForVariance(dataSubSamp, data) != -1) {
+//             Rcpp::Rcout << "Variance issue with dataset: " << s << std::endl;
+//         }
+//     }
     
-    return stabilitySearchStars(data, alg, param, initialGraph, num_threads, adjacency, samps);
-}
+//     return stabilitySearchStars(data, alg, param, initialGraph, num_threads, adjacency, samps);
+// }
 
-double StabilityUtils::stabilitySearchStars(DataSet& data,
-					    std::string& alg,
-					    double param,
-					    EdgeListGraph* initialGraph,
-					    int num_threads,
-					    bool adjacency,
-					    arma::umat& subs) {
-    int numVars = data.getNumColumns();
-    int layers;
-    double numPossEdges=0;
-    std::vector<double> lambda;
-    double alpha;
+// double StabilityUtils::stabilitySearchStars(DataSet& data,
+// 					    std::string& alg,
+// 					    double param,
+// 					    EdgeListGraph* initialGraph,
+// 					    int num_threads,
+// 					    bool adjacency,
+// 					    arma::umat& subs) {
+//     int numVars = data.getNumColumns();
+//     int layers;
+//     double numPossEdges=0;
+//     std::vector<double> lambda;
+//     double alpha;
 
-    if (alg == "mgm") {
-	adjacency = true;
-	numPossEdges = 0.5 * numVars * (numVars - 1);
+//     if (alg == "mgm") {
+// 	adjacency = true;
+// 	numPossEdges = 0.5 * numVars * (numVars - 1);
 
-	int lamLength;
+// 	int lamLength;
 
-	if (data.isMixed()) {
-	    lamLength = 3;
-	    // if (data.isCensored()) {
-	    // 	lamLength = 5;
-	    // } else {
-	    // 	lamLength = 3;
-	    // }
-	} else {
-	    throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
-	}
+// 	if (data.isMixed()) {
+// 	    lamLength = 3;
+// 	    // if (data.isCensored()) {
+// 	    // 	lamLength = 5;
+// 	    // } else {
+// 	    // 	lamLength = 3;
+// 	    // }
+// 	} else {
+// 	    throw std::runtime_error("MGM is not implemented for purely continuous or purely discrete datasets.");
+// 	}
 
-	for (int i = 1; i < lamLength; i++) {
-	    lambda.push_back(param);
-	}
+// 	for (int i = 1; i < lamLength; i++) {
+// 	    lambda.push_back(param);
+// 	}
 	
-    } else if (adjacency) {
-	if (initialGraph == NULL) {
-	    numPossEdges = numVars * (numVars - 1) / 2;
-	} else {
-	    std::string ig_alg = initialGraph->getAlgorithm();
-	    if (ig_alg.find("MGM")!=std::string::npos) {
-		std::size_t start = ig_alg.find("[");
-		std::size_t end = ig_alg.find("]");
-		if (start != end && end != std::string::npos) {
-		    std::stringstream ss(ig_alg.substr(start+1, end-start-1));
-		    for (double lam; ss >> lam;) {
-			lambda.push_back(lam);
-			while (ss.peek()==',' || ss.peek()==' ')
-			    ss.ignore();
-		    }
+//     } else if (adjacency) {
+// 	if (initialGraph == NULL) {
+// 	    numPossEdges = numVars * (numVars - 1) / 2;
+// 	} else {
+// 	    std::string ig_alg = initialGraph->getAlgorithm();
+// 	    if (ig_alg.find("MGM")!=std::string::npos) {
+// 		std::size_t start = ig_alg.find("[");
+// 		std::size_t end = ig_alg.find("]");
+// 		if (start != end && end != std::string::npos) {
+// 		    std::stringstream ss(ig_alg.substr(start+1, end-start-1));
+// 		    for (double lam; ss >> lam;) {
+// 			lambda.push_back(lam);
+// 			while (ss.peek()==',' || ss.peek()==' ')
+// 			    ss.ignore();
+// 		    }
 		    
-		    Rcpp::Rcout << lambda[0] << ", " << lambda[1] << ", " << lambda[2] << std::endl;
-		    numPossEdges = numVars * (numVars - 1) / 2;
-		}
-	    }
-	    if (numPossEdges == 0) {
-		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
-		numPossEdges = initialGraph->getEdges().size();
-	    }
-	}
-	alpha = param;
-    } else if (alg == "pc" || alg == "cpc" || alg == "pcm") {
-	layers = 2;
-	if (initialGraph == NULL) {
-	    numPossEdges = 1.5 * numVars * (numVars - 1);
-	} else {
-	    std::string ig_alg = initialGraph->getAlgorithm();
-	    if (ig_alg.find("MGM")!=std::string::npos) {
-		std::size_t start = ig_alg.find("[");
-		std::size_t end = ig_alg.find("]");
-		if (start != end && end != std::string::npos) {
-		    std::stringstream ss(ig_alg.substr(start+1, end-start-1));
-		    for (double lam; ss >> lam;) {
-			lambda.push_back(lam);
-			while (ss.peek()==',' || ss.peek()==' ')
-			    ss.ignore();
-		    }
+// 		    Rcpp::Rcout << lambda[0] << ", " << lambda[1] << ", " << lambda[2] << std::endl;
+// 		    numPossEdges = numVars * (numVars - 1) / 2;
+// 		}
+// 	    }
+// 	    if (numPossEdges == 0) {
+// 		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
+// 		numPossEdges = initialGraph->getEdges().size();
+// 	    }
+// 	}
+// 	alpha = param;
+//     } else if (alg == "pc" || alg == "cpc" || alg == "pcm") {
+// 	layers = 2;
+// 	if (initialGraph == NULL) {
+// 	    numPossEdges = 1.5 * numVars * (numVars - 1);
+// 	} else {
+// 	    std::string ig_alg = initialGraph->getAlgorithm();
+// 	    if (ig_alg.find("MGM")!=std::string::npos) {
+// 		std::size_t start = ig_alg.find("[");
+// 		std::size_t end = ig_alg.find("]");
+// 		if (start != end && end != std::string::npos) {
+// 		    std::stringstream ss(ig_alg.substr(start+1, end-start-1));
+// 		    for (double lam; ss >> lam;) {
+// 			lambda.push_back(lam);
+// 			while (ss.peek()==',' || ss.peek()==' ')
+// 			    ss.ignore();
+// 		    }
 		    
-		    Rcpp::Rcout << lambda[0] << ", " << lambda[1] << ", " << lambda[2] << std::endl;
-		    numPossEdges = 1.5 * numVars * (numVars - 1);
-		}
-	    }
-	    if (numPossEdges == 0) {
-		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
-		numPossEdges = 3.0 * initialGraph->getEdges().size();
-	    }
-	}
-	alpha = param;
-    } else if (alg == "fci" || alg == "cfci" || alg == "fcim") {
-	layers = 3;
-	if (initialGraph == NULL) {
-	    numPossEdges = 3.0 * numVars * (numVars - 1);
-	} else {
-	    std::string ig_alg = initialGraph->getAlgorithm();
-	    if (ig_alg.find("MGM")!=std::string::npos) {
-		std::size_t start = ig_alg.find("[");
-		std::size_t end = ig_alg.find("]");
-		if (start != end && end != std::string::npos) {
-		    std::stringstream ss(ig_alg.substr(start+1, end-start-1));
-		    for (double lam; ss >> lam;) {
-			lambda.push_back(lam);
-			while (ss.peek()==',' || ss.peek()==' ')
-			    ss.ignore();
-		    }
+// 		    Rcpp::Rcout << lambda[0] << ", " << lambda[1] << ", " << lambda[2] << std::endl;
+// 		    numPossEdges = 1.5 * numVars * (numVars - 1);
+// 		}
+// 	    }
+// 	    if (numPossEdges == 0) {
+// 		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
+// 		numPossEdges = 3.0 * initialGraph->getEdges().size();
+// 	    }
+// 	}
+// 	alpha = param;
+//     } else if (alg == "fci" || alg == "cfci" || alg == "fcim") {
+// 	layers = 3;
+// 	if (initialGraph == NULL) {
+// 	    numPossEdges = 3.0 * numVars * (numVars - 1);
+// 	} else {
+// 	    std::string ig_alg = initialGraph->getAlgorithm();
+// 	    if (ig_alg.find("MGM")!=std::string::npos) {
+// 		std::size_t start = ig_alg.find("[");
+// 		std::size_t end = ig_alg.find("]");
+// 		if (start != end && end != std::string::npos) {
+// 		    std::stringstream ss(ig_alg.substr(start+1, end-start-1));
+// 		    for (double lam; ss >> lam;) {
+// 			lambda.push_back(lam);
+// 			while (ss.peek()==',' || ss.peek()==' ')
+// 			    ss.ignore();
+// 		    }
 		    
-		    Rcpp::Rcout << lambda[0] << ", " << lambda[1] << ", " << lambda[2] << std::endl;
-		    numPossEdges = 3.0 * numVars * (numVars - 1);
-		}
-	    }
-	    if (numPossEdges == 0) {
-		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
-		numPossEdges = 6.0 * initialGraph->getEdges().size();
-	    }
-	}
-	alpha = param;
-    } else {
-	throw std::invalid_argument("Invalid algorithm: " + alg
-				    + "\n   Algorithm must be in the list: { mgm, pc, cpc, pcm, fci, cfci, fcim }");
-    }
+// 		    Rcpp::Rcout << lambda[0] << ", " << lambda[1] << ", " << lambda[2] << std::endl;
+// 		    numPossEdges = 3.0 * numVars * (numVars - 1);
+// 		}
+// 	    }
+// 	    if (numPossEdges == 0) {
+// 		// std::unordered_set<Edge> edgeSet = initialGraph->getEdges();
+// 		numPossEdges = 6.0 * initialGraph->getEdges().size();
+// 	    }
+// 	}
+// 	alpha = param;
+//     } else {
+// 	throw std::invalid_argument("Invalid algorithm: " + alg
+// 				    + "\n   Algorithm must be in the list: { mgm, pc, cpc, pcm, fci, cfci, fcim }");
+//     }
 
-    EdgeListGraph g;
-    EdgeListGraph ig;
-    arma::mat thetaMat;
-    arma::cube thetaCube;
+//     EdgeListGraph g;
+//     EdgeListGraph ig;
+//     arma::mat thetaMat;
+//     arma::cube thetaCube;
 
-    if (adjacency)
-	thetaMat = arma::mat(numVars, numVars, arma::fill::zeros);
-    else
-	thetaCube = arma::cube(numVars, numVars, layers, arma::fill::zeros);
+//     if (adjacency)
+// 	thetaMat = arma::mat(numVars, numVars, arma::fill::zeros);
+//     else
+// 	thetaCube = arma::cube(numVars, numVars, layers, arma::fill::zeros);
 
-    // for (int i = 0; i < subs.n_rows; i++) {
-    // 	DataSet dataSubSamp(data, subs.row(i));
+//     // for (int i = 0; i < subs.n_rows; i++) {
+//     // 	DataSet dataSubSamp(data, subs.row(i));
 	
-    // 	if (alg == "mgm") {
+//     // 	if (alg == "mgm") {
 	    
-    // 	    MGM mgm(dataSubSamp, lambda);
-    // 	    g = mgm.search();
+//     // 	    MGM mgm(dataSubSamp, lambda);
+//     // 	    g = mgm.search();
 	    
-    // 	} else if (alg == "pc") {
+//     // 	} else if (alg == "pc") {
 	    
-    // 	    IndTestMulti itm(dataSubSamp, alpha);
+//     // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-    // 	    PcStable pcs((IndependenceTest*) &itm);
-    // 	    if (num_threads > 0) pcs.setThreads(num_threads);
+//     // 	    PcStable pcs((IndependenceTest*) &itm);
+//     // 	    if (num_threads > 0) pcs.setThreads(num_threads);
 	    
-    // 	    pcs.setVerbose(false);
+//     // 	    pcs.setVerbose(false);
 
-    // 	    if (!lambda.empty()) {
-    // 		MGM mgm(dataSubSamp, lambda);
-    // 		ig = mgm.search();
-    // 		pcs.setInitialGraph(&ig);
-    // 	    } else {
-    // 		pcs.setInitialGraph(initialGraph);
-    // 	    }
+//     // 	    if (!lambda.empty()) {
+//     // 		MGM mgm(dataSubSamp, lambda);
+//     // 		ig = mgm.search();
+//     // 		pcs.setInitialGraph(&ig);
+//     // 	    } else {
+//     // 		pcs.setInitialGraph(initialGraph);
+//     // 	    }
 	    
-    // 	    g = pcs.search();
+//     // 	    g = pcs.search();
 	    
-    // 	} else if (alg == "cpc") {
+//     // 	} else if (alg == "cpc") {
 	    
-    // 	    IndTestMulti itm(dataSubSamp, alpha);
+//     // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-    // 	    CpcStable cpc((IndependenceTest*) &itm);
-    // 	    if (num_threads > 0) cpc.setThreads(num_threads);
+//     // 	    CpcStable cpc((IndependenceTest*) &itm);
+//     // 	    if (num_threads > 0) cpc.setThreads(num_threads);
 	    
-    // 	    cpc.setVerbose(false);
+//     // 	    cpc.setVerbose(false);
 
-    // 	    if (!lambda.empty()) {
-    // 		MGM mgm(dataSubSamp, lambda);
-    // 		ig = mgm.search();
-    // 		cpc.setInitialGraph(&ig);
-    // 	    } else {
-    // 		cpc.setInitialGraph(initialGraph);
-    // 	    }
+//     // 	    if (!lambda.empty()) {
+//     // 		MGM mgm(dataSubSamp, lambda);
+//     // 		ig = mgm.search();
+//     // 		cpc.setInitialGraph(&ig);
+//     // 	    } else {
+//     // 		cpc.setInitialGraph(initialGraph);
+//     // 	    }
 	    
-    // 	    g = cpc.search();
+//     // 	    g = cpc.search();
 	    
-    // 	} else if (alg == "pcm") {
+//     // 	} else if (alg == "pcm") {
 	    
-    // 	    IndTestMulti itm(dataSubSamp, alpha);
+//     // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-    // 	    PcMax pcm((IndependenceTest*) &itm);
-    // 	    if (num_threads > 0) pcm.setThreads(num_threads);
+//     // 	    PcMax pcm((IndependenceTest*) &itm);
+//     // 	    if (num_threads > 0) pcm.setThreads(num_threads);
 	    
-    // 	    pcm.setVerbose(false);
+//     // 	    pcm.setVerbose(false);
 	    
-    // 	    if (!lambda.empty()) {
-    // 		MGM mgm(dataSubSamp, lambda);
-    // 		ig = mgm.search();
-    // 		pcm.setInitialGraph(&ig);
-    // 	    } else {
-    // 		pcm.setInitialGraph(initialGraph);
-    // 	    }
+//     // 	    if (!lambda.empty()) {
+//     // 		MGM mgm(dataSubSamp, lambda);
+//     // 		ig = mgm.search();
+//     // 		pcm.setInitialGraph(&ig);
+//     // 	    } else {
+//     // 		pcm.setInitialGraph(initialGraph);
+//     // 	    }
 	    
-    // 	    g = pcm.search();
+//     // 	    g = pcm.search();
 	    
-    // 	} else if (alg == "fci") {
+//     // 	} else if (alg == "fci") {
 	    
-    // 	    IndTestMulti itm(dataSubSamp, alpha);
+//     // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-    // 	    Fci fci((IndependenceTest*) &itm);
-    // 	    if (num_threads > 0) fci.setThreads(num_threads);
+//     // 	    Fci fci((IndependenceTest*) &itm);
+//     // 	    if (num_threads > 0) fci.setThreads(num_threads);
 	    
-    // 	    fci.setVerbose(false);
+//     // 	    fci.setVerbose(false);
 	    
-    // 	    if (!lambda.empty()) {
-    // 		MGM mgm(dataSubSamp, lambda);
-    // 		ig = mgm.search();
-    // 		fci.setInitialGraph(&ig);
-    // 	    } else {
-    // 		fci.setInitialGraph(initialGraph);
-    // 	    }
+//     // 	    if (!lambda.empty()) {
+//     // 		MGM mgm(dataSubSamp, lambda);
+//     // 		ig = mgm.search();
+//     // 		fci.setInitialGraph(&ig);
+//     // 	    } else {
+//     // 		fci.setInitialGraph(initialGraph);
+//     // 	    }
 	    
-    // 	    g = fci.search();
+//     // 	    g = fci.search();
 	    
-    // 	} else if (alg == "cfci") {
+//     // 	} else if (alg == "cfci") {
 	    
-    // 	    IndTestMulti itm(dataSubSamp, alpha);
+//     // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-    // 	    Cfci cfci((IndependenceTest*) &itm);
-    // 	    if (num_threads > 0) cfci.setThreads(num_threads);
+//     // 	    Cfci cfci((IndependenceTest*) &itm);
+//     // 	    if (num_threads > 0) cfci.setThreads(num_threads);
 	    
-    // 	    cfci.setVerbose(false);
+//     // 	    cfci.setVerbose(false);
 	    
-    // 	    if (!lambda.empty()) {
-    // 		MGM mgm(dataSubSamp, lambda);
-    // 		ig = mgm.search();
-    // 		cfci.setInitialGraph(&ig);
-    // 	    } else {
-    // 		cfci.setInitialGraph(initialGraph);
-    // 	    }
+//     // 	    if (!lambda.empty()) {
+//     // 		MGM mgm(dataSubSamp, lambda);
+//     // 		ig = mgm.search();
+//     // 		cfci.setInitialGraph(&ig);
+//     // 	    } else {
+//     // 		cfci.setInitialGraph(initialGraph);
+//     // 	    }
 	    
-    // 	    g = cfci.search();
+//     // 	    g = cfci.search();
 	    
-    // 	} else if (alg == "fcim") {
+//     // 	} else if (alg == "fcim") {
 	    
-    // 	    IndTestMulti itm(dataSubSamp, alpha);
+//     // 	    IndTestMulti itm(dataSubSamp, alpha);
 	    
-    // 	    FciMax fcim((IndependenceTest*) &itm);
-    // 	    if (num_threads > 0) fcim.setThreads(num_threads);
+//     // 	    FciMax fcim((IndependenceTest*) &itm);
+//     // 	    if (num_threads > 0) fcim.setThreads(num_threads);
 	    
-    // 	    fcim.setVerbose(false);
+//     // 	    fcim.setVerbose(false);
 
-    // 	    if (!lambda.empty()) {
-    // 		MGM mgm(dataSubSamp, lambda);
-    // 		ig = mgm.search();
-    // 		fcim.setInitialGraph(&ig);
-    // 	    } else {
-    // 		fcim.setInitialGraph(initialGraph);
-    // 	    }
+//     // 	    if (!lambda.empty()) {
+//     // 		MGM mgm(dataSubSamp, lambda);
+//     // 		ig = mgm.search();
+//     // 		fcim.setInitialGraph(&ig);
+//     // 	    } else {
+//     // 		fcim.setInitialGraph(initialGraph);
+//     // 	    }
 	    
-    // 	    g = fcim.search();
+//     // 	    g = fcim.search();
 	    
-    // 	} else {
-    // 	    throw std::invalid_argument("Unrecognized search algorithm");
-    // 	}
+//     // 	} else {
+//     // 	    throw std::invalid_argument("Unrecognized search algorithm");
+//     // 	}
 
-    // 	// arma::cube curAdj = graphToCube(g, dataSubSamp);
-    // 	if (adjacency)
-    // 	    thetaMat += skeletonToMatrix(g, dataSubSamp);
-    // 	else
-    // 	    thetaCube += graphToCube(g, dataSubSamp);
-    // }
+//     // 	// arma::cube curAdj = graphToCube(g, dataSubSamp);
+//     // 	if (adjacency)
+//     // 	    thetaMat += skeletonToMatrix(g, dataSubSamp);
+//     // 	else
+//     // 	    thetaCube += graphToCube(g, dataSubSamp);
+//     // }
     
-    // if (adjacency) {
-    // 	thetaMat = thetaMat / subs.n_rows;
-    // 	Rcpp::Rcout << thetaMat << std::endl;
-    // 	arma::mat destable = 2 * thetaMat % (1-thetaMat);
-    // 	Rcpp::Rcout << destable << std::endl;
-    // 	Rcpp::Rcout << arma::accu(destable) / 2 << " / " << numPossEdges << std::endl;
-    // 	return (arma::accu(destable) / 2) / numPossEdges;
-    // }
+//     // if (adjacency) {
+//     // 	thetaMat = thetaMat / subs.n_rows;
+//     // 	Rcpp::Rcout << thetaMat << std::endl;
+//     // 	arma::mat destable = 2 * thetaMat % (1-thetaMat);
+//     // 	Rcpp::Rcout << destable << std::endl;
+//     // 	Rcpp::Rcout << arma::accu(destable) / 2 << " / " << numPossEdges << std::endl;
+//     // 	return (arma::accu(destable) / 2) / numPossEdges;
+//     // }
     
-    thetaCube = thetaCube / subs.n_rows;
-    arma::cube destable = 2 * thetaCube % (1-thetaCube);
-    return arma::accu(destable) / numPossEdges;
-}
+//     thetaCube = thetaCube / subs.n_rows;
+//     arma::cube destable = 2 * thetaCube % (1-thetaCube);
+//     return arma::accu(destable) / numPossEdges;
+// }

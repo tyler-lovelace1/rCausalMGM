@@ -56,13 +56,15 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
     }
     
     std::vector<EdgeListGraph> igVec(samps.n_rows);
-    std::vector<std::future<EdgeListGraph>> futures(samps.n_rows);
+    // std::vector<std::future<EdgeListGraph>> futures(samps.n_rows);
 
     if (mgmFlag) {
-	RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, (int) samps.n_rows)));
+	// RcppThread::ThreadPool pool(std::max(1, std::min(parallelism, (int) samps.n_rows)));
         lambda = std::vector<double>(lambdaVec.begin(), lambdaVec.end());
 
-	auto initialGraphTask = [&] (int i) {
+	std::vector<RcppThread::Thread> threads;
+
+	auto initialGraphTask = [&] (std::size_t i) {
 				    EdgeListGraph ig;
 
 				    RcppThread::checkUserInterrupt();
@@ -80,6 +82,30 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 				    igVec[i] = ig;
 				};
 
+	auto producer = [&] () {
+	    for (std::size_t i = 0; i < N; i++) {
+		taskQueue.push(ParallelTask(initialGraphTask, i));
+
+		if (RcppThread::isInterrupted()) {
+		    break;
+		}
+	    }
+	
+	    for (int i = 0; i < parallelism; i++) {
+		taskQueue.push(ParallelTask::poisonpill());
+	    }
+	};
+
+	threads.push_back(RcppThread::Thread(producer));
+
+	for (int i = 0; i < parallelism; i++) {
+	    threads.push_back(RcppThread::Thread([this] { parallelTaskConsumer(); }));
+	}
+
+	for (uint i = 0; i < threads.size(); i++) {
+	    threads[i].join();
+	}
+
 	// for (int i = 0; i < samps.n_rows; i++) {
 	//     futures[i] = pool.pushReturn(initialGraphTask, i);
 	// }
@@ -90,9 +116,9 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 
 	// RcppThread::checkUserInterrupt();
 
-	pool.parallelFor(0, samps.n_rows, initialGraphTask);
+	// pool.parallelFor(0, samps.n_rows, initialGraphTask);
 
-	pool.join();
+	// pool.join();
     }
 
 

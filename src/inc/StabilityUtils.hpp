@@ -13,6 +13,20 @@ class StabilityUtils {
 
     static const std::size_t MAX_QUEUE_SIZE = 1000;
 
+    static void parallelTaskConsumer(BlockingQueue<ParallelTask>& taskQueue) {
+	while (true) {
+	    ParallelTask t = taskQueue.pop();
+
+	    if (t.is_poison())
+		break;
+
+	    if (RcppThread::isInterrupted())
+		break;	
+
+	    t();
+	}
+    }
+
 public:
 
     static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, int N, int b);
@@ -21,11 +35,11 @@ public:
 
     static arma::mat stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads, arma::umat& subs);
 
-    static double stabilitySearchStars(DataSet& data, std::string& alg, double param, EdgeListGraph* initialGraph, int num_threads, bool adjcacency, int N, int b);
+    // static double stabilitySearchStars(DataSet& data, std::string& alg, double param, EdgeListGraph* initialGraph, int num_threads, bool adjcacency, int N, int b);
 
-    static double stabilitySearchStars(DataSet& data, std::string& alg, double param, EdgeListGraph* initialGraph, int num_threads, bool adjcacency); // LOO
+    // static double stabilitySearchStars(DataSet& data, std::string& alg, double param, EdgeListGraph* initialGraph, int num_threads, bool adjcacency); // LOO
 
-    static double stabilitySearchStars(DataSet& data, std::string& alg, double param, EdgeListGraph* initialGraph, int num_threads, bool adjcacency, arma::umat& subs);
+    // static double stabilitySearchStars(DataSet& data, std::string& alg, double param, EdgeListGraph* initialGraph, int num_threads, bool adjcacency, arma::umat& subs);
 
     static arma::umat subSampleNoReplacement(DataSet& data, int subSize, int numSub);
 
