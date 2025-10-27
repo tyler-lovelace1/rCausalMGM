@@ -718,7 +718,7 @@ void FciOrient::reachablePathFind(const Node& a, const Node& b, const Node& c,
 	// Possible DDP path endpoints.
 	std::vector<Node> pathExtensions = graph.getNodesInTo(x, ENDPOINT_ARROW);
 	for (const Node& var: visited) {
-	    std::remove(pathExtensions.begin(), pathExtensions.end(), var);
+	    pathExtensions.erase(std::remove(pathExtensions.begin(), pathExtensions.end(), var), pathExtensions.end());
 	}
 
 	for (const Node& d : pathExtensions) {
