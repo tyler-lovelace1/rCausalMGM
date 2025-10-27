@@ -124,8 +124,8 @@ public:
     CoxMGM(DataSet& ds, std::vector<double>& lambda);
     CoxMGM(DataSet ds, std::vector<int> l, std::vector<double> lambda);
 
-    CoxMGM(CoxMGM& other) = default;
-    CoxMGM& operator=(CoxMGM& other) = default;
+    CoxMGM(const CoxMGM& other) = default;
+    CoxMGM& operator=(const CoxMGM& other) = default;
     CoxMGM(CoxMGM&& other) = default;
     CoxMGM& operator=(CoxMGM&& other) = default;
     ~CoxMGM() = default;

@@ -85,8 +85,8 @@ public:
 
     MGM(const MGM& other) = default;
     MGM& operator=(const MGM& other) = default;
-    MGM(const MGM&& other) = default;
-    MGM& operator=(const MGM&& other) = default;
+    MGM(MGM&& other) = default;
+    MGM& operator=(MGM&& other) = default;
     ~MGM() = default;
 
     std::string printParameters(arma::vec& X);
