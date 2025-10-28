@@ -9,20 +9,25 @@
 ## And with R 3.4.0, and RcppArmadillo 0.7.960.*, we turn C++11 on as OpenMP
 ## support within Armadillo prefers / requires it
 # CXX_STD=CXX11
-# CC=ccache gcc
-# CXX=ccache g++
+# CC=clang
+# CXX=clang++
 
 # ## Your package flags
 # PKG_CPPFLAGS = -I"inc"
 # PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
 # PKG_LIBS     = $(SHLIB_OPENMP_LDFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-
 ## C++ compiler flags for OpenMP and include paths
-PKG_CPPFLAGS = -I"inc"
-PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_CXXFLAGS = -I"inc" $(SHLIB_OPENMP_CXXFLAGS) # -std=c++17 # -fsanitize=address
 
 ## Linker flags for R libraries and other dependencies
-PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
-# PKG_LIBS += $(shell $(R_HOME)/bin/R CMD config PKG_LIBS)
-# PKG_LIBS += $(R_system_link_flag) atomic
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) # -fsanitize=address -shared-libasan
+
+# ## C++ compiler flags for OpenMP and include paths
+# PKG_CPPFLAGS = -I"inc"
+# PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+
+# ## Linker flags for R libraries and other dependencies
+# PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -fsanitize=address
+# # PKG_LIBS += $(shell $(R_HOME)/bin/R CMD config PKG_LIBS)
+# # PKG_LIBS += $(R_system_link_flag) atomic

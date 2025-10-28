@@ -1193,7 +1193,7 @@ double MGM::smoothValue(arma::vec& parIn) {
  * @return value of h(X)
  */
 double MGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
-    double nonSmooth = 0;
+    // double nonSmooth = 0;
 
     arma::vec tlam = lambda * t;
 

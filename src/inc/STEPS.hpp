@@ -14,7 +14,7 @@ private:
     double gamma;
     bool leaveOneOut = false;
     
-    int iterLimit = 500;
+    // int iterLimit = 500;
     double origLambda;
     std::vector<double> lastLambda;
     arma::mat stabilities;

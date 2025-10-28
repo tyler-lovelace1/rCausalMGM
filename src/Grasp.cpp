@@ -78,7 +78,7 @@ std::list<Node> Grasp::initializeBOSS() {
     double oldBic = 1e20;
     // double oldScore = nodeList.size() * nodeList.size();
     double bic = tau.bic;
-    double score = tau.score;
+    // double score = tau.score;
 
     if (verbose) Rcpp::Rcout << "  Initializing with BOSS...\n";
 

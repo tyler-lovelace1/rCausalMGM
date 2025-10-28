@@ -1334,7 +1334,7 @@ Rcpp::List pcCV(
 //' @examples
 //' \donttest{
 //' sim <- simRandomDAG(200, 25, deg=2)
-//' g.cv <- fciCV(sim$data)
+//' g.cv <- fciCV(sim$data, verbose=T)
 //' print(g.cv)
 //' }
 // [[Rcpp::export]]
