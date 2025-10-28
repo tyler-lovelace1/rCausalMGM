@@ -519,7 +519,7 @@ pcCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.ch
 #' @examples
 #' \donttest{
 #' sim <- simRandomDAG(200, 25, deg=2)
-#' g.cv <- fciCV(sim$data)
+#' g.cv <- fciCV(sim$data, verbose=T)
 #' print(g.cv)
 #' }
 fciCV <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority", "maxp", "conservative")), alphas = NULL, nfolds = 5L, foldid = NULL, threads = -1L, fdr = FALSE, rank = FALSE, verbose = FALSE) {
