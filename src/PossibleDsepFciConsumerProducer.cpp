@@ -115,15 +115,21 @@ void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std
     const std::set<Edge> edges(graph.getEdges());
     std::vector<RcppThread::Thread> threads;
 
+    RcppThread::Rcout << "concurrentSearch initiated...\n";
+
     threads.push_back(RcppThread::Thread( [&] { PossibleDsepProducer(edges); } ));
+
+    RcppThread::Rcout << "PossibleDsepProducer initiated...\n";
 
 
     for (int i = 0; i < parallelism; i++) {
         threads.push_back(RcppThread::Thread( [&] { PossibleDsepConsumer(edgeCondsetMap); } ));
+	RcppThread::Rcout << "PossibleDsepConsumer " << i << " initiated...\n";
     }
 
     for (uint i = 0; i < threads.size(); i++) {
         threads[i].join();
+	RcppThread::Rcout << "Thread " << i << " joined.\n";
     }
     return;
 }
