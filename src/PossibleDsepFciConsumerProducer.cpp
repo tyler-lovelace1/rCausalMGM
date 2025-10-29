@@ -122,7 +122,7 @@ void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std
         threads.push_back(RcppThread::Thread( [&] { PossibleDsepConsumer(edgeCondsetMap); } ));
     }
 
-    for (int i = 0; i < threads.size(); i++) {
+    for (uint i = 0; i < threads.size(); i++) {
         threads[i].join();
     }
     return;

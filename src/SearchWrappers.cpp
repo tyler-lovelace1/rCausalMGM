@@ -1082,7 +1082,7 @@ Rcpp::List pcStable(
 //' @examples
 //' \donttest{
 //' sim <- simRandomDAG(200, 25, deg=2)
-//' g <- fciStable(sim$data)
+//' g <- fciStable(sim$data, verbose=TRUE)
 //' print(g)
 //' }
 // [[Rcpp::export]]

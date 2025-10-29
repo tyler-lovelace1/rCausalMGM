@@ -465,7 +465,7 @@ pcStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = a
 #' @examples
 #' \donttest{
 #' sim <- simRandomDAG(200, 25, deg=2)
-#' g <- fciStable(sim$data)
+#' g <- fciStable(sim$data, verbose=TRUE)
 #' print(g)
 #' }
 fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alpha = 0.05, threads = -1L, possDsep = TRUE, fdr = FALSE, rank = FALSE, verbose = FALSE) {
