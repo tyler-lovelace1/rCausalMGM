@@ -63,7 +63,7 @@ private:
 	    edge(),
 	    condSet(std::vector<Node>()) {}
 
-        PossibleDsepTask(const Edge& edge_, std::vector<Node> condSet_) :
+        PossibleDsepTask(Edge edge_, std::vector<Node> condSet_) :
 	    edge(edge_),
 	    condSet(condSet_) {}
 
