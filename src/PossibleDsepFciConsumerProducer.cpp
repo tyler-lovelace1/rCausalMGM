@@ -221,8 +221,8 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		    // }
 		    
 		    // if (!allAdj) {
-		    PossibleDsepTask newTask(edge, condSet);
-		    taskQueue.push(newTask);
+		    // PossibleDsepTask newTask(edge, condSet);
+		    taskQueue.push(PossibleDsepTask(edge, condSet));
 		    // }
 		}
 	    }
@@ -277,8 +277,8 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		    // }
 		    
 		    // if (!allAdj) {
-		    PossibleDsepTask newTask(edge, condSet);
-		    taskQueue.push(newTask);
+		    // PossibleDsepTask newTask(edge, condSet);
+		    taskQueue.push(PossibleDsepTask(edge, condSet));
 		    // }
 		}
 	    }
