@@ -118,7 +118,7 @@ private:
 	IndependenceTask() : x(),
 			     y(),
 			     z() {}
-        IndependenceTask(const Node& _x, const Node& _y, std::vector<Node>& _z) : x(_x),
+        IndependenceTask(Node _x, Node _y, std::vector<Node> _z) : x(_x),
 										  y(_y),
 										  z(_z) {}
 	IndependenceTask(const IndependenceTask& it) = default;

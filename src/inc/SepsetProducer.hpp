@@ -47,10 +47,10 @@ private:
         Node c;
         std::vector<Node> s;
 	IndependenceTask() {}
-        IndependenceTask(const Node& _a,
-			 const Node& _b,
-			 const Node& _c,
-			 const std::vector<Node>& _s) :
+        IndependenceTask(Node _a,
+			 Node _b,
+			 Node _c,
+			 std::vector<Node> _s) :
 	    a(_a),
 	    b(_b),
 	    c(_c),
