@@ -464,7 +464,7 @@ pcStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = a
 #' @export
 #' @examples
 #' \donttest{
-#' sim <- simRandomDAG(200, 25, deg=2)
+#' sim <- simRandomDAG(200, 50, deg=3)
 #' g <- fciStable(sim$data, verbose=TRUE)
 #' print(g)
 #' }

@@ -46,7 +46,7 @@ Runs the causal discovery algorithm FCI-Stable on a dataset. The FCI-Stable algo
 }
 \examples{
 \donttest{
-sim <- simRandomDAG(200, 25, deg=2)
+sim <- simRandomDAG(200, 50, deg=3)
 g <- fciStable(sim$data, verbose=TRUE)
 print(g)
 }
