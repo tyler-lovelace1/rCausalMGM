@@ -94,9 +94,12 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
 	posDsp->setDepth(depth);
 	posDsp->setVerbose(verbose);
 	posDsp->setKnowledge(knowledge);
+	
 	if (verbose) Rcpp::Rcout << "      Filling Triple Map..." << std::endl;
 	
 	posDsp->fillMap();
+
+	Rcpp::Rcout << "    Finished" << std::endl;
 	
 	fciorient_ = FciOrient(*posDsp, whyOrient);
 	
@@ -152,6 +155,8 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
 	mapSp->fillMap();
 
 	fciorient_ = FciOrient(*mapSp, whyOrient);
+
+	Rcpp::Rcout << "    Finished" << std::endl;
       
     } else {
 
@@ -162,6 +167,8 @@ EdgeListGraph Fci::search(FasStableProducerConsumer& fas, const std::vector<Node
 	if (verbose) Rcpp::Rcout << "    Filling Triple Map..." << std::endl;
       
 	sp->fillMap();
+
+	Rcpp::Rcout << "    Finished" << std::endl;
 
 	fciorient_ = FciOrient(*sp, whyOrient);
     }
