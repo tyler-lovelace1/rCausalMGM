@@ -150,7 +150,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 
     bool printFlag = false;
 
-    for (const Edge& edge : edges) {
+    for (Edge edge : edges) {
         Node x = edge.getNode1();
         Node y = edge.getNode2();
 
@@ -182,18 +182,18 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		maxPossDsepSize = possibleDsep.size();
 		if (verbose) {
 		    printFlag = true;
-		    RcppThread::Rcout << "\r      Largest Encountered Possible-D-Sep: "
+		    RcppThread::Rcout << "\n      Largest Encountered Possible-D-Sep: "
 				      << maxPossDsepSize;
 		}
 	    }
 
-	    // RcppThread::Rcout << "      Possible-D-Sep(" << x << "," << y << ")  :  { "; // != Adj(" << x <<") \\ { " << y <<" }\n";
+	    RcppThread::Rcout << "      Possible-D-Sep(" << x << "," << y << ")  :  { "; // != Adj(" << x <<") \\ { " << y <<" }\n";
 	
-	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
-	    // for (Node node : possibleDsep) {
-	    // 	RcppThread::Rcout << node << " ";
-	    // }
-	    // RcppThread::Rcout << "}\n";
+	    // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
+	    for (Node node : possibleDsep) {
+		RcppThread::Rcout << node << " ";
+	    }
+	    RcppThread::Rcout << "}\n";
 
 	    // std::set<Node> adjSet(adjx.begin(), adjx.end());
 
@@ -238,18 +238,18 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 	        maxPossDsepSize = possibleDsep.size();
 		if (verbose) {
 		    printFlag = true;
-		    RcppThread::Rcout << "\r      Largest Encountered Possible-D-Sep: "
+		    RcppThread::Rcout << "\n      Largest Encountered Possible-D-Sep: "
 				      << maxPossDsepSize;
 		}
 	    }
 
-	    // RcppThread::Rcout << "      Possible-D-Sep(" << y << "," << x << ")  :  { "; // != Adj(" << y <<") \\ { " << x <<" }\n";
+	    RcppThread::Rcout << "      Possible-D-Sep(" << y << "," << x << ")  :  { "; // != Adj(" << y <<") \\ { " << x <<" }\n";
 	
-	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
-	    // for (Node node : possibleDsep) {
-	    // 	RcppThread::Rcout << node << " ";
-	    // }
-	    // RcppThread::Rcout << "}\n";
+	    // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
+	    for (Node node : possibleDsep) {
+		RcppThread::Rcout << node << " ";
+	    }
+	    RcppThread::Rcout << "}\n";
 	    
 	    // std::set<Node> adjSet(adjy.begin(), adjy.end());
 
