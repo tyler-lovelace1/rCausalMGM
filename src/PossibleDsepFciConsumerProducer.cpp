@@ -127,12 +127,12 @@ void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std
 	RcppThread::Rcout << "PossibleDsepConsumer " << i << " initiated...\n";
     }
 
-    for (uint i = 1; i < threads.size(); i++) {
+    for (uint i = 0; i < threads.size(); i++) {
         threads[i].join();
 	RcppThread::Rcout << "Thread " << i << " joined.\n";
     }
-    threads[0].join();
-    RcppThread::Rcout << "Thread " << 0 << " joined.\n";
+    // threads[0].join();
+    // RcppThread::Rcout << "Thread " << 0 << " joined.\n";
     return;
 }
 
