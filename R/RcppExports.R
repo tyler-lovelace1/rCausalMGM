@@ -464,7 +464,7 @@ pcStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = a
 #' @export
 #' @examples
 #' sim <- simRandomDAG(200, 50, deg=3)
-#' g <- fciStable(sim$data, verbose=TRUE)
+#' g <- fciStable(sim$data, verbose=TRUE, possDsep=FALSE)
 #' print(g)
 fciStable <- function(data, initialGraph = NULL, knowledge = NULL, orientRule = as.character( c("majority")), alpha = 0.05, threads = -1L, possDsep = TRUE, fdr = FALSE, rank = FALSE, verbose = FALSE) {
     .Call(`_rCausalMGM_fciStable`, data, initialGraph, knowledge, orientRule, alpha, threads, possDsep, fdr, rank, verbose)
