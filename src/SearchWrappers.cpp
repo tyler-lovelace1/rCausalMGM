@@ -1080,11 +1080,9 @@ Rcpp::List pcStable(
 //' @return The PAG learned by FCI-Stable.
 //' @export
 //' @examples
-//' \donttest{
 //' sim <- simRandomDAG(200, 50, deg=3)
 //' g <- fciStable(sim$data, verbose=TRUE)
 //' print(g)
-//' }
 // [[Rcpp::export]]
 Rcpp::List fciStable(
     const Rcpp::DataFrame& data,
