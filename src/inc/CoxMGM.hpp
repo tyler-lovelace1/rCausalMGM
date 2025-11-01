@@ -100,9 +100,9 @@ private:
 
     // bool verbose = false;
 
-    double logsumexp(arma::vec x);
+    double logsumexp(const arma::vec& x);
 
-    arma::vec logsumexp(arma::mat x);
+    arma::vec logsumexp(const arma::mat& x);
 
     void initParameters();  // init all parameters to zeros except for betad which is set to 1s
     void calcWeights();     // calculate parameter weights as in Lee and Hastie

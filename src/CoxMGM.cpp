@@ -353,18 +353,19 @@ void CoxMGM::initParameters() {
 }
 
 // avoid underflow in log(sum(exp(x))) calculation
-double CoxMGM::logsumexp(arma::vec x) {
-    // arma::vec myX = arma::vec(x);
-    double maxX = x.max();
-    x -= maxX;
-    return std::log(arma::sum(arma::exp(x))) + maxX;
+double CoxMGM::logsumexp(const arma::vec& x) {
+    arma::vec myX = arma::vec(x);
+    double maxX = myX.max();
+    myX -= maxX;
+    return std::log(arma::sum(arma::exp(myX))) + maxX;
 }
 
 // avoid underflow in log(sum(exp(x))) calculation
-arma::vec CoxMGM::logsumexp(arma::mat x) {
-    arma::vec maxX = arma::max(x, 1);
-    x.each_col() -= maxX;
-    return arma::log(arma::sum(arma::exp(x), 1)) + maxX;
+arma::vec CoxMGM::logsumexp(const arma::mat& x) {
+    arma::mat myX = arma::mat(x);
+    arma::vec maxX = arma::max(myX, 1);
+    myX.each_col() -= maxX;
+    return arma::log(arma::sum(arma::exp(myX), 1)) + maxX;
 }
 
 
