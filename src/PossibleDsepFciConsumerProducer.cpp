@@ -47,11 +47,11 @@ PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTes
 /**
  * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
  */
-std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(const Node& x, std::vector<Node>& nodes) {
+std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(Node x, std::vector<Node>& nodes) {
 
     std::vector<Node> possibleParents;
 
-    for (const Node& z : nodes) {
+    for (Node z : nodes) {
 
         if (possibleParentOf(z, x)) {
             possibleParents.push_back(z);
@@ -60,7 +60,7 @@ std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(const Node& x
     return possibleParents;
 }
 
-bool PossibleDsepFciConsumerProducer::possibleParentOf(const Node& x, const Node& z) {
+bool PossibleDsepFciConsumerProducer::possibleParentOf(Node x, Node z) {
     return !knowledge.isForbidden(z, x) && !knowledge.isRequired(x, z);
 }
 
@@ -74,7 +74,7 @@ bool PossibleDsepFciConsumerProducer::possibleParentOf(const Node& x, const Node
  * 		(b) X is adjacent to Z.
  * </pre>
  */
-std::unordered_set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(const Node& node1, const Node& node2, int maxPathLength) {
+std::unordered_set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(Node node1, Node node2, int maxPathLength) {
 
     std::unordered_set<Node>  dsep = GraphUtils::possibleDsep(node1, node2, graph, maxPathLength);
 
@@ -215,7 +215,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		for (combination = cg.next(); combination != NULL; combination = cg.next()) {
 		    std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
 		    // bool allAdj = true;
-		    // for (const Node& n : condSet) {
+		    // for (Node n : condSet) {
 		    // 	if (adjSet.count(n)==0) {
 		    // 	    allAdj = false;
 		    // 	    break;
@@ -271,7 +271,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		for (combination = cg.next(); combination != NULL; combination = cg.next()) {
 		    std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
 		    // bool allAdj = true;
-		    // for (const Node& n : condSet) {
+		    // for (Node n : condSet) {
 		    // 	if (adjSet.count(n)==0) {
 		    // 	    allAdj = false;
 		    // 	    break;

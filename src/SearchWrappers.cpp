@@ -1081,7 +1081,7 @@ Rcpp::List pcStable(
 //' @export
 //' @examples
 //' sim <- simRandomDAG(200, 50, deg=3)
-//' g <- fciStable(sim$data, verbose=TRUE, possDsep=FALSE)
+//' g <- fciStable(sim$data, verbose=TRUE)
 //' print(g)
 // [[Rcpp::export]]
 Rcpp::List fciStable(
