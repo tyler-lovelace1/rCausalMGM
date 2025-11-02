@@ -32,8 +32,8 @@ private:
     static bool existOnePathWithPossibleParents(std::unordered_map<Node, std::vector<Node>> previous, Node w, Node x, Node b, EdgeListGraph& graph);
 
     static bool existOnePathWithPossibleParents(std::map<Node,std::set<Node>>& previous,
-						EdgeListGraph& graph, Node w,
-						Node x, Node b);
+						EdgeListGraph& graph, const Node& w,
+						const Node& x, const Node& b);
 
     static bool existsSemidirectedPath(Node from, Node to, EdgeListGraph& G);
     
@@ -52,20 +52,20 @@ public:
     // Breadth first.
     static bool isDConnectedTo(Node x, Node y, std::vector<Node>& z, EdgeListGraph& graph);
 
-    static std::vector<Node> getSepset(Node x, Node y, EdgeListGraph& graph);
+    static std::vector<Node> getSepset(const Node& x, const Node& y, EdgeListGraph& graph);
 
-    static bool sepsetPathFound(Node a, Node b, Node y, std::set<Node>& path, std::vector<Node>& z, std::set<Triple>& colliders, EdgeListGraph& graph);
+    static bool sepsetPathFound(const Node& a, const Node& b, const Node& y, std::set<Node>& path, std::vector<Node>& z, std::set<Triple>& colliders, EdgeListGraph& graph);
 
-    static std::vector<Node> getPassNodes(Node a, Node b,
+    static std::vector<Node> getPassNodes(const Node& a, const Node& b,
 					  std::vector<Node>& z,
 					  EdgeListGraph& graph);
 
-    static bool reachable(Node a, Node b, Node c,
+    static bool reachable(const Node& a, const Node& b, const Node& c,
 			  std::vector<Node>& z, EdgeListGraph& graph);
 
-    static bool isAncestor(Node b, std::vector<Node>& z, EdgeListGraph& graph);
+    static bool isAncestor(const Node& b, std::vector<Node>& z, EdgeListGraph& graph);
 
-    static std::vector<Node> getInducingPath(Node x, Node y,
+    static std::vector<Node> getInducingPath(const Node& x, const Node& y,
 					     EdgeListGraph& graph);
 
     static std::vector<Node> getCausalOrdering(EdgeListGraph& graph);
@@ -104,9 +104,9 @@ public:
 
     static EdgeListGraph undirectedGraph(EdgeListGraph& graph);
 
-    static std::unordered_set<Node> possibleDsep(Node x, Node y, EdgeListGraph& graph, int maxPathLength);
+    static std::set<Node> possibleDsep(Node x, Node y, EdgeListGraph& graph, int maxPathLength);
 
-    static std::set<Node> possibleDsep2(Node x, Node y, EdgeListGraph& graph, int maxPathLength);
+    static std::set<Node> possibleDsep2(const Node& x, const Node& y, EdgeListGraph& graph, int maxPathLength);
 
     static bool existsPossibleColliderPath(Node from, Node to, std::unordered_set<Node> Z, EdgeListGraph& G);
 

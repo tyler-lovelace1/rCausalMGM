@@ -47,11 +47,11 @@ PossibleDsepFciConsumerProducer::PossibleDsepFciConsumerProducer(IndependenceTes
 /**
  * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
  */
-std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(Node x, std::vector<Node>& nodes) {
+std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(const Node& x, std::vector<Node>& nodes) {
 
     std::vector<Node> possibleParents;
 
-    for (Node z : nodes) {
+    for (const Node& z : nodes) {
 
         if (possibleParentOf(z, x)) {
             possibleParents.push_back(z);
@@ -60,7 +60,7 @@ std::vector<Node> PossibleDsepFciConsumerProducer::possibleParents(Node x, std::
     return possibleParents;
 }
 
-bool PossibleDsepFciConsumerProducer::possibleParentOf(Node x, Node z) {
+bool PossibleDsepFciConsumerProducer::possibleParentOf(const Node& x, const Node& z) {
     return !knowledge.isForbidden(z, x) && !knowledge.isRequired(x, z);
 }
 
@@ -74,9 +74,9 @@ bool PossibleDsepFciConsumerProducer::possibleParentOf(Node x, Node z) {
  * 		(b) X is adjacent to Z.
  * </pre>
  */
-std::unordered_set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(Node node1, Node node2, int maxPathLength) {
+std::set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(const Node& node1, const Node& node2, int maxPathLength) {
 
-    std::unordered_set<Node>  dsep = GraphUtils::possibleDsep(node1, node2, graph, maxPathLength);
+    std::set<Node>  dsep = GraphUtils::possibleDsep(node1, node2, graph, maxPathLength);
 
     dsep.erase(node1);
     dsep.erase(node2);
@@ -163,7 +163,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
         Node y = edge.getNode2();
 
         // std::unordered_set<Node> possibleDsepSet = getPossibleDsep(x, y, maxReachablePathLength);
-	std::set<Node> possibleDsepSet = GraphUtils::possibleDsep2(x, y, graph, maxReachablePathLength);
+	std::set<Node> possibleDsepSet = GraphUtils::possibleDsep(x, y, graph, maxReachablePathLength);
         std::vector<Node> possibleDsep;
 
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
@@ -215,7 +215,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		for (combination = cg.next(); combination != NULL; combination = cg.next()) {
 		    std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
 		    // bool allAdj = true;
-		    // for (Node n : condSet) {
+		    // for (const Node& n : condSet) {
 		    // 	if (adjSet.count(n)==0) {
 		    // 	    allAdj = false;
 		    // 	    break;
@@ -231,7 +231,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 	}
 
         // possibleDsepSet = getPossibleDsep(y, x, maxReachablePathLength);	
-	possibleDsepSet = GraphUtils::possibleDsep2(y, x, graph, maxReachablePathLength);
+	possibleDsepSet = GraphUtils::possibleDsep(y, x, graph, maxReachablePathLength);
         possibleDsep.clear();
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
 
@@ -271,7 +271,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		for (combination = cg.next(); combination != NULL; combination = cg.next()) {
 		    std::vector<Node> condSet = GraphUtils::asList(*combination, possParents);
 		    // bool allAdj = true;
-		    // for (Node n : condSet) {
+		    // for (const Node& n : condSet) {
 		    // 	if (adjSet.count(n)==0) {
 		    // 	    allAdj = false;
 		    // 	    break;

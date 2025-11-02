@@ -659,7 +659,7 @@ Grasp::OrderGraph Grasp::bestMove(Node n, OrderGraph tau) {
     // }
 
     auto producer = [&] () {
-	for (int i = 0; i < tau.order.size(); ++i) {
+      for (int i = 0; i < (int) tau.order.size(); ++i) {
 
 	    // Rcpp::Rcout << *jt << " ";
 	
@@ -728,7 +728,7 @@ Grasp::OrderGraph Grasp::bestMove(Node n, OrderGraph tau) {
     }
 
     runningScore = 0.0;
-    for (int i = 0; i < tau.order.size(); i++) {
+    for (int i = 0; i < (int) tau.order.size(); i++) {
 	if (i == currIdx) continue;
 	runningScore += without[i];
 	scores[i] += runningScore;
@@ -741,7 +741,7 @@ Grasp::OrderGraph Grasp::bestMove(Node n, OrderGraph tau) {
     double minBic = tau.bic;
     int minIdx = currIdx;
     
-    for (int i = 0; i < tau.order.size(); ++i) {
+    for (int i = 0; i < (int) tau.order.size(); ++i) {
 	if (scores[i] + 1e-6 < minBic) {
 	    minIdx = i;
 	    minBic = scores[i];
@@ -809,7 +809,7 @@ std::list<Node> Grasp::initializeMinDegree() {
 
 	    EdgeListGraph tierUndir(_tier);
 
-	    for (int i = 0; i < _tier.size(); i++) {
+	    for (int i = 0; i < (int) _tier.size(); i++) {
 		std::vector<Node> parents = gstMap[_tier.at(i)]->search(_tier);
 		for (Node n : parents) {
 		    tierUndir.addUndirectedEdge(_tier.at(i), n);
@@ -876,7 +876,7 @@ std::list<Node> Grasp::minDegreeAlgorithm(EdgeListGraph graph) {
 	std::vector<Node> adjNodes = graph.getAdjacentNodes(mdNode);
 
 	if (minDegree > 1) {
-	    for (int i = 1; i < adjNodes.size(); i++) {
+	  for (int i = 1; i < (int) adjNodes.size(); i++) {
 		for (int j = 0; j < i; j++) {
 		    graph.addUndirectedEdge(adjNodes.at(i), adjNodes.at(j));
 		}

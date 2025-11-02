@@ -88,9 +88,9 @@ private:
     /**
      * Removes from the list of nodes any that cannot be parents of x given the background knowledge.
      */
-    std::vector<Node> possibleParents(Node x, std::vector<Node>& nodes);
+    std::vector<Node> possibleParents(const Node& x, std::vector<Node>& nodes);
 
-    bool possibleParentOf(Node x, Node z);
+    bool possibleParentOf(const Node& x, const Node& z);
 
     /**
      * A variable v is in Possible-D-Sep(A,B) iff
@@ -102,8 +102,7 @@ private:
      * 		(b) X is adjacent to Z.
      * </pre>
      */
-    std::unordered_set<Node> getPossibleDsep(Node node1,
-					     Node node2, int maxPathLength);
+    std::set<Node> getPossibleDsep(const Node& node1, const Node& node2, int maxPathLength);
 
 public:
 

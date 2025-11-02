@@ -895,7 +895,7 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
     // }
 
     auto producer = [&] () {
-	for (int i = 0; i < tau.order.size(); ++i) {
+      for (int i = 0; i < (int) tau.order.size(); ++i) {
 
 	    // Rcpp::Rcout << *jt << " ";
 	
@@ -964,7 +964,7 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
     }
 
     runningScore = 0.0;
-    for (int i = 0; i < tau.order.size(); i++) {
+    for (int i = 0; i < (int) tau.order.size(); i++) {
 	if (i == currIdx) continue;
 	runningScore += without[i];
 	scores[i] += runningScore;
@@ -977,7 +977,7 @@ Boss::OrderGraph Boss::bestMove(Node n, OrderGraph tau) {
     double minBic = tau.bic;
     int minIdx = currIdx;
     
-    for (int i = 0; i < tau.order.size(); ++i) {
+    for (int i = 0; i < (int) tau.order.size(); ++i) {
 	if (scores[i] + 1e-6 < minBic) {
 	    minIdx = i;
 	    minBic = scores[i];
