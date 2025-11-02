@@ -76,7 +76,7 @@ bool PossibleDsepFciConsumerProducer::possibleParentOf(const Node& x, const Node
  */
 std::set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(const Node& node1, const Node& node2, int maxPathLength) {
 
-    std::set<Node>  dsep = GraphUtils::possibleDsep(node1, node2, graph, maxPathLength);
+    std::set<Node>  dsep = GraphUtils::possibleDsep2(node1, node2, graph, maxPathLength);
 
     dsep.erase(node1);
     dsep.erase(node2);
@@ -163,7 +163,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
         Node y = edge.getNode2();
 
         // std::unordered_set<Node> possibleDsepSet = getPossibleDsep(x, y, maxReachablePathLength);
-	std::set<Node> possibleDsepSet = GraphUtils::possibleDsep(x, y, graph, maxReachablePathLength);
+	std::set<Node> possibleDsepSet = GraphUtils::possibleDsep2(x, y, graph, maxReachablePathLength);
         std::vector<Node> possibleDsep;
 
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
@@ -231,7 +231,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 	}
 
         // possibleDsepSet = getPossibleDsep(y, x, maxReachablePathLength);	
-	possibleDsepSet = GraphUtils::possibleDsep(y, x, graph, maxReachablePathLength);
+	possibleDsepSet = GraphUtils::possibleDsep2(y, x, graph, maxReachablePathLength);
         possibleDsep.clear();
         possibleDsep.insert(possibleDsep.end(), possibleDsepSet.begin(), possibleDsepSet.end());
 
