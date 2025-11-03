@@ -44,11 +44,11 @@ public:
 
     Edge(const Edge& edge);
 
-    Edge& operator=(const Edge& other);
+    // Edge& operator=(const Edge& other);
 
-    Edge(Edge&& edge);
+    // Edge(Edge&& edge);
 
-    Edge& operator=(Edge&& other);
+    // Edge& operator=(Edge&& other);
 
     // Used by both constructors
     void init(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint endpoint2);

@@ -16,84 +16,88 @@ Edge::Edge(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint en
 }
 
 Edge::Edge(const Edge& edge) {
-    if (edge.node1.isNull() || edge.node2.isNull()) {
-        throw std::invalid_argument("Nodes must not be null");
-    }
-
-    // Flip edges pointing left the other way.
-    if(pointingLeft(edge.endpoint1, edge.endpoint2) || (edge.endpoint1==edge.endpoint2 && edge.node2 < edge.node1)) {
-        this->node1 = edge.node2;
-        this->node2 = edge.node1;
-        this->endpoint1 = edge.endpoint2;
-        this->endpoint2 = edge.endpoint1;
-    } else {
-        this->node1 = edge.node1;
-        this->node2 = edge.node2;
-        this->endpoint1 = edge.endpoint1;
-        this->endpoint2 = edge.endpoint2;
-    }
+    init(edge.node1, edge.node2, edge.endpoint1, edge.endpoint2);
 }
 
-Edge& Edge::operator=(const Edge& other) {
-    if (other.node1.isNull() || other.node2.isNull()) {
-        throw std::invalid_argument("Nodes must not be null");
-    }
+// Edge::Edge(const Edge& edge) {
+//     if (edge.node1.isNull() || edge.node2.isNull()) {
+//         throw std::invalid_argument("Nodes must not be null");
+//     }
 
-    // Flip edges pointing left the other way.
-    if(pointingLeft(other.endpoint1, other.endpoint2) || (other.endpoint1==other.endpoint2 && other.node2 < other.node1)) {
-        this->node1 = other.node2;
-        this->node2 = other.node1;
-        this->endpoint1 = other.endpoint2;
-        this->endpoint2 = other.endpoint1;
-    } else {
-        this->node1 = other.node1;
-        this->node2 = other.node2;
-        this->endpoint1 = other.endpoint1;
-        this->endpoint2 = other.endpoint2;
-    }
-    return *this;
-}
+//     // Flip edges pointing left the other way.
+//     if(pointingLeft(edge.endpoint1, edge.endpoint2) || (edge.endpoint1==edge.endpoint2 && edge.node2 < edge.node1)) {
+//         this->node1 = edge.node2;
+//         this->node2 = edge.node1;
+//         this->endpoint1 = edge.endpoint2;
+//         this->endpoint2 = edge.endpoint1;
+//     } else {
+//         this->node1 = edge.node1;
+//         this->node2 = edge.node2;
+//         this->endpoint1 = edge.endpoint1;
+//         this->endpoint2 = edge.endpoint2;
+//     }
+// }
+
+// Edge& Edge::operator=(const Edge& other) {
+//     if (other.node1.isNull() || other.node2.isNull()) {
+//         throw std::invalid_argument("Nodes must not be null");
+//     }
+
+//     // Flip edges pointing left the other way.
+//     if(pointingLeft(other.endpoint1, other.endpoint2) || (other.endpoint1==other.endpoint2 && other.node2 < other.node1)) {
+//         this->node1 = other.node2;
+//         this->node2 = other.node1;
+//         this->endpoint1 = other.endpoint2;
+//         this->endpoint2 = other.endpoint1;
+//     } else {
+//         this->node1 = other.node1;
+//         this->node2 = other.node2;
+//         this->endpoint1 = other.endpoint1;
+//         this->endpoint2 = other.endpoint2;
+//     }
+//     return *this;
+// }
 
 
-Edge::Edge(Edge&& edge) {
-    if (edge.node1.isNull() || edge.node2.isNull()) {
-        throw std::invalid_argument("Nodes must not be null");
-    }
+// Edge::Edge(Edge&& edge) {
+//     if (edge.node1.isNull() || edge.node2.isNull()) {
+//         throw std::invalid_argument("Nodes must not be null");
+//     }
 
-    // Flip edges pointing left the other way.
-    if(pointingLeft(edge.endpoint1, edge.endpoint2) || (edge.endpoint1==edge.endpoint2 && edge.node2 < edge.node1)) {
-	std::swap(this->node1, edge.node2);
-        std::swap(this->node2, edge.node1);
-	std::swap(this->endpoint1, edge.endpoint2);
-        std::swap(this->endpoint2, edge.endpoint1);
-    } else {
-	std::swap(this->node1, edge.node1);
-        std::swap(this->node2, edge.node2);
-        std::swap(this->endpoint1, edge.endpoint1);
-        std::swap(this->endpoint2, edge.endpoint2);
-    }
-}
+//     // Flip edges pointing left the other way.
+//     if(pointingLeft(edge.endpoint1, edge.endpoint2) || (edge.endpoint1==edge.endpoint2 && edge.node2 < edge.node1)) {
+// 	std::swap(this->node1, edge.node2);
+//         std::swap(this->node2, edge.node1);
+// 	std::swap(this->endpoint1, edge.endpoint2);
+//         std::swap(this->endpoint2, edge.endpoint1);
+//     } else {
+// 	std::swap(this->node1, edge.node1);
+//         std::swap(this->node2, edge.node2);
+//         std::swap(this->endpoint1, edge.endpoint1);
+//         std::swap(this->endpoint2, edge.endpoint2);
+//     }
+// }
 
-Edge& Edge::operator=(Edge&& other) {
-    if (other.node1.isNull() || other.node2.isNull()) {
-        throw std::invalid_argument("Nodes must not be null");
-    }
+// Edge& Edge::operator=(Edge&& other) {
+//     if (other.node1.isNull() || other.node2.isNull()) {
+//         throw std::invalid_argument("Nodes must not be null");
+//     }
 
-    // Flip edges pointing left the other way.
-    if(pointingLeft(other.endpoint1, other.endpoint2) || (other.endpoint1==other.endpoint2 && other.node2 < other.node1)) {
-	std::swap(this->node1, other.node2);
-        std::swap(this->node2, other.node1);
-	std::swap(this->endpoint1, other.endpoint2);
-        std::swap(this->endpoint2, other.endpoint1);
-    } else {
-	std::swap(this->node1, other.node1);
-        std::swap(this->node2, other.node2);
-        std::swap(this->endpoint1, other.endpoint1);
-        std::swap(this->endpoint2, other.endpoint2);
-    }
+//     // Flip edges pointing left the other way.
+//     if(pointingLeft(other.endpoint1, other.endpoint2) || (other.endpoint1==other.endpoint2 && other.node2 < other.node1)) {
+// 	std::swap(this->node1, other.node2);
+//         std::swap(this->node2, other.node1);
+// 	std::swap(this->endpoint1, other.endpoint2);
+//         std::swap(this->endpoint2, other.endpoint1);
+//     } else {
+// 	std::swap(this->node1, other.node1);
+//         std::swap(this->node2, other.node2);
+//         std::swap(this->endpoint1, other.endpoint1);
+//         std::swap(this->endpoint2, other.endpoint2);
+//     }
     
-    return *this;
-}
+//     return *this;
+// }
 
 void Edge::init(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint endpoint2) {
     if (node1.isNull() || node2.isNull()) {
