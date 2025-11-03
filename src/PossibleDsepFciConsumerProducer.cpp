@@ -306,24 +306,31 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::map<Edge, std::vector<Node>>& edgeCondsetMap) {
     PossibleDsepTask task = taskQueue.pop();
     while (!task.edge.isNull()) {
-	
-        if (edgeCondsetMap.count(task.edge) == 0) {
-	    Node x = task.edge.getNode1();
-	    Node y = task.edge.getNode2();
-	    // if (x > y) {
-	    // 	x = task.edge.getNode2();
-	    // 	y = task.edge.getNode1();
-	    // }
-	    double pval;
-	    bool indep = test->isIndependent(x, y, task.condSet, &pval);
-	    
-            if (indep) {
-                std::lock_guard<std::mutex> edgeLock(edgeMutex);
-		edgeCondsetMap[task.edge] = task.condSet;
-                // edgeCondsetMap.insert(std::pair<Edge,
-		// 		      std::vector<Node>>(task.edge, task.condSet));
-	    }
+
+	{
+            std::lock_guard<std::mutex> edgeLock(edgeMutex);
+            if (edgeCondsetMap.find(task.edge) != edgeCondsetMap.end()) {
+                if (RcppThread::isInterrupted()) {
+		    break;
+		}
+                continue;
+            }
         }
+
+	Node x = task.edge.getNode1();
+	Node y = task.edge.getNode2();
+	    
+	double pval = 0.0;
+	bool indep = test->isIndependent(x, y, task.condSet, &pval);
+	    
+	if (indep) {
+	    std::lock_guard<std::mutex> edgeLock(edgeMutex);
+
+	    auto it = edgeCondsetMap.find(task.edge);
+            if (it == edgeCondsetMap.end()) {
+                edgeCondsetMap.emplace(task.edge, task.condSet);
+            }
+	}
 	
         task = taskQueue.pop();
 

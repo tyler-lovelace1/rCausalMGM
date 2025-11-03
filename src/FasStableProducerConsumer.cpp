@@ -455,10 +455,12 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
         if (task.x.isNull() && task.y.isNull()) return;
 
 	// bool edgeExists;
-	// {
-	//     std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
-	//     edgeExists = adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x);
-	// }
+	{
+	    std::lock_guard<std::mutex> adjacencyLock(adjacencyMutex);
+	    if (!(adjacencies[task.x].count(task.y) && adjacencies[task.y].count(task.x))) {
+		continue;
+	    }
+	}
 	
         // if (!edgeExists) continue; // Skip if the edge no longer exists
 

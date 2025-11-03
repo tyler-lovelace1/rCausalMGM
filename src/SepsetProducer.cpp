@@ -197,8 +197,11 @@ void SepsetProducer::consumerSepsetMap() {
         // Poison Pill
         if (it.a.isNull() || it.b.isNull() || it.c.isNull()) break;
 
-	if (sepsets.isInSepsetMap(it.a, it.c))
-	    continue;
+	{
+	    std::lock_guard<std::mutex> mapLock(mapMutex);
+	    if (sepsets.isInSepsetMap(it.a, it.c))
+		continue;
+	}
 
 	double score = 0.0;
 
