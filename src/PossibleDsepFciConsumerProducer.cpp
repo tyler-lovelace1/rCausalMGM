@@ -94,7 +94,7 @@ std::set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(const Node& node
  * constructor is directly changed.
  */
 SepsetMap& PossibleDsepFciConsumerProducer::search() {
-    std::unordered_map<Edge, std::vector<Node>> edgeCondsetMap;
+    std::map<Edge, std::vector<Node>> edgeCondsetMap;
 
     concurrentSearch(graph, edgeCondsetMap);
 
@@ -111,7 +111,7 @@ SepsetMap& PossibleDsepFciConsumerProducer::search() {
     return sepset;
 }
 
-void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap) {
+void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std::map<Edge, std::vector<Node>>& edgeCondsetMap) {
     const std::set<Edge> edges(graph.getEdges());
     std::vector<RcppThread::Thread> threads;
 
@@ -303,7 +303,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
     return;
 }
 
-void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap) {
+void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::map<Edge, std::vector<Node>>& edgeCondsetMap) {
     PossibleDsepTask task = taskQueue.pop();
     while (!task.edge.isNull()) {
 	

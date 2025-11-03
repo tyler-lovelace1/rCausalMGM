@@ -110,8 +110,9 @@ public:
     }
 
     ~BlockingQueue() = default;
-	// {
-    // 	if (queue != NULL) delete[] queue;
+    // {
+    // 	if (queue != nullptr)
+    // 	    delete[] queue;
     // }
 
     void push(T const &value)

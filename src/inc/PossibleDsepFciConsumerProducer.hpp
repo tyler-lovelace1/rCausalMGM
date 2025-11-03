@@ -26,6 +26,7 @@
 #include <limits>
 #include <mutex>
 #include <thread>
+#include <map>
 
 
 class PossibleDsepFciConsumerProducer {
@@ -81,7 +82,7 @@ private:
 
     void PossibleDsepProducer(std::set<Edge> edges);
 
-    void PossibleDsepConsumer(std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap);
+    void PossibleDsepConsumer(std::map<Edge, std::vector<Node>>& edgeCondsetMap);
 
           //========================PRIVATE METHODS==========================//
 
@@ -131,7 +132,7 @@ public:
      */
     SepsetMap& search();
 
-    void concurrentSearch(EdgeListGraph& graph, std::unordered_map<Edge, std::vector<Node>>& edgeCondsetMap);
+    void concurrentSearch(EdgeListGraph& graph, std::map<Edge, std::vector<Node>>& edgeCondsetMap);
 
     int getDepth() { return depth; }
 
