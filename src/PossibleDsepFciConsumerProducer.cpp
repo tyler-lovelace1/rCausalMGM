@@ -314,8 +314,10 @@ void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::unordered_map<Ed
 	    // 	x = task.edge.getNode2();
 	    // 	y = task.edge.getNode1();
 	    // }
+	    double pval;
+	    bool indep = test->isIndependent(x, y, task.condSet, &pval);
 	    
-            if (test->isIndependent(x, y, task.condSet)) {
+            if (indep) {
                 std::lock_guard<std::mutex> edgeLock(edgeMutex);
 		edgeCondsetMap[task.edge] = task.condSet;
                 // edgeCondsetMap.insert(std::pair<Edge,

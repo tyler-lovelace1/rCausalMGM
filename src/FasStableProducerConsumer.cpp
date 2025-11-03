@@ -464,8 +464,7 @@ void FasStableProducerConsumer::consumerDepth(int depth) {
 
         numIndependenceTests++;
 	double pval = 0.0;
-        bool independent;
-        independent = test->isIndependent(task.x, task.y, task.z, &pval);
+        bool independent = test->isIndependent(task.x, task.y, task.z, &pval);
 
 	if (independent) {
             numIndependenceJudgements++;
