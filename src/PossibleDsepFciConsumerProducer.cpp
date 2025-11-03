@@ -301,15 +301,20 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
     }
 
     for (int i = 0; i < parallelism; i++) {
-	taskQueue.push(PossibleDsepTask());
+	PossibleDsepTask null;
+	RcppThread::Rcout << "Poisson Pill " << i << ": edge.first.isNull() = " << null.edge.first.isNull() << ", edge.first.isNull() = " << null.edge.second.isNull() << std::endl;
+	taskQueue.push(PossibleDsepTask(Node(), Node(), std::vector<Node>()));
     }
     return;
 }
 
 void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::map<NodePair, std::vector<Node>>& edgeCondsetMap) {
-    PossibleDsepTask task = taskQueue.pop();
-    while (!(task.edge.first.isNull() || task.edge.second.isNull())) {
+    while (true) {
 
+	PossibleDsepTask task = taskQueue.pop();
+
+	if (task.edge.first.isNull()) break;
+	
 	{
             std::lock_guard<std::mutex> edgeLock(edgeMutex);
             if (edgeCondsetMap.find(task.edge) != edgeCondsetMap.end()) {
@@ -335,8 +340,6 @@ void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::map<NodePair, st
             }
 	}
 	
-        task = taskQueue.pop();
-
 	if (RcppThread::isInterrupted()) {
 	    break;
 	}

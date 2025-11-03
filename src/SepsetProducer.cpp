@@ -199,7 +199,7 @@ void SepsetProducer::consumerSepsetMap() {
 
 	{
 	    std::lock_guard<std::mutex> mapLock(mapMutex);
-	    if (sepsets.isInSepsetMap(it.a, it.c))
+	    if (sepsets.isInSepsetMap(it.a, it.c)) 
 		continue;
 	}
 
