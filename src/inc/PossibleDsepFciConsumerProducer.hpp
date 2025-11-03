@@ -28,6 +28,7 @@
 #include <thread>
 #include <map>
 
+typedef std::pair<Node, Node> NodePair;
 
 class PossibleDsepFciConsumerProducer {
 
@@ -57,15 +58,19 @@ private:
     // Edge poisonEdge;
 
     struct PossibleDsepTask {
-        Edge edge;
+        NodePair edge;
         std::vector<Node> condSet;
 
         PossibleDsepTask() :
-	    edge(),
+	    edge(std::minmax(Node(), Node())),
 	    condSet(std::vector<Node>()) {}
 
-        PossibleDsepTask(Edge edge_, std::vector<Node> condSet_) :
-	    edge(edge_),
+	PossibleDsepTask(NodePair edge, std::vector<Node> condSet_) :
+	    edge(std::minmax(edge.first, edge.second)),
+	    condSet(condSet_) {}
+
+	PossibleDsepTask(Node x, Node y, std::vector<Node> condSet_) :
+	    edge(std::minmax(x, y)),
 	    condSet(condSet_) {}
 
         PossibleDsepTask(const PossibleDsepTask& it) = default;
@@ -80,9 +85,9 @@ private:
     BlockingQueue<PossibleDsepTask> taskQueue;
     std::mutex edgeMutex;
 
-    void PossibleDsepProducer(std::set<Edge> edges);
+    void PossibleDsepProducer(std::set<NodePair> edges);
 
-    void PossibleDsepConsumer(std::map<Edge, std::vector<Node>>& edgeCondsetMap);
+    void PossibleDsepConsumer(std::map<NodePair, std::vector<Node>>& edgeCondsetMap);
 
           //========================PRIVATE METHODS==========================//
 
@@ -132,7 +137,7 @@ public:
      */
     SepsetMap& search();
 
-    void concurrentSearch(EdgeListGraph& graph, std::map<Edge, std::vector<Node>>& edgeCondsetMap);
+    void concurrentSearch(EdgeListGraph& graph, std::map<NodePair, std::vector<Node>>& edgeCondsetMap);
 
     int getDepth() { return depth; }
 

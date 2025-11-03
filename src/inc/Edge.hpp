@@ -53,8 +53,8 @@ public:
     // Used by both constructors
     void init(const Node& node1, const Node& node2, Endpoint endpoint1, Endpoint endpoint2);
 
-    const Node& getNode1() const { return node1; }
-    const Node& getNode2() const { return node2; }
+    Node getNode1() const { return node1; }
+    Node getNode2() const { return node2; }
     Endpoint getEndpoint1() const { return endpoint1; }
     Endpoint getEndpoint2() const { return endpoint2; }
     void setEndpoint1(Endpoint e) { endpoint1 = e; }

@@ -94,15 +94,15 @@ std::set<Node> PossibleDsepFciConsumerProducer::getPossibleDsep(const Node& node
  * constructor is directly changed.
  */
 SepsetMap& PossibleDsepFciConsumerProducer::search() {
-    std::map<Edge, std::vector<Node>> edgeCondsetMap;
+    std::map<NodePair, std::vector<Node>> edgeCondsetMap;
 
     concurrentSearch(graph, edgeCondsetMap);
 
-    for (std::pair<Edge, std::vector<Node>> entry : edgeCondsetMap) {
-        Edge edge = entry.first;
+    for (std::pair<NodePair, std::vector<Node>> entry : edgeCondsetMap) {
+        NodePair edge = entry.first;
         std::vector<Node> condSet = entry.second;
-        Node x = edge.getNode1();
-        Node y = edge.getNode2();
+        Node x = edge.first;
+        Node y = edge.second;
 
         graph.removeEdge(x, y);
         if (verbose) Rcpp::Rcout << "      Removed " << x.getName() << " --- " << y.getName() << "\n";
@@ -111,8 +111,11 @@ SepsetMap& PossibleDsepFciConsumerProducer::search() {
     return sepset;
 }
 
-void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std::map<Edge, std::vector<Node>>& edgeCondsetMap) {
-    const std::set<Edge> edges(graph.getEdges());
+void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std::map<NodePair, std::vector<Node>>& edgeCondsetMap) {
+    std::set<NodePair> edges;
+    for (auto edge : graph.getEdges()) {
+	edges.insert(std::minmax(edge.getNode1(), edge.getNode2()));
+    }
     std::vector<RcppThread::Thread> threads;
 
     RcppThread::Rcout << "concurrentSearch initiated...\n";
@@ -151,16 +154,16 @@ void PossibleDsepFciConsumerProducer::setMaxPathLength(int maxReachablePathLengt
     this->maxReachablePathLength = maxReachablePathLength == std::numeric_limits<int>::max() ? -1 : maxReachablePathLength;
 }
 
-void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges) {
+void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> edges) {
     // PossibleDsepTask poisonPill(Edge(), std::vector<Node>());
 
     int maxPossDsepSize = 0;
 
     bool printFlag = false;
 
-    for (Edge edge : edges) {
-        Node x = edge.getNode1();
-        Node y = edge.getNode2();
+    for (NodePair edge : edges) {
+        Node x = edge.first;
+        Node y = edge.second;
 
         // std::unordered_set<Node> possibleDsepSet = getPossibleDsep(x, y, maxReachablePathLength);
 	std::set<Node> possibleDsepSet = GraphUtils::possibleDsep2(x, y, graph, maxReachablePathLength);
@@ -224,7 +227,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		    
 		    // if (!allAdj) {
 		    // PossibleDsepTask newTask(edge, condSet);
-		    taskQueue.push(PossibleDsepTask(edge, condSet));
+		    taskQueue.push(PossibleDsepTask(x, y, condSet));
 		    // }
 		}
 	    }
@@ -280,7 +283,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
 		    
 		    // if (!allAdj) {
 		    // PossibleDsepTask newTask(edge, condSet);
-		    taskQueue.push(PossibleDsepTask(edge, condSet));
+		    taskQueue.push(PossibleDsepTask(x, y, condSet));
 		    // }
 		}
 	    }
@@ -303,9 +306,9 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<Edge> edges)
     return;
 }
 
-void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::map<Edge, std::vector<Node>>& edgeCondsetMap) {
+void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::map<NodePair, std::vector<Node>>& edgeCondsetMap) {
     PossibleDsepTask task = taskQueue.pop();
-    while (!task.edge.isNull()) {
+    while (!(task.edge.first.isNull() || task.edge.second.isNull())) {
 
 	{
             std::lock_guard<std::mutex> edgeLock(edgeMutex);
@@ -317,8 +320,8 @@ void PossibleDsepFciConsumerProducer::PossibleDsepConsumer(std::map<Edge, std::v
             }
         }
 
-	Node x = task.edge.getNode1();
-	Node y = task.edge.getNode2();
+	Node x = task.edge.first;
+	Node y = task.edge.second;
 	    
 	double pval = 0.0;
 	bool indep = test->isIndependent(x, y, task.condSet, &pval);
