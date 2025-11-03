@@ -476,10 +476,22 @@ bool operator!=(const Edge& e1, const Edge& e2) {
 }
 
 bool operator< (const Edge& e1, const Edge& e2) {
-    if (e1.node1 != e2.node1) {
-        return e1.node1 < e2.node1;
+    Edge edge1(e1);
+    Edge edge2(e2);
+    
+    if (edge1 == edge2)
+	return false;
+
+    if (edge1.node1 == edge2.node1) {
+	if (edge1.endpoint1 == edge2.endpoint1) {
+	    if (edge1.endpoint2 == edge2.endpoint2) {
+		return edge1.node2 < edge2.node2;
+	    }
+	    return edge1.endpoint2 < edge2.endpoint2;
+	}
+	return edge1.endpoint1 < edge2.endpoint1;
     }
-    return e1.node2 < e2.node2;
+    return edge1.node1 < edge2.node1;
 }
 
 bool operator>= (const Edge& e1, const Edge& e2) {
