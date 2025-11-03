@@ -1080,9 +1080,11 @@ Rcpp::List pcStable(
 //' @return The PAG learned by FCI-Stable.
 //' @export
 //' @examples
+//' \donttest{
 //' sim <- simRandomDAG(200, 50, deg=3)
-//' g <- fciStable(sim$data, verbose=TRUE)
+//' g <- fciStable(sim$data)
 //' print(g)
+//' }
 // [[Rcpp::export]]
 Rcpp::List fciStable(
     const Rcpp::DataFrame& data,
@@ -1312,158 +1314,158 @@ Rcpp::List pcCV(
 }
 
 
-// //' Implements k-fold cross-validation for FCI-Stable
-// //'
-// //' @description Runs k-fold cross-validation to select the value of alpha and orientation rule for FCI-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
-// //'
-// //' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
-// //' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
-// //' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
-// //' @param orientRule A vector of strings to determine which of the orientation rules to test in the cross-validation procedure to select the optimal model. The default is a vector that contains the "majority", "maxp", and "conservative" orientation rules.
-// //' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
-// //' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
-// //' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
-// //' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
-// //' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
-// //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
-// //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
-// //' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
-// //' @export
-// //' @examples
-// //' \donttest{
-// //' sim <- simRandomDAG(200, 25, deg=2)
-// //' g.cv <- fciCV(sim$data, verbose=TRUE)
-// //' print(g.cv)
-// //' }
-// // [[Rcpp::export]]
-// Rcpp::List fciCV(
-//     const Rcpp::DataFrame& data,
-//     Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
-//     Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
-//     const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
-//     Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
-//     const int nfolds = 5,
-//     Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
-//     const int threads = -1,
-//     const bool fdr = false,
-//     const bool rank = false,
-//     const bool verbose = false
-// ) {
-//     DataSet ds = DataSet(data);
-//     ds.dropMissing();
+//' Implements k-fold cross-validation for FCI-Stable
+//'
+//' @description Runs k-fold cross-validation to select the value of alpha and orientation rule for FCI-Stable. Returns a graphCV object containing the causal graphical models that minimize the negative log(pseudo-likelihood) and the sparsest model within one standard error of the minimum.
+//'
+//' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
+//' @param initialGraph An undirected rCausalMGM graph object containing the initial skeleton of adjacencies used in the causal discovery algorithm. This graph can be learned by `mgm` or learned by another method and imported into an undirected rCausalMGM graph object from its adjacency matrix. The default is NULL, in which case a fully connected graph is used as the initial skeleton.
+//' @param knowledge A knowledge object containing prior knowledge about the causal interactions in a dataset. This knowledge can be used to forbid or require certain edges in the causal graph, helping to inform causal discovery an prevent orientations known to be nonsensical. The default is NULL, in which case no prior knowledge is provided to the causal discovery algorithm.
+//' @param orientRule A vector of strings to determine which of the orientation rules to test in the cross-validation procedure to select the optimal model. The default is a vector that contains the "majority", "maxp", and "conservative" orientation rules.
+//' @param alphas A numeric vector containing values of alpha to test in the cross-validation procedure. The default value is NULL, in which case we set alpha = c(0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2).
+//' @param nfolds An integer value defining the number of folds to be used for cross-validation if foldid is NULL. The default value is 5.
+//' @param foldid An integer vector containing values in the range of 1 to K for each sample that identifies which test set that sample belongs to. This enables users to define their own cross-validation splits, for example in the case stratified cross-validation is needed. The default value is NULL.
+//' @param threads An integer value denoting the number of threads to use for parallelization of independence tests. The default value is -1, which will all available CPUs.
+//' @param fdr A logical value indicating whether to use false discovery rate control for the discovery of adjacencies in the causal graph. The default value is FALSE.
+//' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
+//' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graphCV object containing the PAGs selected by the minimum and one standard error rule.
+//' @export
+//' @examples
+//' \donttest{
+//' sim <- simRandomDAG(200, 25, deg=2)
+//' g.cv <- fciCV(sim$data)
+//' print(g.cv)
+//' }
+// [[Rcpp::export]]
+Rcpp::List fciCV(
+    const Rcpp::DataFrame& data,
+    Rcpp::Nullable<Rcpp::List> initialGraph = R_NilValue,
+    Rcpp::Nullable<Rcpp::List> knowledge = R_NilValue,
+    const Rcpp::StringVector orientRule = Rcpp::CharacterVector::create("majority", "maxp", "conservative"),
+    Rcpp::Nullable<Rcpp::NumericVector> alphas = R_NilValue,
+    const int nfolds = 5,
+    Rcpp::Nullable<Rcpp::NumericVector> foldid = R_NilValue,
+    const int threads = -1,
+    const bool fdr = false,
+    const bool rank = false,
+    const bool verbose = false
+) {
+    DataSet ds = DataSet(data);
+    ds.dropMissing();
 
-//     if (rank) {
-// 	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
-// 	ds.npnTransform();
-// 	if (verbose) Rcpp::Rcout << "done\n";
-//     }
+    if (rank) {
+	if (verbose) Rcpp::Rcout << "Applying the nonparanormal transform to continuous variables...";
+	ds.npnTransform();
+	if (verbose) Rcpp::Rcout << "done\n";
+    }
 
-//     int varIdx = StabilityUtils::checkForVariance(ds);
-//     if (varIdx >= 0) {
-// 	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
-//     }
+    int varIdx = StabilityUtils::checkForVariance(ds);
+    if (varIdx >= 0) {
+	throw std::invalid_argument("The variable " + ds.getVariable(varIdx).getName() + " has an invalid variance (Continuous: all values are the same, Categorical: <5 samples in a category, Censored: <10 events).");
+    }
 
-//     if (orientRule.size()==0) {
-// 	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
-//     }
+    if (orientRule.size()==0) {
+	throw std::invalid_argument("At least one orientation rule must be provided. Options are {\"majority\", \"maxp\", \"conservative\", \"sepsets\"}");
+    }
     
-//     std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
-//     arma::vec _alphas;
+    std::vector<std::string> _orientRule = Rcpp::as<std::vector<std::string>>(orientRule);
+    arma::vec _alphas;
 
-//     if (alphas.isNotNull()) {
-//         _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
-//     } else {
-//       _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
-//     }
+    if (alphas.isNotNull()) {
+        _alphas = arma::vec(Rcpp::as<arma::vec>(alphas)); 
+    } else {
+      _alphas = {0.001, 0.005, 0.01, 0.05, 0.1, 0.15, 0.2 };
+    }
     
-//     std::vector<OrientRule> rules;
+    std::vector<OrientRule> rules;
 
-//     for (std::string rule : _orientRule) {
-// 	rules.push_back(SepsetProducer::str2rule(rule));
-//     }
+    for (std::string rule : _orientRule) {
+	rules.push_back(SepsetProducer::str2rule(rule));
+    }
 
-//     SearchCV cv;
+    SearchCV cv;
 
-//     arma::uvec _foldid;
+    arma::uvec _foldid;
     
-//     if (foldid.isNull()) {
-// 	cv = SearchCV(ds, "fci", nfolds);
-//     } else {
-// 	_foldid = Rcpp::as<arma::uvec>(foldid);
-// 	cv = SearchCV(ds, "fci", _foldid);
-//     }
+    if (foldid.isNull()) {
+	cv = SearchCV(ds, "fci", nfolds);
+    } else {
+	_foldid = Rcpp::as<arma::uvec>(foldid);
+	cv = SearchCV(ds, "fci", _foldid);
+    }
 
-//     cv.setVerbose(verbose);
-//     cv.setAlphas(_alphas);
-//     cv.setOrientRules(rules);
-//     cv.setFDR(fdr);
+    cv.setVerbose(verbose);
+    cv.setAlphas(_alphas);
+    cv.setOrientRules(rules);
+    cv.setFDR(fdr);
 
-//     EdgeListGraph ig;
-//     if (!initialGraph.isNull()) {
-//         Rcpp::List _initialGraph(initialGraph);
-//         ig = EdgeListGraph(_initialGraph, ds);
-//         cv.setInitialGraph(&ig);
-//     }
+    EdgeListGraph ig;
+    if (!initialGraph.isNull()) {
+        Rcpp::List _initialGraph(initialGraph);
+        ig = EdgeListGraph(_initialGraph, ds);
+        cv.setInitialGraph(&ig);
+    }
     
-//     Knowledge k;
-//     if (!knowledge.isNull()) {
-// 	Rcpp::List _knowledge(knowledge);
-// 	k = Knowledge(ds.getVariables(), _knowledge);
-// 	cv.setKnowledge(k);
-//     }
+    Knowledge k;
+    if (!knowledge.isNull()) {
+	Rcpp::List _knowledge(knowledge);
+	k = Knowledge(ds.getVariables(), _knowledge);
+	cv.setKnowledge(k);
+    }
 
-//     std::vector<EdgeListGraph> cvGraphs = cv.causalCV();
+    std::vector<EdgeListGraph> cvGraphs = cv.causalCV();
 
-//     std::set<CvResult> results = cv.getCVResults();
+    std::set<CvResult> results = cv.getCVResults();
 
-//     int nValues = results.size();
-//     arma::vec mbSize(nValues);
-//     arma::vec mean(nValues);
-//     arma::vec se(nValues);
-//     arma::vec alphasOut(nValues);
-//     std::vector<std::string> rulesOut(nValues);
+    int nValues = results.size();
+    arma::vec mbSize(nValues);
+    arma::vec mean(nValues);
+    arma::vec se(nValues);
+    arma::vec alphasOut(nValues);
+    std::vector<std::string> rulesOut(nValues);
 
-//     uint idx = 0;
-//     uint minIdx = 0;
-//     CvResult minResult(1e20, 1e20, 0);
-//     for (auto res : results) {
-// 	mbSize(idx) = res.mbSize;
-// 	mean(idx) = res.mean;
-// 	se(idx) = res.se;
-// 	alphasOut(idx) = res.alpha;
-// 	rulesOut.at(idx) = SepsetProducer::rule2str(res.rule);
-// 	if (res.mean < minResult.mean) {
-// 	    minIdx = idx;
-// 	    minResult = res;
-// 	}
-// 	idx++;
-//     }
+    uint idx = 0;
+    uint minIdx = 0;
+    CvResult minResult(1e20, 1e20, 0);
+    for (auto res : results) {
+	mbSize(idx) = res.mbSize;
+	mean(idx) = res.mean;
+	se(idx) = res.se;
+	alphasOut(idx) = res.alpha;
+	rulesOut.at(idx) = SepsetProducer::rule2str(res.rule);
+	if (res.mean < minResult.mean) {
+	    minIdx = idx;
+	    minResult = res;
+	}
+	idx++;
+    }
 
-//     uint seIdx = 0;
-//     for (auto res : results) {
-// 	if (res.mean < minResult.mean + minResult.se) {
-// 	    // seResult = res;
-// 	    break;
-// 	}
-// 	seIdx++;
-//     }
+    uint seIdx = 0;
+    for (auto res : results) {
+	if (res.mean < minResult.mean + minResult.se) {
+	    // seResult = res;
+	    break;
+	}
+	seIdx++;
+    }
 
-//     Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
-// 					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
-//     					   Rcpp::_["lambdas"]=R_NilValue,
-// 					   Rcpp::_["alphas"]=alphasOut,
-// 					   Rcpp::_["orientRules"]=rulesOut,
-// 					   Rcpp::_["idx.min"]=minIdx+1,
-// 					   Rcpp::_["idx.1se"]=seIdx+1,
-// 					   Rcpp::_["mean"] = mean,
-// 					   Rcpp::_["se"] = se,
-// 					   Rcpp::_["size"] = mbSize,
-// 					   Rcpp::_["foldid"]=cv.getFoldID());
+    Rcpp::List result = Rcpp::List::create(Rcpp::_["graph.min"]=cvGraphs[0].toList(),
+					   Rcpp::_["graph.1se"]=cvGraphs[1].toList(),
+    					   Rcpp::_["lambdas"]=R_NilValue,
+					   Rcpp::_["alphas"]=alphasOut,
+					   Rcpp::_["orientRules"]=rulesOut,
+					   Rcpp::_["idx.min"]=minIdx+1,
+					   Rcpp::_["idx.1se"]=seIdx+1,
+					   Rcpp::_["mean"] = mean,
+					   Rcpp::_["se"] = se,
+					   Rcpp::_["size"] = mbSize,
+					   Rcpp::_["foldid"]=cv.getFoldID());
 
-//     result.attr("class") = "graphCV";
+    result.attr("class") = "graphCV";
         
-//     return result;
-// }
+    return result;
+}
 
 
 //' Implements k-fold cross-validation for MGM-PC-Stable

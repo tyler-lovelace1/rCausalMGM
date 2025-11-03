@@ -45,7 +45,9 @@ The PAG learned by FCI-Stable.
 Runs the causal discovery algorithm FCI-Stable on a dataset. The FCI-Stable algorithm is designed to recover the Markov equivalence class of causal MAGs that could give rise to the observed conditional independence relationships in the causally insufficient case. This means that FCI-Stable can still learn the Markov equivalence class of the true MAG even in the presence of latent confounders and/or selection bias. The resulting graph is a partial ancestral graph (PAG).
 }
 \examples{
+\donttest{
 sim <- simRandomDAG(200, 50, deg=3)
-g <- fciStable(sim$data, verbose=TRUE)
+g <- fciStable(sim$data)
 print(g)
+}
 }

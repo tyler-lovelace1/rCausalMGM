@@ -118,21 +118,21 @@ void PossibleDsepFciConsumerProducer::concurrentSearch(EdgeListGraph& graph, std
     }
     std::vector<RcppThread::Thread> threads;
 
-    RcppThread::Rcout << "concurrentSearch initiated...\n";
+    // RcppThread::Rcout << "concurrentSearch initiated...\n";
 
     threads.push_back(RcppThread::Thread( [&] { PossibleDsepProducer(edges); } ));
 
-    RcppThread::Rcout << "PossibleDsepProducer initiated...\n";
+    // RcppThread::Rcout << "PossibleDsepProducer initiated...\n";
 
 
     for (int i = 0; i < parallelism; i++) {
         threads.push_back(RcppThread::Thread( [&] { PossibleDsepConsumer(edgeCondsetMap); } ));
-	RcppThread::Rcout << "PossibleDsepConsumer " << i << " initiated...\n";
+	// RcppThread::Rcout << "PossibleDsepConsumer " << i << " initiated...\n";
     }
 
     for (uint i = 0; i < threads.size(); i++) {
         threads[i].join();
-	RcppThread::Rcout << "Thread " << i << " joined.\n";
+	// RcppThread::Rcout << "Thread " << i << " joined.\n";
     }
     // threads[0].join();
     // RcppThread::Rcout << "Thread " << 0 << " joined.\n";
@@ -193,18 +193,18 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
 		maxPossDsepSize = possibleDsep.size();
 		if (verbose) {
 		    printFlag = true;
-		    RcppThread::Rcout << "\n      Largest Encountered Possible-D-Sep: "
+		    RcppThread::Rcout << "\r      Largest Encountered Possible-D-Sep: "
 				      << maxPossDsepSize;
 		}
 	    }
 
-	    RcppThread::Rcout << "      Possible-D-Sep(" << x << "," << y << ")  :  { "; // != Adj(" << x <<") \\ { " << y <<" }\n";
+	    // RcppThread::Rcout << "      Possible-D-Sep(" << x << "," << y << ")  :  { "; // != Adj(" << x <<") \\ { " << y <<" }\n";
 	
-	    // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
-	    for (Node node : possibleDsep) {
-		RcppThread::Rcout << node << " ";
-	    }
-	    RcppThread::Rcout << "}\n";
+	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
+	    // for (Node node : possibleDsep) {
+	    // 	RcppThread::Rcout << node << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
 
 	    // std::set<Node> adjSet(adjx.begin(), adjx.end());
 
@@ -249,18 +249,18 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
 	        maxPossDsepSize = possibleDsep.size();
 		if (verbose) {
 		    printFlag = true;
-		    RcppThread::Rcout << "\n      Largest Encountered Possible-D-Sep: "
+		    RcppThread::Rcout << "\r      Largest Encountered Possible-D-Sep: "
 				      << maxPossDsepSize;
 		}
 	    }
 
-	    RcppThread::Rcout << "      Possible-D-Sep(" << y << "," << x << ")  :  { "; // != Adj(" << y <<") \\ { " << x <<" }\n";
+	    // RcppThread::Rcout << "      Possible-D-Sep(" << y << "," << x << ")  :  { "; // != Adj(" << y <<") \\ { " << x <<" }\n";
 	
-	    // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
-	    for (Node node : possibleDsep) {
-		RcppThread::Rcout << node << " ";
-	    }
-	    RcppThread::Rcout << "}\n";
+	    // // RcppThread::Rcout << "    Edge: " << edge << "  :  { ";
+	    // for (Node node : possibleDsep) {
+	    // 	RcppThread::Rcout << node << " ";
+	    // }
+	    // RcppThread::Rcout << "}\n";
 	    
 	    // std::set<Node> adjSet(adjy.begin(), adjy.end());
 
@@ -301,9 +301,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
     }
 
     for (int i = 0; i < parallelism; i++) {
-	PossibleDsepTask null;
-	RcppThread::Rcout << "Poisson Pill " << i << ": edge.first.isNull() = " << null.edge.first.isNull() << ", edge.first.isNull() = " << null.edge.second.isNull() << std::endl;
-	taskQueue.push(PossibleDsepTask(Node(), Node(), std::vector<Node>()));
+	taskQueue.push(PossibleDsepTask());
     }
     return;
 }
