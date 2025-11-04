@@ -68,7 +68,7 @@ LogisticRegressionResult LogisticRegression::regress(const Node& x,
 
     std::vector<std::string> regressorNames(regressors.size());
 
-    for (int l = 0; l < regressors.size(); l++)
+    for (uint l = 0; l < regressors.size(); l++)
     {
         regressorNames[l] = regressors[l].getName();
     }
@@ -126,7 +126,7 @@ LogisticRegressionResult LogisticRegression::regress(const Node& x,
 
     std::vector<std::string> regressorNames(regressors.size());
 
-    for (int l = 0; l < regressors.size(); l++)
+    for (uint l = 0; l < regressors.size(); l++)
     {
         regressorNames[l] = regressors[l].getName();
     }
@@ -169,7 +169,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
     // logfile.open("../debug.log", std::ios_base::app);
 
-    for (arma::uword i = 0; i < numCases; i++)
+    for (arma::uword i = 0; i < (arma::uword) numCases; i++)
     {
         y0[i] = 0;
         y1[i] = 0;
@@ -181,7 +181,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     int ny1 = 0;
     int nc = 0;
 
-    for (arma::uword i = 0; i < numCases; i++)
+    for (arma::uword i = 0; i < (arma::uword) numCases; i++)
     {
         if (target[i] == 0)
         {
@@ -194,14 +194,14 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
             ny1++;
         }
         nc += y0[i] + y1[i];
-        for (arma::uword j = 1; j <= numRegressors; j++)
+        for (arma::uword j = 1; j <= (arma::uword) numRegressors; j++)
         {
             xMeans[j] += (y0[i] + y1[i]) * x(j, i);
             xStdDevs[j] += (y0[i] + y1[i]) * x(j, i) * x(j, i);
         }
     }
 
-    for (arma::uword j = 1; j <= numRegressors; j++)
+    for (arma::uword j = 1; j <= (arma::uword) numRegressors; j++)
     {
         xMeans[j] /= nc;
         xStdDevs[j] /= nc;
@@ -211,9 +211,9 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     xMeans[0] = 0.0;
     xStdDevs[0] = 1.0;
 
-    for (arma::uword i = 0; i < nc; i++)
+    for (arma::uword i = 0; i < (arma::uword) nc; i++)
     {
-        for (arma::uword j = 1; j <= numRegressors; j++)
+        for (arma::uword j = 1; j <= (arma::uword) numRegressors; j++)
         {
             x(j, i) = (x(j, i) - xMeans[j]) / xStdDevs[j];
         }
@@ -240,7 +240,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     // auto start = std::chrono::high_resolution_clock::now();
     
     par[0] = std::log((double)ny1 / (double)ny0);
-    for (arma::uword j = 1; j <= numRegressors; j++) {
+    for (arma::uword j = 1; j <= (arma::uword) numRegressors; j++) {
 	par[j] = 0.0;
     }
 
@@ -284,17 +284,17 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 	llP = ll;
 	ll = 0.0;
 
-	for (arma::uword j = 0; j <= numRegressors; j++) {
-	    for (arma::uword k = j; k <= numRegressors + 1; k++) {
+	for (arma::uword j = 0; j <= (arma::uword) numRegressors; j++) {
+	    for (arma::uword k = j; k <= (arma::uword) numRegressors + 1; k++) {
 		arr(j, k) = 0.0;
 	    }
 	}
 
-	for (arma::uword i = 0; i < nc; i++) {
+	for (arma::uword i = 0; i < (arma::uword) nc; i++) {
 	    double q;
 	    double v = par[0];
 
-	    for (arma::uword j = 1; j <= numRegressors; j++) {
+	    for (arma::uword j = 1; j <= (arma::uword) numRegressors; j++) {
 		v += par[j] * x(j, i);
 	    }
 
@@ -319,11 +319,11 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
 	    ll -= (2.0 * y1[i] * lnV + 2.0 * y0[i] * ln1mV);
 
-	    for (arma::uword j = 0; j <= numRegressors; j++) {
+	    for (arma::uword j = 0; j <= (arma::uword) numRegressors; j++) {
 		double xij = x(j, i);
 		arr(j, numRegressors + 1) += xij * (y1[i] * (1.0 - v) + y0[i] * (-v));
 
-		for (arma::uword k = j; k <= numRegressors; k++) {
+		for (arma::uword k = j; k <= (arma::uword) numRegressors; k++) {
 		    arr(j, k) += xij * x(k, i) * q * (y0[i] + y1[i]);
 		}
 	    }
@@ -341,7 +341,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
 	// RcppThread::Rcout << arr << std::endl;
 
-	for (arma::uword j = 1; j <= numRegressors; j++) {
+	for (arma::uword j = 1; j <= (arma::uword) numRegressors; j++) {
 	    for (arma::uword k = 0; k < j; k++) {
 		arr(j, k) = arr(k, j);
 	    }
@@ -372,7 +372,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
 
 	// RcppThread::Rcout << arr << std::endl;
 
-	for (arma::uword j = 0; j <= numRegressors; j++) {
+	for (arma::uword j = 0; j <= (arma::uword) numRegressors; j++) {
 	    par[j] += arr(j, numRegressors + 1);
 	}
 
@@ -408,7 +408,7 @@ LogisticRegressionResult LogisticRegression::regress(arma::uvec& target,
     // 	RcppThread::Rcout << "arr:\n" << arr << "\ncov:\n" << cov << "\npar:\n" << par.t() << std::endl;
     // }
 
-    for (arma::uword j = 1; j <= numRegressors; j++) {
+    for (arma::uword j = 1; j <= (arma::uword) numRegressors; j++) {
 	par[j] = par[j] / xStdDevs[j];
 	parStdErr[j] = std::sqrt(cov(j, j)) / xStdDevs[j];
 	par[0] = par[0] - par[j] * xMeans[j];

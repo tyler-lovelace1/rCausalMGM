@@ -189,7 +189,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
 
 	if (adjx != possibleDsep) {
 
-	    if (possibleDsep.size() > maxPossDsepSize) {
+	    if ( ((int) possibleDsep.size()) > maxPossDsepSize) {
 		maxPossDsepSize = possibleDsep.size();
 		if (verbose) {
 		    printFlag = true;
@@ -211,7 +211,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
 	    //possible parents is not fully implemented without background knowledge
 	    possParents = possibleParents(x, possibleDsep);
 
-	    for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
+	    for (int d = 0; d <= std::min(depth_, (int) possParents.size()); d++) {
 		ChoiceGenerator cg(possParents.size(), d);
 		std::vector<int> *combination;
 
@@ -245,7 +245,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
 
 	if (adjy != possibleDsep) {
 
-	    if (possibleDsep.size() > maxPossDsepSize) {
+	    if ( ((int) possibleDsep.size()) > maxPossDsepSize) {
 	        maxPossDsepSize = possibleDsep.size();
 		if (verbose) {
 		    printFlag = true;
@@ -267,7 +267,7 @@ void PossibleDsepFciConsumerProducer::PossibleDsepProducer(std::set<NodePair> ed
 	    //possible parents is not fully implemented without background knowledge
 	    possParents = possibleParents(y, possibleDsep);
 
-	    for (int d = 0; d <= std::min((std::size_t) depth_, possParents.size()); d++) {
+	    for (int d = 0; d <= std::min(depth_, (int) possParents.size()); d++) {
 		ChoiceGenerator cg (possParents.size(), d);
 		std::vector<int> *combination;
 

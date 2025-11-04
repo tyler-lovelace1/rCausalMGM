@@ -34,7 +34,7 @@ CoxMGMParams::CoxMGMParams(arma::vec& vec, int p, int ltot, int r) {
     std::vector<arma::uword> lenSums(lens.size());
     lenSums[0] = lens[0];
 
-    for (int i = 1; i < lenSums.size(); i++) {
+    for (int i = 1; i < (int) lenSums.size(); i++) {
         lenSums[i] = lens[i] + lenSums[i-1];
     }
 
@@ -62,7 +62,7 @@ arma::vec CoxMGMParams::toMatrix1D() {
     std::vector<int> lens{p*p, p, p*ltot, ltot*ltot, p*r, ltot*r, p, ltot, r};
     std::vector<arma::uword> lenSums(lens.size());
     lenSums[0] = lens[0];
-    for (int i = 1; i < lenSums.size(); i++) {
+    for (int i = 1; i < (int) lenSums.size(); i++) {
         lenSums[i] = lens[i] + lenSums[i-1];
     }
 

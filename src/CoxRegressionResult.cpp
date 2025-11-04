@@ -36,7 +36,7 @@ std::ostream& operator<<(std::ostream& os, const CoxRegressionResult& crr) {
     os << "Cox Regression Result Summary:";
     os << "\n";
     os << "List of Regressor Names: ";
-    for (int i = 0; i < crr.regressorNames.size(); i++) {
+    for (int i = 0; i < (int) crr.regressorNames.size(); i++) {
 	os << crr.regressorNames[i];
 	os << "\t";
     }
@@ -45,31 +45,31 @@ std::ostream& operator<<(std::ostream& os, const CoxRegressionResult& crr) {
     os << crr.n;
     os << "\n";
     os << "Cox Regression coefficients: ";
-    for (int i = 0; i < crr.b.size(); i++) {
+    for (int i = 0; i < (int) crr.b.size(); i++) {
 	os << crr.b[i];
 	os << "\t";
     }
     os << "\n";
     os << "Hazard Ratios: ";
-    for (int i = 0; i < crr.b.size(); i++) {
+    for (int i = 0; i < (int) crr.b.size(); i++) {
 	os << std::exp(crr.b[i]);
 	os << "\t";
     }
     os << "\n";
     os << "t-statistics: ";
-    for (int i = 0; i < crr.t.size(); i++) {
+    for (int i = 0; i < (int) crr.t.size(); i++) {
 	os << crr.t[i];
 	os << "\t";
     }
     os << "\n";
     os << "P-Values: ";
-    for (int i = 0; i < crr.p.size(); i++) {
+    for (int i = 0; i < (int) crr.p.size(); i++) {
 	os << crr.p[i];
 	os << "\t";
     }
     os << "\n";
     os << "Standard Errors: ";
-    for (int i = 0; i < crr.se.size(); i++) {
+    for (int i = 0; i < (int) crr.se.size(); i++) {
 	os << crr.se[i];
 	os << "\t";
     }

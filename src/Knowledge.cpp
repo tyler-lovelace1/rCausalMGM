@@ -41,7 +41,7 @@ Knowledge::Knowledge(std::vector<Node> nodes, Rcpp::List& knowledge) : nodes(nod
 		    throw std::invalid_argument("Invalid Knowledge: The list of tiers and the logical vector forbiddenWithinTier must be the same length.");
 		}
 	    } else {
-		for (int i = 0; i < tiers.size(); i++) {
+		for (uint i = 0; i < tiers.size(); i++) {
 		    forbiddenWithinTier.push_back(false);
 		}
 	    }
@@ -77,8 +77,8 @@ Knowledge::Knowledge(std::vector<Node> nodes, Rcpp::List& knowledge) : nodes(nod
 	    }
 	}
 
-	for (int i = 0; i < nodes.size(); i++) {
-	    for (int j = 0; j < i; j++) {
+	for (uint i = 0; i < nodes.size(); i++) {
+	    for (uint j = 0; j < i; j++) {
 		if (i==j) continue;
 		if (isForbidden(nodes[i], nodes[j]) && isRequired(nodes[i], nodes[j])) {
 		    throw std::invalid_argument("Invalid Knowledge: The edge " + nodes[i].getName() + " *-> " + nodes[j].getName() + " is both forbidden and required.");
@@ -101,7 +101,7 @@ bool Knowledge::isForbiddenByTiers(const Node& node1, const Node& node2) {
 
     if (tiers.empty()) return false;
 
-    for (int i = 0; i < tiers.size(); i++) {
+    for (int i = 0; i < (int) tiers.size(); i++) {
 	if (tiers[i].count(node1)) tier1 = i;
 	if (tiers[i].count(node2)) tier2 = i;
 	if (tier1 >= 0 && tier2 >= 0) break;

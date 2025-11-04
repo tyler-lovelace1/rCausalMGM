@@ -242,19 +242,19 @@ std::vector<EdgeListGraph> STEPS::runStepsPath(arma::mat& instabs, arma::umat& s
 
 
     if (r > 0) {
-	for (int i = 0; i < samps.n_rows; i++) {
+	for (uint i = 0; i < samps.n_rows; i++) {
 	    DataSet dataSubSamp(d, samps.row(i));
 	    coxmgmList.push_back(CoxMGM(dataSubSamp));
 	}
     } else {
-	for (int i = 0; i < samps.n_rows; i++) {
+	for (uint i = 0; i < samps.n_rows; i++) {
 	    DataSet dataSubSamp(d, samps.row(i));
 	    mgmList.push_back(MGM(dataSubSamp));
 	}
     }    
 
     // go until we break by having instability better than threshold
-    for (currIndex = 0; currIndex < lambda.size(); currIndex++) {
+    for (currIndex = 0; currIndex < (int) lambda.size(); currIndex++) {
 	
         if (verbose) Rcpp::Rcout << "  Testing lambda = " << lambda[currIndex] << std::endl;
 

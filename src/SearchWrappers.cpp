@@ -61,7 +61,7 @@ Rcpp::List mgm(
 	for (int i = 1; i < lamLength; i++) {
 	    l.push_back(l[0]);
 	}
-    } else if (l.size() != lamLength) {
+    } else if (((int) l.size()) != lamLength) {
 	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
     }
 
@@ -126,7 +126,7 @@ Rcpp::List coxmgm(
 	for (int i = 1; i < lamLength; i++) {
 	    l.push_back(l[0]);
 	}
-    } else if (l.size() != lamLength) {
+    } else if ( ((int) l.size()) != lamLength) {
 	throw std::runtime_error("The regularization parameter lambda should be either a vector of length " + std::to_string(lamLength) + " or a single value for this dataset.");
     }
 
@@ -232,7 +232,7 @@ Rcpp::List mgmPath(
 
     Rcpp::List graphList;
     
-    for (int i = 0; i < l.size(); i++) {
+    for (int i = 0; i < (int) l.size(); i++) {
         graphList.push_back(mgmGraphs[i].toList());
     }
 
@@ -340,7 +340,7 @@ Rcpp::List coxmgmPath(
 
     Rcpp::List graphList;
     
-    for (int i = 0; i < l.size(); i++) {
+    for (int i = 0; i < (int) l.size(); i++) {
         graphList.push_back(mgmGraphs[i].toList());
     }
 
@@ -454,7 +454,7 @@ Rcpp::List mgmCV(
 	_foldid = Rcpp::as<arma::uvec>(foldid);
     }
 
-    if (_foldid.n_elem != n) {
+    if (((int) _foldid.n_elem) != n) {
 	throw std::invalid_argument("foldid has a length that does not equal number of samples in the dataset.");
     }
 
@@ -573,7 +573,7 @@ Rcpp::List coxmgmCV(
 	_foldid = Rcpp::as<arma::uvec>(foldid);
     }
 
-    if (_foldid.n_elem != n) {
+    if (((int) _foldid.n_elem) != n) {
 	throw std::invalid_argument("foldid has a length that does not equal number of samples in the dataset.");
     }
 

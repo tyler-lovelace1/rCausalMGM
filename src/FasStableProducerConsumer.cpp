@@ -224,7 +224,7 @@ bool FasStableProducerConsumer::searchAtDepth0() {
         threads.push_back(RcppThread::Thread( [this] { consumerDepth0(); } ));
     }
 
-    for (int i = 0; i < threads.size(); i++) {
+    for (int i = 0; i < (int) threads.size(); i++) {
         if (threads[i].joinable()) {
 	    threads[i].join();
 	} else {
@@ -237,10 +237,10 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	std::unordered_set<NodePair,
 			   boost::hash<NodePair>> edgeSet;
 
-	for (int i = 0; i < nodes.size(); i++) {
+	for (int i = 0; i < (int) nodes.size(); i++) {
 	    const Node& x = nodes[i];
 	    
-	    for (int j = i+1; j < nodes.size(); j++) {
+	    for (int j = i+1; j < (int) nodes.size(); j++) {
 		const Node& y = nodes[j];
 
 		if (initialGraph != NULL) {
@@ -284,7 +284,7 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 	
 	// double maxFdrpval = 0;
 	int firstRejectIdx = -1;
-	for (int i = 0; i < edgeVec.size(); i++) {
+	for (int i = 0; i < (int) edgeVec.size(); i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
 	    double fdrpval = harmonicSum * numEdges / ((double) edgeVec.size()-i) * pval;
@@ -342,10 +342,10 @@ bool FasStableProducerConsumer::searchAtDepth0() {
 void FasStableProducerConsumer::producerDepth0() {
     std::vector<Node> empty = {};
 
-    for (int i = 0; i < nodes.size(); i++) {
+    for (int i = 0; i < (int) nodes.size(); i++) {
         const Node& x = nodes[i];
 
-        for (int j = i+1; j < nodes.size(); j++) {
+        for (int j = i+1; j < (int) nodes.size(); j++) {
             const Node& y = nodes[j];
 
             if (initialGraph != NULL) {
@@ -515,7 +515,7 @@ void FasStableProducerConsumer::producerDepth(int depth, std::unordered_map<Node
 
 	    // std::sort(ppx.begin(), ppx.end());
 
-            if (ppx.size() >= depth) {
+            if ( ((int) ppx.size()) >= depth) {
                 ChoiceGenerator cg(ppx.size(), depth);
                 std::vector<int> *choice;
 
@@ -569,7 +569,7 @@ int FasStableProducerConsumer::freeDegree() {
             std::unordered_set<Node> adjx(opposites);
             adjx.erase(y);
 
-            if (adjx.size() > max) {
+            if ( ((int) adjx.size()) > max) {
                 max = adjx.size();
             }
         }
@@ -620,7 +620,7 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
         threads.push_back(RcppThread::Thread( [&] { consumerDepth(depth); } ));
     }
 
-    for (int i = 0; i < threads.size(); i++) {
+    for (int i = 0; i < (int) threads.size(); i++) {
 	if (threads[i].joinable()) {
 	    threads[i].join();
 	} else {
@@ -664,7 +664,7 @@ bool FasStableProducerConsumer::searchAtDepth(int depth) {
 	
 	// double maxFdrpval = 0;
 	int firstRejectIdx = -1;
-	for (int i = 0; i < edgeVec.size(); i++) {
+	for (int i = 0; i < (int) edgeVec.size(); i++) {
 	    NodePair edgePair = edgeVec.at(i);
 	    double pval = edgePvals[edgeVec.at(i)];
 	    double fdrpval = numEdges * harmonicSum / ((double) edgeVec.size()-i) * pval;

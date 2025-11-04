@@ -11,7 +11,7 @@ arma::umat StabilityUtils::subSampleNoReplacement(DataSet& data, int subSize, in
 	throw std::invalid_argument("Subample size must be < " + std::to_string(sampSize));
 
     arma::urowvec indices(sampSize);
-    for (arma::uword i = 0; i < sampSize; i++) {
+    for (arma::uword i = 0; i < (arma::uword) sampSize; i++) {
         indices(i) = i;
     }
 
@@ -19,7 +19,7 @@ arma::umat StabilityUtils::subSampleNoReplacement(DataSet& data, int subSize, in
     
     arma::umat sampMat(numSub, subSize);
 
-    for(arma::uword i = 0; i < numSub; i++) {
+    for(arma::uword i = 0; i < (arma::uword) numSub; i++) {
         arma::urowvec curSamp;
         while(true) {
             SAMP:   
@@ -50,13 +50,12 @@ arma::umat StabilityUtils::subSampleNoReplacement(DataSet& data, int subSize, in
 arma::umat StabilityUtils::subSampleLOO(DataSet& data) {
     arma::umat sampMat(data.getNumRows(), data.getNumRows()-1);
 
-    for(int i = 0; i < sampMat.n_rows; i++) {
+    for(int i = 0; i < (int) sampMat.n_rows; i++) {
         int count = 0;
-        for(int j = 0; j < sampMat.n_rows; j++) {
-            if(i==j) goto A;
+        for(int j = 0; j < (int) sampMat.n_rows; j++) {
+            if(i==j) continue;
             sampMat(i, count) = j;
             count++;
-            A:;
         }
     }
     
@@ -125,7 +124,7 @@ arma::umat StabilityUtils::subSampleWithReplacement(DataSet& data, int subSize, 
     
     arma::umat sampMat(numSub, subSize);
 
-    for(arma::uword i = 0; i < numSub; i++) {
+    for(arma::uword i = 0; i < (arma::uword) numSub; i++) {
         arma::urowvec curSamp;
         while(true) {
             SAMP:   
@@ -307,7 +306,7 @@ arma::cube StabilityUtils::graphToCube(EdgeListGraph& graph, DataSet& d) {
 
 int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
     arma::mat t = d.getData();
-    for (arma::uword i = 0; i < d.getNumColumns(); i++) {
+    for (arma::uword i = 0; i < (arma::uword) d.getNumColumns(); i++) {
         if (d.getVariable(i).isContinuous()) {
             arma::vec curr = standardizeData(t.col(i));
 
@@ -326,11 +325,11 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
 	    }
 	    
             std::unordered_map<int, int> cats;
-            for (arma::uword j = 0; j < full.getNumRows(); j++) {
+            for (arma::uword j = 0; j < (arma::uword) full.getNumRows(); j++) {
                 cats[full.getInt(j, i)] = 0;
             }
 
-            for (arma::uword j = 0; j < d.getNumRows(); j++) {
+            for (arma::uword j = 0; j < (arma::uword) d.getNumRows(); j++) {
                 int currCat = d.getInt(j, i);
                 if (cats.find(currCat) == cats.end()) {
                     throw std::invalid_argument("Found a category not in the full dataset");
@@ -365,7 +364,7 @@ int StabilityUtils::checkForVariance(DataSet& d, DataSet& full) {
 
 int StabilityUtils::checkForVariance(DataSet& d) {
     arma::mat t = d.getData();
-    for (arma::uword i = 0; i < d.getNumColumns(); i++) {
+    for (arma::uword i = 0; i < (arma::uword) d.getNumColumns(); i++) {
         if (d.getVariable(i).isContinuous()) {
             arma::vec curr = standardizeData(t.col(i));
 
@@ -384,11 +383,11 @@ int StabilityUtils::checkForVariance(DataSet& d) {
 	    }
 	  
             std::unordered_map<int, int> cats;
-            for (arma::uword j = 0; j < d.getNumRows(); j++) {
+            for (arma::uword j = 0; j < (arma::uword) d.getNumRows(); j++) {
                 cats[d.getInt(j, i)] = 0;
             }
 
-            for (arma::uword j = 0; j < d.getNumRows(); j++) {
+            for (arma::uword j = 0; j < (arma::uword) d.getNumRows(); j++) {
                 int currCat = d.getInt(j, i);
                 if (cats.find(currCat) == cats.end()) {
                     throw std::invalid_argument("Found an invalid category");
@@ -488,13 +487,12 @@ arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>&
 arma::mat StabilityUtils::stabilitySearchPar(DataSet& data, std::vector<double>& lambda, int num_threads) {
     arma::umat samps(data.getNumRows(), data.getNumRows()-1);
 
-    for(int i = 0; i < samps.n_rows; i++) {
+    for(int i = 0; i < (int) samps.n_rows; i++) {
         int count = 0;
-        for(int j = 0; j < samps.n_rows; j++) {
-            if(i==j) goto A;
+        for(int j = 0; j < (int) samps.n_rows; j++) {
+            if(i==j) continue;
             samps(i, count) = j;
             count++;
-            A:;
         }
     }
     

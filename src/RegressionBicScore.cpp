@@ -167,12 +167,12 @@ arma::mat RegressionBicScore::getSubsetData(DataSet& origData, std::vector<Node>
     arma::uvec colIndices(varSubset.size());
     arma::uvec rowIndices(origMat.n_rows);
     // for (const Node& var : varSubset){
-    for (int i = 0; i < varSubset.size(); i++) {
+    for (uint i = 0; i < varSubset.size(); i++) {
         const Node& var = varSubset.at(i);
         arma::uword j = origData.getColumn(var);
         colIndices[i] = j;
     }
-    for (int i = 0; i < origMat.n_rows; i++) {
+    for (uint i = 0; i < origMat.n_rows; i++) {
         rowIndices[i] = i;
     }
     return origMat.submat(rowIndices, colIndices);
@@ -378,7 +378,7 @@ std::vector<std::string> RegressionBicScore::getVariableNames() {
 }
 
 Node RegressionBicScore::getVariable(std::string name) {
-    for (int i = 0; i < getVariables().size(); i++)
+    for (uint i = 0; i < getVariables().size(); i++)
     {
         Node var = getVariables().at(i);
         if (var.getName() == name)

@@ -43,7 +43,7 @@ CoxMGM::CoxMGM(DataSet ds, std::vector<int> l, std::vector<double> lambda) {
     this->r = cDat.n_cols;
     this->n = xDat.n_rows;
 
-    if (l.size() != this->q)
+    if (l.size() != (std::size_t) this->q)
         throw std::invalid_argument("length of l doesn't match number of discrete variables");
 
     this->zDat = arma::mat(n, r, arma::fill::zeros);
@@ -129,7 +129,7 @@ CoxMGM::CoxMGM(DataSet& ds) {
 	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	for (arma::uword i = 0; i < (arma::uword) ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::runif(0,2)));
 	}
 	// mixed = false;
@@ -140,7 +140,7 @@ CoxMGM::CoxMGM(DataSet& ds) {
 	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	for (arma::uword i = 0; i < (arma::uword) ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::rnorm(0,1)));
 	}
 	// mixed = false;
@@ -233,7 +233,7 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
 	dummyVar = Node(new DiscreteVariable("dummy.gLpkx1Hs6x", 2));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	for (arma::uword i = 0; i < (arma::uword) ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::runif(0,2)));
 	}
 	// mixed = false;
@@ -244,7 +244,7 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
 	dummyVar = Node(new ContinuousVariable("dummy.qCm6jaC1VK"));
 	ds.addVariable(dummyVar);
 	arma::uword j = ds.getColumn(dummyVar);
-	for (arma::uword i = 0; i < ds.getNumRows(); i++) {
+	for (arma::uword i = 0; i < (arma::uword) ds.getNumRows(); i++) {
 	    ds.set(i, j, std::floor(R::rnorm(0,1)));
 	}
 	// mixed = false;
@@ -332,7 +332,7 @@ CoxMGM::CoxMGM(DataSet& ds, std::vector<double>& lambda) {
 void CoxMGM::initParameters() {
     lcumsum = std::vector<int>(l.size()+1);
     lcumsum[0] = 0;
-    for(int i = 0; i < l.size(); i++){
+    for(int i = 0; i < (int) l.size(); i++){
         lcumsum[i+1] = lcumsum[i] + l[i];
     }
     lsum = lcumsum[l.size()];
@@ -375,12 +375,12 @@ void CoxMGM::calcWeights() {
     weights = arma::vec(p+q+r, arma::fill::ones);
 
     //Continuous variable weights are standard deviations
-    for (arma::uword i = 0; i < p; i++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
         weights(i) = arma::stddev(xDat.col(i));
     }
 
     //Discrete variable weights for each variable-category pair are p(1-p) where p is the percentage of times that category appears
-    for (arma::uword j = 0; j < q; j++) {
+    for (arma::uword j = 0; j < (arma::uword) q; j++) {
         double curWeight = 0;
         for (int k = 0; k < l[j]; k++) {
             arma::vec equalityVec = arma::vec(yDat.col(j)).transform( [k](double val) { return val == k+1 ? 1 : 0; } );
@@ -646,7 +646,7 @@ arma::vec CoxMGM::coxGradHess(arma::mat& eta, arma::mat& grad, arma::mat& diagHe
 
     for (int m = 0; m < r; m++) {
 	arma::uvec col = { (uint) m };
-	for (int strat = 0; strat < numStrata(m); strat++) {
+	for (int strat = 0; strat < (int) numStrata(m); strat++) {
 	    // censor = censList[m][strat];
 	    // order = orderList[m][strat];
 	    // index = idxList[m][strat];
@@ -654,14 +654,14 @@ arma::vec CoxMGM::coxGradHess(arma::mat& eta, arma::mat& grad, arma::mat& diagHe
 	    theta_weight_sum = 0;
 	    theta_weight2_sum = 0;
 	    int i = 0;
-	    for (int j = 0; j < HList[m][strat].n_elem; j++) {
+	    for (int j = 0; j < (int) HList[m][strat].n_elem; j++) {
 		HsumTheta = 0;
 		nEvents = 0;
 		sub = 0;
 		dSum = 0;
 		dSum2 = 0;
 
-		for (int k = 0; k < HList[m][strat][j]; k++) {
+		for (int k = 0; k < (int) HList[m][strat][j]; k++) {
 		    if (censList[m][strat](orderList[m][strat](i+k))) {
 			nEvents++;
 			HsumTheta += theta(idxList[m][strat](orderList[m][strat](i+k)), m);
@@ -672,7 +672,7 @@ arma::vec CoxMGM::coxGradHess(arma::mat& eta, arma::mat& grad, arma::mat& diagHe
 
 		if (nEvents > 0) {
 		    if (sub - rs_sum > 1e-5) {
-			if ((HList[m][strat][j] + i) != n) {
+			if ((( (int) HList[m][strat][j] ) + i) != n) {
 			    arma::uvec indices = orderList[m][strat](arma::span(i,n-1));
 			    // arma::uvec col = { (uint) m };
 			    rs_sum = arma::accu(theta(indices, col));
@@ -695,7 +695,7 @@ arma::vec CoxMGM::coxGradHess(arma::mat& eta, arma::mat& grad, arma::mat& diagHe
 		    }
 		}
 
-		for (int k = 0; k < HList[m][strat][j]; k++) {
+		for (int k = 0; k < (int) HList[m][strat][j]; k++) {
 		    theta_weight(idxList[m][strat](orderList[m][strat](i+k)), m) = theta_weight_sum - censList[m][strat](orderList[m][strat](i+k)) * dSum;
 		    theta_weight2(idxList[m][strat](orderList[m][strat](i+k)), m) = theta_weight2_sum - censList[m][strat](orderList[m][strat](i+k)) * dSum2;
 		}
@@ -722,7 +722,7 @@ double CoxMGM::calcLambdaMax() {
     // Rcpp::Rcout << "Running calcLambdaMax...\n";
     lcumsum = std::vector<int>(l.size()+1);
     lcumsum[0] = 0;
-    for(int i = 0; i < l.size(); i++){
+    for(int i = 0; i < (int) l.size(); i++){
         lcumsum[i+1] = lcumsum[i] + l[i];
     }
     lsum = lcumsum[l.size()];
@@ -769,7 +769,7 @@ double CoxMGM::calcLambdaMax() {
         end
     end
     */
-    for (arma::uword i = 0; i < p; i++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
             arma::vec tempVec = nullGrad.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
 	    // Rcpp::Rcout << "mean theta(" << i << ", " << j << ") = " << arma::mean(tempVec) << std::endl;
@@ -813,7 +813,7 @@ double CoxMGM::calcLambdaMax() {
 
     // Rcpp::Rcout << "Independent Psi^2 for Survival0:\n";
     
-    for (arma::uword i = 0; i < r; i++) {
+    for (arma::uword i = 0; i < (arma::uword) r; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
             arma::subview_col<double> tempVec = nullGrad.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
 	    // if (i == 0) Rcpp::Rcout << arma::sum(tempVec % tempVec) << "    ";
@@ -891,7 +891,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     par.beta = arma::symmatu(par.beta);
     par.beta.diag(0).zeros();
 
-    for (arma::uword i = 0; i < q; i++) {
+    for (arma::uword i = 0; i < (arma::uword) q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
 
@@ -924,7 +924,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi + wzDat * par.psi.t();
 
-    for (arma::uword i = 0; i < n; i++) {
+    for (arma::uword i = 0; i < (arma::uword) n; i++) {
         for (arma::uword j = 0; j < xDat.n_cols; j++) {
             tempLoss(i, j) = xDat(i,j) - par.alpha1(j) - xBeta(i,j) - dTheta(i,j) - zGamma(i,j);
         }
@@ -986,7 +986,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
         // arma::vec invDenom = arma::vec(n, arma::fill::ones) / arma::sum(wxTemp, 1);
         // wxTemp = arma::diagmat(invDenom) * wxTemp;
 
-        for (arma::uword k = 0; k < n; k++) {
+        for (arma::uword k = 0; k < (arma::uword) n; k++) {
             arma::vec curRow0(arma::conv_to<arma::vec>::from(wxTemp0.row(k)));
 
             catloss -= curRow0((arma::uword) yDat(k,i) - 1);
@@ -1023,7 +1023,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     //for r=1:q
     //gradphi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
     //end
-    for (arma::uword i = 0; i < q; i++) {
+    for (arma::uword i = 0; i < (arma::uword) q; i++) {
         gradOut.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
 
@@ -1085,7 +1085,7 @@ double CoxMGM::smooth(arma::vec& parIn, arma::vec& gradOutVec) {
     end
     */
     gradOut.betad = arma::vec(xDat.n_cols);
-    for(arma::uword i = 0; i < p; i++){
+    for(arma::uword i = 0; i < (arma::uword) p; i++){
         gradOut.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(tempLoss.col(i), 2), 2) / 2.0 -
 	    arma::as_scalar(tempLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i) + zGamma.col(i) + par.alpha1(i) / par.betad(i)));
     }
@@ -1173,7 +1173,7 @@ double CoxMGM::smoothValue(arma::vec& parIn) {
     par.beta = arma::symmatu(par.beta);
     par.beta.diag(0).zeros();
 
-    for (arma::uword i = 0; i < q; i++) {
+    for (arma::uword i = 0; i < (arma::uword) q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
 
@@ -1199,7 +1199,7 @@ double CoxMGM::smoothValue(arma::vec& parIn) {
     //wxprod=X*(theta')+D*phi+e*alpha2';
     arma::mat wxProd = xDat * par.theta.t() + dDat * par.phi + wzDat * par.psi.t();
 
-    for (arma::uword i = 0; i < n; i++) {
+    for (arma::uword i = 0; i < (arma::uword) n; i++) {
         for (arma::uword j = 0; j < xDat.n_cols; j++) {
             tempLoss(i, j) = xDat(i,j) - par.alpha1(j) - xBeta(i,j) - dTheta(i,j) - zGamma(i,j);
         }
@@ -1228,7 +1228,7 @@ double CoxMGM::smoothValue(arma::vec& parIn) {
     double catloss = 0;
     for (arma::uword i = 0; i < yDat.n_cols; i++) {
         arma::subview<double> wxTemp = wxProd(0, lcumsum[i], arma::size(n, l[i]));
-        for (arma::uword k = 0; k < n; k++) {
+        for (arma::uword k = 0; k < (arma::uword) n; k++) {
             arma::vec curRow = arma::conv_to<arma::vec>::from(wxTemp.row(k));
 
             catloss -= curRow((arma::uword) yDat(k,i) - 1);
@@ -1298,8 +1298,8 @@ double CoxMGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
 
     double betaNorms = 0;
 
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < p; j++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
+        for (arma::uword j = 0; j < (arma::uword) p; j++) {
             double curVal = par.beta(i,j);
             if (curVal != 0) {
                 curVal *= betaScale(i,j);
@@ -1330,7 +1330,7 @@ double CoxMGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     end
     */
     double thetaNorms = 0;
-    for (arma::uword i = 0; i < p; i++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
             arma::subview_col<double> tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
             double thetaScale = std::max(0.0, 1 - tlam(1)*weightMat(i,p+j)/arma::norm(tempVec, 2));
@@ -1382,8 +1382,8 @@ double CoxMGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
 
     double gammaNorms = 0;
 
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < r; j++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
+        for (arma::uword j = 0; j < (arma::uword) r; j++) {
             double curVal = par.gamma(i,j);
             if (curVal != 0) {
                 curVal *= gammaScale(i,j);
@@ -1397,7 +1397,7 @@ double CoxMGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
     }
 
     double psiNorms = 0;
-    for (arma::uword i = 0; i < r; i++) {
+    for (arma::uword i = 0; i < (arma::uword) r; i++) {
         for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
             arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
             double psiScale = std::max(0.0, 1 - tlam(4)*weightMat(p+j, p+q+i)/arma::norm(tempVec, 2));
@@ -2237,6 +2237,7 @@ double CoxMGM::nonSmooth(double t, arma::vec& X, arma::vec& pX) {
 //     return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms + lambda(3)*gammaNorms + lambda(4)*psiNorms;
 // }
 
+
 /**
  * Calculate value of h(X)
  *
@@ -2248,7 +2249,7 @@ double CoxMGM::nonSmoothValue(arma::vec& parIn) {
     //par is a copy so we can update it
     CoxMGMParams par(parIn, p, lsum, r);
 
-    double a = 5;
+    // double a = 5;
 
     // Rcpp::Rcout << "nonSmoothValue called\n";
 
@@ -2259,129 +2260,49 @@ double CoxMGM::nonSmoothValue(arma::vec& parIn) {
     //betascale=max(0,1-penbeta./abs(beta));
     arma::mat weightMat = weights * weights.t();
 
-    double betaNorms = 0;
-    arma::mat betaLambda = lambda(0) * weightMat.submat(0,0,p-1,p-1);
-    arma::mat absBeta = arma::abs(par.beta);
-    arma::mat betaPenalty = arma::mat(p,p,arma::fill::zeros);
+    // double betaNorms = 0;
+    // arma::mat betaLambda = lambda(0) * weightMat.submat(0,0,p-1,p-1);
+    // arma::mat absBeta = arma::abs(par.beta);
+    // arma::mat betaPenalty = arma::mat(p,p,arma::fill::zeros);
 
-    for (arma::uword i = 0; i < p; i++) {
-	for (arma::uword j = i+1; j < p; j++) {
-	    if (absBeta(i,j) < betaLambda(i,j)) {
-		betaPenalty(i,j) = betaLambda(i,j) * absBeta(i,j);
-	    } else if (absBeta(i,j) < a * betaLambda(i,j)) {
-		betaPenalty(i,j) = (2 * a * betaLambda(i,j) * absBeta(i,j) - std::pow(absBeta(i,j), 2) - std::pow(betaLambda(i,j), 2)) / (2 * (a-1));
-	    } else {
-		betaPenalty(i,j) = std::pow(betaLambda(i,j), 2) * (a + 1) / 2;
-	    }
-	}
-    }
+    // for (arma::uword i = 0; i < (arma::uword) p; i++) {
+    // 	for (arma::uword j = i+1; j < (arma::uword) p; j++) {
+    // 	    if (absBeta(i,j) < betaLambda(i,j)) {
+    // 		betaPenalty(i,j) = betaLambda(i,j) * absBeta(i,j);
+    // 	    } else if (absBeta(i,j) < a * betaLambda(i,j)) {
+    // 		betaPenalty(i,j) = (2 * a * betaLambda(i,j) * absBeta(i,j) - std::pow(absBeta(i,j), 2) - std::pow(betaLambda(i,j), 2)) / (2 * (a-1));
+    // 	    } else {
+    // 		betaPenalty(i,j) = std::pow(betaLambda(i,j), 2) * (a + 1) / 2;
+    // 	    }
+    // 	}
+    // }
 
-    betaNorms = arma::accu(betaPenalty);
+    // betaNorms = arma::accu(betaPenalty);
 
-    // Rcpp::Rcout << "NSV betaNorms = " << betaNorms << std::endl;
-
-    /*
-    thetanorms=0;
-    for s=1:p
-        for j=1:q
-            tempvec=theta(Lsums(j)+1:Lsums(j+1),s);
-            thetanorms=thetanorms+(wv(s)*wv(p+j))*norm(tempvec);
-        end
-    end
-    */
-    double thetaNorms = 0;
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-
-	    double wLam = weightMat(i, p+j) * lambda(1);
-	    double normTheta = arma::norm(tempVec, 2);
-	    if (normTheta < wLam) {
-		thetaNorms += wLam * normTheta;
-	    } else if (normTheta < a * wLam) {
-	        thetaNorms += (2 * a * wLam * normTheta - std::pow(normTheta, 2) - std::pow(wLam, 2)) / (2 * (a-1));
-	    } else {
-	        thetaNorms += std::pow(wLam, 2) * (a + 1) / 2;
-	    }
-        }
-    }
-    // Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
-
-    /*
-    for r=1:q
-        for j=1:q
-            if r<j
-                tempmat=phi(Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1));
-                tempmat=max(0,1-t(3)*(wv(p+r)*wv(p+j))/norm(tempmat))*tempmat; % Lj by 2*Lr
-                phinorms=phinorms+(wv(p+r)*wv(p+j))*norm(tempmat,'fro');
-                phi( Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1) )=tempmat;
-            end
-        end
-    end
-    */
-    double phiNorms = 0;
-    for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
-        for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
-            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-	    double wLam = weightMat(p+i, p+j) * lambda(2);
-	    double normPhi = arma::norm(tempMat, "fro");
-	    if (normPhi < wLam) {
-		phiNorms += wLam * normPhi;
-	    } else if (normPhi < a * wLam) {
-	        phiNorms += (2 * a * wLam * normPhi - std::pow(normPhi, 2) - std::pow(wLam, 2)) / (2 * (a-1));
-	    } else {
-	        phiNorms += std::pow(wLam, 2) * (a + 1) / 2;
-	    }
-        }
-    }
-
+    // const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
+    // arma::mat betaScale = betaWeight * -lambda(0);
+    // arma::mat absBeta = arma::abs(par.beta); 
     
-    // double gammaNorms = arma::accu(weightMat.submat(0, p+q, p-1, p+q+r-1) % abs(par.gamma));
+    // betaScale /= absBeta;
+    // betaScale += 1;
+    // betaScale.transform( [](double val) {return std::max(val, 0.0); } );
 
-    double gammaNorms = 0;
-    arma::mat gammaLambda = lambda(3) * weightMat.submat(0, p+q, p-1, p+q+r-1);
-    arma::mat absGamma = arma::abs(par.gamma);
-    arma::mat gammaPenalty = arma::mat(p,r,arma::fill::zeros);
+    // // Rcpp::Rcout << "betaScale = \n" << betaScale << std::endl;
 
-    for (arma::uword i = 0; i < p; i++) {
-	for (arma::uword j = 0; j < r; j++) {
-	    if (absGamma(i,j) < gammaLambda(i,j)) {
-		gammaPenalty(i,j) = gammaLambda(i,j) * absGamma(i,j);
-	    } else if (absGamma(i,j) < a * gammaLambda(i,j)) {
-		gammaPenalty(i,j) = (2 * a * gammaLambda(i,j) * absGamma(i,j) - std::pow(absGamma(i,j), 2) - std::pow(gammaLambda(i,j), 2)) / (2 * (a-1));
-	    } else {
-		gammaPenalty(i,j) = std::pow(gammaLambda(i,j), 2) * (a + 1) / 2;
-	    }
-	}
-    }
+    // double betaNorms = 0;
 
-    gammaNorms = arma::accu(gammaPenalty);
-    
-    double psiNorms = 0;
-    for (arma::uword i = 0; i < r; i++) {
-        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-            arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-	    double wLam = weightMat(p+j, p+q+i) * lambda(4);
-	    double normPsi = arma::norm(tempVec, 2);
-	    if (normPsi < wLam) {
-		psiNorms += wLam * normPsi;
-	    } else if (normPsi < a * wLam) {
-	        psiNorms += (2 * a * wLam * normPsi - std::pow(normPsi, 2) - std::pow(wLam, 2)) / (2 * (a-1));
-	    } else {
-	        psiNorms += std::pow(wLam, 2) * (a + 1) / 2;
-	    }
-	    
-        }
-    }
+    // for (arma::uword i = 0; i < (arma::uword) p; i++) {
+    //     for (arma::uword j = 0; j < (arma::uword) p; j++) {
+    //         double curVal = par.beta(i,j);
+    //         if (curVal != 0) {
+    //             curVal *= betaScale(i,j);
+    //             // Rcpp::Rcout << "curVal = " << curVal << std::endl;
+    //             betaNorms += std::abs(betaWeight(i,j)*curVal);
+    //             // Rcpp::Rcout << "curBetaNorms = " << betaNorms << std::endl;
 
-    // Rcpp::Rcout << "NSV phiNorms = " << phiNorms << std::endl;
-
-    return betaNorms + thetaNorms + phiNorms + gammaNorms + psiNorms;
-
-    // //weight beta
-    // //betaw = (wv(1:p)'*wv(1:p)).*abs(beta);
-    // //betanorms=sum(betaw(:));
-    // double betaNorms = arma::accu(arma::mat(weightMat.submat(0, 0, p-1, p-1)) % arma::abs(par.beta));
+    //         }
+    //     }
+    // }
 
     // // Rcpp::Rcout << "NSV betaNorms = " << betaNorms << std::endl;
 
@@ -2395,10 +2316,19 @@ double CoxMGM::nonSmoothValue(arma::vec& parIn) {
     // end
     // */
     // double thetaNorms = 0;
-    // for (arma::uword i = 0; i < p; i++) {
+    // for (arma::uword i = 0; i < (arma::uword) p; i++) {
     //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
     //         const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-    //         thetaNorms += weightMat(i, p+j) * arma::norm(tempVec, 2);
+
+    // 	    double wLam = weightMat(i, p+j) * lambda(1);
+    // 	    double normTheta = arma::norm(tempVec, 2);
+    // 	    if (normTheta < wLam) {
+    // 		thetaNorms += wLam * normTheta;
+    // 	    } else if (normTheta < a * wLam) {
+    // 	        thetaNorms += (2 * a * wLam * normTheta - std::pow(normTheta, 2) - std::pow(wLam, 2)) / (2 * (a-1));
+    // 	    } else {
+    // 	        thetaNorms += std::pow(wLam, 2) * (a + 1) / 2;
+    // 	    }
     //     }
     // }
     // // Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
@@ -2419,24 +2349,120 @@ double CoxMGM::nonSmoothValue(arma::vec& parIn) {
     // for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
     //     for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
     //         const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-    //         phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
+    // 	    double wLam = weightMat(p+i, p+j) * lambda(2);
+    // 	    double normPhi = arma::norm(tempMat, "fro");
+    // 	    if (normPhi < wLam) {
+    // 		phiNorms += wLam * normPhi;
+    // 	    } else if (normPhi < a * wLam) {
+    // 	        phiNorms += (2 * a * wLam * normPhi - std::pow(normPhi, 2) - std::pow(wLam, 2)) / (2 * (a-1));
+    // 	    } else {
+    // 	        phiNorms += std::pow(wLam, 2) * (a + 1) / 2;
+    // 	    }
     //     }
     // }
 
     
-    // double gammaNorms = arma::accu(weightMat.submat(0, p+q, p-1, p+q+r-1) % abs(par.gamma));
+    // // double gammaNorms = arma::accu(weightMat.submat(0, p+q, p-1, p+q+r-1) % abs(par.gamma));
+
+    // double gammaNorms = 0;
+    // arma::mat gammaLambda = lambda(3) * weightMat.submat(0, p+q, p-1, p+q+r-1);
+    // arma::mat absGamma = arma::abs(par.gamma);
+    // arma::mat gammaPenalty = arma::mat(p,r,arma::fill::zeros);
+
+    // for (arma::uword i = 0; i < p; i++) {
+    // 	for (arma::uword j = 0; j < r; j++) {
+    // 	    if (absGamma(i,j) < gammaLambda(i,j)) {
+    // 		gammaPenalty(i,j) = gammaLambda(i,j) * absGamma(i,j);
+    // 	    } else if (absGamma(i,j) < a * gammaLambda(i,j)) {
+    // 		gammaPenalty(i,j) = (2 * a * gammaLambda(i,j) * absGamma(i,j) - std::pow(absGamma(i,j), 2) - std::pow(gammaLambda(i,j), 2)) / (2 * (a-1));
+    // 	    } else {
+    // 		gammaPenalty(i,j) = std::pow(gammaLambda(i,j), 2) * (a + 1) / 2;
+    // 	    }
+    // 	}
+    // }
+
+    // gammaNorms = arma::accu(gammaPenalty);
     
     // double psiNorms = 0;
     // for (arma::uword i = 0; i < r; i++) {
     //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
     //         arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-    //         psiNorms += weightMat(p+j, p+q+i) * arma::norm(tempVec, 2);
+    // 	    double wLam = weightMat(p+j, p+q+i) * lambda(4);
+    // 	    double normPsi = arma::norm(tempVec, 2);
+    // 	    if (normPsi < wLam) {
+    // 		psiNorms += wLam * normPsi;
+    // 	    } else if (normPsi < a * wLam) {
+    // 	        psiNorms += (2 * a * wLam * normPsi - std::pow(normPsi, 2) - std::pow(wLam, 2)) / (2 * (a-1));
+    // 	    } else {
+    // 	        psiNorms += std::pow(wLam, 2) * (a + 1) / 2;
+    // 	    }
+	    
     //     }
     // }
 
     // // Rcpp::Rcout << "NSV phiNorms = " << phiNorms << std::endl;
 
-    // return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms + lambda(3)*gammaNorms + lambda(4)*psiNorms;
+    // return betaNorms + thetaNorms + phiNorms + gammaNorms + psiNorms;
+
+    //weight beta
+    //betaw = (wv(1:p)'*wv(1:p)).*abs(beta);
+    //betanorms=sum(betaw(:));
+    double betaNorms = arma::accu(arma::mat(weightMat.submat(0, 0, p-1, p-1)) % arma::abs(par.beta));
+
+    // Rcpp::Rcout << "NSV betaNorms = " << betaNorms << std::endl;
+
+    /*
+    thetanorms=0;
+    for s=1:p
+        for j=1:q
+            tempvec=theta(Lsums(j)+1:Lsums(j+1),s);
+            thetanorms=thetanorms+(wv(s)*wv(p+j))*norm(tempvec);
+        end
+    end
+    */
+    double thetaNorms = 0;
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
+        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+            thetaNorms += weightMat(i, p+j) * arma::norm(tempVec, 2);
+        }
+    }
+    // Rcpp::Rcout << "NSV thetaNorms = " << thetaNorms << std::endl;
+
+    /*
+    for r=1:q
+        for j=1:q
+            if r<j
+                tempmat=phi(Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1));
+                tempmat=max(0,1-t(3)*(wv(p+r)*wv(p+j))/norm(tempmat))*tempmat; % Lj by 2*Lr
+                phinorms=phinorms+(wv(p+r)*wv(p+j))*norm(tempmat,'fro');
+                phi( Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1) )=tempmat;
+            end
+        end
+    end
+    */
+    double phiNorms = 0;
+    for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+        for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+            phiNorms += weightMat(p+i, p+j) * arma::norm(tempMat, "fro");
+        }
+    }
+
+    
+    double gammaNorms = arma::accu(weightMat.submat(0, p+q, p-1, p+q+r-1) % abs(par.gamma));
+    
+    double psiNorms = 0;
+    for (arma::uword i = 0; i < (arma::uword) r; i++) {
+        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+            arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+            psiNorms += weightMat(p+j, p+q+i) * arma::norm(tempVec, 2);
+        }
+    }
+
+    // Rcpp::Rcout << "NSV phiNorms = " << phiNorms << std::endl;
+
+    return lambda(0)*betaNorms + lambda(1)*thetaNorms + lambda(2)*phiNorms + lambda(3)*gammaNorms + lambda(4)*psiNorms;
 }
 
 /**
@@ -2486,7 +2512,7 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     par.beta.diag(0).zeros();
     // Rcpp::Rcout << "par.beta: \n" << par.beta << std::endl;
 
-    for (arma::uword i = 0; i < q; i++) {
+    for (arma::uword i = 0; i < (arma::uword) q; i++) {
         par.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
 
@@ -2522,8 +2548,8 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     arma::mat wxProd = xDat*par.theta.t() + dDat*par.phi + wzDat * par.psi.t();
     // Rcpp::Rcout << "wxProd1: \n" << wxProd << std::endl;
 
-    for (arma::uword i = 0; i < n; i++) {
-        for (arma::uword j = 0; j < p; j++) {
+    for (arma::uword i = 0; i < (arma::uword) n; i++) {
+        for (arma::uword j = 0; j < (arma::uword) p; j++) {
             negLoss(i,j) = xBeta(i,j) - xDat(i,j) + par.alpha1(j) + dTheta(i,j) + zGamma(i,j);
         }
         for (arma::uword j = 0; j < dDat.n_cols; j++) {
@@ -2569,7 +2595,7 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
         // arma::vec invDenom = arma::vec(n, arma::fill::ones) / arma::sum(wxTemp, 1);
         // wxTemp = arma::diagmat(invDenom) * wxTemp;
 
-        for (arma::uword k = 0; k < n; k++) {
+        for (arma::uword k = 0; k < (arma::uword) n; k++) {
             //wxtemp(sub2ind(size(wxtemp),(1:n)',Y(:,r)))=wxtemp(sub2ind(size(wxtemp),(1:n)',Y(:,r)))-1;
             wxTemp(k, (arma::uword) yDat(k,i)-1) -= 1;
         }
@@ -2602,7 +2628,7 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     //for r=1:q
     //gradphi(Lsum(r)+1:Lsum(r+1),Lsum(r)+1:Lsum(r+1))=0;
     //end
-    for (arma::uword i = 0; i < q; i++) {
+    for (arma::uword i = 0; i < (arma::uword) q; i++) {
         grad.phi(lcumsum[i], lcumsum[i], arma::size(l[i], l[i])).zeros();
     }
     //gradphi=tril(gradphi)'+triu(gradphi);
@@ -2695,7 +2721,7 @@ arma::vec CoxMGM::smoothGradient(arma::vec& parIn) {
     end
         */
     grad.betad = arma::vec(xDat.n_cols);
-    for(arma::uword i = 0; i < p; i++){
+    for(arma::uword i = 0; i < (arma::uword) p; i++){
         // Rcpp::Rcout << "BETA NORM (i = " << i << "):\n" << std::pow(arma::norm(negLoss.col(i), 2), 2) << std::endl;
         // Rcpp::Rcout << "BETA SCALAR (i = " << i << "):\n" << arma::as_scalar(negLoss.col(i).t() * (xBeta.col(i) + dTheta.col(i))) << std::endl;
         grad.betad(i) = -n / (2.0 * par.betad(i)) + std::pow(arma::norm(negLoss.col(i), 2), 2) / 2.0 -
@@ -2744,7 +2770,7 @@ arma::vec CoxMGM::proximalOperator(double t, arma::vec& X) {
     if (t <= 0)
         throw std::invalid_argument("t must be positive: " + std::to_string(t));
 
-    double a = 5;
+    // double a = 5;
 
     // Rcpp::Rcout << "proximalOperator called\n";
     // Rcpp::Rcout << "Lambda:\n" << lambda.t() << std::endl;
@@ -2761,139 +2787,20 @@ arma::vec CoxMGM::proximalOperator(double t, arma::vec& X) {
     //betascale=max(0,1-penbeta./abs(beta));
     arma::mat weightMat = weights * weights.t();
 
-    const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
-    arma::mat betaScale = betaWeight * tlam(0);
-    
-    betaScale /= arma::abs(par.beta);
-    // betaScale += 1;
-    betaScale.transform( [&a](double val) {
-			     if (val > 0.5) {
-				 return std::max(1 - val, 0.0);
-			     } else if (val > (1/a)) {
-				 return (a-1) / (a-2) * std::max(1 - a * val / (a-1), 0.0);
-			     } else {
-				 return 1.0;
-			     }
-			 } );
-
-    par.beta = par.beta % betaScale;
-
-    //weight beta
-    //betaw = (wv(1:p)'*wv(1:p)).*beta;
-    //betanorms=sum(abs(betaw(:)));
-
-    /*
-    thetanorms=0;
-    for s=1:p
-        for j=1:q
-            tempvec=theta(Lsums(j)+1:Lsums(j+1),s);
-            tempvec=max(0,1-t(2)*(wv(s)*wv(p+j))/norm(tempvec))*tempvec;
-            thetanorms=thetanorms+(wv(s)*wv(p+j))*norm(tempvec);
-            theta(Lsums(j)+1:Lsums(j+1),s)=tempvec(1:L(j));
-        end
-    end
-    */
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-            double thetaScale = tlam(1)*weightMat(i,p+j)/arma::norm(tempVec, 2);
-	    if (thetaScale > 0.5) {
-		thetaScale = std::max(1-thetaScale, 0.0);
-	    } else if (thetaScale > (1/a)) {
-		thetaScale = (a-1) / (a-2) * std::max(1 - a * thetaScale / (a-1), 0.0);
-	    } else {
-		thetaScale = 1;
-	    }
-            par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * thetaScale;
-        }
-    }
-
-    /*
-    for r=1:q
-        for j=1:q
-            if r<j
-                tempmat=phi(Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1));
-                tempmat=max(0,1-t(3)*(wv(p+r)*wv(p+j))/norm(tempmat))*tempmat; % Lj by 2*Lr
-                phinorms=phinorms+(wv(p+r)*wv(p+j))*norm(tempmat,'fro');
-                phi( Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1) )=tempmat;
-            end
-        end
-    end
-    */
-    for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
-        for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
-            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-            double phiScale = tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, "fro");
-	    if (phiScale > 0.5) {
-		phiScale = std::max(1-phiScale, 0.0);
-	    } else if (phiScale > (1/a)) {
-		phiScale = (a-1) / (a-2) * std::max(1 - a * phiScale / (a-1), 0.0);
-	    } else {
-		phiScale = 1;
-	    }
-            // Use the tempMat subview again to set the values (doesn't work with const)
-            par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
-        }
-    }
-
-
-    const arma::mat& gammaWeight = weightMat.submat(0, p+q, p-1, p+q+r-1);
-
-    // Rcpp::Rcout << "GammaWeight:\n" << gammaWeight;
-    
-    arma::mat gammaScale = gammaWeight * tlam(3);
-    arma::mat absGamma = arma::abs(par.gamma); 
-    
-    gammaScale /= absGamma;
-    // gammaScale += 1;
-
-    // Rcpp::Rcout << "GammaScale:\n" << gammaScale;
-    
-    gammaScale.transform( [&a](double val) {
-			      if (val > 0.5) {
-				  return std::max(1 - val, 0.0);
-			      } else if (val > (1/a)) {
-				  return (a-1) / (a-2) * std::max(1 - a * val / (a-1), 0.0);
-			      } else {
-				  return 1.0;
-			      }
-			  } );
-
-    // Rcpp::Rcout << "Thresholded GammaScale:\n" << gammaScale;
-
-    par.gamma = par.gamma % gammaScale;
-
-
-    for (arma::uword i = 0; i < r; i++) {
-        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
-            arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-            double psiScale = tlam(4)*weightMat(p+j, p+q+i)/arma::norm(tempVec, 2);
-	    if (psiScale > 0.5) {
-		psiScale = std::max(1-psiScale, 0.0);
-	    } else if (psiScale > (1/a)) {
-		psiScale = (a-1) / (a-2) * std::max(1 - a * psiScale / (a-1), 0.0);
-	    } else {
-		psiScale = 1;
-	    }
-            par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * psiScale;
-        }
-    }
-
-
-
-    // calcZWeights();
-
-    // //penbeta = t(1).*(wv(1:p)'*wv(1:p));
-    // //betascale=zeros(size(beta));
-    // //betascale=max(0,1-penbeta./abs(beta));
-    // arma::mat weightMat = weights * weights.t();
-
     // const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
-    // arma::mat betaScale = betaWeight * -tlam(0);
+    // arma::mat betaScale = betaWeight * tlam(0);
     
     // betaScale /= arma::abs(par.beta);
-    // betaScale += 1;
-    // betaScale.transform( [](double val) { return std::max(val, 0.0); } );
+    // // betaScale += 1;
+    // betaScale.transform( [&a](double val) {
+    // 			     if (val > 0.5) {
+    // 				 return std::max(1 - val, 0.0);
+    // 			     } else if (val > (1/a)) {
+    // 				 return (a-1) / (a-2) * std::max(1 - a * val / (a-1), 0.0);
+    // 			     } else {
+    // 				 return 1.0;
+    // 			     }
+    // 			 } );
 
     // par.beta = par.beta % betaScale;
 
@@ -2915,7 +2822,14 @@ arma::vec CoxMGM::proximalOperator(double t, arma::vec& X) {
     // for (arma::uword i = 0; i < p; i++) {
     //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
     //         const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-    //         double thetaScale = std::max(0.0, 1 - tlam(1)*weightMat(i,p+j)/arma::norm(tempVec, 2));
+    //         double thetaScale = tlam(1)*weightMat(i,p+j)/arma::norm(tempVec, 2);
+    // 	    if (thetaScale > 0.5) {
+    // 		thetaScale = std::max(1-thetaScale, 0.0);
+    // 	    } else if (thetaScale > (1/a)) {
+    // 		thetaScale = (a-1) / (a-2) * std::max(1 - a * thetaScale / (a-1), 0.0);
+    // 	    } else {
+    // 		thetaScale = 1;
+    // 	    }
     //         par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * thetaScale;
     //     }
     // }
@@ -2935,7 +2849,14 @@ arma::vec CoxMGM::proximalOperator(double t, arma::vec& X) {
     // for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
     //     for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
     //         const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
-    //         double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, "fro"));
+    //         double phiScale = tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, "fro");
+    // 	    if (phiScale > 0.5) {
+    // 		phiScale = std::max(1-phiScale, 0.0);
+    // 	    } else if (phiScale > (1/a)) {
+    // 		phiScale = (a-1) / (a-2) * std::max(1 - a * phiScale / (a-1), 0.0);
+    // 	    } else {
+    // 		phiScale = 1;
+    // 	    }
     //         // Use the tempMat subview again to set the values (doesn't work with const)
     //         par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
     //     }
@@ -2946,15 +2867,23 @@ arma::vec CoxMGM::proximalOperator(double t, arma::vec& X) {
 
     // // Rcpp::Rcout << "GammaWeight:\n" << gammaWeight;
     
-    // arma::mat gammaScale = gammaWeight * -tlam(3);
+    // arma::mat gammaScale = gammaWeight * tlam(3);
     // arma::mat absGamma = arma::abs(par.gamma); 
     
     // gammaScale /= absGamma;
-    // gammaScale += 1;
+    // // gammaScale += 1;
 
     // // Rcpp::Rcout << "GammaScale:\n" << gammaScale;
     
-    // gammaScale.transform( [](double val) {return std::max(val, 0.0); } );
+    // gammaScale.transform( [&a](double val) {
+    // 			      if (val > 0.5) {
+    // 				  return std::max(1 - val, 0.0);
+    // 			      } else if (val > (1/a)) {
+    // 				  return (a-1) / (a-2) * std::max(1 - a * val / (a-1), 0.0);
+    // 			      } else {
+    // 				  return 1.0;
+    // 			      }
+    // 			  } );
 
     // // Rcpp::Rcout << "Thresholded GammaScale:\n" << gammaScale;
 
@@ -2964,10 +2893,107 @@ arma::vec CoxMGM::proximalOperator(double t, arma::vec& X) {
     // for (arma::uword i = 0; i < r; i++) {
     //     for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
     //         arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
-    //         double psiScale = std::max(0.0, 1 - tlam(4)*weightMat(p+j, p+q+i)/arma::norm(tempVec, 2));
+    //         double psiScale = tlam(4)*weightMat(p+j, p+q+i)/arma::norm(tempVec, 2);
+    // 	    if (psiScale > 0.5) {
+    // 		psiScale = std::max(1-psiScale, 0.0);
+    // 	    } else if (psiScale > (1/a)) {
+    // 		psiScale = (a-1) / (a-2) * std::max(1 - a * psiScale / (a-1), 0.0);
+    // 	    } else {
+    // 		psiScale = 1;
+    // 	    }
     //         par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * psiScale;
     //     }
     // }
+
+
+
+    // calcZWeights();
+
+    //penbeta = t(1).*(wv(1:p)'*wv(1:p));
+    //betascale=zeros(size(beta));
+    //betascale=max(0,1-penbeta./abs(beta));
+    // arma::mat weightMat = weights * weights.t();
+
+    const arma::mat& betaWeight = weightMat.submat(0, 0, p-1, p-1);
+    arma::mat betaScale = betaWeight * -tlam(0);
+    
+    betaScale /= arma::abs(par.beta);
+    betaScale += 1;
+    betaScale.transform( [](double val) { return std::max(val, 0.0); } );
+
+    par.beta = par.beta % betaScale;
+
+    //weight beta
+    //betaw = (wv(1:p)'*wv(1:p)).*beta;
+    //betanorms=sum(abs(betaw(:)));
+
+    /*
+    thetanorms=0;
+    for s=1:p
+        for j=1:q
+            tempvec=theta(Lsums(j)+1:Lsums(j+1),s);
+            tempvec=max(0,1-t(2)*(wv(s)*wv(p+j))/norm(tempvec))*tempvec;
+            thetanorms=thetanorms+(wv(s)*wv(p+j))*norm(tempvec);
+            theta(Lsums(j)+1:Lsums(j+1),s)=tempvec(1:L(j));
+        end
+    end
+    */
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
+        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+            const arma::vec& tempVec = par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+            double thetaScale = std::max(0.0, 1 - tlam(1)*weightMat(i,p+j)/arma::norm(tempVec, 2));
+            par.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * thetaScale;
+        }
+    }
+
+    /*
+    for r=1:q
+        for j=1:q
+            if r<j
+                tempmat=phi(Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1));
+                tempmat=max(0,1-t(3)*(wv(p+r)*wv(p+j))/norm(tempmat))*tempmat; % Lj by 2*Lr
+                phinorms=phinorms+(wv(p+r)*wv(p+j))*norm(tempmat,'fro');
+                phi( Lsums(r)+1:Lsums(r+1),Lsums(j)+1:Lsums(j+1) )=tempmat;
+            end
+        end
+    end
+    */
+    for (arma::uword i = 0; i < lcumsum.size()-1; i++) {
+        for (arma::uword j = i+1; j < lcumsum.size()-1; j++) {
+            const arma::mat& tempMat = par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1);
+            double phiScale = std::max(0.0, 1 - tlam(2)*weightMat(p+i,p+j)/arma::norm(tempMat, "fro"));
+            // Use the tempMat subview again to set the values (doesn't work with const)
+            par.phi.submat(lcumsum[i], lcumsum[j], lcumsum[i+1]-1, lcumsum[j+1]-1) = tempMat * phiScale;
+        }
+    }
+
+
+    const arma::mat& gammaWeight = weightMat.submat(0, p+q, p-1, p+q+r-1);
+
+    // Rcpp::Rcout << "GammaWeight:\n" << gammaWeight;
+    
+    arma::mat gammaScale = gammaWeight * -tlam(3);
+    arma::mat absGamma = arma::abs(par.gamma); 
+    
+    gammaScale /= absGamma;
+    gammaScale += 1;
+
+    // Rcpp::Rcout << "GammaScale:\n" << gammaScale;
+    
+    gammaScale.transform( [](double val) {return std::max(val, 0.0); } );
+
+    // Rcpp::Rcout << "Thresholded GammaScale:\n" << gammaScale;
+
+    par.gamma = par.gamma % gammaScale;
+
+
+    for (arma::uword i = 0; i < (arma::uword) r; i++) {
+        for (arma::uword j = 0; j < lcumsum.size()-1; j++) {
+            arma::subview_col<double> tempVec = par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1);
+            double psiScale = std::max(0.0, 1 - tlam(4)*weightMat(p+j, p+q+i)/arma::norm(tempVec, 2));
+            par.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1) = tempVec * psiScale;
+        }
+    }
 
     return par.toMatrix1D();
 }
@@ -3185,32 +3211,32 @@ arma::mat CoxMGM::adjMatFromCoxMGM() {
     if (p - pDummy > 0) 
 	outMat(0, 0, arma::size(p, p)) = params.beta + params.beta.t();
 
-    for (arma::uword i = 0; i < p-pDummy; i++) {
-        for (arma::uword j = 0; j < q-qDummy; j++) {
+    for (arma::uword i = 0; i < (arma::uword) p-pDummy; i++) {
+        for (arma::uword j = 0; j < (arma::uword) q-qDummy; j++) {
             double val = arma::norm(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1), 2);
             outMat(i, p+j) = val;
             outMat(p+j, i) = val;
         }
     }
 
-    for (arma::uword i = 0; i < p-pDummy; i++) {
-        for (arma::uword j = 0; j < r; j++) {
+    for (arma::uword i = 0; i < (arma::uword) p-pDummy; i++) {
+        for (arma::uword j = 0; j < (arma::uword) r; j++) {
             double val = params.gamma(i,j);
             outMat(i, p+q-qDummy+j) = val;
             outMat(p+q-qDummy+j, i) = val;
         }
     }
 
-    for (arma::uword i = 0; i < q-qDummy; i++) {
-        for (arma::uword j = i+1; j < q-qDummy; j++) {
+    for (arma::uword i = 0; i < (arma::uword) q-qDummy; i++) {
+        for (arma::uword j = i+1; j < (arma::uword) q-qDummy; j++) {
             double val = arma::norm(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j])), "fro");
             outMat(p-pDummy+i, p-pDummy+j) = val;
             outMat(p-pDummy+j, p-pDummy+i) = val;
         }
     }
 
-    for (arma::uword i = 0; i < q-qDummy; i++) {
-        for (arma::uword j = 0; j < r; j++) {
+    for (arma::uword i = 0; i < (arma::uword) q-qDummy; i++) {
+        for (arma::uword j = 0; j < (arma::uword) r; j++) {
             double val = arma::norm(params.psi.col(j).subvec(lcumsum[i], lcumsum[i+1]-1), 2);
             outMat(p-pDummy+i, p-pDummy+q+j) = val;
             outMat(p-pDummy+q+j, p-pDummy+i) = val;
@@ -3219,7 +3245,7 @@ arma::mat CoxMGM::adjMatFromCoxMGM() {
 
     //order the adjmat to be the same as the original DataSet variable ordering
     arma::uvec varMap(p+q+r-pDummy-qDummy);
-    for(arma::uword i = 0; i < p+q+r-pDummy-qDummy; i++){
+    for(arma::uword i = 0; i < (arma::uword) p+q+r-pDummy-qDummy; i++){
         varMap(i) = std::distance(variables.begin(), std::find(variables.begin(), variables.end(), initVariables[i]));
     }
     outMat = outMat.submat(varMap, varMap);
@@ -3236,8 +3262,8 @@ arma::mat CoxMGM::adjMatFromCoxMGM() {
 EdgeListGraph CoxMGM::graphFromCoxMGM() {
     EdgeListGraph g(variables);
 
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = i+1; j < p; j++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
+        for (arma::uword j = i+1; j < (arma::uword) p; j++) {
             double v1 = params.beta(i,j);
 
             if (std::abs(v1) > 0) {
@@ -3249,8 +3275,8 @@ EdgeListGraph CoxMGM::graphFromCoxMGM() {
         }
     }
 
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < q; j++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
+        for (arma::uword j = 0; j < (arma::uword) q; j++) {
             double v1 = arma::accu(arma::abs(params.theta.col(i).subvec(lcumsum[j], lcumsum[j+1]-1)));
 
             if (v1 > 0) {
@@ -3262,8 +3288,8 @@ EdgeListGraph CoxMGM::graphFromCoxMGM() {
         }
     }
 
-    for (arma::uword i = 0; i < q; i++) {
-        for (arma::uword j = i+1; j < q; j++) {
+    for (arma::uword i = 0; i < (arma::uword) q; i++) {
+        for (arma::uword j = i+1; j < (arma::uword) q; j++) {
             double v1 = arma::accu(arma::abs(params.phi(lcumsum[i], lcumsum[j], arma::size(l[i], l[j]))));
 
             if (v1 > 0) {
@@ -3275,8 +3301,8 @@ EdgeListGraph CoxMGM::graphFromCoxMGM() {
         }
     }
 
-    for (arma::uword i = 0; i < p; i++) {
-        for (arma::uword j = 0; j < r; j++) {
+    for (arma::uword i = 0; i < (arma::uword) p; i++) {
+        for (arma::uword j = 0; j < (arma::uword) r; j++) {
             double v1 = params.gamma(i,j);
 
             if (std::abs(v1) > 0) {
@@ -3288,8 +3314,8 @@ EdgeListGraph CoxMGM::graphFromCoxMGM() {
         }
     }
 
-    for (arma::uword i = 0; i < r; i++) {
-        for (arma::uword j = 0; j < q; j++) {
+    for (arma::uword i = 0; i < (arma::uword) r; i++) {
+        for (arma::uword j = 0; j < (arma::uword) q; j++) {
             double v1 = arma::accu(arma::abs(params.psi.col(i).subvec(lcumsum[j], lcumsum[j+1]-1)));
 
             if (v1 > 0) {
@@ -3347,7 +3373,7 @@ std::vector<EdgeListGraph> CoxMGM::searchPath(std::vector<double> lambdas,
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<EdgeListGraph> pathGraphs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
-    for (int i = 0; i < lambdas.size(); i++) {
+    for (int i = 0; i < (int) lambdas.size(); i++) {
 	if (verbose) RcppThread::Rcout << "  Learning CoxMGM for lambda = " << lambdas[i] << "\n";
 	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i],
 				       lambdas[i], lambdas[i] };
@@ -3401,7 +3427,7 @@ std::vector<EdgeListGraph> CoxMGM::searchPath(std::vector<double> lambdas) {
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<EdgeListGraph> pathGraphs;
     std::sort(lambdas.begin(), lambdas.end(), std::greater<double>());
-    for (int i = 0; i < lambdas.size(); i++) {
+    for (int i = 0; i < (int) lambdas.size(); i++) {
 	// RcppThread::Rcout << "Learning CoxMGM for lambda = " << lambdas[i] << std::endl;
 	std::vector<double> lambda = { lambdas[i], lambdas[i], lambdas[i],
 				       lambdas[i], lambdas[i] };
@@ -3460,7 +3486,7 @@ std::vector<EdgeListGraph> CoxMGM::searchPathCV(std::vector<double> lambdas,
 
 	// Rcpp::Rcout << "  Test complete\n";
 	
-	for (int i = 0; i < lambdas.size(); i++) {
+	for (int i = 0; i < (int) lambdas.size(); i++) {
 	    if (verbose) {
 		RcppThread::Rcout << "  Fold " << k << ": Learning MGM for lambda = "
 				  << lambdas[i] << "\r";

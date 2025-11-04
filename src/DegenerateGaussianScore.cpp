@@ -27,7 +27,7 @@ DegenerateGaussianScore::DegenerateGaussianScore(DataSet data, double penalty) {
 
     variables = data.getVariables();
     
-    for (int i = 0; i < variables.size(); i++) {
+    for (int i = 0; i < (int) variables.size(); i++) {
 	indexMap.insert(std::pair<Node, int>(variables[i], i));
     }
 
@@ -157,8 +157,7 @@ double DegenerateGaussianScore::localScore(const Node& x, const std::vector<Node
 /**
  * @return the list of variable varNames.
  */
-std::vector<std::string> DegenerateGaussianScore::getVariableNames()
-{
+std::vector<std::string> DegenerateGaussianScore::getVariableNames() {
     std::vector<Node> variables = getVariables();
     std::vector<std::string> variableNames;
 
@@ -170,7 +169,7 @@ std::vector<std::string> DegenerateGaussianScore::getVariableNames()
 }
 
 Node DegenerateGaussianScore::getVariable(std::string name) {
-    for (int i = 0; i < getVariables().size(); i++) {
+    for (int i = 0; i < (int) getVariables().size(); i++) {
 	Node var = getVariables().at(i);
 	if (var.getName() == name) {
 	    return var;

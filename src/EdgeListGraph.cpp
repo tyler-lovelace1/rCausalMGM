@@ -1869,7 +1869,7 @@ void streamGraph(const Rcpp::List& list, std::ostream& os, std::string ext) {
 	for (std::string nodeName : nodeNames) {
 	    count++;
 	    os << nodeName;
-	    if (count < nodeNames.size()) {
+	    if (count < (int) nodeNames.size()) {
 		os << ",";
 	    }
 	}
@@ -2026,7 +2026,7 @@ Rcpp::List loadGraph(const std::string& filename) {
             return s == "";
         };
 
-        for (; i < lines.size(); i++) {
+        for (; i < (int) lines.size(); i++) {
             std::string edgeString = lines[i];
 
             if (edgeString.find("Algorithm: ") != std::string::npos) {
@@ -2101,7 +2101,7 @@ Rcpp::List loadGraph(const std::string& filename) {
         }
 
         TRIPLES:
-        for (; i < lines.size(); i++) {
+        for (; i < (int) lines.size(); i++) {
             std::string tripleString = lines[i];
 
             if (isWhiteSpace(tripleString)) continue; // Skip empty lines
@@ -2169,7 +2169,7 @@ Rcpp::List adjMat2Graph(arma::mat adj, Rcpp::StringVector nodes, bool directed =
     }
 
     std::vector<Node> _nodes;
-    for (int i = 0; i < nodeNames.size(); i++) {
+    for (int i = 0; i < (int) nodeNames.size(); i++) {
 	_nodes.push_back(Node(new ContinuousVariable(nodeNames[i])));
     }
 
@@ -2443,8 +2443,8 @@ EdgeListGraph EdgeListGraph::getPAG(std::vector<Node>& latent) {
     
     EdgeListGraph pag(observedNodes);
 
-    for (int i = 0; i < observedNodes.size()-1; i++) {
-    	for (int j = i+1; j < observedNodes.size(); j++) {
+    for (int i = 0; i < (int) observedNodes.size()-1; i++) {
+    	for (int j = i+1; j < (int) observedNodes.size(); j++) {
     	    // if (i==j) continue;
     	    std::vector<Node> inducingPath = GraphUtils::getInducingPath(observedNodes[i],
     									 observedNodes[j],

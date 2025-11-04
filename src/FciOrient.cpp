@@ -941,7 +941,7 @@ std::vector<Node> FciOrient::getPath(const Node& c,
  * @param path The path to orient as all tails.
  */
 void FciOrient::orientTailPath(std::vector<Node> path, EdgeListGraph& graph) {
-    for (int i = 0; i < path.size() - 1; i++) {
+    for (int i = 0; i < (int) path.size() - 1; i++) {
 	Node n1 = path.at(i);
 	Node n2 = path.at(i + 1);
 
@@ -1041,7 +1041,7 @@ std::vector<std::vector<Node>> FciOrient::getUcCirclePaths(const Node& n1, const
     std::vector<std::vector<Node>> ucPdPaths = getUcPdPaths(n1, n2, graph);
 
     for (const std::vector<Node>& path : ucPdPaths) {
-	for (int i = 0; i < path.size() - 1; i++) {
+	for (int i = 0; i < ((int) path.size()) - 1; i++) {
 	    Node j = path.at(i);
 	    Node sj = path.at(i + 1);
 
@@ -1053,7 +1053,7 @@ std::vector<std::vector<Node>> FciOrient::getUcCirclePaths(const Node& n1, const
 	    }
 	    // This edge is OK, it's all circles.
 
-	    if (i == path.size() - 2) {
+	    if (i == (((int) path.size()) - 2)) {
 		// We're at the last edge, so this is a circle path.
 		ucCirclePaths.push_back(path);
 	    }

@@ -107,7 +107,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 				}
 
 				for (int idx = 0; idx < n; idx++) {
-				    for (int cat = 0; cat < levels.size(); cat++) {
+				    for (int cat = 0; cat < (int) levels.size(); cat++) {
 					if (tempLevels[(int) (values[idx]-1)] == levels[cat]) {
 					    strata[idx] = cat;
 					}
@@ -122,7 +122,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 				arma::vec values = Rcpp::as<arma::vec>(st);
 				arma::vec uniqVals = arma::unique(values(arma::find_finite(values)));
 				for (int idx = 0; idx < n; idx++) {
-				    for (int cat = 0; cat < uniqVals.size(); cat++) {
+				    for (int cat = 0; cat < (int) uniqVals.size(); cat++) {
 					if (values[idx] == uniqVals[cat]) {
 					    strata[idx] = cat;
 					}
@@ -195,7 +195,7 @@ DataSet::DataSet(const Rcpp::DataFrame &df) {
 		arma::vec mappedValues(n, arma::fill::zeros);
 
 		for (int idx = 0; idx < n; idx++) {
-		    for (int cat = 0; cat < levels.size(); cat++) {
+		    for (int cat = 0; cat < (int) levels.size(); cat++) {
 			if (tempLevels[(int) (values[idx]-1)] == levels[cat]) {
 			    mappedValues[idx] = cat;
 			}
@@ -451,7 +451,7 @@ void DataSet::removeVariable(Node v) {
 
     data.shed_col(idx);
 
-    for (int i = idx; i < variables.size(); i++) {
+    for (int i = idx; i < (int) variables.size(); i++) {
 	name2idx.at(variableNames.at(i)) = i-1;
 	var2idx.at(variables.at(i)) = i-1;
     }
@@ -842,7 +842,7 @@ arma::mat DataSet::getSubsetData(arma::uvec rowIdxs, arma::uvec colIdxs) {
 arma::mat DataSet::getContinuousData() {
     std::vector<arma::uword> continuousColumns = std::vector<arma::uword>();
 
-    for (arma::uword i = 0; i < m; i++) {
+    for (arma::uword i = 0; i < (arma::uword) m; i++) {
         if (variables[i].isContinuous())
             continuousColumns.push_back(i);
     }
@@ -853,7 +853,7 @@ arma::mat DataSet::getContinuousData() {
 arma::mat DataSet::getDiscreteData() {
     std::vector<arma::uword> discreteColumns = std::vector<arma::uword>();
 
-    for (arma::uword i = 0; i < m; i++) {
+    for (arma::uword i = 0; i < (arma::uword) m; i++) {
         if (variables[i].isDiscrete())
             discreteColumns.push_back(i);
     }
@@ -864,7 +864,7 @@ arma::mat DataSet::getDiscreteData() {
 arma::mat DataSet::getCensoredData() {
     std::vector<arma::uword> censoredColumns = std::vector<arma::uword>();
 
-    for (arma::uword i = 0; i < m; i++) {
+    for (arma::uword i = 0; i < (arma::uword) m; i++) {
         if (variables[i].isCensored())
             censoredColumns.push_back(i);
     }
@@ -875,7 +875,7 @@ arma::mat DataSet::getCensoredData() {
 std::vector<int> DataSet::getDiscLevels() {
     std::vector<int> result;
 
-    for (arma::uword i = 0; i < m; i++) {
+    for (arma::uword i = 0; i < (arma::uword) m; i++) {
         if (variables[i].isDiscrete())
             result.push_back(variables[i].getNumCategories());
     }

@@ -192,7 +192,7 @@ double SearchCV::multiTestLL(arma::mat& coeffs, const Node& dep,
     depIdx[0] = internalData.getColumn(dep);
     
     arma::uvec indepIdx(indep.size());
-    for (int i = 0; i < indep.size(); i++) {
+    for (uint i = 0; i < indep.size(); i++) {
         indepIdx[i] = internalData.getColumn(indep.at(i));
     }
 
@@ -251,7 +251,7 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 
     // RcppThread::Rcout << "Scoring " << dep << " fold " << k << ":\n  indep: ";
 
-    for (int i = 0; i < indep.size(); i++) {
+    for (uint i = 0; i < indep.size(); i++) {
 	// RcppThread::Rcout << indep[i] << " ";
     // }
 	// RcppThread::Rcout << std::endl;
@@ -276,7 +276,7 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 	N = depData.n_elem; // returns number of rows
     
 	arma::uvec indepIdx(indep.size());
-	for (int i = 0; i < indep.size(); i++) {
+	for (uint i = 0; i < indep.size(); i++) {
 	    indepIdx[i] = internalData.getColumn(indep.at(i));
 	}
 
@@ -305,7 +305,7 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 	LogisticRegressionResult result;
 	arma::mat coeffs = arma::mat();
 	
-	for (int i = 0; i < variablesPerNode.at(dep).size(); i++) {
+	for (int i = 0; i < (int) variablesPerNode.at(dep).size(); i++) {
 	    const Node& varDep = variablesPerNode.at(dep).at(i);
 
 	    result = logisticRegression.regress(varDep, indep, trainRows);
@@ -341,7 +341,7 @@ double SearchCV::scoreTestLLTask(const Node& dep, std::vector<Node>& indep, int 
 	N = depData.n_elem; // returns number of rows
 	
 	arma::uvec indepIdx(indep.size());
-	for (int i = 0; i < indep.size(); i++) {
+	for (uint i = 0; i < indep.size(); i++) {
 	    indepIdx[i] = internalData.getColumn(indep.at(i));
 	}
 
@@ -463,10 +463,10 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 
     std::vector<std::vector<arma::vec>> loglik;
     std::vector<std::vector<arma::vec>> mbSize;
-    for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
+    for (int orIdx = 0; orIdx < (int) orientRules.size(); orIdx++) {
 	loglik.push_back(std::vector<arma::vec>());
 	mbSize.push_back(std::vector<arma::vec>());
-	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
+	for (int aIdx = 0; aIdx < (int) alphas.n_elem; aIdx++) {
 	    loglik.at(orIdx).push_back(arma::vec(nfolds));
 	    mbSize.at(orIdx).push_back(arma::vec(nfolds));
 	}
@@ -501,7 +501,7 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 	    }
 	}
 
-	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
+	for (int aIdx = 0; aIdx < (int) alphas.n_elem; aIdx++) {
 	    IndTestMultiCox itm(train, alphas(aIdx));
 
 	    if (verbose) RcppThread::Rcout << "\r    Alpha = " << alphas[aIdx];
@@ -536,7 +536,7 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 		loglik[0][aIdx][k-1] = scoreOutput[0];
 		mbSize[0][aIdx][k-1] = scoreOutput[1];
 	      
-		for (int orIdx = 1; orIdx < orientRules.size(); orIdx++) {
+		for (int orIdx = 1; orIdx < (int) orientRules.size(); orIdx++) {
 		    g = causalAlg.reorientWithRule(orientRules.at(orIdx));
 
 		    std::vector<double> scoreOutput = scoreGraphTestLL(g, k);
@@ -566,7 +566,7 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 		loglik[0][aIdx][k-1] = scoreOutput[0];
 		mbSize[0][aIdx][k-1] = scoreOutput[1];
 	      
-		for (int orIdx = 1; orIdx < orientRules.size(); orIdx++) {
+		for (int orIdx = 1; orIdx < (int) orientRules.size(); orIdx++) {
 		    g = causalAlg.reorientWithRule(orientRules.at(orIdx));
 
 		    std::vector<double> scoreOutput = scoreGraphTestLL(g, k);
@@ -584,8 +584,8 @@ std::vector<EdgeListGraph> SearchCV::causalCV() {
 
     // std::set<CvResult> results;
 
-    for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
-	for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
+    for (int orIdx = 0; orIdx < (int) orientRules.size(); orIdx++) {
+	for (int aIdx = 0; aIdx < (int) alphas.n_elem; aIdx++) {
 	    results.insert(CvResult(arma::mean(loglik[orIdx][aIdx]),
 				    arma::stddev(loglik[orIdx][aIdx]),
 				    arma::mean(mbSize[orIdx][aIdx]),
@@ -725,13 +725,13 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
     
     std::vector<std::vector<std::vector<arma::vec>>> loglik;
     std::vector<std::vector<std::vector<arma::vec>>> mbSize;
-    for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
+    for (int lIdx = 0; lIdx < (int) lambdas.n_elem; lIdx++) {
 	loglik.push_back(std::vector<std::vector<arma::vec>>());
 	mbSize.push_back(std::vector<std::vector<arma::vec>>());
-	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
+	for (int orIdx = 0; orIdx < (int) orientRules.size(); orIdx++) {
 	    loglik.at(lIdx).push_back(std::vector<arma::vec>());
 	    mbSize.at(lIdx).push_back(std::vector<arma::vec>());
-	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
+	    for (int aIdx = 0; aIdx < (int) alphas.n_elem; aIdx++) {
 		loglik.at(lIdx).at(orIdx).push_back(arma::vec(nfolds));
 		mbSize.at(lIdx).at(orIdx).push_back(arma::vec(nfolds));
 	    }
@@ -761,7 +761,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 	    // if (verbose) RcppThread::Rcout << "  CoxMGM initialized " << k << "...\n";
 	}
 
-	for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
+	for (int lIdx = 0; lIdx < (int) lambdas.n_elem; lIdx++) {
 
 	    if (!censFlag) {
 		lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
@@ -778,7 +778,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 		// if (verbose) RcppThread::Rcout << ig << "\n";
 	    }
 	
-	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
+	    for (int aIdx = 0; aIdx < (int) alphas.n_elem; aIdx++) {
 		IndTestMultiCox itm(train, alphas(aIdx));
 		if (verbose) RcppThread::Rcout << "\r    Lambda = " << lambdas[lIdx] << ", Alpha = " << alphas[aIdx];
 		if (alg=="pc") {
@@ -800,7 +800,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 		    loglik[lIdx][0][aIdx][k-1] = scoreOutput[0];
 		    mbSize[lIdx][0][aIdx][k-1] = scoreOutput[1];
 
-		    for (int orIdx = 1; orIdx < orientRules.size(); orIdx++) {
+		    for (int orIdx = 1; orIdx < (int) orientRules.size(); orIdx++) {
 			g = causalAlg.reorientWithRule(orientRules.at(orIdx));
 
 			std::vector<double> scoreOutput = scoreGraphTestLL(g, k);
@@ -837,7 +837,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 
 		    // if (verbose) RcppThread::Rcout << "  Reorienting graph " << k << "...\n";
 
-		    for (int orIdx = 1; orIdx < orientRules.size(); orIdx++) {
+		    for (int orIdx = 1; orIdx < (int) orientRules.size(); orIdx++) {
 			g = causalAlg.reorientWithRule(orientRules.at(orIdx));
 
 			std::vector<double> scoreOutput = scoreGraphTestLL(g, k);
@@ -855,14 +855,14 @@ std::vector<EdgeListGraph> SearchCV::causalMGMGridCV() {
 	if (verbose) RcppThread::Rcout << std::endl;
     }
 
-    for (int lIdx = 0; lIdx < lambdas.n_elem; lIdx++) {
+    for (int lIdx = 0; lIdx < (int) lambdas.n_elem; lIdx++) {
 	if (censFlag) {
 	    lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
 	} else {
 	    lambda = { lambdas[lIdx], lambdas[lIdx], lambdas[lIdx] };
 	}
-	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
-	    for (int aIdx = 0; aIdx < alphas.n_elem; aIdx++) {
+	for (int orIdx = 0; orIdx < (int) orientRules.size(); orIdx++) {
+	    for (int aIdx = 0; aIdx < (int) alphas.n_elem; aIdx++) {
 		results.insert(CvResult(arma::mean(loglik[lIdx][orIdx][aIdx]),
 					arma::stddev(loglik[lIdx][orIdx][aIdx]),
 					arma::mean(mbSize[lIdx][orIdx][aIdx]),
@@ -1008,7 +1008,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
     
     std::vector<std::vector<arma::vec>> loglik;
     std::vector<std::vector<arma::vec>> mbSize;
-    for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
+    for (int orIdx = 0; orIdx < (int) orientRules.size(); orIdx++) {
 	loglik.push_back(std::vector<arma::vec>());
 	mbSize.push_back(std::vector<arma::vec>());
 	for (int tIdx = 0; tIdx < trials; tIdx++) {
@@ -1084,7 +1084,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 		loglik[0][tIdx][k-1] = scoreOutput[0];
 		mbSize[0][tIdx][k-1] = scoreOutput[1];
 
-		for (int orIdx = 1; orIdx < orientRules.size(); orIdx++) {
+		for (int orIdx = 1; orIdx < (int) orientRules.size(); orIdx++) {
 		    g = causalAlg.reorientWithRule(orientRules.at(orIdx));
 
 		    std::vector<double> scoreOutput = scoreGraphTestLL(g, k);
@@ -1111,7 +1111,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 		loglik[0][tIdx][k-1] = scoreOutput[0];
 		mbSize[0][tIdx][k-1] = scoreOutput[1];
 
-		for (int orIdx = 1; orIdx < orientRules.size(); orIdx++) {
+		for (int orIdx = 1; orIdx < (int) orientRules.size(); orIdx++) {
 		    g = causalAlg.reorientWithRule(orientRules.at(orIdx));
 
 		    std::vector<double> scoreOutput = scoreGraphTestLL(g, k);
@@ -1134,7 +1134,7 @@ std::vector<EdgeListGraph> SearchCV::causalMGMRandCV() {
 	} else {
 	    lambda = { lambdas[tIdx], lambdas[tIdx], lambdas[tIdx] };
 	}
-	for (int orIdx = 0; orIdx < orientRules.size(); orIdx++) {
+	for (int orIdx = 0; orIdx < (int) orientRules.size(); orIdx++) {
 	    // count++;
 	    results.insert(CvResult(arma::mean(loglik[orIdx][tIdx]),
 				    arma::stddev(loglik[orIdx][tIdx]),

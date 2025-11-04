@@ -10,7 +10,7 @@ LinearRegression::LinearRegression(DataSet& data) {
     dataMat = arma::mat(data.getData());
     variables = data.getVariables();
     rows = arma::uvec(data.getNumRows());
-    for (arma::uword i = 0; i < data.getNumRows(); i++)
+    for (arma::uword i = 0; i < (arma::uword) data.getNumRows(); i++)
         rows[i] = i;    
 }
 
@@ -28,7 +28,7 @@ RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
 
-    for (int i = 0; i < regressors.size(); i++)
+    for (uint i = 0; i < regressors.size(); i++)
         regressors_[i] = data.getColumn(regressors[i]);
 
     arma::uvec target_Vec(1);
@@ -56,17 +56,17 @@ RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>
 	}
     }
 
-    std::ostringstream oss;
+    // std::ostringstream oss;
 
-    if (rcond(x.t() * x) < 5e-16) {
-        oss << "Ill-conditioned Linear Regression: " << target << " ~ ";
-	for (int i = 0; i < regressors.size()-1; i++) {
-	    oss << regressors.at(i) << " + ";
-	}
-        oss << regressors.at(regressors.size()-1) << std::endl;
-    }
+    // if (rcond(x.t() * x) < 5e-16) {
+    //     oss << "Ill-conditioned Linear Regression: " << target << " ~ ";
+    // 	for (uint i = 0; i < regressors.size()-1; i++) {
+    // 	    oss << regressors.at(i) << " + ";
+    // 	}
+    //     oss << regressors.at(regressors.size()-1) << std::endl;
+    // }
 
-    RcppThread::Rcout << oss.str();
+    // RcppThread::Rcout << oss.str();
 
     arma::vec b = arma::solve(x, y);
     arma::mat xTxInv = arma::solve(x.t() * x, arma::eye(x.n_cols, x.n_cols),
@@ -122,7 +122,7 @@ RegressionResult LinearRegression::regress(const Node& target, std::vector<Node>
 
     std::vector<std::string> vNames(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)
+    for (uint i = 0; i < regressors.size(); i++)
         vNames[i] = regressors[i].getName(); // getName Function may not be implemented
 
 
@@ -145,7 +145,7 @@ RegressionResult LinearRegression::regress(const Node& target,
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
 
-    for (int i = 0; i < regressors.size(); i++)
+    for (uint i = 0; i < regressors.size(); i++)
         regressors_[i] = data.getColumn(regressors[i]);
 
     arma::uvec target_Vec(1);
@@ -174,17 +174,17 @@ RegressionResult LinearRegression::regress(const Node& target,
 	}
     }
 
-    std::ostringstream oss;
+    // std::ostringstream oss;
 
-    if (rcond(x.t() * x) < 5e-16) {
-        oss << "Ill-conditioned Linear Regression: " << target << " ~ ";
-	for (int i = 0; i < regressors.size()-1; i++) {
-	    oss << regressors.at(i) << " + ";
-	}
-        oss << regressors.at(regressors.size()-1) << std::endl;
-    }
+    // if (rcond(x.t() * x) < 5e-16) {
+    //     oss << "Ill-conditioned Linear Regression: " << target << " ~ ";
+    // 	for (int i = 0; i < regressors.size()-1; i++) {
+    // 	    oss << regressors.at(i) << " + ";
+    // 	}
+    //     oss << regressors.at(regressors.size()-1) << std::endl;
+    // }
 
-    RcppThread::Rcout << oss.str();
+    // RcppThread::Rcout << oss.str();
 
     arma::vec b = arma::solve(x, y);
     arma::mat xTxInv = arma::solve(x.t() * x, arma::eye(x.n_cols, x.n_cols),
@@ -240,7 +240,7 @@ RegressionResult LinearRegression::regress(const Node& target,
 
     std::vector<std::string> vNames(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)
+    for (uint i = 0; i < regressors.size(); i++)
         vNames[i] = regressors[i].getName(); // getName Function may not be implemented
 
     return RegressionResult(regressors.size() == 0, vNames, n, b, t, p, sqErr, r2, rss_, alpha, yHat_, res_); // MUST CONVERT B INTO A VECTOR

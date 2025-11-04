@@ -330,7 +330,7 @@ bool IndTestMultiCox::isIndependentMultinomialLogisticRegression(const Node& x, 
     arma::mat coeffsDep = arma::mat();  //yzList.size()+1, variablesPerNode.at(x).size());
 
     /*********************************************************************/
-    for (int i = 0; i < variablesPerNode.at(x).size(); i++) {
+    for (uint i = 0; i < variablesPerNode.at(x).size(); i++) {
         const Node& varX = variablesPerNode.at(x).at(i);
 	// LogisticRegressionResult result0;
 	// LogisticRegressionResult result1;
@@ -871,7 +871,7 @@ std::vector<std::string> IndTestMultiCox::getVariableNames()
 
 Node IndTestMultiCox::getVariable(std::string name)
 {
-    for (int i = 0; i < getVariables().size(); i++)
+    for (uint i = 0; i < getVariables().size(); i++)
     {
         Node var = getVariables().at(i);
         if (var.getName() == name)
@@ -888,7 +888,7 @@ arma::mat IndTestMultiCox::getSubsetData(DataSet& origData, std::vector<Node> &v
     arma::uvec colIndices(varSubset.size());
     // arma::uvec rowIndices(origData.getNumRows());
     // for (const Node& var : varSubset){
-    for (int i = 0; i < varSubset.size(); i++) {
+    for (uint i = 0; i < varSubset.size(); i++) {
         const Node& var = varSubset.at(i);
         arma::uword j = origData.getColumn(var);
         colIndices[i] = j;

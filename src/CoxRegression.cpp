@@ -9,7 +9,7 @@ CoxRegression::CoxRegression(DataSet& data) {
     dataMat = arma::mat(data.getData());
     variables = data.getVariables();
     rows = arma::uvec(data.getNumRows());
-    for (arma::uword i = 0; i < data.getNumRows(); i++)
+    for (arma::uword i = 0; i < (arma::uword) data.getNumRows(); i++)
         rows[i] = i;
 }
 
@@ -26,7 +26,7 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
 
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (int i = 0; i < (int) regressors.size(); i++)	{
 	regressors_[i] = data.getColumn(regressors[i]);
     }
 
@@ -147,7 +147,7 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
 
     std::vector<std::string> vNames(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (int i = 0; i < (int) regressors.size(); i++)	{
 	vNames[i] = regressors[i].getName(); 
     }
 
@@ -173,7 +173,7 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
 
     arma::uvec regressors_ = arma::uvec(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (int i = 0; i < (int) regressors.size(); i++)	{
 	regressors_[i] = data.getColumn(regressors[i]);
     }
 
@@ -296,7 +296,7 @@ CoxRegressionResult CoxRegression::regress(const Node& target,
     
     std::vector<std::string> vNames(regressors.size());
 
-    for (int i = 0; i < regressors.size(); i++)	{
+    for (int i = 0; i < (int) regressors.size(); i++)	{
 	vNames[i] = regressors[i].getName(); 
     }
 
@@ -334,7 +334,7 @@ double CoxRegression::loss(arma::vec& beta, arma::mat& X, const Node& target) {
 	rs_sum = 0.0;
 
 	
-	for (uint rowIdx = 0; rowIdx < n; rowIdx++) {
+	for (uint rowIdx = 0; rowIdx < (uint) n; rowIdx++) {
 	    uint xRowIdx = index[rowIdx];
 	    eta[xRowIdx] = arma::dot(X.row(xRowIdx), beta);
 	    theta[xRowIdx] = std::exp(eta[xRowIdx]);
@@ -344,12 +344,12 @@ double CoxRegression::loss(arma::vec& beta, arma::mat& X, const Node& target) {
 
 	// Calculate loss for this strata
 	int i = 0;
-	for (int j = 0; j < H.n_elem; j++) {
+	for (int j = 0; j < (int) H.n_elem; j++) {
 	    HsumTheta = 0;
 	    m = 0;
 	    sub = 0;
 
-	    for (int k = 0; k < H[j]; k++) {
+	    for (int k = 0; k < (int) H[j]; k++) {
 		uint rowIdx = order[i+k];
 		uint xRowIdx = index[rowIdx];
 		uint delta = censor[rowIdx];
@@ -365,7 +365,7 @@ double CoxRegression::loss(arma::vec& beta, arma::mat& X, const Node& target) {
 					 std::to_string(HsumTheta) + " > " + std::to_string(sub));
 
 	    if (sub - rs_sum > 1e-5) {
-		if ((H[j] + i) != n) {
+	      if (( ((int) H[j]) + i) != n) {
 		    arma::uvec remainingXIdx = index(order.subvec(i, n-1));
 		    arma::vec remainingTheta = theta(remainingXIdx);
 		    rs_sum = arma::accu(remainingTheta);
@@ -433,7 +433,7 @@ double CoxRegression::gradHess(arma::vec& beta, arma::vec& grad, arma::mat& hess
 	    }
 	}
 
-	for (uint rowIdx = 0; rowIdx < n; rowIdx++) {
+	for (uint rowIdx = 0; rowIdx < (uint) n; rowIdx++) {
 	    uint xRowIdx = index[rowIdx];
 	    eta[xRowIdx] = arma::dot(X.row(xRowIdx), beta);
 	    theta[xRowIdx] = std::exp(eta[xRowIdx]);
@@ -450,7 +450,7 @@ double CoxRegression::gradHess(arma::vec& beta, arma::vec& grad, arma::mat& hess
 
 	// Calculate loss, gradient, and hessian for this strata
 	int i = 0;
-	for (int j = 0; j < H.n_elem; j++) {
+	for (int j = 0; j < (int) H.n_elem; j++) {
 	    HsumTheta = 0;
 	    m = 0;
 	    sub = 0;
@@ -464,7 +464,7 @@ double CoxRegression::gradHess(arma::vec& beta, arma::vec& grad, arma::mat& hess
 		}
 	    }
 
-	    for (int k = 0; k < H[j]; k++) {
+	    for (int k = 0; k < (int) H[j]; k++) {
 		uint rowIdx = order[i+k];
 		uint xRowIdx = index[rowIdx];
 		uint delta = censor[rowIdx];
@@ -494,7 +494,7 @@ double CoxRegression::gradHess(arma::vec& beta, arma::vec& grad, arma::mat& hess
 					 std::to_string(HsumTheta) + " > " + std::to_string(sub));
 
 	    if (sub - rs_sum > 1e-5) {
-		if ((H[j] + i) != n) {
+		if (( ((int) H[j]) + i) != n) {
 		    arma::uvec remainingXIdx = index(order.subvec(i, n-1));
 		    arma::vec remainingTheta = theta(remainingXIdx);
 		    rs_sum = arma::accu(remainingTheta);
@@ -577,14 +577,14 @@ double CoxRegression::etaGradHess(arma::vec& eta, arma::vec& grad, arma::vec& di
 	grad(index) += arma::conv_to<arma::vec>::from(censor);
     
 	int i = 0;
-	for (int j = 0; j < H.n_elem; j++) {
+	for (int j = 0; j < (int) H.n_elem; j++) {
 	    HsumTheta = 0;
 	    m = 0;
 	    sub = 0;
 	    dSum = 0;
 	    dSum2 = 0;
 
-	    for (int k = 0; k < H[j]; k++) {
+	    for (int k = 0; k < (int) H[j]; k++) {
 		if (censor[order[i+k]]) {
 		    m++;
 		    HsumTheta += theta[order[i+k]];
@@ -595,7 +595,7 @@ double CoxRegression::etaGradHess(arma::vec& eta, arma::vec& grad, arma::vec& di
 
 	    if (m > 0) {
 		if (sub - rs_sum > 1e-5) {
-		    if ((H[j] + i) != n) {
+		    if (( ((int) H[j]) + i) != n) {
 			rs_sum = arma::accu(theta(order.subvec(i, n-1)));
 			if (sub - rs_sum > 1e-5) {
 			    throw std::runtime_error("Error in Cox IRLS Regression gradHess, sub > rs_sum: " + std::to_string(sub) + " > " + std::to_string(rs_sum));
@@ -616,7 +616,7 @@ double CoxRegression::etaGradHess(arma::vec& eta, arma::vec& grad, arma::vec& di
 		}
 	    }
 
-	    for (int k = 0; k < H[j]; k++) {
+	    for (int k = 0; k < (int) H[j]; k++) {
 		theta_weight[order[i+k]] = theta_weight_sum - censor[order[i+k]] * dSum;
 		theta_weight2[order[i+k]] = theta_weight2_sum - censor[order[i+k]] * dSum2;
 	    }

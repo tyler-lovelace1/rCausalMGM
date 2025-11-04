@@ -163,7 +163,7 @@ struct CvResult {
 		    
 		double lambdaSum = 0.0;
 		double rhsLambdaSum = 0.0;
-		for (int i = 0; i < lambda.size(); i++) {
+		for (uint i = 0; i < lambda.size(); i++) {
 		    lambdaSum += lambda.at(i);
 		    rhsLambdaSum += rhs.lambda.at(i);
 		}
@@ -181,7 +181,7 @@ struct CvResult {
 							  ORIENT_MAXP,
 							  ORIENT_SEPSETS };
 		    int ruleIdx = 4, rhsRuleIdx = 4;
-		    for (int i = 0; i < ruleOrder.size(); i++) {
+		    for (int i = 0; i < (int) ruleOrder.size(); i++) {
 			if (rule == ruleOrder[i]) ruleIdx = i;
 			if (rhs.rule == ruleOrder[i]) rhsRuleIdx = i;
 		    }

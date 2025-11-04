@@ -59,7 +59,7 @@ std::ostream& operator<<(std::ostream& os, RegressionResult& rr) {
   os << rr.zeroInterceptAssumed;
   os << "\n";
   os << "List of Regressor Names: ";
-  for (int i = 0; i < rr.regressorNames.size(); i++) {
+  for (uint i = 0; i < rr.regressorNames.size(); i++) {
     os << rr.regressorNames[i];
     os << "\t";
   }
@@ -68,25 +68,25 @@ std::ostream& operator<<(std::ostream& os, RegressionResult& rr) {
   os << rr.n;
   os << "\n";
   os << "Regression coefficients: ";
-  for (int i = 0; i < rr.b.size(); i++) {
+  for (uint i = 0; i < rr.b.size(); i++) {
     os << rr.b[i];
     os << "\t";
   }
   os << "\n";
   os << "t-statistics: ";
-  for (int i = 0; i < rr.t.size(); i++) {
+  for (uint i = 0; i < rr.t.size(); i++) {
     os << rr.t[i];
     os << "\t";
   }
   os << "\n";
   os << "P-Values: ";
-  for (int i = 0; i < rr.p.size(); i++) {
+  for (uint i = 0; i < rr.p.size(); i++) {
     os << rr.p[i];
     os << "\t";
   }
   os << "\n";
   os << "Standard Errors: ";
-  for (int i = 0; i < rr.se.size(); i++) {
+  for (uint i = 0; i < rr.se.size(); i++) {
     os << rr.se[i];
     os << "\t";
   }

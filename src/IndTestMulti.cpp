@@ -1,8 +1,7 @@
 #include "IndTestMulti.hpp"
 
 
-IndTestMulti::IndTestMulti(DataSet& data, double alpha)
-{
+IndTestMulti::IndTestMulti(DataSet& data, double alpha) {
     this->timesCalled = 0;
     this->searchVariables = data.getVariables();
     this->originalData = DataSet(data);
@@ -270,7 +269,7 @@ bool IndTestMulti::isIndependentMultinomialLogisticRegression(const Node& x, con
     arma::mat coeffsDep = arma::mat();  //yzList.size()+1, variablesPerNode.at(x).size());
 
     /*********************************************************************/
-    for (int i = 0; i < variablesPerNode.at(x).size(); i++)
+    for (uint i = 0; i < variablesPerNode.at(x).size(); i++)
     {
         const Node& varX = variablesPerNode.at(x).at(i);
 	// LogisticRegressionResult result0;
@@ -706,7 +705,7 @@ std::vector<std::string> IndTestMulti::getVariableNames()
 
 Node IndTestMulti::getVariable(std::string name)
 {
-    for (int i = 0; i < getVariables().size(); i++)
+    for (int i = 0; i < (int) getVariables().size(); i++)
     {
         Node var = getVariables().at(i);
         if (var.getName() == name)
@@ -724,13 +723,13 @@ arma::mat IndTestMulti::getSubsetData(DataSet &origData, std::vector<Node> &varS
     arma::uvec colIndices(varSubset.size());
     arma::uvec rowIndices(origMat.n_rows);
     // for (const Node& var : varSubset){
-    for (int i = 0; i < varSubset.size(); i++)
+    for (uint i = 0; i < varSubset.size(); i++)
     {
         const Node& var = varSubset.at(i);
         arma::uword j = origData.getColumn(var);
         colIndices[i] = j;
     }
-    for (int i = 0; i < origMat.n_rows; i++)
+    for (uint i = 0; i < origMat.n_rows; i++)
     {
         rowIndices[i] = i;
     }

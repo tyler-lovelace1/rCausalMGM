@@ -95,7 +95,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
         }
 
         int diffEdges = 0;
-        for (int i = 0; i < X.n_elem; i++) {
+        for (uint i = 0; i < X.n_elem; i++) {
             double a = X(i);
             double b = Xold(i);
             if ((a == 0 || b == 0) && a != b) {
@@ -275,7 +275,7 @@ arma::vec ProximalGradient::learnBackTrack(ConvexProximal *cp, arma::vec& Xin, d
 	// L = std::min(10*LocalL, L);
 
         int diffEdges = 0;
-        for (int i = 0; i < X.n_elem; i++) {
+        for (uint i = 0; i < X.n_elem; i++) {
             double a = X(i);
             double b = Xold(i);
             if ((a == 0 || b == 0) && a != b) {

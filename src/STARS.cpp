@@ -50,7 +50,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
     std::vector<DataSet> dataSubVec;
     std::vector<IndTestMultiCox> itSubVec;
     
-    for (int i = 0; i < samps.n_rows; i++) {
+    for (uint i = 0; i < samps.n_rows; i++) {
 	dataSubVec.push_back(DataSet(d, samps.row(i)));
 	itSubVec.push_back(IndTestMultiCox(dataSubVec.at(i), alphas[0]));
     }
@@ -64,7 +64,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 
 	std::vector<RcppThread::Thread> threads;
 
-	auto initialGraphTask = [&] (std::size_t i) {
+	auto initialGraphTask = [&] (int i) {
 				    EdgeListGraph ig;
 
 				    RcppThread::checkUserInterrupt();
@@ -83,7 +83,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 				};
 
 	auto producer = [&] () {
-	    for (std::size_t i = 0; i < N; i++) {
+	    for (int i = 0; i < N; i++) {
 		taskQueue.push(ParallelTask(initialGraphTask, i));
 
 		if (RcppThread::isInterrupted()) {
@@ -123,7 +123,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 
 
     // go until we break by having instability better than threshold
-    for (currIndex = 0; currIndex < alphas.n_elem; currIndex++) {
+    for (currIndex = 0; currIndex < (int) alphas.n_elem; currIndex++) {
 	
         if (verbose) Rcpp::Rcout << "  Testing alpha = " << alphas[currIndex] << std::endl;
 
@@ -131,7 +131,7 @@ EdgeListGraph STARS::runStarsPar(arma::mat& instabs, arma::umat& samps) {
 
 	thetaMat.fill(0);
 
-	for (int i = 0; i < samps.n_rows; i++) {
+	for (int i = 0; i < (int) samps.n_rows; i++) {
 	    
 	    itSubVec[i].setAlpha(alphas[currIndex]);
 	    if (alg == "pc") {

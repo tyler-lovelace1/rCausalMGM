@@ -52,8 +52,8 @@ EdgeListGraph GraphUtils::completeGraph(EdgeListGraph& graph) {
 
     std::vector<Node> nodes = graph2.getNodes();
 
-    for (int i = 0; i < nodes.size(); i++) {
-        for (int j = i+1; j < nodes.size(); j++) {
+    for (int i = 0; i < (int) nodes.size(); i++) {
+        for (int j = i+1; j < (int) nodes.size(); j++) {
             Node node1 = nodes[i];
             Node node2 = nodes[j];
             graph2.addUndirectedEdge(node1, node2);

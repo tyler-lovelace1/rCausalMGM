@@ -300,7 +300,7 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
 
     for (int d = 0; d <= maxDepth; d++) {
 
-	if (d <= ppa.size()) {
+      if (d <= (int) ppa.size()) {
 	    ChoiceGenerator cg1(ppa.size(), d);
 	    std::vector<int> *comb2;
 	    for (comb2 = cg1.next(); comb2 != NULL; comb2 = cg1.next()) {
@@ -315,7 +315,7 @@ std::vector<Node> SepsetProducer::getSepset(const Node& a, const Node& b) {
 	    }
 	}
 
-	if (d <= ppb.size()) {
+	if (d <= (int) ppb.size()) {
 	    ChoiceGenerator cg2(ppb.size(), d);
 	    std::vector<int> *comb3;
 	    for (comb3 = cg2.next(); comb3 != NULL; comb3 = cg2.next()) {

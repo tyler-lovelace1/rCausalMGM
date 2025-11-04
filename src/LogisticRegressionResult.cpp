@@ -8,32 +8,32 @@ LogisticRegressionResult::LogisticRegressionResult(std::string target, std::vect
                                                    double chiSq, double alpha)
 {
 
-    if (regressorNames.size() != numRegressors)
+    if (regressorNames.size() != (std::size_t) numRegressors)
     {
         throw std::invalid_argument("Number of Regressor Names in vector does not equal numRegressors");
     }
 
-    if (coefs.size() != numRegressors + 1)
+    if (coefs.size() != (std::size_t) numRegressors + 1)
     {
         throw std::invalid_argument("Invalid size for coefs");
     }
 
-    if (stdErrs.size() != numRegressors + 1)
+    if (stdErrs.size() != (std::size_t) numRegressors + 1)
     {
         throw std::invalid_argument("Invalid size for stdErrs");
     }
 
-    if (probs.size() != numRegressors + 1)
+    if (probs.size() != (std::size_t) numRegressors + 1)
     {
         throw std::invalid_argument("Invalid size for probs");
     }
 
-    if (xMeans.size() != numRegressors + 1)
+    if (xMeans.size() != (std::size_t) numRegressors + 1)
     {
         throw std::invalid_argument("Invalid size for xMeans");
     }
 
-    if (xStdDevs.size() != numRegressors + 1)
+    if (xStdDevs.size() != (std::size_t) numRegressors + 1)
     {
         throw std::invalid_argument("Invalid size for xxStdDevs");
     }
@@ -66,7 +66,7 @@ std::ostream &operator<<(std::ostream &os, LogisticRegressionResult &lrr)
     os << "\n";
     os << "Regressor Names ";
     std::vector<std::string> rnames = lrr.getRegressorNames();
-    for (int i = 0; i < rnames.size(); i++)
+    for (uint i = 0; i < rnames.size(); i++)
     {
         os << rnames[i];
         os << "\t";
@@ -95,7 +95,7 @@ std::ostream &operator<<(std::ostream &os, LogisticRegressionResult &lrr)
     os << "\n";
     os << "Regression coefficients: ";
     arma::vec regCoefs = lrr.getCoefs();
-    for (int j = 0; j < regCoefs.size(); j++)
+    for (uint j = 0; j < regCoefs.size(); j++)
     {
         os << regCoefs[j];
         os << "\t";
@@ -104,7 +104,7 @@ std::ostream &operator<<(std::ostream &os, LogisticRegressionResult &lrr)
     os << "\n";
     os << "Standard Errors: ";
     arma::vec stdErrs = lrr.getStdErrs();
-    for (int l = 0; l < stdErrs.size(); l++)
+    for (uint l = 0; l < stdErrs.size(); l++)
     {
         os << stdErrs[l];
         os << "\t";
@@ -113,7 +113,7 @@ std::ostream &operator<<(std::ostream &os, LogisticRegressionResult &lrr)
     os << "\n";
     os << "P-Values: ";
     arma::vec pVals = lrr.getProbs();
-    for (int m = 0; m < pVals.size(); m++)
+    for (uint m = 0; m < pVals.size(); m++)
     {
         os << pVals[m];
         os << "\t";
@@ -122,7 +122,7 @@ std::ostream &operator<<(std::ostream &os, LogisticRegressionResult &lrr)
     os << "\n";
     os << "X Means: ";
     arma::vec xMeans = lrr.getxMeans();
-    for (int n = 0; n < xMeans.size(); n++)
+    for (uint n = 0; n < xMeans.size(); n++)
     {
         os << xMeans[n];
         os << "\t";
@@ -131,7 +131,7 @@ std::ostream &operator<<(std::ostream &os, LogisticRegressionResult &lrr)
     os << "\n";
     os << "X Std Devs: ";
     arma::vec xStdDevs = lrr.getxStdDevs();
-    for (int o = 0; o < xStdDevs.size(); o++)
+    for (uint o = 0; o < xStdDevs.size(); o++)
     {
         os << xStdDevs[o];
         os << "\t";

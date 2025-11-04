@@ -6,7 +6,7 @@ void DiscreteVariable::setCategories(const int& numCategories) {
 }
 
 int DiscreteVariable::getIndex(const std::string& category) {
-  for (int i = 0; i < categories.size(); i++) {
+  for (int i = 0; i < (int) categories.size(); i++) {
     if (categories.at(i)==category) {
       return i;
     }
@@ -15,7 +15,7 @@ int DiscreteVariable::getIndex(const std::string& category) {
 }
 
 bool DiscreteVariable::checkValue(const std::string& val) {
-  for (int i = 0; i < categories.size(); i++) {
+  for (int i = 0; i < (int) categories.size(); i++) {
     if (categories.at(i)==val)
       return true;
   }
