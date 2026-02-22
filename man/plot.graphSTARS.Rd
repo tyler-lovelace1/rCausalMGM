@@ -11,6 +11,9 @@
 
 \item{...}{Additional plot arguments}
 }
+\value{
+No return value. This function plots graph sparsity, quantified by the significance threshold alpha, against the average edge instability used for stability-based model selection, with a horizontal line indicating the instability threshold and a vertical line indicating the selected threshold.
+}
 \description{
 A plot override function for the graphSTARS class
 }

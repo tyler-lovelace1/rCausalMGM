@@ -11,6 +11,9 @@
 
 \item{...}{Additional plot arguments}
 }
+\value{
+No return value. This function plots graph sparsity, quantified by the average Markov blanket size for causal graphs or the regularization parameter for undirected graphs, against -log(pseudo-likelihood), with lines indicating the selected models.
+}
 \description{
 A plot override function for the graphCV class
 }

@@ -1931,6 +1931,7 @@ void streamGraph(const Rcpp::List& list, std::ostream& os, std::string ext) {
 //'
 //' @param graph The graph object
 //' @param filename The graph filename
+//' @return No return value. This function saves the full details of a graph object to a .txt file, including nodes, edges, the algorithm used to learn the model, and relevant hyperparameters. This format can then be read back into R with the loadGraph function.
 //' @export
 // [[Rcpp::export]]
 void saveGraph(const Rcpp::List& graph, const std::string& filename) {
@@ -2210,6 +2211,7 @@ Rcpp::List adjMat2Graph(arma::mat adj, Rcpp::StringVector nodes, bool directed =
 //' @description Display a graph object as text. This is the same format as written in ".txt" save files.
 //'
 //' @param graph The graph object
+//' @return No return value, this function prints the full details of a graph object, including nodes, edges, the algorithm used to learn the model, and relevant hyperparameters.
 //' @export
 //' @examples
 //' sim <- simRandomDAG(200, 25, deg=2)

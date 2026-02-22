@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{mgm}
 \alias{mgm}
-\title{Calculate the MGM graph on a dataset}
+\title{Calculate the Mixed Graphical Model (MGM) graph on a dataset.}
 \usage{
 mgm(data, lambda = as.numeric(c(0.2, 0.2, 0.2)), rank = FALSE, verbose = FALSE)
 }
@@ -19,7 +19,7 @@ mgm(data, lambda = as.numeric(c(0.2, 0.2, 0.2)), rank = FALSE, verbose = FALSE)
 The calculated MGM graph
 }
 \description{
-Calculate the MGM graph on a dataset
+Calculate the MGM graph on a dataset. The dataset may contain continuous and discrete variables. In the case that it contains only continuous variables, MGM reduces to a pseudo-likelihood estimate of the graphical LASSO, and in the case that it contains only discrete variables, MGM reduces to a pseudo-likelihood estimate of a pairwise Markov random field.
 }
 \examples{
 sim <- simRandomDAG(200, 25, deg=2)

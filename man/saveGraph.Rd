@@ -11,6 +11,9 @@ saveGraph(graph, filename)
 
 \item{filename}{The graph filename}
 }
+\value{
+No return value. This function saves the full details of a graph object to a .txt file, including nodes, edges, the algorithm used to learn the model, and relevant hyperparameters. This format can then be read back into R with the loadGraph function.
+}
 \description{
 Save a graph to a file. Supported file types are ".txt" and ".sif".
 }

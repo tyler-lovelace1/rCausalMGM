@@ -11,6 +11,9 @@
 
 \item{...}{Additional print arguments}
 }
+\value{
+No return value, the function prints a summary of the graphCV object.
+}
 \description{
 A print override function for the graphCV class
 }

@@ -11,6 +11,9 @@
 
 \item{...}{Additional plot arguments}
 }
+\value{
+No return value. This function plots graph sparsity, quantified by the regularization parameters, against the average edge instability used for stability-based model selection, with a horizontal line indicating the instability threshold and vertical lines indicating the selected regularization parameters.
+}
 \description{
 A plot override function for the graphSTEPS class
 }

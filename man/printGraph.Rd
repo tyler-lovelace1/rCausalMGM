@@ -9,6 +9,9 @@ printGraph(graph)
 \arguments{
 \item{graph}{The graph object}
 }
+\value{
+No return value, this function prints the full details of a graph object, including nodes, edges, the algorithm used to learn the model, and relevant hyperparameters.
+}
 \description{
 Display a graph object as text. This is the same format as written in ".txt" save files.
 }

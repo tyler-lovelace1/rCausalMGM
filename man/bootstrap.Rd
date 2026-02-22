@@ -32,6 +32,9 @@ bootstrap(
 
 \item{verbose}{A logical value indicating whether to print progress updates. The default is FALSE.}
 }
+\value{
+A graph object representing an ensemble graph learned from bootstrapped samples. For each adjacency observed across the bootstrap graphs, if absence is not the most frequent outcome, the edge orientation with the highest frequency is included in the ensemble graph. The object also contains a 'stabilities' data frame that records the frequencies of all possible edge orientations for each observed adjacency. The ensemble graph may not becorrespond to a valid CPDAG or PAG and is not guaranteed to represent a causal graph.
+}
 \description{
 Runs bootstrapping for a causal graph on the dataset. This function can be used to estimate the stability of edge adjacencies and orientations in the causal graph. It returns an ensemble graph which consists of the most common edges accross bootstrap samples. The ensemble graph is constructed based on edge-wise probabilities, so it is not guaranteed to be a valid CPDAG or PAG. The ensemble graph's stabilites entry contains information about the frequency of each possible orientation for each edge that appears at least once across bootstrap samples.
 }

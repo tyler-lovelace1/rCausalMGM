@@ -1,8 +1,8 @@
 Package: rCausalMGM
 Type: Package
-Title: Scalable Causal Discovery and Model Selection on Mixed Datasets with rCausalMGM
+Title: Scalable Causal Discovery and Model Selection on Mixed Datasets with 'rCausalMGM'
 Version: 1.0
-Date: 2025-10-15
+Date: 2026-02-09
 Author: Tyler C Lovelace [aut], Max Dudek [aut], Jack Fiore [aut], Panayiotis V Benos [aut, cre]
 Authors@R: c(person(given = c("Tyler", "C"),
                     family = "Lovelace",
@@ -18,7 +18,7 @@ Authors@R: c(person(given = c("Tyler", "C"),
                     role = c("aut", "cre"),
                     email = "pbenos@ufl.edu"))
 Maintainer: Panayiotis V Benos <pbenos@ufl.edu>
-Description: The rCasualMGM package is a scalable implementation of CausalMGM, a method for learning causal graphical models over mixed (continuous, discrete, and censored) data. rCausalMGM scales to high-dimensional mixed datasets by utilizing a convex score-based method for learning the initial (moralized) graph and a producer-consumer scheme that efficiently performs the conditional independence tests in constraint-based causal discovery algorithms in parallel. Each individual component of the CausalMGM procedure, such as MGM and the causal discovery algorithms PC-Stable and FCI-Stable, are also available individually. Finally, in real-world applications, model selection is essential. As such, rCausalMGM implements three approaches to model selection: (1) information criteria based on model likelihood and complexity, (2) a cross-validation approach to estimating model likelihood on out-of-sample data, and (3) stability-based approaches that assesses how stable a graphical model is across subsamples of the dataset.
+Description: Scalable methods for learning causal graphical models from mixed data, including continuous, discrete, and censored variables. The package implements CausalMGM, which combines a convex, score-based approach for learning an initial moralized graph with a producer-consumer scheme that enables efficient parallel conditional independence testing in constraint-based causal discovery algorithms. The implementation supports high-dimensional datasets and provides individual access to core components of the workflow, including MGM and the PC-Stable and FCI-Stable causal discovery algorithms. To support practical applications, the package includes multiple model selection strategies, including information criteria based on likelihood and model complexity, cross-validation for out-of-sample likelihood estimation, and stability-based approaches that assess graph robustness across subsamples.
 License: GPL-3 
 Imports:
 	Rcpp (>= 1.0.3),

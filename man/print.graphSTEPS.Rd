@@ -11,6 +11,9 @@
 
 \item{...}{Additional print arguments}
 }
+\value{
+No return value, the function prints a summary of the graphSTEPS object.
+}
 \description{
 A print override function for the graphSTEPS class
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/MiscFunctions.R
 \name{plot.graphPath}
 \alias{plot.graphPath}
-\title{A plot override function for the graphCV class}
+\title{A plot override function for the graphPath class}
 \usage{
 \method{plot}{graphPath}(x, ...)
 }
@@ -11,6 +11,9 @@
 
 \item{...}{Additional plot arguments}
 }
+\value{
+No return value. This function plots graph sparsity, quantified by the regularization parameter, against the AIC and BIC scores along a solution path, with lines indicating the selected models.
+}
 \description{
-A plot override function for the graphCV class
+A plot override function for the graphPath class
 }

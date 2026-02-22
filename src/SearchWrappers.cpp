@@ -15,7 +15,9 @@
 #include "Boss.hpp"
 #include "Knowledge.hpp"
 
-//' Calculate the MGM graph on a dataset
+//' Calculate the Mixed Graphical Model (MGM) graph on a dataset.
+//'
+//' @description Calculate the MGM graph on a dataset. The dataset may contain continuous and discrete variables. In the case that it contains only continuous variables, MGM reduces to a pseudo-likelihood estimate of the graphical LASSO, and in the case that it contains only discrete variables, MGM reduces to a pseudo-likelihood estimate of a pairwise Markov random field.
 //'
 //' @param data A data.frame containing the dataset to be used for estimating the MGM, with each row representing a sample and each column representing a variable. All continuous variables must be of the numeric type, while categorical variables must be factor or character. Any rows with missing values will be dropped.
 //' @param lambda A numeric vector of three values for the regularization parameter lambda: the first for continuous-continuous edges, the second for continuous-discrete, and the third for discrete-discrete. Defaults to c(0.2, 0.2, 0.2). If a single value is provided, all three values in the vector will be set to that value.
@@ -1887,6 +1889,7 @@ Rcpp::List mgmfciCV(
 //' @param replace A logical value indicating whether to use sampling with replacement or to draw subsamples of size floor(0.632 * N). The default value is FALSE.
 //' @param rank A logical value indicating whether to use the nonparanormal transform to learn rank-based associations. The default is FALSE.
 //' @param verbose A logical value indicating whether to print progress updates. The default is FALSE.
+//' @return A graph object representing an ensemble graph learned from bootstrapped samples. For each adjacency observed across the bootstrap graphs, if absence is not the most frequent outcome, the edge orientation with the highest frequency is included in the ensemble graph. The object also contains a 'stabilities' data frame that records the frequencies of all possible edge orientations for each observed adjacency. The ensemble graph may not becorrespond to a valid CPDAG or PAG and is not guaranteed to represent a causal graph.
 //' @export
 //' @examples
 //' \donttest{

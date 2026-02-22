@@ -20,6 +20,9 @@ will be plotted.}
 
 \item{...}{Additional plot arguments}
 }
+\value{
+No return value, the function plots a graph object.
+}
 \description{
 A plot override function for the graph class
 }

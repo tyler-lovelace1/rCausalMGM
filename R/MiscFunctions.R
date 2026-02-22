@@ -2,6 +2,7 @@
 #'
 #' @param x The graph object
 #' @param ... Additional print arguments
+#' @return No return value, the function prints a summary of the graph object.
 #' @export
 print.graph <- function(x, ...) {
     cat("Algorithm: ", x[["algorithm"]], "\n")
@@ -46,6 +47,7 @@ print.graph <- function(x, ...) {
 #'
 #' @param x The graphCV object
 #' @param ... Additional print arguments
+#' @return No return value, the function prints a summary of the graphCV object.
 #' @export
 print.graphCV <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -72,6 +74,7 @@ print.graphCV <- function(x, ...) {
 #'
 #' @param x The graphPath object
 #' @param ... Additional print arguments
+#' @return No return value, the function prints a summary of the graphPath object.
 #' @export
 print.graphPath <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -94,6 +97,7 @@ print.graphPath <- function(x, ...) {
 #'
 #' @param x The graphSTEPS object
 #' @param ... Additional print arguments
+#' @return No return value, the function prints a summary of the graphSTEPS object.
 #' @export
 print.graphSTEPS <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -113,6 +117,7 @@ print.graphSTEPS <- function(x, ...) {
 #'
 #' @param x The graphSTARS object
 #' @param ... Additional print arguments
+#' @return No return value, the function prints a summary of the graphSTARS object.
 #' @export
 print.graphSTARS <- function(x, ...) {
     cat("StARS selected graph:\n\n")
@@ -124,6 +129,7 @@ print.graphSTARS <- function(x, ...) {
 #'
 #' @param x The knowledge object
 #' @param ... Additional print arguments
+#' @return No return value, the function prints a summary of the knowledge object.
 #' @export
 print.knowledge <- function(x, ...) {
     cat("Prior Knowledge:\n")
@@ -160,6 +166,7 @@ print.knowledge <- function(x, ...) {
 #'     (e.g. fontsize).
 #' @param edgeAttr A list of options to modify graph edges.
 #' @param ... Additional plot arguments
+#' @return No return value, the function plots a graph object.
 #' @export
 plot.graph <- function(x,
                        nodes = c(),
@@ -261,6 +268,7 @@ plot.graph <- function(x,
 #'
 #' @param x The graph object
 #' @param ... Additional plot arguments
+#' @return No return value. This function plots graph sparsity, quantified by the average Markov blanket size for causal graphs or the regularization parameter for undirected graphs, against -log(pseudo-likelihood), with lines indicating the selected models.
 #' @export
 plot.graphCV <- function(x, ...) {
     mgmFlag <- x$graph.min$type=="undirected"
@@ -299,10 +307,11 @@ plot.graphCV <- function(x, ...) {
                      col='black', lty=3, lw=2)
 }
 
-#' A plot override function for the graphCV class
+#' A plot override function for the graphPath class
 #'
 #' @param x The graph object
 #' @param ... Additional plot arguments
+#' @return No return value. This function plots graph sparsity, quantified by the regularization parameter, against the AIC and BIC scores along a solution path, with lines indicating the selected models.
 #' @export
 plot.graphPath <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -343,6 +352,7 @@ plot.graphPath <- function(x, ...) {
 #'
 #' @param x The graph object
 #' @param ... Additional plot arguments
+#' @return No return value. This function plots graph sparsity, quantified by the regularization parameters, against the average edge instability used for stability-based model selection, with a horizontal line indicating the instability threshold and vertical lines indicating the selected regularization parameters.
 #' @export
 plot.graphSTEPS <- function(x, ...) {
     mgmFlag <- !is.null(x$lambdas)
@@ -411,6 +421,7 @@ plot.graphSTEPS <- function(x, ...) {
 #'
 #' @param x The graph object
 #' @param ... Additional plot arguments
+#' @return No return value. This function plots graph sparsity, quantified by the significance threshold alpha, against the average edge instability used for stability-based model selection, with a horizontal line indicating the instability threshold and a vertical line indicating the selected threshold.
 #' @export
 plot.graphSTARS <- function(x, ...) {
     gamma <- x$gamma
