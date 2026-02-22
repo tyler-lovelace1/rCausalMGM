@@ -118,7 +118,7 @@ public:
     void push(T const &value)
     {
         std::unique_lock<std::mutex> lock(mtx);
-        c_tail.wait(lock, [=, this] { return (tail - head) != capacity; });
+        c_tail.wait(lock, [&] { return (tail - head) != capacity; });
 
         queue.get()[tail % capacity] = value;
         tail++;
@@ -128,7 +128,7 @@ public:
     T pop()
     {
         std::unique_lock<std::mutex> lock(mtx);
-        c_head.wait(lock, [=, this] { return head != tail; });
+        c_head.wait(lock, [&] { return head != tail; });
 	
         T ret(std::move(queue.get()[head % capacity]));
         head++;
