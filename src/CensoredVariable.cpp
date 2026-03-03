@@ -1,12 +1,12 @@
 #include "CensoredVariable.hpp"
 
 bool CensoredVariable::checkValue(const std::string& val) {
-  try {
-    stod(val);
-  } catch (std::exception& e) {
-    return false;
-  }
-  return true;
+    try {
+	double d = std::stod(val);
+    } catch (std::exception& e) {
+	return false;
+    }
+    return true;
 }
 
 bool CensoredVariable::setCensor(arma::vec& values, arma::uvec& censor, arma::uvec& strata) {

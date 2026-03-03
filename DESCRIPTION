@@ -1,7 +1,7 @@
 Package: rCausalMGM
 Type: Package
 Title: Scalable Causal Discovery and Model Selection on Mixed Datasets with 'rCausalMGM'
-Version: 1.0
+Version: 1.0.1
 Date: 2026-02-09
 Author: Tyler C Lovelace [aut], Max Dudek [aut], Jack Fiore [aut], Panayiotis V Benos [aut, cre]
 Authors@R: c(person(given = c("Tyler", "C"),
