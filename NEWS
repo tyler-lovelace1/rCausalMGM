@@ -1,0 +1,3 @@
+Changes in version 1.0-1 (2025-03-13)
+
+  * Changes to ContinuousVariable.cpp and CensoredVariable.cpp prevent the return value of std::stod from being discarded, ensuring compatibility with LLVM 22.
